@@ -209,15 +209,19 @@ class GMGSolver:
                  n_geometric: int | None = None, max_coarse_dof: int = 3000, amg_max_dof: int = 60000,
                  smoother_degree: int = 3, cheb_lo: float = 0.1, cheb_hi: float = 1.1, power_its: int = 15,
                  pin_rel: float = 0.0, tol: float = 1e-8, maxit: int = 500, amg_options: dict | None = None,
-                 amg_cycles: int = 1, transfer: str = "blackbox") -> None:
+                 amg_cycles: int = 1, transfer: Any = "trilinear", cycle: str = "K") -> None:
         self.shape = tuple(int(v) for v in shape)
         if len(self.shape) != 3 or min(self.shape) < 1:
             raise ValueError("shape must be (nx, ny, nz)")
         if coarse not in ("amg", "dense", "direct"):
             raise ValueError("coarse: amg | dense | direct")
-        if transfer not in ("blackbox", "trilinear"):
-            raise ValueError("transfer: blackbox | trilinear")
-        self.transfer = transfer
+        tr = [transfer] if isinstance(transfer, str) else list(transfer)
+        if any(t not in ("blackbox", "trilinear") for t in tr):
+            raise ValueError("transfer: blackbox | trilinear, or a list per level")
+        if cycle not in ("V", "W", "K"):
+            raise ValueError("cycle: V | W | K")
+        self.transfer, self.cycle = transfer, cycle
+        self._tr = tr
         self.device = torch.device(device if device is not None else ("cuda" if torch.cuda.is_available() else "cpu"))
         self.vdtype = vcycle_dtype or (torch.float32 if self.device.type == "cuda" else torch.float64)
         self.graphs = (self.device.type == "cuda") if graphs is None else bool(graphs and self.device.type == "cuda")
@@ -294,7 +298,7 @@ class GMGSolver:
             if nx % 2 or ny % 2 or nz % 2:
                 break
             cshape = (nx // 2, ny // 2, nz // 2)
-            if self.transfer == "blackbox":
+            if self._tr[min(len(transfers), len(self._tr) - 1)] == "blackbox":
                 T = BlackBoxTransfer(L)
                 Kc = T.galerkin(L)
                 transfers.append(T)
@@ -324,7 +328,7 @@ class GMGSolver:
         coef = [self._cheb_coef(L.lmax) for L in levels[:-1]]
         vlev = [L.to(self.vdtype) for L in levels]
         vtr = [None if T is None else T.to(self.vdtype) for T in transfers]
-        structure = (tuple(L.shape for L in levels), self.coarse_kind, self.transfer)
+        structure = (tuple(L.shape for L in levels), self.coarse_kind, tuple(self._tr), self.cycle)
         reuse = self._structure == structure and self.graphs and self._A_call is not None
         if reuse:
             for old, new in zip(self.levels, vlev, strict=True):
@@ -357,7 +361,7 @@ class GMGSolver:
         self.last_setup = {"setup_s": time.perf_counter() - t0, "hierarchy_s": t_h - t0, "coarse_setup_s": t_c - t_h,
                            "levels": [list(L.shape) for L in levels], "coarse": self.coarse_kind,
                            "coarse_ndof": int(levels[-1].ndof), "lmax": [L.lmax for L in levels[:-1]],
-                           "n_pinned": self.n_pinned, "graph_reused": bool(reuse), "transfer": self.transfer,
+                           "n_pinned": self.n_pinned, "graph_reused": bool(reuse), "transfer": self.transfer, "cycle": self.cycle,
                            "trilinear_fallback_nodes": [0 if T is None else T.n_trilinear_fallback
                                                         for T in transfers]}
         if isinstance(coarse, _HostCoarse):
@@ -409,13 +413,53 @@ class GMGSolver:
             e = self._smooth(lev, x, bs[lev])
         return e
 
+    def _restrict(self, lev: int, r: torch.Tensor) -> torch.Tensor:
+        T = self.transfers[lev]
+        return self.levels[lev + 1].free * (gk.restrict(r) if T is None else T.restrict(r))
+
+    def _prolong(self, lev: int, e: torch.Tensor) -> torch.Tensor:
+        T = self.transfers[lev]
+        return self.levels[lev].free * (gk.prolong(e) if T is None else T.prolong(e))
+
+    def _cycle(self, lev: int, b: torch.Tensor) -> torch.Tensor:
+        """Multigrid cycle at level ``lev`` (V, W or K) with zero initial guess."""
+        last = len(self.levels) - 1
+        if lev == last:
+            return self.coarse(b)
+        L = self.levels[lev]
+        x = self._smooth(lev, None, b)
+        rc = self._restrict(lev, b - L.apply(x))
+        if lev + 1 == last or self.cycle == "V":
+            ec = self._cycle(lev + 1, rc)
+        elif self.cycle == "W":
+            ec = self._cycle(lev + 1, rc)
+            ec = ec + self._cycle(lev + 1, rc - self.levels[lev + 1].apply(ec))
+        else:
+            ec = self._kcycle(lev + 1, rc)
+        return self._smooth(lev, x + self._prolong(lev, ec), b)
+
+    def _kcycle(self, lev: int, r: torch.Tensor) -> torch.Tensor:
+        """Two flexible-CG steps on level ``lev`` preconditioned by its cycle (K-cycle; scalars stay on the device,
+        so the whole cycle is graph-capturable)."""
+        A = self.levels[lev].apply
+        v1 = self._cycle(lev, r)
+        w1 = A(v1)
+        rho1 = (v1 * w1).sum()
+        a1 = (v1 * r).sum()
+        r2 = r - (a1 / rho1) * w1
+        v2 = self._cycle(lev, r2)
+        w2 = A(v2)
+        gam = (v2 * w1).sum()
+        bet = (v2 * w2).sum()
+        a2 = (v2 * r2).sum()
+        rho2 = bet - gam * gam / rho1
+        ok = rho2 > 1e-30 * bet.abs()
+        c2 = torch.where(ok, a2 / torch.where(ok, rho2, torch.ones_like(rho2)), torch.zeros_like(rho2))
+        return (a1 / rho1 - c2 * gam / rho1) * v1 + c2 * v2
+
     def vcycle(self, r: torch.Tensor) -> torch.Tensor:
-        """One V-cycle applied to a float64 residual (no graph)."""
-        b = r.to(self.vdtype)
-        if len(self.levels) == 1:
-            return self.coarse(b).to(r.dtype)
-        xs, bs, bc = self._down(b)
-        return self._up(xs, bs, self.coarse(bc)).to(r.dtype)
+        """One multigrid cycle (``self.cycle``) applied to a float64 residual (no graph)."""
+        return self._cycle(0, r.to(self.vdtype)).to(r.dtype)
 
     def _build_calls(self) -> None:
         assert self.A64 is not None
@@ -427,6 +471,9 @@ class GMGSolver:
         A_call, _, _ = _graphed(A64.apply, ex)
         if not getattr(self.coarse, "on_host", False):
             M_call, _, _ = _graphed(self.vcycle, ex)
+        elif self.cycle != "V" and len(self.levels) > 2:
+            self._A_call, self._M_call = A64.apply, self.vcycle      # host coarse inside W/K cycles: no graph
+            return
         else:
             def down(r: torch.Tensor) -> tuple:
                 return self._down(r.to(self.vdtype))

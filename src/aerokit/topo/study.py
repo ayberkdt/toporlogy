@@ -94,8 +94,12 @@ class Study:
 
     def __init__(self, domain: Domain, physics: Any, loads: np.ndarray, chain: Chain, interp: torch.nn.Module,
                  objective: Response, constraints: Sequence[Constraint], optimizer: Optimizer,
-                 schedule: Schedule | None = None, recorder: Any = None) -> None:
+                 schedule: Schedule | None = None, recorder: Any = None,
+                 move_beta_ref: float | None = None) -> None:
         self.domain, self.physics, self.chain, self.interp = domain, physics, chain, interp
+        # move limit shrinks as move0 · min(1, move_beta_ref / β) after every β step of the schedule (sharp
+        # projections make large steps unstable; 2.0 is the common choice). None: move limit unchanged.
+        self.move_beta_ref = None if move_beta_ref is None else float(move_beta_ref)
         F = np.asarray(loads, float)
         self.F = F[:, None] if F.ndim == 1 else F
         if self.F.shape[0] != domain.ndof:
@@ -208,6 +212,7 @@ class Study:
         if self.recorder is not None:
             self.recorder.start(self)
         it, change, ev = 0, 1.0, None
+        move0 = getattr(self.optimizer, "move", None)
         while it < max_iter:
             it += 1
             for k, v in self.schedule.state().items():
@@ -227,12 +232,17 @@ class Study:
                 self.recorder.log(it, ev, change, self.schedule.state())
             if self.schedule.update(it, change):
                 self.optimizer.reset()
+                beta = self.schedule.state().get("beta")
+                if self.move_beta_ref is not None and move0 is not None and beta:
+                    self.optimizer.move = float(move0) * min(1.0, self.move_beta_ref / float(beta))
                 continue
             if change <= tol and self.schedule.finished:
                 break
         xphys = self.physical(x)
         res = Result(x, xphys, hist, it, change <= tol and self.schedule.finished, time.perf_counter() - t0,
                      None if ev is None else ev.U, self.settings())
+        if move0 is not None:
+            self.optimizer.move = move0                 # leave the optimizer as it was given
         if self.recorder is not None:
             self.recorder.finish(res)
         return res

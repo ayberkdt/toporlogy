@@ -882,3 +882,81 @@ def split_benchmark(dim: int = 2, n: int = 24, coupling: float = 0.02, h: float 
         F[d.dim * nodes + up, 0] -= 1.0 / nodes.size
         F[d.dim * nodes + 0, 0] += sx * coupling / nodes.size
     return SplitBenchmark(d, fixed, F, ifc)
+
+
+# ====================================================================================================== one-call plan
+@dataclass
+class OneBodyPlan:
+    """Everything needed to keep a design in one body, from :func:`one_body`.
+
+    Use ``plan.domain`` (the input domain with the minimal ties frozen) to build the chain and physics, add
+    ``plan.constraints`` to the study, and call ``plan.finish(xphys)`` on the result (gate + optional repair).
+    """
+
+    domain: Domain
+    interfaces: dict[str, np.ndarray]
+    ties: np.ndarray | None
+    constraints: list[Any]
+    threshold: float = 0.5
+    repair_section: int = 2
+
+    def gate(self, xphys: np.ndarray, **kw: Any) -> ConnectivityReport:
+        """:func:`analyse_connectivity` with the plan's interfaces (thresholds 0.3/0.7 and erosion included)."""
+        return analyse_connectivity(self.domain, xphys, self.interfaces, threshold=kw.pop("threshold", self.threshold),
+                                    **kw)
+
+    def finish(self, xphys: np.ndarray, repair: bool = True,
+               **kw: Any) -> tuple[np.ndarray, ConnectivityReport, BridgeResult | None]:
+        """Gate the design; if it is not PASS and ``repair``, join the bodies with :func:`bridge` and gate again.
+
+        Returns (design, final report, bridge result or None). A repaired design must be re-verified (stiffness,
+        stress) by the caller: bridges are geometric, not optimised.
+        """
+        rep = self.gate(xphys, **kw)
+        if rep.verdict == "PASS" or not repair:
+            return np.asarray(xphys, float), rep, None
+        br = bridge(self.domain, xphys, self.interfaces, threshold=self.threshold, section=self.repair_section)
+        return br.xphys, self.gate(br.xphys, **kw), br
+
+
+def one_body(domain: Domain, interfaces: Mapping[str, Any], *, ties: int | None = 1,
+             constraint: str | None = "conduction", eta: float | None = 0.7, bound: float | None = None,
+             sink: str | None = None, threshold: float = 0.5, repair_section: int = 2,
+             **response_kw: Any) -> OneBodyPlan:
+    """Layered protection against a design that falls apart (defaults from the measured comparison in
+    ``tests/topo/test_connectivity.py``: only frozen ties survived the one-element erosion test; the conduction and
+    coupling constraints are robust to the 0.3/0.7 thresholds only when they see the eroded field, ``eta`` ≈ 0.7).
+
+    interfaces : name → bool element mask, or name → node numbers (converted to the elements touching them).
+    ties : section (elements) of frozen minimal ties between the interfaces; None/0 = no ties.
+    constraint : "conduction" (virtual heat conduction, bound default 20 with k_min 1e-3), "coupling" (auxiliary
+        structural case, bound default 2.5 × first value) or None.
+    """
+    from aerokit.topo.study import Constraint
+    masks: dict[str, np.ndarray] = {}
+    for name, v in interfaces.items():
+        a = np.asarray(v)
+        if a.dtype == bool and a.shape == domain.shape:
+            masks[str(name)] = a & domain.active
+        else:
+            masks[str(name)] = elements_touching_nodes(domain, a.astype(np.int64))
+    masks = _interfaces(domain, masks)
+    tie_mask = None
+    dom = domain
+    if ties:
+        tie_mask = tie_regions(domain, masks, section=int(ties))
+        dom = with_keep(domain, tie_mask)
+    cons: list[Any] = []
+    if constraint == "conduction":
+        resp = ConductionConnectivity(dom, masks, sink=sink, eta=eta, **response_kw)
+        cons.append(Constraint(resp, 20.0 if bound is None else float(bound), name="connectivity"))
+    elif constraint == "coupling":
+        response_kw.setdefault("reference", "first")
+        resp = CouplingCompliance(dom, masks, held=sink, eta=eta, **response_kw)
+        cons.append(Constraint(resp, 2.5 if bound is None else float(bound), name="connectivity"))
+    elif constraint is not None:
+        raise ValueError("constraint: conduction | coupling | None")
+    return OneBodyPlan(dom, masks, tie_mask, cons, threshold, repair_section)
+
+
+__all__ += ["OneBodyPlan", "one_body"]
