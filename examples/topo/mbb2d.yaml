@@ -1,0 +1,23 @@
+# Half MBB beam (2-D, plane stress): symmetric half of a simply supported beam with a centre point load.
+# Units: consistent, dimensionless here (h = 1, E0 = 1, unit load). rmin is in elements.
+#   python -m aerokit.topo validate examples/topo/mbb2d.yaml
+#   python -m aerokit.topo run examples/topo/mbb2d.yaml
+name: mbb2d
+domain: {type: box, shape: [60, 20], h: 1.0}
+material: {E0: 1.0, nu: 0.3}
+supports:
+  - {type: fixed, where: {type: plane, axis: x, at: min}, dofs: x}        # symmetry line
+  - {type: fixed, where: {type: point, at: [max, min]}, dofs: y}          # roller at the bottom right
+load_cases:
+  - name: centre
+    loads:
+      - {type: force, where: {type: point, at: [min, max]}, force: [0, -1]}
+chain:
+  - {type: density_filter, rmin: 2.0}
+interpolation: {type: simp, penal: 3.0, emin_ratio: 1.0e-9}
+objective: compliance
+constraints:
+  - {response: volume, upper: 0.5}
+optimizer: {type: oc, move: 0.2, bisection_tol: 1.0e-3}
+run: {max_iter: 300, tol: 0.01}
+output: {folder: runs}

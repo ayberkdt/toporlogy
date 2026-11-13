@@ -1,0 +1,24 @@
+# 3-D cantilever: clamped face at x = 0, line load along the bottom edge of the free end.
+# Projection with beta continuation (beta 1 -> 16, doubled every 20 iterations or at convergence).
+# Units: consistent, dimensionless (h = 1, E0 = 1, total load 1). rmin is in elements.
+#   python -m aerokit.topo run examples/topo/cantilever3d.yaml
+name: cantilever3d
+domain: {type: box, shape: [24, 8, 4], h: 1.0}
+material: {E0: 1.0, nu: 0.3}
+physics: {type: elasticity, element: H8}
+supports:
+  - {type: fixed, where: {type: plane, axis: x, at: min}}
+load_cases:
+  - name: tip
+    loads:
+      - type: force
+        where: {type: box, min: [max, null, min], max: [max, null, min]}  # edge x = max, z = min
+        force: [0, 0, -1]
+chain:
+  - {type: density_filter, rmin: 1.5}
+  - {type: heaviside_projection, beta: 1.0, eta: 0.5}
+constraints:
+  - {response: volume, upper: 0.3}
+optimizer: oc
+schedule: {type: beta_continuation, beta0: 1.0, beta_max: 16.0, every: 20}
+run: {max_iter: 150, tol: 0.01}
