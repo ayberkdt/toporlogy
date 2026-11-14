@@ -1,0 +1,4581 @@
+{
+ "generated_by": "python scratch/robustness/report.py",
+ "commands": {
+  "connectivity_2d": "PYTHONPATH=src AEROKIT_PYLIB=<pylib> AEROKIT_SWEEP_RECORD=scratch/robustness/out/conn_2d.jsonl python -m pytest tests/topo/test_sweep_connectivity.py -m slow -k 2d -s",
+  "connectivity_3d": "same with -k 3d and conn_3d.jsonl",
+  "post_analytic": "PYTHONPATH=src AEROKIT_PYLIB=<pylib> AEROKIT_SWEEP_RECORD=scratch/robustness/out/post_analytic.jsonl python -m pytest tests/topo/test_sweep_post.py -m slow -k analytic -s",
+  "post_real": "same with -k real and post_real.jsonl"
+ },
+ "preregistration": "docs/olcumler/robustness.md sections 1-2",
+ "connectivity": [
+  {
+   "case": "c09_2d_multiload",
+   "method": "plain",
+   "optimizer": "MMA",
+   "dim": 2,
+   "shape": [
+    60,
+    24
+   ],
+   "n_design": 1396,
+   "vf": 0.15,
+   "rmin": 2.0,
+   "projection": true,
+   "iterations": 100,
+   "converged": true,
+   "seconds": 9.93,
+   "compliance": 5.499936630279101,
+   "volume": 0.149999993085618,
+   "volume_feasible": true,
+   "verdict": "FAIL",
+   "verdict_voids_fail": "FAIL",
+   "n_bodies": 2,
+   "connected": false,
+   "unattached": [],
+   "floating": 0,
+   "enclosed_voids": 0,
+   "checks": {
+    "t=0.3": {
+     "bodies": 2,
+     "connected": false
+    },
+    "t=0.7": {
+     "bodies": 2,
+     "connected": false
+    },
+    "eroded": {
+     "bodies": 2,
+     "connected": false
+    }
+   },
+   "min_neck_cells": null,
+   "reasons": [
+    "interfaces spread over 2 bodies"
+   ],
+   "tie_cells": null,
+   "after_finish": "PASS",
+   "repaired": true,
+   "repair_cells": 112,
+   "repair_compliance": 5.288607169329262,
+   "repair_volume": 0.22501337558311962
+  },
+  {
+   "case": "c09_2d_multiload",
+   "method": "default",
+   "optimizer": "MMA",
+   "dim": 2,
+   "shape": [
+    60,
+    24
+   ],
+   "n_design": 1338,
+   "vf": 0.15,
+   "rmin": 2.0,
+   "projection": true,
+   "iterations": 101,
+   "converged": true,
+   "seconds": 11.8,
+   "compliance": 6.901895359481108,
+   "volume": 0.1499999646537281,
+   "volume_feasible": true,
+   "verdict": "PASS",
+   "verdict_voids_fail": "PASS",
+   "n_bodies": 1,
+   "connected": true,
+   "unattached": [],
+   "floating": 0,
+   "enclosed_voids": 0,
+   "checks": {
+    "t=0.3": {
+     "bodies": 1,
+     "connected": true
+    },
+    "t=0.7": {
+     "bodies": 1,
+     "connected": true
+    },
+    "eroded": {
+     "bodies": 1,
+     "connected": true
+    }
+   },
+   "min_neck_cells": null,
+   "reasons": [],
+   "tie_cells": 58,
+   "connectivity_value": 17.65665596916488,
+   "connectivity_bound": 20.0,
+   "connectivity_feasible": true,
+   "after_finish": "PASS",
+   "repaired": false,
+   "repair_cells": null
+  },
+  {
+   "case": "c09_2d_multiload",
+   "method": "ties",
+   "optimizer": "MMA",
+   "dim": 2,
+   "shape": [
+    60,
+    24
+   ],
+   "n_design": 1338,
+   "vf": 0.15,
+   "rmin": 2.0,
+   "projection": true,
+   "iterations": 104,
+   "converged": true,
+   "seconds": 7.4,
+   "compliance": 6.901885016400453,
+   "volume": 0.14999999477377962,
+   "volume_feasible": true,
+   "verdict": "PASS",
+   "verdict_voids_fail": "PASS",
+   "n_bodies": 1,
+   "connected": true,
+   "unattached": [],
+   "floating": 0,
+   "enclosed_voids": 0,
+   "checks": {
+    "t=0.3": {
+     "bodies": 1,
+     "connected": true
+    },
+    "t=0.7": {
+     "bodies": 1,
+     "connected": true
+    },
+    "eroded": {
+     "bodies": 1,
+     "connected": true
+    }
+   },
+   "min_neck_cells": null,
+   "reasons": [],
+   "tie_cells": 58,
+   "after_finish": "PASS",
+   "repaired": false,
+   "repair_cells": null
+  },
+  {
+   "case": "c09_2d_multiload",
+   "method": "conduction",
+   "optimizer": "MMA",
+   "dim": 2,
+   "shape": [
+    60,
+    24
+   ],
+   "n_design": 1396,
+   "vf": 0.15,
+   "rmin": 2.0,
+   "projection": true,
+   "iterations": 150,
+   "converged": false,
+   "seconds": 14.25,
+   "compliance": 7.506444456477093,
+   "volume": 0.15000064263139679,
+   "volume_feasible": true,
+   "verdict": "FRAGILE",
+   "verdict_voids_fail": "FRAGILE",
+   "n_bodies": 1,
+   "connected": true,
+   "unattached": [],
+   "floating": 0,
+   "enclosed_voids": 0,
+   "checks": {
+    "t=0.3": {
+     "bodies": 1,
+     "connected": true
+    },
+    "t=0.7": {
+     "bodies": 1,
+     "connected": true
+    },
+    "eroded": {
+     "bodies": 2,
+     "connected": false
+    }
+   },
+   "min_neck_cells": 1,
+   "reasons": [
+    "split in: eroded"
+   ],
+   "tie_cells": null,
+   "connectivity_value": 19.999766512347534,
+   "connectivity_bound": 20.0,
+   "connectivity_feasible": true,
+   "after_finish": "PASS",
+   "repaired": true,
+   "repair_cells": 118,
+   "repair_compliance": 7.408044421297039,
+   "repair_volume": 0.19667964582501543
+  },
+  {
+   "case": "c03_2d_four_columns",
+   "method": "plain",
+   "optimizer": "MMA",
+   "dim": 2,
+   "shape": [
+    80,
+    20
+   ],
+   "n_design": 1512,
+   "vf": 0.1,
+   "rmin": 1.5,
+   "projection": true,
+   "iterations": 40,
+   "converged": true,
+   "seconds": 1.43,
+   "compliance": 19.911089518443063,
+   "volume": 0.09999999779562821,
+   "volume_feasible": true,
+   "verdict": "FAIL",
+   "verdict_voids_fail": "FAIL",
+   "n_bodies": 4,
+   "connected": false,
+   "unattached": [],
+   "floating": 0,
+   "enclosed_voids": 0,
+   "checks": {
+    "t=0.3": {
+     "bodies": 4,
+     "connected": false
+    },
+    "t=0.7": {
+     "bodies": 4,
+     "connected": false
+    },
+    "eroded": {
+     "bodies": 8,
+     "connected": false
+    }
+   },
+   "min_neck_cells": null,
+   "reasons": [
+    "interfaces spread over 4 bodies"
+   ],
+   "tie_cells": null,
+   "after_finish": "PASS",
+   "repaired": true,
+   "repair_cells": 272,
+   "repair_compliance": 11.479666901094255,
+   "repair_volume": 0.26062177564589617
+  },
+  {
+   "case": "c03_2d_four_columns",
+   "method": "default",
+   "optimizer": "MMA",
+   "dim": 2,
+   "shape": [
+    80,
+    20
+   ],
+   "n_design": 1430,
+   "vf": 0.1,
+   "rmin": 1.5,
+   "projection": true,
+   "iterations": 5,
+   "converged": true,
+   "seconds": 0.89,
+   "compliance": 722.5916237432582,
+   "volume": 0.10628140458518684,
+   "volume_feasible": false,
+   "verdict": "PASS",
+   "verdict_voids_fail": "PASS",
+   "n_bodies": 1,
+   "connected": true,
+   "unattached": [],
+   "floating": 0,
+   "enclosed_voids": 0,
+   "checks": {
+    "t=0.3": {
+     "bodies": 1,
+     "connected": true
+    },
+    "t=0.7": {
+     "bodies": 1,
+     "connected": true
+    },
+    "eroded": {
+     "bodies": 1,
+     "connected": true
+    }
+   },
+   "min_neck_cells": null,
+   "reasons": [],
+   "tie_cells": 82,
+   "connectivity_value": 21.065036058581686,
+   "connectivity_bound": 20.0,
+   "connectivity_feasible": false,
+   "after_finish": "PASS",
+   "repaired": false,
+   "repair_cells": null
+  },
+  {
+   "case": "c03_2d_four_columns",
+   "method": "ties",
+   "optimizer": "MMA",
+   "dim": 2,
+   "shape": [
+    80,
+    20
+   ],
+   "n_design": 1430,
+   "vf": 0.1,
+   "rmin": 1.5,
+   "projection": true,
+   "iterations": 5,
+   "converged": true,
+   "seconds": 0.26,
+   "compliance": 722.5916237432582,
+   "volume": 0.10628140458518684,
+   "volume_feasible": false,
+   "verdict": "PASS",
+   "verdict_voids_fail": "PASS",
+   "n_bodies": 1,
+   "connected": true,
+   "unattached": [],
+   "floating": 0,
+   "enclosed_voids": 0,
+   "checks": {
+    "t=0.3": {
+     "bodies": 1,
+     "connected": true
+    },
+    "t=0.7": {
+     "bodies": 1,
+     "connected": true
+    },
+    "eroded": {
+     "bodies": 1,
+     "connected": true
+    }
+   },
+   "min_neck_cells": null,
+   "reasons": [],
+   "tie_cells": 82,
+   "after_finish": "PASS",
+   "repaired": false,
+   "repair_cells": null
+  },
+  {
+   "case": "c03_2d_four_columns",
+   "method": "conduction",
+   "optimizer": "MMA",
+   "dim": 2,
+   "shape": [
+    80,
+    20
+   ],
+   "n_design": 1512,
+   "vf": 0.1,
+   "rmin": 1.5,
+   "projection": true,
+   "iterations": 150,
+   "converged": false,
+   "seconds": 11.11,
+   "compliance": 9376.972757607036,
+   "volume": 0.13800468402085941,
+   "volume_feasible": false,
+   "verdict": "FRAGILE",
+   "verdict_voids_fail": "FRAGILE",
+   "n_bodies": 1,
+   "connected": true,
+   "unattached": [],
+   "floating": 0,
+   "enclosed_voids": 1,
+   "checks": {
+    "t=0.3": {
+     "bodies": 1,
+     "connected": true
+    },
+    "t=0.7": {
+     "bodies": 1,
+     "connected": true
+    },
+    "eroded": {
+     "bodies": 8,
+     "connected": false
+    }
+   },
+   "min_neck_cells": 1,
+   "reasons": [
+    "split in: eroded"
+   ],
+   "tie_cells": null,
+   "connectivity_value": 20.010668638193927,
+   "connectivity_bound": 20.0,
+   "connectivity_feasible": true,
+   "after_finish": "PASS",
+   "repaired": true,
+   "repair_cells": 272,
+   "repair_compliance": 23.80561315172711,
+   "repair_volume": 0.2745882257344471
+  },
+  {
+   "case": "c07_2d_L_domain",
+   "method": "plain",
+   "optimizer": "MMA",
+   "dim": 2,
+   "shape": [
+    48,
+    48
+   ],
+   "n_design": 1468,
+   "vf": 0.12,
+   "rmin": 2.0,
+   "projection": true,
+   "iterations": 122,
+   "converged": true,
+   "seconds": 3.11,
+   "compliance": 12.096991295932629,
+   "volume": 0.11999997953485465,
+   "volume_feasible": true,
+   "verdict": "FAIL",
+   "verdict_voids_fail": "FAIL",
+   "n_bodies": 2,
+   "connected": false,
+   "unattached": [],
+   "floating": 0,
+   "enclosed_voids": 2,
+   "checks": {
+    "t=0.3": {
+     "bodies": 2,
+     "connected": false
+    },
+    "t=0.7": {
+     "bodies": 2,
+     "connected": false
+    },
+    "eroded": {
+     "bodies": 2,
+     "connected": false
+    }
+   },
+   "min_neck_cells": null,
+   "reasons": [
+    "interfaces spread over 2 bodies"
+   ],
+   "tie_cells": null,
+   "after_finish": "PASS",
+   "repaired": true,
+   "repair_cells": 154,
+   "repair_compliance": 10.94542083880685,
+   "repair_volume": 0.22131505775228727
+  },
+  {
+   "case": "c07_2d_L_domain",
+   "method": "default",
+   "optimizer": "MMA",
+   "dim": 2,
+   "shape": [
+    48,
+    48
+   ],
+   "n_design": 1403,
+   "vf": 0.12,
+   "rmin": 2.0,
+   "projection": true,
+   "iterations": 134,
+   "converged": true,
+   "seconds": 5.0,
+   "compliance": 23.725629448154958,
+   "volume": 0.11999999585175385,
+   "volume_feasible": true,
+   "verdict": "PASS",
+   "verdict_voids_fail": "PASS",
+   "n_bodies": 1,
+   "connected": true,
+   "unattached": [],
+   "floating": 0,
+   "enclosed_voids": 2,
+   "checks": {
+    "t=0.3": {
+     "bodies": 1,
+     "connected": true
+    },
+    "t=0.7": {
+     "bodies": 1,
+     "connected": true
+    },
+    "eroded": {
+     "bodies": 2,
+     "connected": true
+    }
+   },
+   "min_neck_cells": null,
+   "reasons": [],
+   "tie_cells": 65,
+   "connectivity_value": 15.349258153237972,
+   "connectivity_bound": 20.0,
+   "connectivity_feasible": true,
+   "after_finish": "PASS",
+   "repaired": false,
+   "repair_cells": null
+  },
+  {
+   "case": "c07_2d_L_domain",
+   "method": "ties",
+   "optimizer": "MMA",
+   "dim": 2,
+   "shape": [
+    48,
+    48
+   ],
+   "n_design": 1403,
+   "vf": 0.12,
+   "rmin": 2.0,
+   "projection": true,
+   "iterations": 134,
+   "converged": true,
+   "seconds": 3.13,
+   "compliance": 23.72562944859336,
+   "volume": 0.11999999584995219,
+   "volume_feasible": true,
+   "verdict": "PASS",
+   "verdict_voids_fail": "PASS",
+   "n_bodies": 1,
+   "connected": true,
+   "unattached": [],
+   "floating": 0,
+   "enclosed_voids": 2,
+   "checks": {
+    "t=0.3": {
+     "bodies": 1,
+     "connected": true
+    },
+    "t=0.7": {
+     "bodies": 1,
+     "connected": true
+    },
+    "eroded": {
+     "bodies": 2,
+     "connected": true
+    }
+   },
+   "min_neck_cells": null,
+   "reasons": [],
+   "tie_cells": 65,
+   "after_finish": "PASS",
+   "repaired": false,
+   "repair_cells": null
+  },
+  {
+   "case": "c07_2d_L_domain",
+   "method": "conduction",
+   "optimizer": "MMA",
+   "dim": 2,
+   "shape": [
+    48,
+    48
+   ],
+   "n_design": 1468,
+   "vf": 0.12,
+   "rmin": 2.0,
+   "projection": true,
+   "iterations": 150,
+   "converged": false,
+   "seconds": 6.03,
+   "compliance": 32.05778800797389,
+   "volume": 0.11999007191480983,
+   "volume_feasible": true,
+   "verdict": "FRAGILE",
+   "verdict_voids_fail": "FRAGILE",
+   "n_bodies": 1,
+   "connected": true,
+   "unattached": [],
+   "floating": 0,
+   "enclosed_voids": 0,
+   "checks": {
+    "t=0.3": {
+     "bodies": 1,
+     "connected": true
+    },
+    "t=0.7": {
+     "bodies": 1,
+     "connected": true
+    },
+    "eroded": {
+     "bodies": 16,
+     "connected": false
+    }
+   },
+   "min_neck_cells": 1,
+   "reasons": [
+    "split in: eroded"
+   ],
+   "tie_cells": null,
+   "connectivity_value": 20.010510197828598,
+   "connectivity_bound": 20.0,
+   "connectivity_feasible": true,
+   "after_finish": "PASS",
+   "repaired": true,
+   "repair_cells": 155,
+   "repair_compliance": 25.108647458746994,
+   "repair_volume": 0.1746074947946466
+  },
+  {
+   "case": "c06_2d_obstacle",
+   "method": "plain",
+   "optimizer": "MMA",
+   "dim": 2,
+   "shape": [
+    60,
+    24
+   ],
+   "n_design": 1324,
+   "vf": 0.15,
+   "rmin": 2.0,
+   "projection": true,
+   "iterations": 84,
+   "converged": true,
+   "seconds": 1.59,
+   "compliance": 2.7971040420250306,
+   "volume": 0.1500000028535314,
+   "volume_feasible": true,
+   "verdict": "FAIL",
+   "verdict_voids_fail": "FAIL",
+   "n_bodies": 2,
+   "connected": false,
+   "unattached": [],
+   "floating": 0,
+   "enclosed_voids": 0,
+   "checks": {
+    "t=0.3": {
+     "bodies": 2,
+     "connected": false
+    },
+    "t=0.7": {
+     "bodies": 2,
+     "connected": false
+    },
+    "eroded": {
+     "bodies": 2,
+     "connected": false
+    }
+   },
+   "min_neck_cells": null,
+   "reasons": [
+    "interfaces spread over 2 bodies"
+   ],
+   "tie_cells": null,
+   "after_finish": "PASS",
+   "repaired": true,
+   "repair_cells": 151,
+   "repair_compliance": 2.771206135118633,
+   "repair_volume": 0.2548426384069632
+  },
+  {
+   "case": "c06_2d_obstacle",
+   "method": "default",
+   "optimizer": "MMA",
+   "dim": 2,
+   "shape": [
+    60,
+    24
+   ],
+   "n_design": 1254,
+   "vf": 0.15,
+   "rmin": 2.0,
+   "projection": true,
+   "iterations": 111,
+   "converged": true,
+   "seconds": 3.03,
+   "compliance": 3.46880055148417,
+   "volume": 0.14999967024165975,
+   "volume_feasible": true,
+   "verdict": "PASS",
+   "verdict_voids_fail": "PASS",
+   "n_bodies": 1,
+   "connected": true,
+   "unattached": [],
+   "floating": 0,
+   "enclosed_voids": 0,
+   "checks": {
+    "t=0.3": {
+     "bodies": 1,
+     "connected": true
+    },
+    "t=0.7": {
+     "bodies": 1,
+     "connected": true
+    },
+    "eroded": {
+     "bodies": 1,
+     "connected": true
+    }
+   },
+   "min_neck_cells": null,
+   "reasons": [],
+   "tie_cells": 70,
+   "connectivity_value": 12.651029269895583,
+   "connectivity_bound": 20.0,
+   "connectivity_feasible": true,
+   "after_finish": "PASS",
+   "repaired": false,
+   "repair_cells": null
+  },
+  {
+   "case": "c06_2d_obstacle",
+   "method": "ties",
+   "optimizer": "MMA",
+   "dim": 2,
+   "shape": [
+    60,
+    24
+   ],
+   "n_design": 1254,
+   "vf": 0.15,
+   "rmin": 2.0,
+   "projection": true,
+   "iterations": 111,
+   "converged": true,
+   "seconds": 1.77,
+   "compliance": 3.4688005505300374,
+   "volume": 0.14999967027939995,
+   "volume_feasible": true,
+   "verdict": "PASS",
+   "verdict_voids_fail": "PASS",
+   "n_bodies": 1,
+   "connected": true,
+   "unattached": [],
+   "floating": 0,
+   "enclosed_voids": 0,
+   "checks": {
+    "t=0.3": {
+     "bodies": 1,
+     "connected": true
+    },
+    "t=0.7": {
+     "bodies": 1,
+     "connected": true
+    },
+    "eroded": {
+     "bodies": 1,
+     "connected": true
+    }
+   },
+   "min_neck_cells": null,
+   "reasons": [],
+   "tie_cells": 70,
+   "after_finish": "PASS",
+   "repaired": false,
+   "repair_cells": null
+  },
+  {
+   "case": "c06_2d_obstacle",
+   "method": "conduction",
+   "optimizer": "MMA",
+   "dim": 2,
+   "shape": [
+    60,
+    24
+   ],
+   "n_design": 1324,
+   "vf": 0.15,
+   "rmin": 2.0,
+   "projection": true,
+   "iterations": 150,
+   "converged": false,
+   "seconds": 4.48,
+   "compliance": 4.763132695724404,
+   "volume": 0.1499936406665946,
+   "volume_feasible": true,
+   "verdict": "FRAGILE",
+   "verdict_voids_fail": "FRAGILE",
+   "n_bodies": 1,
+   "connected": true,
+   "unattached": [],
+   "floating": 0,
+   "enclosed_voids": 0,
+   "checks": {
+    "t=0.3": {
+     "bodies": 1,
+     "connected": true
+    },
+    "t=0.7": {
+     "bodies": 1,
+     "connected": true
+    },
+    "eroded": {
+     "bodies": 2,
+     "connected": false
+    }
+   },
+   "min_neck_cells": 1,
+   "reasons": [
+    "split in: eroded"
+   ],
+   "tie_cells": null,
+   "connectivity_value": 20.000124609329273,
+   "connectivity_bound": 20.0,
+   "connectivity_feasible": true,
+   "after_finish": "PASS",
+   "repaired": true,
+   "repair_cells": 166,
+   "repair_compliance": 4.729848519733714,
+   "repair_volume": 0.25760062818150276
+  },
+  {
+   "case": "c04_2d_close_OC_noproj",
+   "method": "plain",
+   "optimizer": "OC",
+   "dim": 2,
+   "shape": [
+    48,
+    24
+   ],
+   "n_design": 1108,
+   "vf": 0.2,
+   "rmin": 2.0,
+   "projection": false,
+   "iterations": 53,
+   "converged": true,
+   "seconds": 1.67,
+   "compliance": 4.038522290486017,
+   "volume": 0.20000030589462434,
+   "volume_feasible": true,
+   "verdict": "FAIL",
+   "verdict_voids_fail": "FAIL",
+   "n_bodies": 2,
+   "connected": false,
+   "unattached": [],
+   "floating": 0,
+   "enclosed_voids": 0,
+   "checks": {
+    "t=0.3": {
+     "bodies": 2,
+     "connected": false
+    },
+    "t=0.7": {
+     "bodies": 2,
+     "connected": false
+    },
+    "eroded": {
+     "bodies": 2,
+     "connected": false
+    }
+   },
+   "min_neck_cells": null,
+   "reasons": [
+    "interfaces spread over 2 bodies"
+   ],
+   "tie_cells": null,
+   "after_finish": "PASS",
+   "repaired": true,
+   "repair_cells": 20,
+   "repair_compliance": 4.010083262031373,
+   "repair_volume": 0.2147703334443413
+  },
+  {
+   "case": "c04_2d_close_OC_noproj",
+   "method": "default",
+   "optimizer": "MMA",
+   "dim": 2,
+   "shape": [
+    48,
+    24
+   ],
+   "n_design": 1079,
+   "vf": 0.2,
+   "rmin": 2.0,
+   "projection": false,
+   "iterations": 45,
+   "converged": true,
+   "seconds": 1.06,
+   "compliance": 4.556294559686813,
+   "volume": 0.19999998724010337,
+   "volume_feasible": true,
+   "verdict": "PASS",
+   "verdict_voids_fail": "PASS",
+   "n_bodies": 1,
+   "connected": true,
+   "unattached": [],
+   "floating": 0,
+   "enclosed_voids": 1,
+   "checks": {
+    "t=0.3": {
+     "bodies": 1,
+     "connected": true
+    },
+    "t=0.7": {
+     "bodies": 1,
+     "connected": true
+    },
+    "eroded": {
+     "bodies": 1,
+     "connected": true
+    }
+   },
+   "min_neck_cells": null,
+   "reasons": [],
+   "tie_cells": 29,
+   "connectivity_value": 4.973620722129273,
+   "connectivity_bound": 20.0,
+   "connectivity_feasible": true,
+   "after_finish": "PASS",
+   "repaired": false,
+   "repair_cells": null
+  },
+  {
+   "case": "c04_2d_close_OC_noproj",
+   "method": "ties",
+   "optimizer": "OC",
+   "dim": 2,
+   "shape": [
+    48,
+    24
+   ],
+   "n_design": 1079,
+   "vf": 0.2,
+   "rmin": 2.0,
+   "projection": false,
+   "iterations": 32,
+   "converged": true,
+   "seconds": 1.05,
+   "compliance": 4.558140205164719,
+   "volume": 0.20000000114639774,
+   "volume_feasible": true,
+   "verdict": "PASS",
+   "verdict_voids_fail": "PASS",
+   "n_bodies": 1,
+   "connected": true,
+   "unattached": [],
+   "floating": 0,
+   "enclosed_voids": 1,
+   "checks": {
+    "t=0.3": {
+     "bodies": 1,
+     "connected": true
+    },
+    "t=0.7": {
+     "bodies": 1,
+     "connected": true
+    },
+    "eroded": {
+     "bodies": 1,
+     "connected": true
+    }
+   },
+   "min_neck_cells": null,
+   "reasons": [],
+   "tie_cells": 29,
+   "after_finish": "PASS",
+   "repaired": false,
+   "repair_cells": null
+  },
+  {
+   "case": "c04_2d_close_OC_noproj",
+   "method": "conduction",
+   "optimizer": "MMA",
+   "dim": 2,
+   "shape": [
+    48,
+    24
+   ],
+   "n_design": 1108,
+   "vf": 0.2,
+   "rmin": 2.0,
+   "projection": false,
+   "iterations": 39,
+   "converged": true,
+   "seconds": 0.94,
+   "compliance": 4.204914451122606,
+   "volume": 0.19999993626085846,
+   "volume_feasible": true,
+   "verdict": "FRAGILE",
+   "verdict_voids_fail": "FRAGILE",
+   "n_bodies": 1,
+   "connected": true,
+   "unattached": [],
+   "floating": 0,
+   "enclosed_voids": 0,
+   "checks": {
+    "t=0.3": {
+     "bodies": 1,
+     "connected": true
+    },
+    "t=0.7": {
+     "bodies": 2,
+     "connected": false
+    },
+    "eroded": {
+     "bodies": 2,
+     "connected": false
+    }
+   },
+   "min_neck_cells": 2,
+   "reasons": [
+    "split in: t=0.7, eroded"
+   ],
+   "tie_cells": null,
+   "connectivity_value": 19.999921698412166,
+   "connectivity_bound": 20.0,
+   "connectivity_feasible": true,
+   "after_finish": "PASS",
+   "repaired": true,
+   "repair_cells": 26,
+   "repair_compliance": 4.179303330947711,
+   "repair_volume": 0.21284373439188567
+  },
+  {
+   "case": "c04_2d_close_OC_noproj",
+   "method": "plain_mma",
+   "optimizer": "MMA",
+   "dim": 2,
+   "shape": [
+    48,
+    24
+   ],
+   "n_design": 1108,
+   "vf": 0.2,
+   "rmin": 2.0,
+   "projection": false,
+   "iterations": 33,
+   "converged": true,
+   "seconds": 0.47,
+   "compliance": 4.038253691136162,
+   "volume": 0.19999997565114938,
+   "volume_feasible": true,
+   "verdict": "FAIL",
+   "verdict_voids_fail": "FAIL",
+   "n_bodies": 2,
+   "connected": false,
+   "unattached": [],
+   "floating": 0,
+   "enclosed_voids": 0,
+   "checks": {
+    "t=0.3": {
+     "bodies": 2,
+     "connected": false
+    },
+    "t=0.7": {
+     "bodies": 2,
+     "connected": false
+    },
+    "eroded": {
+     "bodies": 2,
+     "connected": false
+    }
+   },
+   "min_neck_cells": null,
+   "reasons": [
+    "interfaces spread over 2 bodies"
+   ],
+   "tie_cells": null,
+   "after_finish": "PASS",
+   "repaired": true,
+   "repair_cells": 20,
+   "repair_compliance": 4.009131016242196,
+   "repair_volume": 0.21483615232693987
+  },
+  {
+   "case": "c01_2d_split_far",
+   "method": "plain",
+   "optimizer": "MMA",
+   "dim": 2,
+   "shape": [
+    60,
+    24
+   ],
+   "n_design": 1396,
+   "vf": 0.15,
+   "rmin": 2.0,
+   "projection": true,
+   "iterations": 87,
+   "converged": true,
+   "seconds": 1.38,
+   "compliance": 2.797103877365939,
+   "volume": 0.1499999986947357,
+   "volume_feasible": true,
+   "verdict": "FAIL",
+   "verdict_voids_fail": "FAIL",
+   "n_bodies": 2,
+   "connected": false,
+   "unattached": [],
+   "floating": 0,
+   "enclosed_voids": 0,
+   "checks": {
+    "t=0.3": {
+     "bodies": 2,
+     "connected": false
+    },
+    "t=0.7": {
+     "bodies": 2,
+     "connected": false
+    },
+    "eroded": {
+     "bodies": 2,
+     "connected": false
+    }
+   },
+   "min_neck_cells": null,
+   "reasons": [
+    "interfaces spread over 2 bodies"
+   ],
+   "tie_cells": null,
+   "after_finish": "PASS",
+   "repaired": true,
+   "repair_cells": 116,
+   "repair_compliance": 2.789275499167659,
+   "repair_volume": 0.22915917335296013
+  },
+  {
+   "case": "c01_2d_split_far",
+   "method": "default",
+   "optimizer": "MMA",
+   "dim": 2,
+   "shape": [
+    60,
+    24
+   ],
+   "n_design": 1338,
+   "vf": 0.15,
+   "rmin": 2.0,
+   "projection": true,
+   "iterations": 107,
+   "converged": true,
+   "seconds": 2.86,
+   "compliance": 3.3031138722110223,
+   "volume": 0.1499999928828807,
+   "volume_feasible": true,
+   "verdict": "PASS",
+   "verdict_voids_fail": "PASS",
+   "n_bodies": 1,
+   "connected": true,
+   "unattached": [],
+   "floating": 0,
+   "enclosed_voids": 0,
+   "checks": {
+    "t=0.3": {
+     "bodies": 1,
+     "connected": true
+    },
+    "t=0.7": {
+     "bodies": 1,
+     "connected": true
+    },
+    "eroded": {
+     "bodies": 1,
+     "connected": true
+    }
+   },
+   "min_neck_cells": null,
+   "reasons": [],
+   "tie_cells": 58,
+   "connectivity_value": 17.695749454312047,
+   "connectivity_bound": 20.0,
+   "connectivity_feasible": true,
+   "after_finish": "PASS",
+   "repaired": false,
+   "repair_cells": null
+  },
+  {
+   "case": "c01_2d_split_far",
+   "method": "ties",
+   "optimizer": "MMA",
+   "dim": 2,
+   "shape": [
+    60,
+    24
+   ],
+   "n_design": 1338,
+   "vf": 0.15,
+   "rmin": 2.0,
+   "projection": true,
+   "iterations": 107,
+   "converged": true,
+   "seconds": 1.61,
+   "compliance": 3.3031108743316717,
+   "volume": 0.14999998679457163,
+   "volume_feasible": true,
+   "verdict": "PASS",
+   "verdict_voids_fail": "PASS",
+   "n_bodies": 1,
+   "connected": true,
+   "unattached": [],
+   "floating": 0,
+   "enclosed_voids": 0,
+   "checks": {
+    "t=0.3": {
+     "bodies": 1,
+     "connected": true
+    },
+    "t=0.7": {
+     "bodies": 1,
+     "connected": true
+    },
+    "eroded": {
+     "bodies": 1,
+     "connected": true
+    }
+   },
+   "min_neck_cells": null,
+   "reasons": [],
+   "tie_cells": 58,
+   "after_finish": "PASS",
+   "repaired": false,
+   "repair_cells": null
+  },
+  {
+   "case": "c01_2d_split_far",
+   "method": "conduction",
+   "optimizer": "MMA",
+   "dim": 2,
+   "shape": [
+    60,
+    24
+   ],
+   "n_design": 1396,
+   "vf": 0.15,
+   "rmin": 2.0,
+   "projection": true,
+   "iterations": 150,
+   "converged": false,
+   "seconds": 4.73,
+   "compliance": 3.459155638406257,
+   "volume": 0.15000258324838708,
+   "volume_feasible": true,
+   "verdict": "FRAGILE",
+   "verdict_voids_fail": "FRAGILE",
+   "n_bodies": 1,
+   "connected": true,
+   "unattached": [],
+   "floating": 0,
+   "enclosed_voids": 0,
+   "checks": {
+    "t=0.3": {
+     "bodies": 1,
+     "connected": true
+    },
+    "t=0.7": {
+     "bodies": 1,
+     "connected": true
+    },
+    "eroded": {
+     "bodies": 2,
+     "connected": false
+    }
+   },
+   "min_neck_cells": 1,
+   "reasons": [
+    "split in: eroded"
+   ],
+   "tie_cells": null,
+   "connectivity_value": 20.002413445624235,
+   "connectivity_bound": 20.0,
+   "connectivity_feasible": true,
+   "after_finish": "PASS",
+   "repaired": true,
+   "repair_cells": 122,
+   "repair_compliance": 3.4419459037874227,
+   "repair_volume": 0.1980306352208562
+  },
+  {
+   "case": "c02_2d_three_loads",
+   "method": "plain",
+   "optimizer": "MMA",
+   "dim": 2,
+   "shape": [
+    72,
+    24
+   ],
+   "n_design": 1668,
+   "vf": 0.12,
+   "rmin": 2.0,
+   "projection": true,
+   "iterations": 150,
+   "converged": false,
+   "seconds": 3.28,
+   "compliance": 85.77632332748382,
+   "volume": 0.11999948770316841,
+   "volume_feasible": true,
+   "verdict": "FRAGILE",
+   "verdict_voids_fail": "FRAGILE",
+   "n_bodies": 1,
+   "connected": true,
+   "unattached": [],
+   "floating": 0,
+   "enclosed_voids": 1,
+   "checks": {
+    "t=0.3": {
+     "bodies": 1,
+     "connected": true
+    },
+    "t=0.7": {
+     "bodies": 1,
+     "connected": true
+    },
+    "eroded": {
+     "bodies": 19,
+     "connected": false
+    }
+   },
+   "min_neck_cells": 1,
+   "reasons": [
+    "split in: eroded"
+   ],
+   "tie_cells": null,
+   "after_finish": "PASS",
+   "repaired": true,
+   "repair_cells": 194,
+   "repair_compliance": 60.27772454044312,
+   "repair_volume": 0.20860236112224662
+  },
+  {
+   "case": "c02_2d_three_loads",
+   "method": "default",
+   "optimizer": "MMA",
+   "dim": 2,
+   "shape": [
+    72,
+    24
+   ],
+   "n_design": 1604,
+   "vf": 0.12,
+   "rmin": 2.0,
+   "projection": true,
+   "iterations": 103,
+   "converged": true,
+   "seconds": 3.95,
+   "compliance": 149.6614049949775,
+   "volume": 0.11999994725836183,
+   "volume_feasible": true,
+   "verdict": "PASS",
+   "verdict_voids_fail": "PASS",
+   "n_bodies": 1,
+   "connected": true,
+   "unattached": [],
+   "floating": 0,
+   "enclosed_voids": 3,
+   "checks": {
+    "t=0.3": {
+     "bodies": 1,
+     "connected": true
+    },
+    "t=0.7": {
+     "bodies": 1,
+     "connected": true
+    },
+    "eroded": {
+     "bodies": 3,
+     "connected": true
+    }
+   },
+   "min_neck_cells": null,
+   "reasons": [],
+   "tie_cells": 64,
+   "connectivity_value": 14.754759830812093,
+   "connectivity_bound": 20.0,
+   "connectivity_feasible": true,
+   "after_finish": "PASS",
+   "repaired": false,
+   "repair_cells": null
+  },
+  {
+   "case": "c02_2d_three_loads",
+   "method": "ties",
+   "optimizer": "MMA",
+   "dim": 2,
+   "shape": [
+    72,
+    24
+   ],
+   "n_design": 1604,
+   "vf": 0.12,
+   "rmin": 2.0,
+   "projection": true,
+   "iterations": 103,
+   "converged": true,
+   "seconds": 2.38,
+   "compliance": 149.66140495571938,
+   "volume": 0.11999994727955332,
+   "volume_feasible": true,
+   "verdict": "PASS",
+   "verdict_voids_fail": "PASS",
+   "n_bodies": 1,
+   "connected": true,
+   "unattached": [],
+   "floating": 0,
+   "enclosed_voids": 3,
+   "checks": {
+    "t=0.3": {
+     "bodies": 1,
+     "connected": true
+    },
+    "t=0.7": {
+     "bodies": 1,
+     "connected": true
+    },
+    "eroded": {
+     "bodies": 3,
+     "connected": true
+    }
+   },
+   "min_neck_cells": null,
+   "reasons": [],
+   "tie_cells": 64,
+   "after_finish": "PASS",
+   "repaired": false,
+   "repair_cells": null
+  },
+  {
+   "case": "c02_2d_three_loads",
+   "method": "conduction",
+   "optimizer": "MMA",
+   "dim": 2,
+   "shape": [
+    72,
+    24
+   ],
+   "n_design": 1668,
+   "vf": 0.12,
+   "rmin": 2.0,
+   "projection": true,
+   "iterations": 134,
+   "converged": true,
+   "seconds": 5.36,
+   "compliance": 128.61350668727852,
+   "volume": 0.11999999329554004,
+   "volume_feasible": true,
+   "verdict": "FRAGILE",
+   "verdict_voids_fail": "FRAGILE",
+   "n_bodies": 1,
+   "connected": true,
+   "unattached": [],
+   "floating": 0,
+   "enclosed_voids": 0,
+   "checks": {
+    "t=0.3": {
+     "bodies": 1,
+     "connected": true
+    },
+    "t=0.7": {
+     "bodies": 1,
+     "connected": true
+    },
+    "eroded": {
+     "bodies": 26,
+     "connected": false
+    }
+   },
+   "min_neck_cells": 1,
+   "reasons": [
+    "split in: eroded"
+   ],
+   "tie_cells": null,
+   "connectivity_value": 17.718855546884434,
+   "connectivity_bound": 20.0,
+   "connectivity_feasible": true,
+   "after_finish": "PASS",
+   "repaired": true,
+   "repair_cells": 171,
+   "repair_compliance": 97.1797308247973,
+   "repair_volume": 0.16501566510102383
+  },
+  {
+   "case": "c05_2d_low_vf_0p08",
+   "method": "plain",
+   "optimizer": "MMA",
+   "dim": 2,
+   "shape": [
+    60,
+    24
+   ],
+   "n_design": 1396,
+   "vf": 0.08,
+   "rmin": 1.5,
+   "projection": true,
+   "iterations": 49,
+   "converged": true,
+   "seconds": 0.88,
+   "compliance": 5.249349259338674,
+   "volume": 0.07999903139233272,
+   "volume_feasible": true,
+   "verdict": "FAIL",
+   "verdict_voids_fail": "FAIL",
+   "n_bodies": 2,
+   "connected": false,
+   "unattached": [],
+   "floating": 0,
+   "enclosed_voids": 0,
+   "checks": {
+    "t=0.3": {
+     "bodies": 2,
+     "connected": false
+    },
+    "t=0.7": {
+     "bodies": 2,
+     "connected": false
+    },
+    "eroded": {
+     "bodies": 2,
+     "connected": false
+    }
+   },
+   "min_neck_cells": null,
+   "reasons": [
+    "interfaces spread over 2 bodies"
+   ],
+   "tie_cells": null,
+   "after_finish": "PASS",
+   "repaired": true,
+   "repair_cells": 126,
+   "repair_compliance": 5.156889646202072,
+   "repair_volume": 0.16629306805502483
+  },
+  {
+   "case": "c05_2d_low_vf_0p08",
+   "method": "default",
+   "optimizer": "MMA",
+   "dim": 2,
+   "shape": [
+    60,
+    24
+   ],
+   "n_design": 1338,
+   "vf": 0.08,
+   "rmin": 1.5,
+   "projection": true,
+   "iterations": 83,
+   "converged": true,
+   "seconds": 4.7,
+   "compliance": 136.7511905472124,
+   "volume": 0.0799994619170512,
+   "volume_feasible": true,
+   "verdict": "PASS",
+   "verdict_voids_fail": "PASS",
+   "n_bodies": 1,
+   "connected": true,
+   "unattached": [],
+   "floating": 0,
+   "enclosed_voids": 0,
+   "checks": {
+    "t=0.3": {
+     "bodies": 1,
+     "connected": true
+    },
+    "t=0.7": {
+     "bodies": 1,
+     "connected": true
+    },
+    "eroded": {
+     "bodies": 1,
+     "connected": true
+    }
+   },
+   "min_neck_cells": null,
+   "reasons": [],
+   "tie_cells": 58,
+   "connectivity_value": 20.000009790121418,
+   "connectivity_bound": 20.0,
+   "connectivity_feasible": true,
+   "after_finish": "PASS",
+   "repaired": false,
+   "repair_cells": null
+  },
+  {
+   "case": "c05_2d_low_vf_0p08",
+   "method": "ties",
+   "optimizer": "MMA",
+   "dim": 2,
+   "shape": [
+    60,
+    24
+   ],
+   "n_design": 1338,
+   "vf": 0.08,
+   "rmin": 1.5,
+   "projection": true,
+   "iterations": 48,
+   "converged": true,
+   "seconds": 2.47,
+   "compliance": 100.17351525354952,
+   "volume": 0.07999999830200538,
+   "volume_feasible": true,
+   "verdict": "PASS",
+   "verdict_voids_fail": "PASS",
+   "n_bodies": 1,
+   "connected": true,
+   "unattached": [],
+   "floating": 0,
+   "enclosed_voids": 0,
+   "checks": {
+    "t=0.3": {
+     "bodies": 1,
+     "connected": true
+    },
+    "t=0.7": {
+     "bodies": 1,
+     "connected": true
+    },
+    "eroded": {
+     "bodies": 1,
+     "connected": true
+    }
+   },
+   "min_neck_cells": null,
+   "reasons": [],
+   "tie_cells": 58,
+   "after_finish": "PASS",
+   "repaired": false,
+   "repair_cells": null
+  },
+  {
+   "case": "c05_2d_low_vf_0p08",
+   "method": "conduction",
+   "optimizer": "MMA",
+   "dim": 2,
+   "shape": [
+    60,
+    24
+   ],
+   "n_design": 1396,
+   "vf": 0.08,
+   "rmin": 1.5,
+   "projection": true,
+   "iterations": 150,
+   "converged": false,
+   "seconds": 14.77,
+   "compliance": 3964.93184290692,
+   "volume": 0.08381010326920048,
+   "volume_feasible": false,
+   "verdict": "FAIL",
+   "verdict_voids_fail": "FAIL",
+   "n_bodies": 2,
+   "connected": false,
+   "unattached": [],
+   "floating": 0,
+   "enclosed_voids": 0,
+   "checks": {
+    "t=0.3": {
+     "bodies": 1,
+     "connected": true
+    },
+    "t=0.7": {
+     "bodies": 2,
+     "connected": false
+    },
+    "eroded": {
+     "bodies": 4,
+     "connected": false
+    }
+   },
+   "min_neck_cells": null,
+   "reasons": [
+    "interfaces spread over 2 bodies"
+   ],
+   "tie_cells": null,
+   "connectivity_value": 20.061063782862135,
+   "connectivity_bound": 20.0,
+   "connectivity_feasible": true,
+   "after_finish": "PASS",
+   "repaired": true,
+   "repair_cells": 183,
+   "repair_compliance": 14.46558522452932,
+   "repair_volume": 0.2070575308740109
+  },
+  {
+   "case": "c08_2d_asym_weak_OC",
+   "method": "plain",
+   "optimizer": "OC",
+   "dim": 2,
+   "shape": [
+    60,
+    24
+   ],
+   "n_design": 1396,
+   "vf": 0.15,
+   "rmin": 2.5,
+   "projection": false,
+   "iterations": 29,
+   "converged": true,
+   "seconds": 3.46,
+   "compliance": 1.5544294396150082,
+   "volume": 0.14999962941014486,
+   "volume_feasible": true,
+   "verdict": "FAIL",
+   "verdict_voids_fail": "FAIL",
+   "n_bodies": 2,
+   "connected": false,
+   "unattached": [],
+   "floating": 0,
+   "enclosed_voids": 0,
+   "checks": {
+    "t=0.3": {
+     "bodies": 2,
+     "connected": false
+    },
+    "t=0.7": {
+     "bodies": 2,
+     "connected": false
+    },
+    "eroded": {
+     "bodies": 2,
+     "connected": false
+    }
+   },
+   "min_neck_cells": null,
+   "reasons": [
+    "interfaces spread over 2 bodies"
+   ],
+   "tie_cells": null,
+   "after_finish": "PASS",
+   "repaired": true,
+   "repair_cells": 117,
+   "repair_compliance": 1.5433920536869712,
+   "repair_volume": 0.22801675276253988
+  },
+  {
+   "case": "c08_2d_asym_weak_OC",
+   "method": "default",
+   "optimizer": "MMA",
+   "dim": 2,
+   "shape": [
+    60,
+    24
+   ],
+   "n_design": 1338,
+   "vf": 0.15,
+   "rmin": 2.5,
+   "projection": false,
+   "iterations": 36,
+   "converged": true,
+   "seconds": 2.07,
+   "compliance": 2.078251627100129,
+   "volume": 0.14999999153017748,
+   "volume_feasible": true,
+   "verdict": "PASS",
+   "verdict_voids_fail": "PASS",
+   "n_bodies": 1,
+   "connected": true,
+   "unattached": [],
+   "floating": 0,
+   "enclosed_voids": 0,
+   "checks": {
+    "t=0.3": {
+     "bodies": 1,
+     "connected": true
+    },
+    "t=0.7": {
+     "bodies": 1,
+     "connected": true
+    },
+    "eroded": {
+     "bodies": 1,
+     "connected": true
+    }
+   },
+   "min_neck_cells": null,
+   "reasons": [],
+   "tie_cells": 58,
+   "connectivity_value": 18.195985108420565,
+   "connectivity_bound": 20.0,
+   "connectivity_feasible": true,
+   "after_finish": "PASS",
+   "repaired": false,
+   "repair_cells": null
+  },
+  {
+   "case": "c08_2d_asym_weak_OC",
+   "method": "ties",
+   "optimizer": "OC",
+   "dim": 2,
+   "shape": [
+    60,
+    24
+   ],
+   "n_design": 1338,
+   "vf": 0.15,
+   "rmin": 2.5,
+   "projection": false,
+   "iterations": 56,
+   "converged": true,
+   "seconds": 4.44,
+   "compliance": 2.078457310650901,
+   "volume": 0.14999995475693895,
+   "volume_feasible": true,
+   "verdict": "PASS",
+   "verdict_voids_fail": "PASS",
+   "n_bodies": 1,
+   "connected": true,
+   "unattached": [],
+   "floating": 0,
+   "enclosed_voids": 0,
+   "checks": {
+    "t=0.3": {
+     "bodies": 1,
+     "connected": true
+    },
+    "t=0.7": {
+     "bodies": 1,
+     "connected": true
+    },
+    "eroded": {
+     "bodies": 1,
+     "connected": true
+    }
+   },
+   "min_neck_cells": null,
+   "reasons": [],
+   "tie_cells": 58,
+   "after_finish": "PASS",
+   "repaired": false,
+   "repair_cells": null
+  },
+  {
+   "case": "c08_2d_asym_weak_OC",
+   "method": "conduction",
+   "optimizer": "MMA",
+   "dim": 2,
+   "shape": [
+    60,
+    24
+   ],
+   "n_design": 1396,
+   "vf": 0.15,
+   "rmin": 2.5,
+   "projection": false,
+   "iterations": 73,
+   "converged": true,
+   "seconds": 6.28,
+   "compliance": 2.6636967377151928,
+   "volume": 0.14999998149209182,
+   "volume_feasible": true,
+   "verdict": "FRAGILE",
+   "verdict_voids_fail": "FRAGILE",
+   "n_bodies": 1,
+   "connected": true,
+   "unattached": [],
+   "floating": 0,
+   "enclosed_voids": 0,
+   "checks": {
+    "t=0.3": {
+     "bodies": 1,
+     "connected": true
+    },
+    "t=0.7": {
+     "bodies": 1,
+     "connected": true
+    },
+    "eroded": {
+     "bodies": 2,
+     "connected": false
+    }
+   },
+   "min_neck_cells": 2,
+   "reasons": [
+    "split in: eroded"
+   ],
+   "tie_cells": null,
+   "connectivity_value": 19.999996530003408,
+   "connectivity_bound": 20.0,
+   "connectivity_feasible": true,
+   "after_finish": "PASS",
+   "repaired": true,
+   "repair_cells": 122,
+   "repair_compliance": 2.6529352893149376,
+   "repair_volume": 0.18270221711261564
+  },
+  {
+   "case": "c08_2d_asym_weak_OC",
+   "method": "plain_mma",
+   "optimizer": "MMA",
+   "dim": 2,
+   "shape": [
+    60,
+    24
+   ],
+   "n_design": 1396,
+   "vf": 0.15,
+   "rmin": 2.5,
+   "projection": false,
+   "iterations": 55,
+   "converged": true,
+   "seconds": 2.81,
+   "compliance": 1.5540576442958711,
+   "volume": 0.1499999770185735,
+   "volume_feasible": true,
+   "verdict": "FAIL",
+   "verdict_voids_fail": "FAIL",
+   "n_bodies": 2,
+   "connected": false,
+   "unattached": [],
+   "floating": 0,
+   "enclosed_voids": 0,
+   "checks": {
+    "t=0.3": {
+     "bodies": 2,
+     "connected": false
+    },
+    "t=0.7": {
+     "bodies": 2,
+     "connected": false
+    },
+    "eroded": {
+     "bodies": 2,
+     "connected": false
+    }
+   },
+   "min_neck_cells": null,
+   "reasons": [
+    "interfaces spread over 2 bodies"
+   ],
+   "tie_cells": null,
+   "after_finish": "PASS",
+   "repaired": true,
+   "repair_cells": 117,
+   "repair_compliance": 1.5433575439756178,
+   "repair_volume": 0.22794783629017037
+  },
+  {
+   "case": "c10_2d_one_support",
+   "method": "plain",
+   "optimizer": "MMA",
+   "dim": 2,
+   "shape": [
+    60,
+    24
+   ],
+   "n_design": 1402,
+   "vf": 0.12,
+   "rmin": 2.0,
+   "projection": true,
+   "iterations": 118,
+   "converged": true,
+   "seconds": 4.27,
+   "compliance": 184.9170254086127,
+   "volume": 0.1199980996309608,
+   "volume_feasible": true,
+   "verdict": "FAIL",
+   "verdict_voids_fail": "FAIL",
+   "n_bodies": 10,
+   "connected": false,
+   "unattached": [],
+   "floating": 7,
+   "enclosed_voids": 3,
+   "checks": {
+    "t=0.3": {
+     "bodies": 4,
+     "connected": false
+    },
+    "t=0.7": {
+     "bodies": 18,
+     "connected": false
+    },
+    "eroded": {
+     "bodies": 3,
+     "connected": false
+    }
+   },
+   "min_neck_cells": null,
+   "reasons": [
+    "interfaces spread over 3 bodies",
+    "7 floating bodies without interface"
+   ],
+   "tie_cells": null,
+   "after_finish": "PASS",
+   "repaired": true,
+   "repair_cells": 302,
+   "repair_compliance": 93.27737468428218,
+   "repair_volume": 0.30968681309564006
+  },
+  {
+   "case": "c10_2d_one_support",
+   "method": "default",
+   "optimizer": "MMA",
+   "dim": 2,
+   "shape": [
+    60,
+    24
+   ],
+   "n_design": 1324,
+   "vf": 0.12,
+   "rmin": 2.0,
+   "projection": true,
+   "iterations": 136,
+   "converged": true,
+   "seconds": 7.08,
+   "compliance": 9780.366155779111,
+   "volume": 0.1199998771266357,
+   "volume_feasible": true,
+   "verdict": "PASS",
+   "verdict_voids_fail": "PASS",
+   "n_bodies": 1,
+   "connected": true,
+   "unattached": [],
+   "floating": 0,
+   "enclosed_voids": 0,
+   "checks": {
+    "t=0.3": {
+     "bodies": 1,
+     "connected": true
+    },
+    "t=0.7": {
+     "bodies": 1,
+     "connected": true
+    },
+    "eroded": {
+     "bodies": 1,
+     "connected": true
+    }
+   },
+   "min_neck_cells": null,
+   "reasons": [],
+   "tie_cells": 78,
+   "connectivity_value": 15.662939742663351,
+   "connectivity_bound": 20.0,
+   "connectivity_feasible": true,
+   "after_finish": "PASS",
+   "repaired": false,
+   "repair_cells": null
+  },
+  {
+   "case": "c10_2d_one_support",
+   "method": "ties",
+   "optimizer": "MMA",
+   "dim": 2,
+   "shape": [
+    60,
+    24
+   ],
+   "n_design": 1324,
+   "vf": 0.12,
+   "rmin": 2.0,
+   "projection": true,
+   "iterations": 119,
+   "converged": true,
+   "seconds": 3.54,
+   "compliance": 9781.268663443763,
+   "volume": 0.11999943780361144,
+   "volume_feasible": true,
+   "verdict": "PASS",
+   "verdict_voids_fail": "PASS",
+   "n_bodies": 1,
+   "connected": true,
+   "unattached": [],
+   "floating": 0,
+   "enclosed_voids": 0,
+   "checks": {
+    "t=0.3": {
+     "bodies": 1,
+     "connected": true
+    },
+    "t=0.7": {
+     "bodies": 1,
+     "connected": true
+    },
+    "eroded": {
+     "bodies": 1,
+     "connected": true
+    }
+   },
+   "min_neck_cells": null,
+   "reasons": [],
+   "tie_cells": 78,
+   "after_finish": "PASS",
+   "repaired": false,
+   "repair_cells": null
+  },
+  {
+   "case": "c10_2d_one_support",
+   "method": "conduction",
+   "optimizer": "MMA",
+   "dim": 2,
+   "shape": [
+    60,
+    24
+   ],
+   "n_design": 1402,
+   "vf": 0.12,
+   "rmin": 2.0,
+   "projection": true,
+   "iterations": 122,
+   "converged": true,
+   "seconds": 5.33,
+   "compliance": 9535.042233826985,
+   "volume": 0.11999988437543649,
+   "volume_feasible": true,
+   "verdict": "FRAGILE",
+   "verdict_voids_fail": "FRAGILE",
+   "n_bodies": 1,
+   "connected": true,
+   "unattached": [],
+   "floating": 0,
+   "enclosed_voids": 0,
+   "checks": {
+    "t=0.3": {
+     "bodies": 1,
+     "connected": true
+    },
+    "t=0.7": {
+     "bodies": 1,
+     "connected": true
+    },
+    "eroded": {
+     "bodies": 21,
+     "connected": false
+    }
+   },
+   "min_neck_cells": 1,
+   "reasons": [
+    "split in: eroded"
+   ],
+   "tie_cells": null,
+   "connectivity_value": 19.99819976872232,
+   "connectivity_bound": 20.0,
+   "connectivity_feasible": true,
+   "after_finish": "PASS",
+   "repaired": true,
+   "repair_cells": 191,
+   "repair_compliance": 2676.757099280214,
+   "repair_volume": 0.19311326019042802
+  },
+  {
+   "case": "c14_3d_close_OC",
+   "method": "plain",
+   "optimizer": "OC",
+   "dim": 3,
+   "shape": [
+    24,
+    6,
+    12
+   ],
+   "n_design": 1664,
+   "vf": 0.2,
+   "rmin": 2.0,
+   "projection": true,
+   "iterations": 120,
+   "converged": false,
+   "seconds": 47.59,
+   "compliance": 0.6039813728726904,
+   "volume": 0.20000021951310162,
+   "volume_feasible": true,
+   "verdict": "FAIL",
+   "verdict_voids_fail": "FAIL",
+   "n_bodies": 2,
+   "connected": false,
+   "unattached": [],
+   "floating": 0,
+   "enclosed_voids": 0,
+   "checks": {
+    "t=0.3": {
+     "bodies": 2,
+     "connected": false
+    },
+    "t=0.7": {
+     "bodies": 2,
+     "connected": false
+    },
+    "eroded": {
+     "bodies": 2,
+     "connected": false
+    }
+   },
+   "min_neck_cells": null,
+   "reasons": [
+    "interfaces spread over 2 bodies"
+   ],
+   "tie_cells": null,
+   "after_finish": "PASS",
+   "repaired": true,
+   "repair_cells": 50,
+   "repair_compliance": 0.5941465034097431,
+   "repair_volume": 0.22080451369765786
+  },
+  {
+   "case": "c14_3d_close_OC",
+   "method": "default",
+   "optimizer": "MMA",
+   "dim": 3,
+   "shape": [
+    24,
+    6,
+    12
+   ],
+   "n_design": 1650,
+   "vf": 0.2,
+   "rmin": 2.0,
+   "projection": true,
+   "iterations": 120,
+   "converged": false,
+   "seconds": 23.51,
+   "compliance": 0.6224847414474348,
+   "volume": 0.19999982585371198,
+   "volume_feasible": true,
+   "verdict": "PASS",
+   "verdict_voids_fail": "PASS",
+   "n_bodies": 1,
+   "connected": true,
+   "unattached": [],
+   "floating": 0,
+   "enclosed_voids": 0,
+   "checks": {
+    "t=0.3": {
+     "bodies": 1,
+     "connected": true
+    },
+    "t=0.7": {
+     "bodies": 1,
+     "connected": true
+    },
+    "eroded": {
+     "bodies": 1,
+     "connected": true
+    }
+   },
+   "min_neck_cells": null,
+   "reasons": [],
+   "tie_cells": 14,
+   "connectivity_value": 19.999766255804534,
+   "connectivity_bound": 20.0,
+   "connectivity_feasible": true,
+   "after_finish": "PASS",
+   "repaired": false,
+   "repair_cells": null
+  },
+  {
+   "case": "c14_3d_close_OC",
+   "method": "ties",
+   "optimizer": "OC",
+   "dim": 3,
+   "shape": [
+    24,
+    6,
+    12
+   ],
+   "n_design": 1650,
+   "vf": 0.2,
+   "rmin": 2.0,
+   "projection": true,
+   "iterations": 120,
+   "converged": false,
+   "seconds": 17.07,
+   "compliance": 0.6094219142618343,
+   "volume": 0.20000007397110797,
+   "volume_feasible": true,
+   "verdict": "PASS",
+   "verdict_voids_fail": "PASS",
+   "n_bodies": 1,
+   "connected": true,
+   "unattached": [],
+   "floating": 0,
+   "enclosed_voids": 0,
+   "checks": {
+    "t=0.3": {
+     "bodies": 1,
+     "connected": true
+    },
+    "t=0.7": {
+     "bodies": 1,
+     "connected": true
+    },
+    "eroded": {
+     "bodies": 1,
+     "connected": true
+    }
+   },
+   "min_neck_cells": null,
+   "reasons": [],
+   "tie_cells": 14,
+   "after_finish": "PASS",
+   "repaired": false,
+   "repair_cells": null
+  },
+  {
+   "case": "c14_3d_close_OC",
+   "method": "conduction",
+   "optimizer": "MMA",
+   "dim": 3,
+   "shape": [
+    24,
+    6,
+    12
+   ],
+   "n_design": 1664,
+   "vf": 0.2,
+   "rmin": 2.0,
+   "projection": true,
+   "iterations": 120,
+   "converged": false,
+   "seconds": 16.05,
+   "compliance": 0.6219916831231844,
+   "volume": 0.1999940662956213,
+   "volume_feasible": true,
+   "verdict": "FRAGILE",
+   "verdict_voids_fail": "FRAGILE",
+   "n_bodies": 1,
+   "connected": true,
+   "unattached": [],
+   "floating": 0,
+   "enclosed_voids": 0,
+   "checks": {
+    "t=0.3": {
+     "bodies": 1,
+     "connected": true
+    },
+    "t=0.7": {
+     "bodies": 1,
+     "connected": true
+    },
+    "eroded": {
+     "bodies": 2,
+     "connected": false
+    }
+   },
+   "min_neck_cells": 2,
+   "reasons": [
+    "split in: eroded"
+   ],
+   "tie_cells": null,
+   "connectivity_value": 19.999765698144785,
+   "connectivity_bound": 20.0,
+   "connectivity_feasible": true,
+   "after_finish": "PASS",
+   "repaired": true,
+   "repair_cells": 44,
+   "repair_compliance": 0.6133189834543326,
+   "repair_volume": 0.21305163918654343
+  },
+  {
+   "case": "c14_3d_close_OC",
+   "method": "plain_mma",
+   "optimizer": "MMA",
+   "dim": 3,
+   "shape": [
+    24,
+    6,
+    12
+   ],
+   "n_design": 1664,
+   "vf": 0.2,
+   "rmin": 2.0,
+   "projection": true,
+   "iterations": 120,
+   "converged": false,
+   "seconds": 13.4,
+   "compliance": 0.6024238791547654,
+   "volume": 0.19999980940707984,
+   "volume_feasible": true,
+   "verdict": "FAIL",
+   "verdict_voids_fail": "FAIL",
+   "n_bodies": 2,
+   "connected": false,
+   "unattached": [],
+   "floating": 0,
+   "enclosed_voids": 0,
+   "checks": {
+    "t=0.3": {
+     "bodies": 2,
+     "connected": false
+    },
+    "t=0.7": {
+     "bodies": 2,
+     "connected": false
+    },
+    "eroded": {
+     "bodies": 2,
+     "connected": false
+    }
+   },
+   "min_neck_cells": null,
+   "reasons": [
+    "interfaces spread over 2 bodies"
+   ],
+   "tie_cells": null,
+   "after_finish": "PASS",
+   "repaired": true,
+   "repair_cells": 52,
+   "repair_compliance": 0.5923957623514848,
+   "repair_volume": 0.22078513445019257
+  },
+  {
+   "case": "c13_3d_obstacle_three_loads",
+   "method": "plain",
+   "optimizer": "MMA",
+   "dim": 3,
+   "shape": [
+    32,
+    8,
+    12
+   ],
+   "n_design": 2600,
+   "vf": 0.12,
+   "rmin": 2.0,
+   "projection": false,
+   "iterations": 46,
+   "converged": true,
+   "seconds": 21.66,
+   "compliance": 17.15151359652678,
+   "volume": 0.11999999284531249,
+   "volume_feasible": true,
+   "verdict": "FRAGILE",
+   "verdict_voids_fail": "FRAGILE",
+   "n_bodies": 1,
+   "connected": true,
+   "unattached": [],
+   "floating": 0,
+   "enclosed_voids": 0,
+   "checks": {
+    "t=0.3": {
+     "bodies": 1,
+     "connected": true
+    },
+    "t=0.7": {
+     "bodies": 15,
+     "connected": false
+    },
+    "eroded": {
+     "bodies": 5,
+     "connected": false
+    }
+   },
+   "min_neck_cells": 2,
+   "reasons": [
+    "split in: t=0.7, eroded"
+   ],
+   "tie_cells": null,
+   "after_finish": "PASS",
+   "repaired": true,
+   "repair_cells": 539,
+   "repair_compliance": 4.965360034693066,
+   "repair_volume": 0.24067029832259737
+  },
+  {
+   "case": "c13_3d_obstacle_three_loads",
+   "method": "default",
+   "optimizer": "MMA",
+   "dim": 3,
+   "shape": [
+    32,
+    8,
+    12
+   ],
+   "n_design": 2562,
+   "vf": 0.12,
+   "rmin": 2.0,
+   "projection": false,
+   "iterations": 120,
+   "converged": false,
+   "seconds": 56.56,
+   "compliance": 17.253087893561272,
+   "volume": 0.11999997284028752,
+   "volume_feasible": true,
+   "verdict": "PASS",
+   "verdict_voids_fail": "PASS",
+   "n_bodies": 1,
+   "connected": true,
+   "unattached": [],
+   "floating": 0,
+   "enclosed_voids": 0,
+   "checks": {
+    "t=0.3": {
+     "bodies": 1,
+     "connected": true
+    },
+    "t=0.7": {
+     "bodies": 2,
+     "connected": true
+    },
+    "eroded": {
+     "bodies": 1,
+     "connected": true
+    }
+   },
+   "min_neck_cells": null,
+   "reasons": [],
+   "tie_cells": 38,
+   "connectivity_value": 19.99998889502634,
+   "connectivity_bound": 20.0,
+   "connectivity_feasible": true,
+   "after_finish": "PASS",
+   "repaired": false,
+   "repair_cells": null
+  },
+  {
+   "case": "c13_3d_obstacle_three_loads",
+   "method": "ties",
+   "optimizer": "MMA",
+   "dim": 3,
+   "shape": [
+    32,
+    8,
+    12
+   ],
+   "n_design": 2562,
+   "vf": 0.12,
+   "rmin": 2.0,
+   "projection": false,
+   "iterations": 47,
+   "converged": true,
+   "seconds": 17.8,
+   "compliance": 17.02829070777477,
+   "volume": 0.11999999381812036,
+   "volume_feasible": true,
+   "verdict": "PASS",
+   "verdict_voids_fail": "PASS",
+   "n_bodies": 1,
+   "connected": true,
+   "unattached": [],
+   "floating": 0,
+   "enclosed_voids": 0,
+   "checks": {
+    "t=0.3": {
+     "bodies": 1,
+     "connected": true
+    },
+    "t=0.7": {
+     "bodies": 1,
+     "connected": true
+    },
+    "eroded": {
+     "bodies": 5,
+     "connected": true
+    }
+   },
+   "min_neck_cells": null,
+   "reasons": [],
+   "tie_cells": 38,
+   "after_finish": "PASS",
+   "repaired": false,
+   "repair_cells": null
+  },
+  {
+   "case": "c13_3d_obstacle_three_loads",
+   "method": "conduction",
+   "optimizer": "MMA",
+   "dim": 3,
+   "shape": [
+    32,
+    8,
+    12
+   ],
+   "n_design": 2600,
+   "vf": 0.12,
+   "rmin": 2.0,
+   "projection": false,
+   "iterations": 62,
+   "converged": true,
+   "seconds": 31.11,
+   "compliance": 27.514587416056806,
+   "volume": 0.12322518418150548,
+   "volume_feasible": false,
+   "verdict": "FRAGILE",
+   "verdict_voids_fail": "FRAGILE",
+   "n_bodies": 1,
+   "connected": true,
+   "unattached": [],
+   "floating": 0,
+   "enclosed_voids": 0,
+   "checks": {
+    "t=0.3": {
+     "bodies": 1,
+     "connected": true
+    },
+    "t=0.7": {
+     "bodies": 1,
+     "connected": true
+    },
+    "eroded": {
+     "bodies": 11,
+     "connected": false
+    }
+   },
+   "min_neck_cells": 2,
+   "reasons": [
+    "split in: eroded"
+   ],
+   "tie_cells": null,
+   "connectivity_value": 19.99999661767406,
+   "connectivity_bound": 20.0,
+   "connectivity_feasible": true,
+   "after_finish": "PASS",
+   "repaired": true,
+   "repair_cells": 314,
+   "repair_compliance": 9.532457288803533,
+   "repair_volume": 0.18431258850232016
+  },
+  {
+   "case": "c12_3d_four_supports",
+   "method": "plain",
+   "optimizer": "MMA",
+   "dim": 3,
+   "shape": [
+    24,
+    16,
+    8
+   ],
+   "n_design": 2976,
+   "vf": 0.1,
+   "rmin": 1.5,
+   "projection": true,
+   "iterations": 120,
+   "converged": false,
+   "seconds": 62.3,
+   "compliance": 0.7464205068500995,
+   "volume": 0.1000000976541382,
+   "volume_feasible": true,
+   "verdict": "FAIL",
+   "verdict_voids_fail": "FAIL",
+   "n_bodies": 4,
+   "connected": false,
+   "unattached": [],
+   "floating": 0,
+   "enclosed_voids": 0,
+   "checks": {
+    "t=0.3": {
+     "bodies": 4,
+     "connected": false
+    },
+    "t=0.7": {
+     "bodies": 4,
+     "connected": false
+    },
+    "eroded": {
+     "bodies": 4,
+     "connected": false
+    }
+   },
+   "min_neck_cells": null,
+   "reasons": [
+    "interfaces spread over 4 bodies"
+   ],
+   "tie_cells": null,
+   "after_finish": "PASS",
+   "repaired": true,
+   "repair_cells": 321,
+   "repair_compliance": 0.7307184919828604,
+   "repair_volume": 0.20056739596172624
+  },
+  {
+   "case": "c12_3d_four_supports",
+   "method": "default",
+   "optimizer": "MMA",
+   "dim": 3,
+   "shape": [
+    24,
+    16,
+    8
+   ],
+   "n_design": 2932,
+   "vf": 0.1,
+   "rmin": 1.5,
+   "projection": true,
+   "iterations": 120,
+   "converged": false,
+   "seconds": 49.94,
+   "compliance": 25.643650535376644,
+   "volume": 0.10000890183535621,
+   "volume_feasible": true,
+   "verdict": "PASS",
+   "verdict_voids_fail": "PASS",
+   "n_bodies": 1,
+   "connected": true,
+   "unattached": [],
+   "floating": 0,
+   "enclosed_voids": 0,
+   "checks": {
+    "t=0.3": {
+     "bodies": 1,
+     "connected": true
+    },
+    "t=0.7": {
+     "bodies": 1,
+     "connected": true
+    },
+    "eroded": {
+     "bodies": 1,
+     "connected": true
+    }
+   },
+   "min_neck_cells": null,
+   "reasons": [],
+   "tie_cells": 44,
+   "connectivity_value": 19.99955218194585,
+   "connectivity_bound": 20.0,
+   "connectivity_feasible": true,
+   "after_finish": "PASS",
+   "repaired": false,
+   "repair_cells": null
+  },
+  {
+   "case": "c12_3d_four_supports",
+   "method": "ties",
+   "optimizer": "MMA",
+   "dim": 3,
+   "shape": [
+    24,
+    16,
+    8
+   ],
+   "n_design": 2932,
+   "vf": 0.1,
+   "rmin": 1.5,
+   "projection": true,
+   "iterations": 120,
+   "converged": false,
+   "seconds": 33.57,
+   "compliance": 0.8470449059467189,
+   "volume": 0.10000011774405639,
+   "volume_feasible": true,
+   "verdict": "PASS",
+   "verdict_voids_fail": "PASS",
+   "n_bodies": 1,
+   "connected": true,
+   "unattached": [],
+   "floating": 0,
+   "enclosed_voids": 0,
+   "checks": {
+    "t=0.3": {
+     "bodies": 1,
+     "connected": true
+    },
+    "t=0.7": {
+     "bodies": 1,
+     "connected": true
+    },
+    "eroded": {
+     "bodies": 1,
+     "connected": true
+    }
+   },
+   "min_neck_cells": null,
+   "reasons": [],
+   "tie_cells": 44,
+   "after_finish": "PASS",
+   "repaired": false,
+   "repair_cells": null
+  },
+  {
+   "case": "c12_3d_four_supports",
+   "method": "conduction",
+   "optimizer": "MMA",
+   "dim": 3,
+   "shape": [
+    24,
+    16,
+    8
+   ],
+   "n_design": 2976,
+   "vf": 0.1,
+   "rmin": 1.5,
+   "projection": true,
+   "iterations": 120,
+   "converged": false,
+   "seconds": 80.69,
+   "compliance": 44.704572789354096,
+   "volume": 0.0999902429561495,
+   "volume_feasible": true,
+   "verdict": "FRAGILE",
+   "verdict_voids_fail": "FRAGILE",
+   "n_bodies": 1,
+   "connected": true,
+   "unattached": [],
+   "floating": 0,
+   "enclosed_voids": 0,
+   "checks": {
+    "t=0.3": {
+     "bodies": 1,
+     "connected": true
+    },
+    "t=0.7": {
+     "bodies": 1,
+     "connected": true
+    },
+    "eroded": {
+     "bodies": 9,
+     "connected": false
+    }
+   },
+   "min_neck_cells": 2,
+   "reasons": [
+    "split in: eroded"
+   ],
+   "tie_cells": null,
+   "connectivity_value": 20.001130768686327,
+   "connectivity_bound": 20.0,
+   "connectivity_feasible": true,
+   "after_finish": "PASS",
+   "repaired": true,
+   "repair_cells": 435,
+   "repair_compliance": 7.1051758570727515,
+   "repair_volume": 0.20026442639868192
+  },
+  {
+   "case": "c11_3d_split",
+   "method": "plain",
+   "optimizer": "MMA",
+   "dim": 3,
+   "shape": [
+    30,
+    4,
+    12
+   ],
+   "n_design": 1384,
+   "vf": 0.15,
+   "rmin": 1.5,
+   "projection": true,
+   "iterations": 73,
+   "converged": true,
+   "seconds": 21.5,
+   "compliance": 0.6248385314856965,
+   "volume": 0.1499999954271691,
+   "volume_feasible": true,
+   "verdict": "FAIL",
+   "verdict_voids_fail": "FAIL",
+   "n_bodies": 2,
+   "connected": false,
+   "unattached": [],
+   "floating": 0,
+   "enclosed_voids": 0,
+   "checks": {
+    "t=0.3": {
+     "bodies": 2,
+     "connected": false
+    },
+    "t=0.7": {
+     "bodies": 2,
+     "connected": false
+    },
+    "eroded": {
+     "bodies": 2,
+     "connected": false
+    }
+   },
+   "min_neck_cells": null,
+   "reasons": [
+    "interfaces spread over 2 bodies"
+   ],
+   "tie_cells": null,
+   "after_finish": "PASS",
+   "repaired": true,
+   "repair_cells": 182,
+   "repair_compliance": 0.6145319993433964,
+   "repair_volume": 0.26250666332462963
+  },
+  {
+   "case": "c11_3d_split",
+   "method": "default",
+   "optimizer": "MMA",
+   "dim": 3,
+   "shape": [
+    30,
+    4,
+    12
+   ],
+   "n_design": 1356,
+   "vf": 0.15,
+   "rmin": 1.5,
+   "projection": true,
+   "iterations": 150,
+   "converged": false,
+   "seconds": 67.26,
+   "compliance": 0.7825722070814709,
+   "volume": 0.15000416183919127,
+   "volume_feasible": true,
+   "verdict": "PASS",
+   "verdict_voids_fail": "PASS",
+   "n_bodies": 1,
+   "connected": true,
+   "unattached": [],
+   "floating": 0,
+   "enclosed_voids": 0,
+   "checks": {
+    "t=0.3": {
+     "bodies": 1,
+     "connected": true
+    },
+    "t=0.7": {
+     "bodies": 1,
+     "connected": true
+    },
+    "eroded": {
+     "bodies": 1,
+     "connected": true
+    }
+   },
+   "min_neck_cells": null,
+   "reasons": [],
+   "tie_cells": 28,
+   "connectivity_value": 20.00243282737442,
+   "connectivity_bound": 20.0,
+   "connectivity_feasible": true,
+   "after_finish": "PASS",
+   "repaired": false,
+   "repair_cells": null
+  },
+  {
+   "case": "c11_3d_split",
+   "method": "ties",
+   "optimizer": "MMA",
+   "dim": 3,
+   "shape": [
+    30,
+    4,
+    12
+   ],
+   "n_design": 1356,
+   "vf": 0.15,
+   "rmin": 1.5,
+   "projection": true,
+   "iterations": 116,
+   "converged": true,
+   "seconds": 25.16,
+   "compliance": 0.6872442052679975,
+   "volume": 0.14999999749317994,
+   "volume_feasible": true,
+   "verdict": "PASS",
+   "verdict_voids_fail": "PASS",
+   "n_bodies": 1,
+   "connected": true,
+   "unattached": [],
+   "floating": 0,
+   "enclosed_voids": 0,
+   "checks": {
+    "t=0.3": {
+     "bodies": 1,
+     "connected": true
+    },
+    "t=0.7": {
+     "bodies": 1,
+     "connected": true
+    },
+    "eroded": {
+     "bodies": 1,
+     "connected": true
+    }
+   },
+   "min_neck_cells": null,
+   "reasons": [],
+   "tie_cells": 28,
+   "after_finish": "PASS",
+   "repaired": false,
+   "repair_cells": null
+  },
+  {
+   "case": "c11_3d_split",
+   "method": "conduction",
+   "optimizer": "MMA",
+   "dim": 3,
+   "shape": [
+    30,
+    4,
+    12
+   ],
+   "n_design": 1384,
+   "vf": 0.15,
+   "rmin": 1.5,
+   "projection": true,
+   "iterations": 150,
+   "converged": false,
+   "seconds": 69.02,
+   "compliance": 0.9208595207228707,
+   "volume": 0.1500113076337285,
+   "volume_feasible": true,
+   "verdict": "FRAGILE",
+   "verdict_voids_fail": "FRAGILE",
+   "n_bodies": 1,
+   "connected": true,
+   "unattached": [],
+   "floating": 0,
+   "enclosed_voids": 0,
+   "checks": {
+    "t=0.3": {
+     "bodies": 1,
+     "connected": true
+    },
+    "t=0.7": {
+     "bodies": 1,
+     "connected": true
+    },
+    "eroded": {
+     "bodies": 3,
+     "connected": false
+    }
+   },
+   "min_neck_cells": 2,
+   "reasons": [
+    "split in: eroded"
+   ],
+   "tie_cells": null,
+   "connectivity_value": 19.997163567275702,
+   "connectivity_bound": 20.0,
+   "connectivity_feasible": true,
+   "after_finish": "PASS",
+   "repaired": true,
+   "repair_cells": 226,
+   "repair_compliance": 0.76281912323296,
+   "repair_volume": 0.28307734433069714
+  }
+ ],
+ "post": [
+  {
+   "input": "p01_sphere",
+   "grid": [
+    16,
+    16,
+    16
+   ],
+   "h_fine": 0.25,
+   "triangles": 18236,
+   "target_volume": 698.7037037037038,
+   "exact_volume": 696.9099703213358,
+   "volume_mesh": 699.2665809507802,
+   "dV_vs_target": 0.0008056022089086845,
+   "dV_vs_exact": 0.003381513724588725,
+   "volume_stages": {
+    "target": 698.7037037037038,
+    "thresholded": 698.7050593792274,
+    "islands_removed": 698.7050593792274,
+    "opened": 699.5847639380341,
+    "closed": 700.1714641418878,
+    "final_grid": 700.1714641418878
+   },
+   "topology_voxel_input": {
+    "bodies": 1,
+    "cavities": 0,
+    "euler": 1,
+    "tunnels": 0
+   },
+   "topology_before": {
+    "bodies": 1,
+    "cavities": 0,
+    "euler": 1,
+    "tunnels": 0
+   },
+   "topology_mesh": {
+    "bodies": 1,
+    "cavities": 0,
+    "euler": 1.0,
+    "tunnels": 0.0
+   },
+   "voids_filled": 0,
+   "islands": {
+    "after_threshold": {
+     "bodies_before": 1,
+     "removed": 0,
+     "removed_volume": 0.0,
+     "mode": "interfaces"
+    },
+    "final": {
+     "bodies_before": 1,
+     "removed": 0,
+     "removed_volume": 0.0,
+     "mode": "interfaces"
+    }
+   },
+   "edges": {
+    "edges": 27354,
+    "open": 0,
+    "non_manifold": 0,
+    "misoriented": 0,
+    "non_manifold_vertices": 0
+   },
+   "watertight": true,
+   "interfaces": [
+    {
+     "name": "envelope",
+     "role": "bound",
+     "shape": "box",
+     "vertices": 0
+    }
+   ],
+   "bore_err_max": null,
+   "flatness_max": null,
+   "hausdorff_final_to_raw": 0.005881908489178195,
+   "hausdorff_raw_to_final": 0.004689008194237399,
+   "normal_dev_mean": 0.9011819545668128,
+   "normal_dev_p99": 2.4955614252284373,
+   "normal_dev_max": 3.768138813812587,
+   "min_angle": 22.547871460277204,
+   "min_angle_p1": 29.169071594845487,
+   "wall_ray": {
+    "min": 10.935436601088314,
+    "p1": 10.943907510465785,
+    "p5": 10.947791353789299,
+    "median": 11.00051260448302
+   },
+   "wall_ball_p1": 11.043161545360578,
+   "overhang_fraction": 0.119093022106613,
+   "r_open": 1.0,
+   "r_close": 1.0,
+   "open_change": 0.0012590499338710627,
+   "close_change": 0.0009344318830043275,
+   "fillet_ok": true,
+   "seconds_post": 19.30281389999982,
+   "seconds_by_stage": {
+    "grid": 0.6908668000005491,
+    "threshold_sdf": 5.079714200000126,
+    "morphology": 8.11812160000045,
+    "cleanup": 0.16539169999941805,
+    "surface": 2.2379713000000265,
+    "report": 3.003501799999867,
+    "total": 19.295740499999738
+   },
+   "checks_passed": true,
+   "opt": {},
+   "criteria": {
+    "watertight": true,
+    "topology": true,
+    "volume_1pct": true,
+    "bore_1pct": null,
+    "flatness": null,
+    "min_angle_15": true,
+    "hausdorff_0p6hf": true
+   },
+   "passed": true,
+   "extra_criteria": {}
+  },
+  {
+   "input": "p02_tube",
+   "grid": [
+    14,
+    14,
+    10
+   ],
+   "h_fine": 0.25,
+   "triangles": 17472,
+   "target_volume": 453.33333333333337,
+   "exact_volume": 452.3893421169302,
+   "volume_mesh": 454.38311617326895,
+   "dV_vs_target": 0.0023156974410343256,
+   "dV_vs_exact": 0.0044072082843706895,
+   "volume_stages": {
+    "target": 453.33333333333337,
+    "thresholded": 453.33388617520575,
+    "islands_removed": 453.33388617520575,
+    "opened": 454.0373233009922,
+    "closed": 455.50048349979846,
+    "final_grid": 455.50048349979846
+   },
+   "topology_voxel_input": {
+    "bodies": 1,
+    "cavities": 0,
+    "euler": 0,
+    "tunnels": 1
+   },
+   "topology_before": {
+    "bodies": 1,
+    "cavities": 0,
+    "euler": 0,
+    "tunnels": 1
+   },
+   "topology_mesh": {
+    "bodies": 1,
+    "cavities": 0,
+    "euler": 0.0,
+    "tunnels": 1.0
+   },
+   "voids_filled": 0,
+   "islands": {
+    "after_threshold": {
+     "bodies_before": 1,
+     "removed": 0,
+     "removed_volume": 0.0,
+     "mode": "interfaces"
+    },
+    "final": {
+     "bodies_before": 1,
+     "removed": 0,
+     "removed_volume": 0.0,
+     "mode": "interfaces"
+    }
+   },
+   "edges": {
+    "edges": 26208,
+    "open": 0,
+    "non_manifold": 0,
+    "misoriented": 0,
+    "non_manifold_vertices": 0
+   },
+   "watertight": true,
+   "interfaces": [
+    {
+     "name": "envelope",
+     "role": "bound",
+     "shape": "box",
+     "vertices": 0
+    },
+    {
+     "name": "bore",
+     "role": "cut",
+     "shape": "cylinder",
+     "vertices": 1918,
+     "nominal_radius": 2.5,
+     "radius_mean": 2.5,
+     "radius_min": 2.499999999999999,
+     "radius_max": 2.5000000000000013,
+     "radius_rel_error_max": 5.329070518200751e-16,
+     "distance_mean": 8.335355346507954e-18,
+     "distance_min": -1.3322676295501878e-15,
+     "distance_max": 8.881784197001252e-16
+    }
+   ],
+   "bore_err_max": 5.329070518200751e-16,
+   "flatness_max": null,
+   "hausdorff_final_to_raw": 0.07157900303901668,
+   "hausdorff_raw_to_final": 0.07296055900790108,
+   "normal_dev_mean": 1.904926010057458,
+   "normal_dev_p99": 20.719338401735907,
+   "normal_dev_max": 66.62873296872115,
+   "min_angle": 23.361938223022367,
+   "min_angle_p1": 31.507338704777,
+   "wall_ray": {
+    "min": 1.1085761586054486e-11,
+    "p1": 2.728991643933651,
+    "p5": 3.025051874519411,
+    "median": 3.128945587231072
+   },
+   "wall_ball_p1": 2.5885177918457996,
+   "overhang_fraction": 0.0022829725246092973,
+   "r_open": 1.0,
+   "r_close": 1.0,
+   "open_change": 0.0015516976498743638,
+   "close_change": 0.0031062290760691617,
+   "fillet_ok": true,
+   "seconds_post": 19.734908299999915,
+   "seconds_by_stage": {
+    "grid": 0.16641729999992094,
+    "threshold_sdf": 5.726760199999262,
+    "morphology": 5.27414939999926,
+    "cleanup": 0.22828019999997196,
+    "surface": 4.5242128999998386,
+    "report": 3.8104520999995657,
+    "total": 19.73038980000001
+   },
+   "checks_passed": true,
+   "opt": {},
+   "criteria": {
+    "watertight": true,
+    "topology": true,
+    "volume_1pct": true,
+    "bore_1pct": true,
+    "flatness": null,
+    "min_angle_15": true,
+    "hausdorff_0p6hf": true
+   },
+   "passed": true,
+   "extra_criteria": {}
+  },
+  {
+   "input": "p03_plate_bore",
+   "grid": [
+    16,
+    16,
+    6
+   ],
+   "h_fine": 0.25,
+   "triangles": 25744,
+   "target_volume": 868.8888888888889,
+   "exact_volume": 870.0619599741001,
+   "volume_mesh": 867.1265830290978,
+   "dV_vs_target": -0.0020282292503990274,
+   "dV_vs_exact": -0.0033737562151202605,
+   "volume_stages": {
+    "target": 868.8888888888889,
+    "thresholded": 868.8894014130274,
+    "islands_removed": 868.8894014130274,
+    "opened": 868.8768695520921,
+    "closed": 868.839528563446,
+    "final_grid": 868.839528563446
+   },
+   "topology_voxel_input": {
+    "bodies": 1,
+    "cavities": 0,
+    "euler": 0,
+    "tunnels": 1
+   },
+   "topology_before": {
+    "bodies": 1,
+    "cavities": 0,
+    "euler": 0,
+    "tunnels": 1
+   },
+   "topology_mesh": {
+    "bodies": 1,
+    "cavities": 0,
+    "euler": 0.0,
+    "tunnels": 1.0
+   },
+   "voids_filled": 0,
+   "islands": {
+    "after_threshold": {
+     "bodies_before": 1,
+     "removed": 0,
+     "removed_volume": 0.0,
+     "mode": "interfaces"
+    },
+    "final": {
+     "bodies_before": 1,
+     "removed": 0,
+     "removed_volume": 0.0,
+     "mode": "interfaces"
+    }
+   },
+   "edges": {
+    "edges": 38616,
+    "open": 0,
+    "non_manifold": 0,
+    "misoriented": 0,
+    "non_manifold_vertices": 0
+   },
+   "watertight": true,
+   "interfaces": [
+    {
+     "name": "envelope",
+     "role": "bound",
+     "shape": "box",
+     "vertices": 4092,
+     "distance_mean": 0.0,
+     "distance_min": 0.0,
+     "distance_max": 0.0
+    },
+    {
+     "name": "bore",
+     "role": "cut",
+     "shape": "cylinder",
+     "vertices": 1712,
+     "nominal_radius": 3.5,
+     "radius_mean": 3.5,
+     "radius_min": 3.499999999999999,
+     "radius_max": 3.5000000000000013,
+     "radius_rel_error_max": 3.806478941571965e-16,
+     "distance_mean": -1.2969895147490146e-17,
+     "distance_min": -1.3322676295501878e-15,
+     "distance_max": 8.881784197001252e-16
+    },
+    {
+     "name": "mounting face",
+     "role": "bound",
+     "shape": "plane",
+     "vertices": 3479,
+     "offset_mean": 0.0,
+     "flatness": 0.0,
+     "distance_mean": 0.0,
+     "distance_min": 0.0,
+     "distance_max": 0.0
+    }
+   ],
+   "bore_err_max": 3.806478941571965e-16,
+   "flatness_max": 0.0,
+   "hausdorff_final_to_raw": 0.1260732150688818,
+   "hausdorff_raw_to_final": 0.08045794985145602,
+   "normal_dev_mean": 0.659754177704233,
+   "normal_dev_p99": 19.23348186038108,
+   "normal_dev_max": 60.59377206841781,
+   "min_angle": 26.550036280023953,
+   "min_angle_p1": 40.14324563906941,
+   "wall_ray": {
+    "min": 3.1291155196317874e-12,
+    "p1": 3.8285344015284455,
+    "p5": 3.97729989312001,
+    "median": 4.013923353665684
+   },
+   "wall_ball_p1": 0.7639233521371338,
+   "overhang_fraction": 0.0,
+   "r_open": 1.0,
+   "r_close": 1.0,
+   "open_change": -1.4422849346405932e-05,
+   "close_change": -3.557973365146262e-05,
+   "fillet_ok": true,
+   "seconds_post": 22.895164799999293,
+   "seconds_by_stage": {
+    "grid": 0.2473848999998154,
+    "threshold_sdf": 5.181890300000305,
+    "morphology": 6.44265809999979,
+    "cleanup": 0.130630900000142,
+    "surface": 6.219487499999559,
+    "report": 4.666596799999752,
+    "total": 22.89189500000066
+   },
+   "checks_passed": true,
+   "opt": {},
+   "criteria": {
+    "watertight": true,
+    "topology": true,
+    "volume_1pct": true,
+    "bore_1pct": true,
+    "flatness": true,
+    "min_angle_15": true,
+    "hausdorff_0p6hf": true
+   },
+   "passed": true,
+   "extra_criteria": {}
+  },
+  {
+   "input": "p04_l_bracket",
+   "grid": [
+    20,
+    8,
+    20
+   ],
+   "h_fine": 0.25,
+   "triangles": 19448,
+   "target_volume": 672.0,
+   "exact_volume": 672,
+   "volume_mesh": 672.488245295627,
+   "dV_vs_target": 0.000726555499445114,
+   "dV_vs_exact": 0.000726555499445114,
+   "volume_stages": {
+    "target": 672.0,
+    "thresholded": 672.0033056370345,
+    "islands_removed": 672.0033056370345,
+    "opened": 671.3616327006121,
+    "closed": 674.6969421646174,
+    "final_grid": 674.6969421646174
+   },
+   "topology_voxel_input": {
+    "bodies": 1,
+    "cavities": 0,
+    "euler": 1,
+    "tunnels": 0
+   },
+   "topology_before": {
+    "bodies": 1,
+    "cavities": 0,
+    "euler": 1,
+    "tunnels": 0
+   },
+   "topology_mesh": {
+    "bodies": 1,
+    "cavities": 0,
+    "euler": 1.0,
+    "tunnels": 0.0
+   },
+   "voids_filled": 0,
+   "islands": {
+    "after_threshold": {
+     "bodies_before": 1,
+     "removed": 0,
+     "removed_volume": 0.0,
+     "mode": "interfaces"
+    },
+    "final": {
+     "bodies_before": 1,
+     "removed": 0,
+     "removed_volume": 0.0,
+     "mode": "interfaces"
+    }
+   },
+   "edges": {
+    "edges": 29172,
+    "open": 0,
+    "non_manifold": 0,
+    "misoriented": 0,
+    "non_manifold_vertices": 0
+   },
+   "watertight": true,
+   "interfaces": [
+    {
+     "name": "envelope",
+     "role": "bound",
+     "shape": "box",
+     "vertices": 0
+    }
+   ],
+   "bore_err_max": null,
+   "flatness_max": null,
+   "hausdorff_final_to_raw": 0.051339047080153175,
+   "hausdorff_raw_to_final": 0.06172849964446322,
+   "normal_dev_mean": 0.9922654847282302,
+   "normal_dev_p99": 6.792620972643304,
+   "normal_dev_max": 48.82536923300566,
+   "min_angle": 24.356601156612875,
+   "min_angle_p1": 39.14970685056777,
+   "wall_ray": {
+    "min": 1.9824290280116073,
+    "p1": 2.992619325357305,
+    "p5": 4.093744459343765,
+    "median": 5.665152861328558
+   },
+   "wall_ball_p1": 3.1078736957902597,
+   "overhang_fraction": 0.005021614724304926,
+   "r_open": 1.0,
+   "r_close": 1.5,
+   "open_change": -0.0009548657440221093,
+   "close_change": 0.004124642786743565,
+   "fillet_ok": true,
+   "seconds_post": 26.285612200000287,
+   "seconds_by_stage": {
+    "grid": 0.45906490000015765,
+    "threshold_sdf": 9.661131399999249,
+    "morphology": 8.04866420000053,
+    "cleanup": 0.21445800000037707,
+    "surface": 4.384631099999751,
+    "report": 3.5050820999995267,
+    "total": 26.273158500000136
+   },
+   "checks_passed": true,
+   "opt": {},
+   "concave_radius": {
+    "radius": 1.5,
+    "max_added_depth": 0.11112032368212699,
+    "added_volume_fraction": 0.0031457562895973,
+    "tolerance": 0.125
+   },
+   "criteria": {
+    "watertight": true,
+    "topology": true,
+    "volume_1pct": true,
+    "bore_1pct": null,
+    "flatness": null,
+    "min_angle_15": true,
+    "hausdorff_0p6hf": true
+   },
+   "passed": true,
+   "extra_criteria": {
+    "concave_radius_ok": true
+   }
+  },
+  {
+   "input": "p05_thin_plate",
+   "grid": [
+    20,
+    20,
+    6
+   ],
+   "h_fine": 0.25,
+   "triangles": 17228,
+   "target_volume": 341.3333333333333,
+   "exact_volume": 320.0,
+   "volume_mesh": 337.92336719317666,
+   "dV_vs_target": -0.009990135176240256,
+   "dV_vs_exact": 0.056010522478677105,
+   "volume_stages": {
+    "target": 341.3333333333333,
+    "thresholded": 341.33336552185705,
+    "islands_removed": 341.33336552185705,
+    "opened": 336.7216805863014,
+    "closed": 339.06732704669173,
+    "final_grid": 339.06732704669173
+   },
+   "topology_voxel_input": {
+    "bodies": 1,
+    "cavities": 0,
+    "euler": 1,
+    "tunnels": 0
+   },
+   "topology_before": {
+    "bodies": 1,
+    "cavities": 0,
+    "euler": 1,
+    "tunnels": 0
+   },
+   "topology_mesh": {
+    "bodies": 1,
+    "cavities": 0,
+    "euler": 1.0,
+    "tunnels": 0.0
+   },
+   "voids_filled": 0,
+   "islands": {
+    "after_threshold": {
+     "bodies_before": 1,
+     "removed": 0,
+     "removed_volume": 0.0,
+     "mode": "interfaces"
+    },
+    "final": {
+     "bodies_before": 1,
+     "removed": 0,
+     "removed_volume": 0.0,
+     "mode": "interfaces"
+    }
+   },
+   "edges": {
+    "edges": 25842,
+    "open": 0,
+    "non_manifold": 0,
+    "misoriented": 0,
+    "non_manifold_vertices": 0
+   },
+   "watertight": true,
+   "interfaces": [
+    {
+     "name": "envelope",
+     "role": "bound",
+     "shape": "box",
+     "vertices": 0
+    }
+   ],
+   "bore_err_max": null,
+   "flatness_max": null,
+   "hausdorff_final_to_raw": 0.027822280826012055,
+   "hausdorff_raw_to_final": 0.020600244118281586,
+   "normal_dev_mean": 0.8769776680129894,
+   "normal_dev_p99": 5.853462303300873,
+   "normal_dev_max": 12.910673832379127,
+   "min_angle": 36.02678182251166,
+   "min_angle_p1": 44.15071145218601,
+   "wall_ray": {
+    "min": 1.5309531178348161,
+    "p1": 1.5314136697805927,
+    "p5": 1.532243861812495,
+    "median": 1.5322558533141217
+   },
+   "wall_ball_p1": 1.2813113662206863,
+   "overhang_fraction": 0.0,
+   "r_open": 0.5625,
+   "r_close": 1.0,
+   "open_change": -0.013510794435536558,
+   "close_change": 0.006476783564837943,
+   "fillet_ok": true,
+   "seconds_post": 21.19512339999983,
+   "seconds_by_stage": {
+    "grid": 0.27068249999956606,
+    "threshold_sdf": 6.377464900000632,
+    "morphology": 8.190787100000307,
+    "cleanup": 0.2083781999999701,
+    "surface": 3.687002599999687,
+    "report": 2.448650700000144,
+    "total": 21.18308049999996
+   },
+   "checks_passed": true,
+   "opt": {},
+   "criteria": {
+    "watertight": true,
+    "topology": true,
+    "volume_1pct": true,
+    "bore_1pct": null,
+    "flatness": null,
+    "min_angle_15": true,
+    "hausdorff_0p6hf": true
+   },
+   "passed": true,
+   "extra_criteria": {
+    "wall_p5_within_10pct": false
+   }
+  },
+  {
+   "input": "p06_lattice",
+   "grid": [
+    19,
+    19,
+    19
+   ],
+   "h_fine": 0.25,
+   "triangles": 69644,
+   "target_volume": 874.0,
+   "exact_volume": null,
+   "volume_mesh": 877.7466810202546,
+   "dV_vs_target": 0.004286820389307389,
+   "dV_vs_exact": null,
+   "volume_stages": {
+    "target": 874.0,
+    "thresholded": 874.0070987614432,
+    "islands_removed": 874.0070987614432,
+    "opened": 877.6090971236537,
+    "closed": 885.5138615950189,
+    "final_grid": 885.5138615950189
+   },
+   "topology_voxel_input": {
+    "bodies": 1,
+    "cavities": 0,
+    "euler": -27,
+    "tunnels": 28
+   },
+   "topology_before": {
+    "bodies": 1,
+    "cavities": 0,
+    "euler": -27,
+    "tunnels": 28
+   },
+   "topology_mesh": {
+    "bodies": 1,
+    "cavities": 0,
+    "euler": -27.0,
+    "tunnels": 28.0
+   },
+   "voids_filled": 0,
+   "islands": {
+    "after_threshold": {
+     "bodies_before": 1,
+     "removed": 0,
+     "removed_volume": 0.0,
+     "mode": "interfaces"
+    },
+    "final": {
+     "bodies_before": 1,
+     "removed": 0,
+     "removed_volume": 0.0,
+     "mode": "interfaces"
+    }
+   },
+   "edges": {
+    "edges": 104466,
+    "open": 0,
+    "non_manifold": 0,
+    "misoriented": 0,
+    "non_manifold_vertices": 0
+   },
+   "watertight": true,
+   "interfaces": [
+    {
+     "name": "envelope",
+     "role": "bound",
+     "shape": "box",
+     "vertices": 0
+    }
+   ],
+   "bore_err_max": null,
+   "flatness_max": null,
+   "hausdorff_final_to_raw": 0.018149426747846132,
+   "hausdorff_raw_to_final": 0.017629482047814653,
+   "normal_dev_mean": 3.7293888897514655,
+   "normal_dev_p99": 12.118032186305063,
+   "normal_dev_max": 15.52086893825772,
+   "min_angle": 20.46330233788685,
+   "min_angle_p1": 29.402099793219467,
+   "wall_ray": {
+    "min": 1.7162118311358072,
+    "p1": 1.7252713805978928,
+    "p5": 1.7426052934245315,
+    "median": 2.1954077809135297
+   },
+   "wall_ball_p1": 1.7659207063999731,
+   "overhang_fraction": 0.09332599812924425,
+   "r_open": 0.5625,
+   "r_close": 1.0,
+   "open_change": 0.004121246117239607,
+   "close_change": 0.006720165882393949,
+   "fillet_ok": true,
+   "seconds_post": 67.37122579999959,
+   "seconds_by_stage": {
+    "grid": 0.35855460000038875,
+    "threshold_sdf": 9.973565499999495,
+    "morphology": 27.910734000000048,
+    "cleanup": 0.37203779999981634,
+    "surface": 12.987285799999881,
+    "report": 15.672564599999532,
+    "total": 67.27485799999977
+   },
+   "checks_passed": true,
+   "opt": {},
+   "criteria": {
+    "watertight": true,
+    "topology": true,
+    "volume_1pct": true,
+    "bore_1pct": null,
+    "flatness": null,
+    "min_angle_15": true,
+    "hausdorff_0p6hf": true
+   },
+   "passed": true,
+   "extra_criteria": {}
+  },
+  {
+   "input": "p07_cavity",
+   "grid": [
+    14,
+    14,
+    14
+   ],
+   "h_fine": 0.25,
+   "triangles": 22120,
+   "target_volume": 933.6666666666667,
+   "exact_volume": 934.5501530502127,
+   "volume_mesh": 934.6806442707751,
+   "dV_vs_target": 0.0010860167127186848,
+   "dV_vs_exact": 0.00013962998147998285,
+   "volume_stages": {
+    "target": 933.6666666666667,
+    "thresholded": 933.6687080981465,
+    "islands_removed": 933.6687080981465,
+    "opened": 933.1955204695024,
+    "closed": 935.1954277028689,
+    "final_grid": 935.1954277028689
+   },
+   "topology_voxel_input": {
+    "bodies": 1,
+    "cavities": 1,
+    "euler": 2,
+    "tunnels": 0
+   },
+   "topology_before": {
+    "bodies": 1,
+    "cavities": 1,
+    "euler": 2,
+    "tunnels": 0
+   },
+   "topology_mesh": {
+    "bodies": 1,
+    "cavities": 1,
+    "euler": 2.0,
+    "tunnels": 0.0
+   },
+   "voids_filled": 0,
+   "islands": {
+    "after_threshold": {
+     "bodies_before": 1,
+     "removed": 0,
+     "removed_volume": 0.0,
+     "mode": "interfaces"
+    },
+    "final": {
+     "bodies_before": 1,
+     "removed": 0,
+     "removed_volume": 0.0,
+     "mode": "interfaces"
+    }
+   },
+   "edges": {
+    "edges": 33180,
+    "open": 0,
+    "non_manifold": 0,
+    "misoriented": 0,
+    "non_manifold_vertices": 0
+   },
+   "watertight": true,
+   "interfaces": [
+    {
+     "name": "envelope",
+     "role": "bound",
+     "shape": "box",
+     "vertices": 0
+    }
+   ],
+   "bore_err_max": null,
+   "flatness_max": null,
+   "hausdorff_final_to_raw": 0.016891053500099482,
+   "hausdorff_raw_to_final": 0.013315454357813217,
+   "normal_dev_mean": 1.031124365926366,
+   "normal_dev_p99": 5.443359975443073,
+   "normal_dev_max": 8.842448993316172,
+   "min_angle": 26.39131869254251,
+   "min_angle_p1": 35.75875249790154,
+   "wall_ray": {
+    "min": 2.781539752741207,
+    "p1": 2.829460219927403,
+    "p5": 3.0348234131359537,
+    "median": 5.439660363192262
+   },
+   "wall_ball_p1": 3.071629324948627,
+   "overhang_fraction": 0.016232628922545032,
+   "r_open": 1.0,
+   "r_close": 1.0,
+   "open_change": -0.0005068046348130369,
+   "close_change": 0.0018590797308136247,
+   "fillet_ok": true,
+   "seconds_post": 18.318690299999616,
+   "seconds_by_stage": {
+    "grid": 0.20748099999946135,
+    "threshold_sdf": 4.600740500000029,
+    "morphology": 6.630239500000243,
+    "cleanup": 0.2321183000003657,
+    "surface": 3.1398472000000766,
+    "report": 3.4960141999999905,
+    "total": 18.30655779999961
+   },
+   "checks_passed": false,
+   "opt": {},
+   "criteria": {
+    "watertight": true,
+    "topology": true,
+    "volume_1pct": true,
+    "bore_1pct": null,
+    "flatness": null,
+    "min_angle_15": true,
+    "hausdorff_0p6hf": true
+   },
+   "passed": true,
+   "extra_criteria": {}
+  },
+  {
+   "input": "r1_cantilever",
+   "grid": [
+    30,
+    10,
+    10
+   ],
+   "h_fine": 0.25,
+   "triangles": 61552,
+   "target_volume": 899.9996377491049,
+   "exact_volume": null,
+   "volume_mesh": 898.1252229996566,
+   "dV_vs_target": -0.002082683893224857,
+   "dV_vs_exact": null,
+   "volume_stages": {
+    "target": 899.9996377491049,
+    "thresholded": 900.0004846701029,
+    "islands_removed": 900.0004846701029,
+    "opened": 900.2609446911853,
+    "closed": 902.3878909906368,
+    "final_grid": 902.3878909906368
+   },
+   "topology_voxel_input": {
+    "bodies": 1,
+    "cavities": 0,
+    "euler": -12,
+    "tunnels": 13
+   },
+   "topology_before": {
+    "bodies": 1,
+    "cavities": 0,
+    "euler": -7,
+    "tunnels": 8
+   },
+   "topology_mesh": {
+    "bodies": 1,
+    "cavities": 0,
+    "euler": -7.0,
+    "tunnels": 8.0
+   },
+   "voids_filled": 0,
+   "islands": {
+    "after_threshold": {
+     "bodies_before": 1,
+     "removed": 0,
+     "removed_volume": 0.0,
+     "mode": "interfaces"
+    },
+    "final": {
+     "bodies_before": 1,
+     "removed": 0,
+     "removed_volume": 0.0,
+     "mode": "interfaces"
+    }
+   },
+   "edges": {
+    "edges": 92328,
+    "open": 0,
+    "non_manifold": 0,
+    "misoriented": 0,
+    "non_manifold_vertices": 0
+   },
+   "watertight": true,
+   "interfaces": [
+    {
+     "name": "envelope",
+     "role": "bound",
+     "shape": "box",
+     "vertices": 14034,
+     "distance_mean": -5.815383908273317e-06,
+     "distance_min": -0.08161309776870773,
+     "distance_max": 0.0
+    }
+   ],
+   "bore_err_max": null,
+   "flatness_max": null,
+   "hausdorff_final_to_raw": 0.14310836194509524,
+   "hausdorff_raw_to_final": 0.08333333333333393,
+   "normal_dev_mean": 1.9982976748117862,
+   "normal_dev_p99": 23.386228696980922,
+   "normal_dev_max": 82.0709511834298,
+   "min_angle": 22.47046057946119,
+   "min_angle_p1": 32.06889358846635,
+   "wall_ray": {
+    "min": 1.6355677699046112e-12,
+    "p1": 0.5040848972868334,
+    "p5": 0.7692835142232081,
+    "median": 1.4747204845690183
+   },
+   "wall_ball_p1": 0.6369907980817988,
+   "overhang_fraction": 0.05508109512248547,
+   "r_open": 0.2373046875,
+   "r_close": 1.0,
+   "open_change": 0.00028939986757659,
+   "close_change": 0.0024639142788064183,
+   "fillet_ok": true,
+   "seconds_post": 132.45639289999963,
+   "seconds_by_stage": {
+    "grid": 1.6768326999999772,
+    "threshold_sdf": 14.571700700000292,
+    "morphology": 74.30691680000018,
+    "cleanup": 0.804075300000477,
+    "surface": 16.603971599999568,
+    "report": 24.47574329999952,
+    "total": 132.43935220000003
+   },
+   "checks_passed": false,
+   "opt": {
+    "iterations": 40,
+    "seconds": 78.8191928999995,
+    "compliance": 37.83359952817315
+   },
+   "criteria": {
+    "watertight": true,
+    "topology": true,
+    "volume_1pct": true,
+    "bore_1pct": null,
+    "flatness": null,
+    "min_angle_15": true,
+    "hausdorff_0p6hf": true
+   },
+   "passed": true,
+   "extra_criteria": {},
+   "t10": {
+    "runs": [
+     {
+      "size": 1.0,
+      "elements": 18919,
+      "dofs": 108423,
+      "compliance_t10": 36.77985882368131,
+      "compliance_voxel": 37.834155703167355,
+      "ratio": 0.9721337278474597,
+      "max_disp_ratio": 0.9965247552360773,
+      "volume_ratio": 0.9881286250856303,
+      "seconds": 130.35161380000045
+     },
+     {
+      "size": 0.5,
+      "elements": 185800,
+      "dofs": 924951,
+      "compliance_t10": 32.73085144544155,
+      "compliance_voxel": 37.834155703167355,
+      "ratio": 0.8651138326499362,
+      "max_disp_ratio": 0.8739848492348293,
+      "volume_ratio": 0.9979173155939596,
+      "seconds": 1121.2845109999998
+     }
+    ],
+    "ratio_rel_change": 0.12370614265837136,
+    "converged_5pct": false
+   }
+  },
+  {
+   "input": "r2_mbb3d",
+   "grid": [
+    48,
+    8,
+    12
+   ],
+   "h_fine": 0.25,
+   "triangles": 55796,
+   "target_volume": 691.1785828513908,
+   "exact_volume": null,
+   "volume_mesh": 679.6454714762598,
+   "dV_vs_target": -0.01668615269812368,
+   "dV_vs_exact": null,
+   "volume_stages": {
+    "target": 691.1785828513908,
+    "thresholded": 691.1816642755861,
+    "islands_removed": 691.1816642755861,
+    "opened": 681.9010760661629,
+    "closed": 685.7071014622248,
+    "final_grid": 685.7071014622248
+   },
+   "topology_voxel_input": {
+    "bodies": 1,
+    "cavities": 0,
+    "euler": -9,
+    "tunnels": 10
+   },
+   "topology_before": {
+    "bodies": 1,
+    "cavities": 0,
+    "euler": -4,
+    "tunnels": 5
+   },
+   "topology_mesh": {
+    "bodies": 1,
+    "cavities": 0,
+    "euler": -4.0,
+    "tunnels": 5.0
+   },
+   "voids_filled": 0,
+   "islands": {
+    "after_threshold": {
+     "bodies_before": 1,
+     "removed": 0,
+     "removed_volume": 0.0,
+     "mode": "interfaces"
+    },
+    "final": {
+     "bodies_before": 1,
+     "removed": 0,
+     "removed_volume": 0.0,
+     "mode": "interfaces"
+    }
+   },
+   "edges": {
+    "edges": 83694,
+    "open": 0,
+    "non_manifold": 0,
+    "misoriented": 0,
+    "non_manifold_vertices": 0
+   },
+   "watertight": true,
+   "interfaces": [
+    {
+     "name": "envelope",
+     "role": "bound",
+     "shape": "box",
+     "vertices": 11991,
+     "distance_mean": 0.0,
+     "distance_min": 0.0,
+     "distance_max": 0.0
+    }
+   ],
+   "bore_err_max": null,
+   "flatness_max": null,
+   "hausdorff_final_to_raw": 0.1788897407923665,
+   "hausdorff_raw_to_final": 0.09854711982329661,
+   "normal_dev_mean": 2.63734540340409,
+   "normal_dev_p99": 32.8956646411614,
+   "normal_dev_max": 86.98969277609407,
+   "min_angle": 22.031666772586416,
+   "min_angle_p1": 32.204477074872614,
+   "wall_ray": {
+    "min": 8.472022309087198e-13,
+    "p1": 0.45881267301610873,
+    "p5": 0.7858339100951677,
+    "median": 1.1736786378517012
+   },
+   "wall_ball_p1": 0.2483503497045441,
+   "overhang_fraction": 0.05335625548076922,
+   "r_open": 1.0,
+   "r_close": 1.0,
+   "open_change": -0.01342713311000513,
+   "close_change": 0.0052586687999931015,
+   "fillet_ok": true,
+   "seconds_post": 22.51420639999924,
+   "seconds_by_stage": {
+    "grid": 1.0563081999998758,
+    "threshold_sdf": 5.063449299999775,
+    "morphology": 5.743119599999773,
+    "cleanup": 0.20793849999972736,
+    "surface": 4.0372033000003285,
+    "report": 6.394029500000215,
+    "total": 22.50217960000009
+   },
+   "checks_passed": false,
+   "opt": {
+    "iterations": 120,
+    "seconds": 103.29669850000028,
+    "compliance": 11.137147531562537
+   },
+   "criteria": {
+    "watertight": true,
+    "topology": true,
+    "volume_1pct": false,
+    "bore_1pct": null,
+    "flatness": null,
+    "min_angle_15": true,
+    "hausdorff_0p6hf": false
+   },
+   "passed": false,
+   "extra_criteria": {},
+   "t10": {
+    "runs": [
+     {
+      "size": 1.0,
+      "elements": 140550,
+      "dofs": 721374,
+      "compliance_t10": 13.100619743280074,
+      "compliance_voxel": 11.137543879237754,
+      "ratio": 1.1762575200894896,
+      "max_disp_ratio": 1.2278049225514225,
+      "volume_ratio": 0.9802298022273211,
+      "seconds": 228.33871780000027
+     },
+     {
+      "size": 0.5,
+      "elements": 143062,
+      "dofs": 740022,
+      "compliance_t10": 12.979487879876794,
+      "compliance_voxel": 11.137543879237754,
+      "ratio": 1.1653815258203142,
+      "max_disp_ratio": 1.217527871117001,
+      "volume_ratio": 0.9833138509218402,
+      "seconds": 217.1327169999995
+     }
+    ],
+    "ratio_rel_change": 0.009332561078244116,
+    "converged_5pct": true
+   }
+  },
+  {
+   "input": "r3_bores",
+   "grid": [
+    32,
+    6,
+    20
+   ],
+   "h_fine": 0.25,
+   "triangles": 40148,
+   "target_volume": 644.5166976341002,
+   "exact_volume": null,
+   "volume_mesh": 645.382762723426,
+   "dV_vs_target": 0.0013437434476173404,
+   "dV_vs_exact": null,
+   "volume_stages": {
+    "target": 644.5166976341002,
+    "thresholded": 644.5149011326563,
+    "islands_removed": 642.9986184295785,
+    "opened": 643.6600607850467,
+    "closed": 647.7542216258144,
+    "final_grid": 647.7542216258144
+   },
+   "topology_voxel_input": {
+    "bodies": 1,
+    "cavities": 0,
+    "euler": -10,
+    "tunnels": 11
+   },
+   "topology_before": {
+    "bodies": 1,
+    "cavities": 0,
+    "euler": -4,
+    "tunnels": 5
+   },
+   "topology_mesh": {
+    "bodies": 1,
+    "cavities": 0,
+    "euler": -4.0,
+    "tunnels": 5.0
+   },
+   "voids_filled": 0,
+   "islands": {
+    "after_threshold": {
+     "bodies_before": 3,
+     "removed": 2,
+     "removed_volume": 1.578125,
+     "mode": "interfaces"
+    },
+    "final": {
+     "bodies_before": 1,
+     "removed": 0,
+     "removed_volume": 0.0,
+     "mode": "interfaces"
+    }
+   },
+   "edges": {
+    "edges": 60222,
+    "open": 0,
+    "non_manifold": 0,
+    "misoriented": 0,
+    "non_manifold_vertices": 0
+   },
+   "watertight": true,
+   "interfaces": [
+    {
+     "name": "bore_a",
+     "role": "cut",
+     "shape": "cylinder",
+     "vertices": 1794,
+     "nominal_radius": 2.5,
+     "radius_mean": 2.5,
+     "radius_min": 2.4999999999999982,
+     "radius_max": 2.5000000000000018,
+     "radius_rel_error_max": 7.105427357601002e-16,
+     "distance_mean": 1.4109857838045468e-17,
+     "distance_min": -1.7763568394002505e-15,
+     "distance_max": 1.7763568394002505e-15
+    },
+    {
+     "name": "bore_b",
+     "role": "cut",
+     "shape": "cylinder",
+     "vertices": 1794,
+     "nominal_radius": 2.5,
+     "radius_mean": 2.5,
+     "radius_min": 2.4999999999999982,
+     "radius_max": 2.5000000000000018,
+     "radius_rel_error_max": 7.105427357601002e-16,
+     "distance_mean": -1.3614775106885977e-17,
+     "distance_min": -1.7763568394002505e-15,
+     "distance_max": 1.7763568394002505e-15
+    }
+   ],
+   "bore_err_max": 7.105427357601002e-16,
+   "flatness_max": null,
+   "hausdorff_final_to_raw": 0.19698581883713645,
+   "hausdorff_raw_to_final": 0.12715655560193484,
+   "normal_dev_mean": 3.9527051030700058,
+   "normal_dev_p99": 39.00079860908972,
+   "normal_dev_max": 77.17566177258222,
+   "min_angle": 22.79683092266453,
+   "min_angle_p1": 32.64390732208707,
+   "wall_ray": {
+    "min": 5.801329051473358e-13,
+    "p1": 3.3230945351944476e-12,
+    "p5": 0.6528176578971527,
+    "median": 2.0042726509830207
+   },
+   "wall_ball_p1": 0.30470306247604484,
+   "overhang_fraction": 0.12721539935195536,
+   "r_open": 0.2373046875,
+   "r_close": 1.0,
+   "open_change": 0.001028683945050446,
+   "close_change": 0.005994267144913058,
+   "fillet_ok": true,
+   "seconds_post": 171.19131239999933,
+   "seconds_by_stage": {
+    "grid": 10.358092200000101,
+    "threshold_sdf": 12.510739999999714,
+    "morphology": 112.93130460000066,
+    "cleanup": 0.8963812000001781,
+    "surface": 17.200441600000886,
+    "report": 17.273237499999595,
+    "total": 171.1710580000008
+   },
+   "checks_passed": false,
+   "opt": {
+    "iterations": 120,
+    "seconds": 147.1874471000001,
+    "compliance": 49.67945380265714
+   },
+   "criteria": {
+    "watertight": true,
+    "topology": true,
+    "volume_1pct": true,
+    "bore_1pct": true,
+    "flatness": null,
+    "min_angle_15": true,
+    "hausdorff_0p6hf": false
+   },
+   "passed": false,
+   "extra_criteria": {}
+  },
+  {
+   "input": "r4_robust_minsize",
+   "grid": [
+    30,
+    8,
+    10
+   ],
+   "h_fine": 0.25,
+   "triangles": 43760,
+   "target_volume": 737.8945966948274,
+   "exact_volume": null,
+   "volume_mesh": 737.9010572926005,
+   "dV_vs_target": 8.755448003050503e-06,
+   "dV_vs_exact": null,
+   "volume_stages": {
+    "target": 737.8945966948274,
+    "thresholded": 737.8948478974199,
+    "islands_removed": 737.8948478974199,
+    "opened": 740.841664205455,
+    "closed": 742.1337447901199,
+    "final_grid": 742.1337447901199
+   },
+   "topology_voxel_input": {
+    "bodies": 1,
+    "cavities": 0,
+    "euler": -4,
+    "tunnels": 5
+   },
+   "topology_before": {
+    "bodies": 1,
+    "cavities": 0,
+    "euler": -4,
+    "tunnels": 5
+   },
+   "topology_mesh": {
+    "bodies": 1,
+    "cavities": 0,
+    "euler": -4.0,
+    "tunnels": 5.0
+   },
+   "voids_filled": 0,
+   "islands": {
+    "after_threshold": {
+     "bodies_before": 1,
+     "removed": 0,
+     "removed_volume": 0.0,
+     "mode": "interfaces"
+    },
+    "final": {
+     "bodies_before": 1,
+     "removed": 0,
+     "removed_volume": 0.0,
+     "mode": "interfaces"
+    }
+   },
+   "edges": {
+    "edges": 65640,
+    "open": 0,
+    "non_manifold": 0,
+    "misoriented": 0,
+    "non_manifold_vertices": 0
+   },
+   "watertight": true,
+   "interfaces": [
+    {
+     "name": "envelope",
+     "role": "bound",
+     "shape": "box",
+     "vertices": 9198,
+     "distance_mean": 0.0,
+     "distance_min": 0.0,
+     "distance_max": 0.0
+    }
+   ],
+   "bore_err_max": null,
+   "flatness_max": null,
+   "hausdorff_final_to_raw": 0.16652444961969678,
+   "hausdorff_raw_to_final": 0.08333333333333393,
+   "normal_dev_mean": 2.434066954824999,
+   "normal_dev_p99": 29.51551937375638,
+   "normal_dev_max": 74.63905979752384,
+   "min_angle": 20.848925071153346,
+   "min_angle_p1": 30.37363051486827,
+   "wall_ray": {
+    "min": 1.4133200661607731e-12,
+    "p1": 0.7048804639244362,
+    "p5": 1.0902434787745399,
+    "median": 2.057337358800514
+   },
+   "wall_ball_p1": 0.75,
+   "overhang_fraction": 0.08174001836649752,
+   "r_open": 1.0,
+   "r_close": 1.0,
+   "open_change": 0.003993545037523728,
+   "close_change": 0.0015946538977051707,
+   "fillet_ok": true,
+   "seconds_post": 38.72737249999955,
+   "seconds_by_stage": {
+    "grid": 0.5936382999998386,
+    "threshold_sdf": 11.044779199999539,
+    "morphology": 9.51032529999975,
+    "cleanup": 0.2075871000006373,
+    "surface": 9.459349599999769,
+    "report": 7.905854499999805,
+    "total": 38.7216612000002
+   },
+   "checks_passed": false,
+   "opt": {
+    "iterations": 100,
+    "seconds": 212.53726180000012,
+    "compliance": 86.65917109831132,
+    "min_size_nominal": 2.0
+   },
+   "criteria": {
+    "watertight": true,
+    "topology": true,
+    "volume_1pct": true,
+    "bore_1pct": null,
+    "flatness": null,
+    "min_angle_15": true,
+    "hausdorff_0p6hf": false
+   },
+   "passed": false,
+   "extra_criteria": {}
+  },
+  {
+   "input": "r5_onebody_c12",
+   "grid": [
+    24,
+    16,
+    8
+   ],
+   "h_fine": 0.25,
+   "triangles": 22300,
+   "target_volume": 307.22734643821434,
+   "exact_volume": null,
+   "volume_mesh": 306.26456931558505,
+   "dV_vs_target": -0.0031337611504674845,
+   "dV_vs_exact": null,
+   "volume_stages": {
+    "target": 307.22734643821434,
+    "thresholded": 307.2275678585023,
+    "islands_removed": 307.2275678585023,
+    "opened": 308.25281710284247,
+    "closed": 309.7591201278714,
+    "final_grid": 309.7591201278714
+   },
+   "topology_voxel_input": {
+    "bodies": 1,
+    "cavities": 0,
+    "euler": 1,
+    "tunnels": 0
+   },
+   "topology_before": {
+    "bodies": 1,
+    "cavities": 0,
+    "euler": 1,
+    "tunnels": 0
+   },
+   "topology_mesh": {
+    "bodies": 1,
+    "cavities": 0,
+    "euler": 1.0,
+    "tunnels": 0.0
+   },
+   "voids_filled": 0,
+   "islands": {
+    "after_threshold": {
+     "bodies_before": 1,
+     "removed": 0,
+     "removed_volume": 0.0,
+     "mode": "interfaces"
+    },
+    "final": {
+     "bodies_before": 1,
+     "removed": 0,
+     "removed_volume": 0.0,
+     "mode": "interfaces"
+    }
+   },
+   "edges": {
+    "edges": 33450,
+    "open": 0,
+    "non_manifold": 0,
+    "misoriented": 0,
+    "non_manifold_vertices": 0
+   },
+   "watertight": true,
+   "interfaces": [
+    {
+     "name": "envelope",
+     "role": "bound",
+     "shape": "box",
+     "vertices": 4925,
+     "distance_mean": -6.892102995450161e-06,
+     "distance_min": -0.033943607252592045,
+     "distance_max": 0.0
+    }
+   ],
+   "bore_err_max": null,
+   "flatness_max": null,
+   "hausdorff_final_to_raw": 0.14340741982029276,
+   "hausdorff_raw_to_final": 0.07078013111513418,
+   "normal_dev_mean": 1.968993984482121,
+   "normal_dev_p99": 21.660843021868068,
+   "normal_dev_max": 70.82619679322374,
+   "min_angle": 23.582371813974163,
+   "min_angle_p1": 34.673459935598515,
+   "wall_ray": {
+    "min": 2.1409279213158242e-12,
+    "p1": 0.8156211536824832,
+    "p5": 1.0060176907047358,
+    "median": 1.888067678120922
+   },
+   "wall_ball_p1": 0.75,
+   "overhang_fraction": 0.03327894815691294,
+   "r_open": 0.75,
+   "r_close": 1.0,
+   "open_change": 0.003337100415456048,
+   "close_change": 0.0037078137133516624,
+   "fillet_ok": true,
+   "seconds_post": 57.593579400000635,
+   "seconds_by_stage": {
+    "grid": 4.2119173999999475,
+    "threshold_sdf": 14.699552500000209,
+    "morphology": 22.61855039999955,
+    "cleanup": 0.3480029000002105,
+    "surface": 7.459793700000773,
+    "report": 8.24233600000025,
+    "total": 57.58027140000013
+   },
+   "checks_passed": false,
+   "opt": {
+    "iterations": 120,
+    "seconds": 262.0529352000003,
+    "compliance": 25.643650535376644,
+    "connectivity_verdict": "PASS"
+   },
+   "criteria": {
+    "watertight": true,
+    "topology": true,
+    "volume_1pct": true,
+    "bore_1pct": null,
+    "flatness": null,
+    "min_angle_15": true,
+    "hausdorff_0p6hf": true
+   },
+   "passed": true,
+   "extra_criteria": {}
+  }
+ ]
+}
