@@ -3,9 +3,9 @@ requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "aerokit"
+name = "toporlogy"
 version = "0.2.0"
-description = "aerokit.topo: modular density-based topology optimisation on regular grids (PyTorch autograd, PARDISO, MMA)"
+description = "Modular density-based topology optimisation on regular 2-D/3-D grids: differentiable FEM, OC/MMA, manufacturing and connectivity constraints, multigrid, post-processing"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = ["numpy>=1.26", "scipy>=1.11", "torch>=2.2", "pyyaml>=6"]
@@ -18,13 +18,13 @@ mesh = ["gmsh>=4.11"]
 dev = ["pytest>=8", "pytest-timeout", "hypothesis>=6", "mypy>=1.10", "ruff>=0.5"]
 
 [project.scripts]
-aerokit-topo = "aerokit.topo.cli:main"
+toporlogy = "toporlogy.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
 
 [tool.setuptools.package-data]
-aerokit = ["data/**/*", "materials/data/*.md", "materials/data/figures/*", "materials/data/curves/*.md", "materials/data/composites/*.md", "py.typed"]
+toporlogy = ["py.typed"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -45,12 +45,12 @@ ignore = ["E741", "E731", "S101", "RET504", "SIM108"]
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = ["S", "B", "E501"]
 # PARDISO must be loaded before torch is imported (duplicate libiomp5md otherwise aborts the process)
-"src/aerokit/topo/__init__.py" = ["E402"]
+"src/toporlogy/__init__.py" = ["E402"]
 
 [tool.mypy]
 python_version = "3.12"
 mypy_path = "src"
-packages = ["aerokit"]
+packages = ["toporlogy"]
 ignore_missing_imports = true
 warn_unused_ignores = true
 warn_redundant_casts = true

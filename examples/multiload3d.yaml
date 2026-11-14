@@ -1,0 +1,26 @@
+# 3-D cantilever with two load cases (vertical and lateral tip load), weighted compliance sum, MMA.
+# The weights scale the cases to a similar size; compliance uses them (objective weights null = case weights).
+# Units: consistent, dimensionless (h = 1, E0 = 1). rmin is in elements.
+#   python -m toporlogy run examples/multiload3d.yaml
+#   python -m toporlogy run examples/multiload3d.yaml --sweep load_cases.1.weight=0.5,1,2
+name: multiload3d
+domain: {type: box, shape: [20, 8, 6], h: 1.0}
+material: {E0: 1.0, nu: 0.3}
+supports:
+  - {type: fixed, where: {type: plane, axis: x, at: min}}
+load_cases:
+  - name: vertical
+    weight: 1.0
+    loads:
+      - {type: force, where: {type: point, at: [max, 4, 0]}, force: [0, 0, -1]}
+  - name: lateral
+    weight: 1.0
+    loads:
+      - {type: force, where: {type: point, at: [max, 4, 0]}, force: [0, 0.5, 0]}
+chain:
+  - {type: density_filter, rmin: 1.5}
+objective: compliance
+constraints:
+  - {response: volume, upper: 0.25}
+optimizer: {type: mma, move: 0.2}
+run: {max_iter: 80, tol: 0.01}

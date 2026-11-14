@@ -1,22 +1,22 @@
 # Component registry — how to add a component
 
-`aerokit.topo.registry` maps `(kind, name)` to a constructor. A config names a component either as a plain string
+`toporlogy.registry` maps `(kind, name)` to a constructor. A config names a component either as a plain string
 (all defaults) or as a mapping `{type: <name>, <param>: <value>, ...}`. Parameters, defaults and types are read from
-the constructor's signature, so a new component needs **one `register` call**. `python -m aerokit.topo list`
+the constructor's signature, so a new component needs **one `register` call**. `python -m toporlogy list`
 shows everything that is registered.
 
 ## One line
 
 ```python
-from aerokit.topo.registry import register
+from toporlogy.registry import register
 
 register("link", "am_filter", AMFilter, context=("domain",))      # AMFilter(domain, direction="+z", ...)
 register("response", "displacement", Displacement)                # Displacement(dof, case=0)
-register("optimizer", "gcmma", "aerokit.topo.optim.gcmma:GCMMA")  # lazy: imported on first use
+register("optimizer", "gcmma", "toporlogy.optim.gcmma:GCMMA")  # lazy: imported on first use
 ```
 
 Put the call at the bottom of the module that defines the component. The module must be imported before the
-config is resolved: either `aerokit.topo` imports it, or the registry imports it lazily through a
+config is resolved: either `toporlogy` imports it, or the registry imports it lazily through a
 `"package.module:attr"` string (preferred for optional parts; register the string in `registry._register_core`
 or in a module that is imported anyway).
 
@@ -65,7 +65,7 @@ A response may carry `config_upper` (and `config_scale`): its default constraint
 
 ## Feature components (registered in `registry._register_features`)
 
-`python -m aerokit.topo list <kind>` prints every parameter with its default and unit.
+`python -m toporlogy list <kind>` prints every parameter with its default and unit.
 
 | kind | names |
 |------|-------|
@@ -85,7 +85,7 @@ Top-level blocks handled by `config.py`: `robust` (min_solid / min_void in lengt
 thresholds; a `heaviside_projection` is added when missing), `connectivity` (one body via
 `connectivity.one_body`: interfaces, ties, constraint, gate, repair), `combinations`, per-case `supports`,
 `run.move_beta_ref`. Post steps that fail are recorded in `summary.json` (`passed: false`) and make the run exit 1;
-`manufacturing_checks`, `export` and `reverify` need a `finalize` before them. Examples: `examples/topo/*.yaml`.
+`manufacturing_checks`, `export` and `reverify` need a `finalize` before them. Examples: `examples/*.yaml`.
 
 ## Chain ends
 
@@ -97,7 +97,7 @@ last. A link that maps a reduced variable vector to the design vector (symmetry,
 
 ```python
 import numpy as np
-from aerokit.topo.registry import register
+from toporlogy.registry import register
 
 def sphere(ctx, centre: list, radius: float):
     """Part nodes within `radius` (length) of `centre`."""
@@ -116,7 +116,7 @@ supports:
 
 ## Testing a new component
 
-Register it, build a small config with `aerokit.topo.config.build_setup(raw)`, and check the built object
-(`tests/topo/test_config.py::test_register_new_components_one_line` is a template). Remove test-only components with
+Register it, build a small config with `toporlogy.config.build_setup(raw)`, and check the built object
+(`tests/toporlogy/test_config.py::test_register_new_components_one_line` is a template). Remove test-only components with
 `REGISTRY.unregister(kind, name)`. Links and responses also need the finite-difference check
-(`aerokit.topo.checks.gradcheck`).
+(`toporlogy.checks.gradcheck`).

@@ -1,47 +1,96 @@
-# aerokit.topo — modular topology optimisation
+# toporlogy
 
-Density-based topology optimisation on regular 2-D/3-D grids, written to be experimented with: every stage of the
-pipeline is a small, replaceable object, derivatives come from PyTorch autograd (plus one hand-written adjoint for
-the linear solve), and every new piece is checked against finite differences and against earlier validated drivers.
+**Topology optimisation you can take apart.** Density-based structural optimisation on regular 2-D and 3-D grids,
+built as small replaceable pieces: geometry and boundary conditions, a differentiable design chain, linear FEM with an
+exact adjoint, OC/MMA optimisers, manufacturing and connectivity constraints, a GPU multigrid solver, and a
+post-processing pipeline that turns the density field into a checked, printable surface.
 
-```
-Domain ─► Chain (design → physical density) ─► Interpolation ─► Physics (K(E)u = f) ─► Responses ─► Optimizer ─► Study ─► Recorder ─► Post-processing
-```
+Derivatives come from PyTorch autograd plus one hand-written adjoint for the linear solve, so a new objective or
+constraint is a forward computation and a finite-difference test, nothing more.
 
-## Status
-
-| Area | Module | State |
-|---|---|---|
-| Core: domain, chain (embed, density filter, tanh projection, passive), SIMP/RAMP, linear elasticity (H8, H8IM, Q4), compliance, volume, OC, Study loop (final design re-evaluated), run folders | `domain`, `chain`, `interp`, `fem/elastic`, `responses`, `optim/oc`, `study`, `record` | done; reproduces the repository's earlier 3-D voxel driver to ≤ 3e-11 and its Python port of top88 to 1.4e-11 (relative compliance history). These are regression oracles, not independent references: a comparison against the original DTU MATLAB code is still open |
-| MMA (any number of constraints) | `optim/mma` | done; reproduces the earlier 2-D MMA driver to 2.4e-9 |
-| Boundary conditions and loads: geometric selectors (bore faces with normal filter, planes, shapes), fixed / roller / symmetry / pinned bore / elastic supports, distributed point loads, traction, pressure, bearing, remote force & moment, torque, body force, load cases, per-case supports, rigid-body and resultant checks | `bc` | done |
-| Geometry: CSG primitives, STL voxelisation with partial volumes, automatic bore detection | `geometry` | done |
-| Length scale: robust (eroded / blueprint / dilated) minimum solid and void size, maximum thickness (local volume), grey level, thickness measurement | `robust`, `lengthscale` | done |
-| Connectivity: one-body gate (thresholds, erosion, min-cut necks, enclosed voids), frozen minimum ties, conduction and coupling constraints, bridge repair, one-call plan `one_body()` | `connectivity`, `fem/heat` | done; on the splitting benchmark plain compliance TO gives 2 bodies, `one_body()` gives PASS |
-| Manufacturing: AM overhang filter (±x/±y/±z), symmetry / extrusion / pattern tying, casting / milling pull direction | `manufacturing` | done |
-| Eigenfrequency: consistent mass, differentiable eigenvalues, KS aggregation, two-range interpolation against spurious modes | `fem/modal`, `dynamics` | done |
-| Post-processing: density → SDF, topology-preserving regularisation, exact functional faces, smoothing, mesh checks, T10 re-verification, export | `post/` | done; T10 mesh convergence on optimised parts not yet established |
-| Declarative studies: YAML/JSON config, component registry (all feature modules), BC check in `validate`, CLI (`run`, `validate`, `show`, `compare`, `list`, sweeps) | `config`, `registry`, `cli` | done |
-| Fast solver: matrix-free geometric multigrid (CUDA mixed precision, K-cycle, rigid-island deflation) with direct fallback, exact tolerance contract, fail-closed by default | `solvers/gmg`, `fem/elastic_gmg` | done; solver gate passed (`docs/olcumler/A2.md`; measured on a loaded machine, ratios are bounds) |
-
-## Install and run
+## Quickstart
 
 ```bash
-pip install -e .            # numpy, scipy, torch, pyyaml
-pip install -e .[post,fast,mesh,dev]   # pyvista/vtk, pypardiso (MKL), gmsh, test tools
+git clone https://github.com/ayberkdt/toporlogy && cd toporlogy
+pip install -e .                                  # numpy, scipy, torch, pyyaml
+python -m toporlogy run examples/mbb2d.yaml --out runs/mbb
 ```
 
+The run prints one line per iteration and ends with a `RESULT` line; the folder holds the resolved config, the
+history and the final design. Then try a real part:
+
 ```bash
-python -m aerokit.topo validate examples/topo/mbb2d.yaml
-python -m aerokit.topo run examples/topo/mbb2d.yaml --out runs/mbb
-python -m aerokit.topo run examples/topo/mbb2d.yaml --sweep chain.0.rmin=1.5,2.5 --sweep constraints.0.upper=0.4,0.5
-python -m aerokit.topo compare runs/mbb runs/other
-python -m aerokit.topo list
+python -m toporlogy validate examples/lbracket_bore3d.yaml     # checks supports, loads, rigid-body modes
+python -m toporlogy run examples/lbracket_bore3d.yaml --out runs/lbracket
 ```
+
+That example builds an L-bracket from primitives, finds its bore, applies a bearing load, enforces a minimum and a
+maximum member size, keeps the part in one body, and exports a smoothed STL with a quality report.
+
+Optional extras: `pip install -e ".[post,fast,mesh,dev]"` adds pyvista/vtk (surfaces), pypardiso (MKL direct solver),
+gmsh (tetrahedral re-verification) and the test tools.
+
+## What is inside
+
+The library follows the optimisation pipeline; every stage is a module you can use alone or replace.
+
+| Stage | Module | What it gives you |
+|:---|:---|:---|
+| Geometry | `geometry` | CSG primitives and STL voxelisation with partial volumes; automatic bore detection |
+| Boundary conditions | `bc` | Selectors by geometry (bore faces, planes, shapes); 5 support types; 9 distributed load types incl. bearing and remote loads; load cases; resultant and rigid-body checks |
+| Design chain | `chain`, `manufacturing` | Density filter, tanh projection, keep/void regions; AM overhang filter (any axis), symmetry, extrusion and pattern tying, casting/milling pull direction |
+| Physics | `fem`, `solvers` | H8, H8IM and Q4 elasticity, heat conduction, modal analysis; PARDISO/SuperLU, or matrix-free multigrid on CUDA with direct fallback |
+| Responses | `responses`, `robust`, `lengthscale`, `connectivity`, `dynamics` | Compliance, volume; robust minimum solid/void size; maximum thickness; one-body constraints; eigenfrequencies |
+| Optimisation | `optim`, `study` | OC, MMA with any number of constraints, β continuation, move-limit control; run folders with git revision |
+| Post-processing | `post` | Density → signed distance → topology-preserving fillets → exact functional faces → smooth surface → manufacturing checks → T10 re-check → STL/PLY |
+
+Everything is also reachable from YAML: `python -m toporlogy list` shows every registered component with its
+parameters and units; `docs/registry.md` explains how to add one.
+
+## Keeping the part in one body
+
+A compliance optimum often splits into separate load paths that are joined by nothing, or by a grey film that
+disappears at thresholding. `connectivity.one_body()` stacks three defences: frozen minimal ties between the
+interfaces, a conduction constraint on the eroded field, and a geometric gate that re-checks the result at several
+thresholds and after erosion (with an optional bridge repair).
+
+On 14 pre-registered scenarios plain optimisation passed none; the default plan passed all
+(`docs/olcumler/robustness.md`).
+
+| Method | Scenarios | PASS | FRAGILE | FAIL | Median compliance vs plain |
+|:---|---:|---:|---:|---:|---:|
+| Plain compliance | 14 | 0 | 2 | 12 | 1.00 |
+| `one_body()` default | 14 | 14 | 0 | 0 | 1.30 |
+| Frozen ties only | 14 | 14 | 0 | 0 | 1.25 |
+| Conduction constraint only | 14 | 0 | 13 | 1 | 1.65 |
+
+PASS means one body holding every interface at thresholds 0.3/0.5/0.7 and after a one-element erosion. Four
+scenarios carry a large compliance penalty (26–53×); they are not yet analysed.
+
+## Evidence
+
+Each claim below links to the test or measurement that produced it. Regression oracles are earlier drivers of the
+same repository, so they show the implementation is unchanged, not that it is independently correct.
+
+| Check | Reference | Result | Source |
+|:---|:---|:---|:---|
+| 3-D optimisation history | earlier voxel driver (regression oracle) | ≤ 3.4e-11 relative, 7 scenarios | `tests/toporlogy/test_regression.py` |
+| 2-D half-MBB history | repository's Python port of top88 | 1.4e-11 relative | `tests/toporlogy/test_regression.py` |
+| Gradients of every link and response | central finite differences | ≤ 1e-6 relative | `tests/toporlogy/test_gradients.py` |
+| Elements H8, H8IM, Q4, T10 | patch test, uniform tension | exact to 1e-12 (T10: 1e-9) | `tests/toporlogy/test_core.py`, `test_post_verify.py` |
+| First bending frequency | Euler–Bernoulli cantilever | 0.997–1.001 (H8IM) | `tests/toporlogy/test_modal.py` |
+| Multigrid solver | PARDISO, same system | 7.2× faster at 163 k DOF; 1 M elements solved to 1e-8 | `docs/olcumler/A2.md` |
+| Post-processing, 12 inputs | pre-registered criteria | 9/12 pass all; 12/12 watertight with topology preserved | `docs/olcumler/robustness.md` |
+
+Not yet done: comparison with the original DTU top88/Top3D codes, NAFEMS benchmarks, large benchmark sets, T10 mesh
+convergence on optimised parts, three-dimensional stress constraints, and continuous integration. The plan is in
+`docs/mimari_plan.md`.
+
+## Python API
 
 ```python
 import numpy as np
-import aerokit.topo as T                      # import before torch (see below)
+import toporlogy as T            # import before torch: it loads MKL PARDISO first
 
 d = T.Domain((60, 20, 10), h=1.0)
 X = d.node_coords()
@@ -49,32 +98,27 @@ fixed = d.dofs(np.flatnonzero(X[:, 0] == 0))
 tip = np.flatnonzero((X[:, 0] == X[:, 0].max()) & (X[:, 2] == 0))
 F = d.load_vector(); F[3 * tip + 2, 0] = -1.0 / len(tip)
 
-chain = T.standard_chain(d, rmin=1.5, projection=True)
+chain = T.standard_chain(d, rmin=1.5)
 study = T.Study(d, T.Elasticity(d, fixed), F, chain, T.SIMP(d), T.Compliance(),
                 [T.Constraint(T.Volume(), 0.3)], T.MMA(), T.BetaContinuation(chain, 1, 16, 25))
-result = study.run(max_iter=150)
+result = study.run(max_iter=150)   # result.objective, result.xphys belong to the returned design
 ```
 
-Boundary conditions by geometry instead of DOF numbers: `aerokit.topo.bc` (`BoundaryConditions`, `OnCylinder`,
-`BearingLoad`, `RemoteForce`, `check()` / `summary()`); domains from shapes or STL: `aerokit.topo.geometry`.
+Boundary conditions by geometry instead of DOF numbers: `toporlogy.bc` (`BoundaryConditions`, `OnCylinder`,
+`BearingLoad`, `RemoteForce`, `check()`). Surfaces: `toporlogy.post.finalize(...)`.
 
-## Notes
-
-* **Import order (Windows, MKL):** torch and MKL PARDISO each ship `libiomp5md.dll`; loading MKL after torch aborts
-  the process. `import aerokit.topo` loads PARDISO first; if torch was already imported, the direct solver falls back
-  to SuperLU. Optional native packages can live in a separate folder given by `AEROKIT_PYLIB` (tests) and
-  `AEROKIT_MKL_BIN` (MKL DLLs).
-* **Threads:** under heavy CPU load, multithreaded MKL/torch can be 10–25× slower than single-threaded; set
-  `torch.set_num_threads` accordingly.
-* **Evidence:** measurements live in `docs/olcumler/`; the roadmap and decisions in `docs/mimari_plan.md`; how to add
-  a component in `docs/registry.md`. Literature used in code is tied to keys of `aerokit.references` with `@cite`;
-  docstrings state when a source was not read.
-
-## Tests
+## Development
 
 ```bash
-python -m pytest tests/topo -m "not slow"
+python -m pytest tests/toporlogy -m "not slow"
 ```
 
-`tests/topo/topo_oracles/` holds frozen copies of earlier validated drivers used only as regression oracles.
-Every differentiable link and response has a finite-difference gradient test.
+* `tests/toporlogy/topo_oracles/` holds frozen copies of earlier drivers used only as regression oracles.
+* Optional native packages outside site-packages are found through `TOPORLOGY_PYLIB` (folders separated by the
+  path separator); MKL DLLs through `TOPORLOGY_MKL_BIN`.
+* On Windows, torch and MKL each ship `libiomp5md.dll`: import `toporlogy` before torch, otherwise the direct solver
+  falls back to SuperLU.
+* Under heavy CPU load, multithreaded MKL and torch can be 10–25× slower than single-threaded; set
+  `torch.set_num_threads` in long runs.
+
+The repository has no licence file yet, so no reuse rights are granted by default.

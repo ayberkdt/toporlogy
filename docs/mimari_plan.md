@@ -1,4 +1,4 @@
-# aerokit.topo — mimari ve yol haritası (sürüm 2, 14 Kasım 2026)
+# toporlogy — mimari ve yol haritası (sürüm 2, 14 Kasım 2026)
 
 Amaç: deney yapmaya açık, kendi kontrolümüzde, bağımsız bir yoğunluk tabanlı topoloji optimizasyonu kütüphanesi.
 Yeni bir amaç, kısıt, filtre, fizik ya da optimizer eklemek bir dosya ve bir test kadar kısa sürmeli; büyük 3-D
@@ -13,10 +13,10 @@ Etiketler: **[Ö]** ölçüldü (dosya/komut verilmiş), **[O]** koddan okundu, 
 
 | # | Karar | Durum | Gerekçe / kanıt |
 |---|---|---|---|
-| D1 | Dizi altyapısı torch; türevler autograd, doğrusal çözüm tek özel adjoint | uygulandı | zincir ve yanıtlar yalnız ileri hesapla yazılıyor; her parça sonlu farkla test ediliyor (`tests/topo/test_gradients.py`) [Ö] |
+| D1 | Dizi altyapısı torch; türevler autograd, doğrusal çözüm tek özel adjoint | uygulandı | zincir ve yanıtlar yalnız ileri hesapla yazılıyor; her parça sonlu farkla test ediliyor (`tests/toporlogy/test_gradients.py`) [Ö] |
 | D2 | Tam sınır kutusu üzerinde düzenli ızgara + maske + kısmi hacim | uygulandı | eski voksel sürücüsüyle aynı numaralama; maskeli alanlarda regresyon ≤ 1e-11 [Ö] |
 | D3 | Hızlı çözücü: matris tutmayan GMG-PCG | uygulandı | A0'da kaldı; A2'de K-döngüsü + ada deflasyonu ile kapı geçti: 49k'da PARDISO'dan 7,2×, 1e6 rastgele alan 361 iterasyonda 9,9e-9 (`docs/olcumler/A2.md`, yüklü makinede) [Ö] |
-| D4 | Paket yeri `src/aerokit/topo/` | uygulandı | `@cite` ve kaynakça altyapısı ortak |
+| D4 | Paket yeri `src/toporlogy/` | uygulandı | `@cite` ve kaynakça altyapısı ortak |
 | D5 | git deposu | uygulandı | yayımlanan depo yalnız kütüphaneyi içerir (`.gitignore` beyaz liste) |
 
 ## 2. Katmanlar ve modüller
@@ -37,7 +37,7 @@ Study (bildirimsel kurulum: config.py + registry.py, CLI: cli.py)
 ```
 
 Kurallar: yanıt yazarı yalnız ileri hesabı yazar; her bağlantı ve yanıt `checks.gradcheck` testinden geçer (bağıl
-hata ≤ 1e-6, float64); eski sürücüler yalnız `tests/topo/topo_oracles/` altında, regresyon kâhini olarak durur.
+hata ≤ 1e-6, float64); eski sürücüler yalnız `tests/toporlogy/topo_oracles/` altında, regresyon kâhini olarak durur.
 
 ## 3. Aşamalar
 

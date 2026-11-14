@@ -1,9 +1,9 @@
 {
  "generated_by": "python scratch/robustness/report.py",
  "commands": {
-  "connectivity_2d": "PYTHONPATH=src AEROKIT_PYLIB=<pylib> AEROKIT_SWEEP_RECORD=scratch/robustness/out/conn_2d.jsonl python -m pytest tests/topo/test_sweep_connectivity.py -m slow -k 2d -s",
+  "connectivity_2d": "PYTHONPATH=src TOPORLOGY_PYLIB=<pylib> TOPORLOGY_SWEEP_RECORD=scratch/robustness/out/conn_2d.jsonl python -m pytest tests/toporlogy/test_sweep_connectivity.py -m slow -k 2d -s",
   "connectivity_3d": "same with -k 3d and conn_3d.jsonl",
-  "post_analytic": "PYTHONPATH=src AEROKIT_PYLIB=<pylib> AEROKIT_SWEEP_RECORD=scratch/robustness/out/post_analytic.jsonl python -m pytest tests/topo/test_sweep_post.py -m slow -k analytic -s",
+  "post_analytic": "PYTHONPATH=src TOPORLOGY_PYLIB=<pylib> TOPORLOGY_SWEEP_RECORD=scratch/robustness/out/post_analytic.jsonl python -m pytest tests/toporlogy/test_sweep_post.py -m slow -k analytic -s",
   "post_real": "same with -k real and post_real.jsonl"
  },
  "preregistration": "docs/olcumler/robustness.md sections 1-2",

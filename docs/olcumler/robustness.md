@@ -3,7 +3,7 @@
 > **Status (15 Nov 2026): interrupted, then written up.** The connectivity sweep (section 3) is complete. The
 > post-processing sweep ran completely (12 records); sections 4–5 were written afterwards from those records, without
 > new computation. Open: causes of the 3 post-processing failures, T10 mesh convergence, the high-penalty connectivity
-> cases. The sweep tests in `tests/topo/test_sweep_*.py` are marked slow as a whole until
+> cases. The sweep tests in `tests/toporlogy/test_sweep_*.py` are marked slow as a whole until
 > they have been re-run on an idle machine.
 
 Sections 1 and 2 were written **before any sweep run** (pre-registration, 2026-11-14 22:11). They are not edited
@@ -11,7 +11,7 @@ after the runs; deviations are listed in section 5. Results: section 3 onward. R
 
 ## 1. Pre-registration — connectivity sweep
 
-Code: `tests/topo/test_sweep_connectivity.py` (scenario builders `cases()`, runner `run()`); single cases:
+Code: `tests/toporlogy/test_sweep_connectivity.py` (scenario builders `cases()`, runner `run()`); single cases:
 `scratch/robustness/conn_one.py <case> <method>`.
 
 ### 1.1 Scenarios (14; 10 × 2-D, 4 × 3-D)
@@ -66,7 +66,7 @@ Expected (stated before the runs, not criteria): plain splits in c01–c09 and c
 
 ## 2. Pre-registration — post-processing sweep
 
-Code: `tests/topo/test_sweep_post.py`; `finalize(domain, xphys, preserve, PostParams())` with defaults unless
+Code: `tests/toporlogy/test_sweep_post.py`; `finalize(domain, xphys, preserve, PostParams())` with defaults unless
 stated, then `manufacturing_checks`. All inputs 3-D (the pipeline is 3-D only), element size h = 1, h_f = h/4.
 
 ### 2.1 Inputs (12)
@@ -113,8 +113,8 @@ Source of every number in this section: `scratch/robustness/out/conn_2d.jsonl`, 
 `-k 3d` and `conn_3d.jsonl`):
 
 ```
-PYTHONPATH=src AEROKIT_PYLIB=<pylib> AEROKIT_SWEEP_RECORD=scratch/robustness/out/conn_2d.jsonl \
-  python -m pytest tests/topo/test_sweep_connectivity.py -m slow -k 2d -s
+PYTHONPATH=src TOPORLOGY_PYLIB=<pylib> TOPORLOGY_SWEEP_RECORD=scratch/robustness/out/conn_2d.jsonl \
+  python -m pytest tests/toporlogy/test_sweep_connectivity.py -m slow -k 2d -s
 ```
 
 Run 2026-11-14 22:43–22:56 (2-D 3 min 32 s, 3-D 11 min 16 s; two processes in parallel, machine shared with other
@@ -163,7 +163,7 @@ Iterations, convergence, time, volume, neck, tie cells and constraint value of e
 iteration limit) — 19 of 59 runs: conduction in c01, c03, c05, c06, c07, c09, c11, c12, c14; c02 plain; c11 default;
 all c12 and c14 runs; c13 default. Verdicts are of the design at the limit.
 
-### 3.3 Source fix: `OneBodyPlan.finish` did not reach PASS (src/aerokit/topo/connectivity.py)
+### 3.3 Source fix: `OneBodyPlan.finish` did not reach PASS (src/toporlogy/connectivity.py)
 
 Failing case (run 1, 22:16): conduction-only results are FRAGILE (one body, split after the one-element erosion);
 `plan.finish` returned them still FRAGILE in **14/14** scenarios. Two causes in the code: `bridge()` joins bodies only
@@ -172,7 +172,7 @@ section 2 cannot survive the gate's own one-element erosion (a 2-wide bar erodes
 `test_neck_min_cut_2d` already shows). Fix: after the nominal bridge, every realisation that still splits
 (threshold 0.7, eroded solid) is bridged with section-3 paths set to x̄ = 1, up to three rounds. After the fix: 14/14
 PASS for conduction+finish and for plain+finish (table above). Regression test:
-`tests/topo/test_sweep_connectivity.py::test_finish_repairs_fragile_and_split_designs_to_pass` (a 2-wide link, a grey
+`tests/toporlogy/test_sweep_connectivity.py::test_finish_repairs_fragile_and_split_designs_to_pass` (a 2-wide link, a grey
 link at 0.6 and a split design: all three ended FRAGILE before, PASS now). Existing tests `test_onebody.py`,
 `test_connectivity.py` (fast): 28 passed after the change.
 
@@ -219,7 +219,7 @@ much worse, with two distinct mechanisms:
 ## 4. Results — post-processing
 
 Written on 15 Nov 2026 from the recorded runs (no new computation): `robustness.json` → `post` (12 records, one per
-input of §2.1), produced by `tests/topo/test_sweep_post.py` (the per-record `criteria` dict is the code's evaluation
+input of §2.1), produced by `tests/toporlogy/test_sweep_post.py` (the per-record `criteria` dict is the code's evaluation
 of §2.2). h = 1, h_f = 0.25 for every input.
 
 ### 4.1 Gating criteria per input

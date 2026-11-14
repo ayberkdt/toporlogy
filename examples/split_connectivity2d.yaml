@@ -1,0 +1,36 @@
+# Two spans that fall apart without a connectivity measure (geometry of toporlogy.connectivity.split_benchmark,
+# n = 24): two support pads on the bottom face near the ends, two load pads at mid-height above them, loaded down
+# with a weak self-equilibrated pull along x. Plain compliance minimisation gives two bodies (each load on its own
+# support). The connectivity block keeps ONE body: interfaces = the two supports and the two loads (default),
+# a frozen minimal tie between them (interface cells frozen too), a virtual-conduction constraint on the eroded
+# design, and the one-body gate after the run (verdict in summary.json; FAIL -> exit 1).
+# Units: consistent, dimensionless (h = 1, E0 = 1, unit loads).
+#   python -m toporlogy run examples/split_connectivity2d.yaml
+#   ... --set connectivity.ties=null --set connectivity.constraint=none     (gate only: the design splits, exit 1)
+name: split_connectivity2d
+domain:
+  type: box
+  shape: [60, 24]
+  keep:                                       # the four pads are frozen solid
+    - {type: box, lo: [4, 0], hi: [10, 1]}
+    - {type: box, lo: [50, 0], hi: [56, 1], op: add}
+    - {type: box, lo: [5, 10], hi: [9, 14], op: add}
+    - {type: box, lo: [51, 10], hi: [55, 14], op: add}
+material: {E0: 1.0, nu: 0.3}
+supports:
+  - {type: fixed, where: {type: in_box, lo: [4, 0], hi: [10, 0]}, name: support_a}
+  - {type: fixed, where: {type: in_box, lo: [50, 0], hi: [56, 0]}, name: support_b}
+load_cases:
+  - name: down
+    loads:
+      - {type: force, where: {type: in_box, lo: [5, 10], hi: [9, 14]}, force: [-0.02, -1], name: load_a}
+      - {type: force, where: {type: in_box, lo: [51, 10], hi: [55, 14]}, force: [0.02, -1], name: load_b}
+chain:
+  - {type: density_filter, rmin: 2.0}
+  - {type: heaviside_projection, beta: 1.0}
+constraints:
+  - {response: volume, upper: 0.15}
+optimizer: mma
+schedule: {type: beta_continuation, beta_max: 16.0, every: 25}
+connectivity: {ties: 1, constraint: conduction, eta: 0.7, bound: 20.0, sink: support_a, gate: true}
+run: {max_iter: 120, tol: 0.01}

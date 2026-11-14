@@ -1,0 +1,42 @@
+# L-shaped bracket (CSG) with a bore at the free end under a bearing load; clamped at the top of the upright.
+# Robust formulation (minimum solid / void size 3, as lengths) + maximum member thickness 5 (local volume of the
+# dilated design), connectivity: frozen tie between the interfaces + conduction constraint + one-body gate.
+# Finished part: smooth surface with the bore re-imposed exactly (machining stock 0.5 in the print variant),
+# manufacturing checks, STL / PLY export into the run folder.
+# Units: consistent, dimensionless (lengths in the unit of h = 1; E0 = 1; total load 1).
+#   python -m toporlogy validate examples/lbracket_bore3d.yaml
+#   python -m toporlogy run examples/lbracket_bore3d.yaml
+name: lbracket_bore3d
+domain:
+  type: csg
+  h: 1.0
+  shapes:
+    - {type: box, lo: [0, 0, 0], hi: [30, 10, 6]}            # horizontal leg
+    - {type: box, lo: [0, 0, 0], hi: [8, 30, 6]}             # upright
+    - {type: cylinder, p0: [24, 5, -1], p1: [24, 5, 7], radius: 2.5, op: cut}   # bore
+material: {E0: 1.0, nu: 0.3}
+supports:
+  - {type: fixed, where: {type: on_plane, axis: y, at: max}}           # top face of the upright
+load_cases:
+  - name: pin
+    loads:
+      - {type: bearing, bore: {type: bore, index: 1}, force: [0, -1, 0]}
+robust: {min_solid: 3.0, min_void: 3.0}        # sets density_filter rmin and the eroded / dilated thresholds
+chain:
+  - {type: density_filter}
+objective: robust_compliance
+constraints:
+  - {response: dilated_volume, upper: 0.4}
+  - {response: {type: local_volume, t_max: 5.0, source: dilated}}      # upper = alpha from t_max
+optimizer: {type: mma, move: 0.2}
+schedule: {type: robust_continuation, beta0: 1.0, beta_max: 8.0, every: 15}
+connectivity: {ties: 1, constraint: conduction, eta: 0.6, gate: true, repair: bridge}
+run: {max_iter: 40, tol: 0.01, move_beta_ref: 2.0}
+post:
+  - {type: measure_lengthscale, upsample: 1}
+  - type: finalize
+    upsample: 3
+    preserve:
+      - {role: cut, shape: {type: bore, index: 1}, stock: 0.5, name: bore}
+  - {type: manufacturing_checks, max_bodies: 1, max_voids: 0}
+  - {type: export, formats: [stl, ply]}

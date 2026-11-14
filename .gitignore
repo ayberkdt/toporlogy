@@ -1,4 +1,4 @@
-# This repository publishes only the topology-optimisation library aerokit.topo (whitelist).
+# This repository publishes only the toporlogy library (whitelist).
 /*
 !/.gitignore
 !/README.md
@@ -9,30 +9,17 @@
 !/src/
 !/tests/
 
-/src/aerokit/*
-!/src/aerokit/__init__.py
-!/src/aerokit/py.typed
-!/src/aerokit/references/
-!/src/aerokit/topo/
-/src/aerokit/references/*
-!/src/aerokit/references/__init__.py
-!/src/aerokit/references/_core.py
-!/src/aerokit/references/_aero.py
-!/src/aerokit/references/_structures.py
-!/src/aerokit/references/_composites.py
-!/src/aerokit/references/_fem.py
-!/src/aerokit/references/_fem_dynamics.py
-!/src/aerokit/references/_optimization.py
-!/src/aerokit/references/_cad.py
-!/src/aerokit/references/_materials.py
+/src/*
+!/src/toporlogy/
 
 /tests/*
-!/tests/topo/
+!/tests/toporlogy/
 
 /docs/*
 !/docs/mimari_plan.md
 !/docs/registry.md
 !/docs/olcumler/
+!/docs/assets/
 
 __pycache__/
 *.pyc

@@ -2,11 +2,11 @@
  "phase": "A2",
  "prototype": "scratch/gmg_proto.py (A0)",
  "library": [
-  "src/aerokit/topo/solvers/gmg.py",
-  "src/aerokit/topo/solvers/gmg_kernels.py",
-  "src/aerokit/topo/solvers/gmg_transfer.py",
-  "src/aerokit/topo/solvers/gmg_deflation.py",
-  "src/aerokit/topo/fem/elastic_gmg.py"
+  "src/toporlogy/solvers/gmg.py",
+  "src/toporlogy/solvers/gmg_kernels.py",
+  "src/toporlogy/solvers/gmg_transfer.py",
+  "src/toporlogy/solvers/gmg_deflation.py",
+  "src/toporlogy/fem/elastic_gmg.py"
  ],
  "scripts": [
   "scratch/a2_history.py",
@@ -108,7 +108,7 @@
   "no PARDISO comparison at 393k / 1e6 (memory)",
   "literature: none read in this session"
  ],
- "tests": "tests/topo/test_gmg.py: 19 passed, 82.8 s (loaded machine; 25.8 s earlier)",
+ "tests": "tests/toporlogy/test_gmg.py: 19 passed, 82.8 s (loaded machine; 25.8 s earlier)",
  "histories": {
   "hist_192x64x32": {
    "size": "192x64x32",

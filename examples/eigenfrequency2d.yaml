@@ -1,0 +1,24 @@
+# Eigenfrequency maximisation: clamped-clamped beam (2-D, 56 x 8) carrying a non-structural mass at its centre
+# (20 % of the admissible structural mass); maximise a KS lower bound of the 3 lowest eigenvalues at 50 % volume.
+# Two-range SIMP keeps low-density regions from producing spurious local modes. No static load case is needed.
+# Units: consistent, dimensionless (h = 1, E0 = 1, rho = 1; eigenvalues lambda = omega^2 in model units).
+#   python -m toporlogy run examples/eigenfrequency2d.yaml
+name: eigenfrequency2d
+domain: {type: box, shape: [56, 8], h: 1.0}
+material: {E0: 1.0, nu: 0.3, rho: 1.0}
+physics:
+  type: modal
+  n_modes: 4
+  added_mass: 44.8                            # total, spread over the selected node(s)
+  added_mass_at: {type: point, at: [mid, mid]}
+supports:
+  - {type: fixed, where: {type: plane, axis: x, at: min}}
+  - {type: fixed, where: {type: plane, axis: x, at: max}}
+chain:
+  - {type: density_filter, rmin: 2.0}
+interpolation: {type: two_range_simp, penal: 3.0}
+objective: {type: maximize, response: {type: min_eigenvalue_ks, n_modes: 3, rho: 40.0}}
+constraints:
+  - {response: volume, upper: 0.5}
+optimizer: {type: mma, move: 0.1}
+run: {max_iter: 60, tol: 0.001}
