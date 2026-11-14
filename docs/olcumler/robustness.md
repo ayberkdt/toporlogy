@@ -1,8 +1,9 @@
 # Robustness sweeps: connectivity (one body) and post-processing (smoothing)
 
-> **Status (15 Nov 2026, 00:0x): interrupted.** The connectivity sweep (section 3) is complete. The post-processing
-> sweep ran (raw records in `robustness.json`), but its result section 4 and the deviation list in section 5 were not
-> written before the run was stopped. The sweep tests in `tests/topo/test_sweep_*.py` are marked slow as a whole until
+> **Status (15 Nov 2026): interrupted, then written up.** The connectivity sweep (section 3) is complete. The
+> post-processing sweep ran completely (12 records); sections 4–5 were written afterwards from those records, without
+> new computation. Open: causes of the 3 post-processing failures, T10 mesh convergence, the high-penalty connectivity
+> cases. The sweep tests in `tests/topo/test_sweep_*.py` are marked slow as a whole until
 > they have been re-run on an idle machine.
 
 Sections 1 and 2 were written **before any sweep run** (pre-registration, 2026-11-14 22:11). They are not edited
@@ -217,8 +218,62 @@ much worse, with two distinct mechanisms:
 
 ## 4. Results — post-processing
 
-Not written yet (run interrupted). Raw records: `robustness.json` → post-processing entries.
+Written on 15 Nov 2026 from the recorded runs (no new computation): `robustness.json` → `post` (12 records, one per
+input of §2.1), produced by `tests/topo/test_sweep_post.py` (the per-record `criteria` dict is the code's evaluation
+of §2.2). h = 1, h_f = 0.25 for every input.
+
+### 4.1 Gating criteria per input
+
+| input | watertight | bodies / χ (thresholded → mesh) | ΔV vs target (%) | bore error max (rel.) | flatness max | min angle (°) | Hausdorff final→raw / raw→final (h_f) | verdict |
+|:---|:---|:---|---:|---:|---:|---:|---:|:---|
+| p01_sphere | yes | 1/1, χ 1/1 | +0.08 | — | — | 22.5 | 0.02 / 0.02 | PASS |
+| p02_tube | yes | 1/1, χ 0/0 | +0.23 | 5.3e-16 | — | 23.4 | 0.29 / 0.29 | PASS |
+| p03_plate_bore | yes | 1/1, χ 0/0 | -0.20 | 3.8e-16 | 0.0e+00 | 26.6 | 0.50 / 0.32 | PASS |
+| p04_l_bracket | yes | 1/1, χ 1/1 | +0.07 | — | — | 24.4 | 0.21 / 0.25 | PASS |
+| p05_thin_plate | yes | 1/1, χ 1/1 | -1.00 | — | — | 36.0 | 0.11 / 0.08 | PASS |
+| p06_lattice | yes | 1/1, χ -27/-27 | +0.43 | — | — | 20.5 | 0.07 / 0.07 | PASS |
+| p07_cavity | yes | 1/1, χ 2/2 | +0.11 | — | — | 26.4 | 0.07 / 0.05 | PASS |
+| r1_cantilever | yes | 1/1, χ -7/-7 | -0.21 | — | — | 22.5 | 0.57 / 0.33 | PASS |
+| r2_mbb3d | yes | 1/1, χ -4/-4 | -1.67 | — | — | 22.0 | 0.72 / 0.39 | FAIL |
+| r3_bores | yes | 1/1, χ -4/-4 | +0.13 | 7.1e-16 | — | 22.8 | 0.79 / 0.51 | FAIL |
+| r4_robust_minsize | yes | 1/1, χ -4/-4 | +0.00 | — | — | 20.8 | 0.67 / 0.33 | FAIL |
+| r5_onebody_c12 | yes | 1/1, χ 1/1 | -0.31 | — | — | 23.6 | 0.57 / 0.28 | PASS |
+
+**9 of 12 pass every gating criterion.** Per criterion over all 12 inputs:
+
+| criterion | pass | fails |
+|:---|---:|:---|
+| 1 watertight closed manifold | 12/12 | — |
+| 2 topology unchanged (bodies, χ, cavities) | 12/12 | — (incl. the lattice with 28 tunnels and the kept cavity of p07) |
+| 3 \|ΔV\| ≤ 1 % vs target | 11/12 | r2 (−1.67 %) |
+| 4 bore radius ≤ 1 %, flatness ≤ 1e-3 h | 3/3 bores, 1/1 plane | — (errors at machine precision: functional faces are re-imposed exactly) |
+| 5 minimum triangle angle ≥ 15° | 12/12 | — (lowest 20.5°) |
+| 6 Hausdorff ≤ 0.6 h_f both ways | 9/12 | r2 (0.72 h_f), r3 (0.79 h_f), r4 (0.67 h_f), all final→raw |
+
+The three failures are real optimisation results; every analytic input passes. Their cause was **not investigated**
+(the run was stopped). A plausible but unverified reading: the Hausdorff excess is one-sided (final→raw), so it sits
+where the final surface leaves the raw iso-surface on purpose — closing fillets (r = 1 h) in concave corners and the
+exact re-imposition of keep pads; r2 also loses 1.7 % volume. To check before changing the pipeline.
+
+### 4.2 Recorded, not gated
+
+* Manufacturing checks (`checks_passed`): pass for p01–p06; fail for p07 (the enclosed cavity is reported, as intended)
+  and for all real results r1–r5. Their ray wall thickness p1 is 0.46–0.82 h (r3: ≈ 0, at a bore edge — not
+  investigated), below the default `min_wall` = 1.0: the optimised designs contain members thinner than the gate,
+  which the post-processing correctly reports instead of hiding. Remedy on the design side: robust minimum size.
+* Opening radius used: 1.0 h on simple shapes; reduced to 0.24–0.75 h on thin members (p05, p06, r1, r3, r5) to keep
+  the topology. Closing 1.0 h (p04 1.5 h as requested; its concave-radius test passes).
+* Post-processing time: 18–67 s for analytic inputs (the 28-tunnel lattice 67 s), 23–171 s for real results (loaded machine).
+* p05 (plate 1.25 h thick): ray wall p5 not within 10 % of 1.25 h (recorded `wall_p5_within_10pct = false`).
+* T10 re-check at two mesh sizes (planned for r1, r2): not in the records; mesh convergence still open.
 
 ## 5. Deviations from the pre-registration
 
-Not written yet (run interrupted).
+* The run was stopped before the agent wrote §4–§5; §4 was written afterwards from the stored records only.
+* §2.2 criterion 3 also asks analytic inputs to match the exact solid volume; the code gates only against the target.
+  Against the exact solid: p01 +0.34 %, p02 +0.44 %, p03 −0.34 %, p04 +0.07 %, p07 +0.01 % (pass), **p05 +5.6 %**
+  (fail: a 1.25-element plate is not represented to 1 % by the input voxels; the pipeline itself keeps ΔV vs target at
+  −1.0 %).
+* The planned T10 re-checks (r1, r2 at two sizes) are missing.
+* The connectivity scenarios with large compliance penalties (c03, c05, c10, c12; 26–53× the plain design) were not
+  investigated.
