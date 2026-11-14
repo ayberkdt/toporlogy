@@ -1,6 +1,7 @@
 """Locate and load Intel MKL PARDISO (pypardiso) without depending on a fixed install path.
 
-The MKL / Intel OpenMP DLLs are looked for in, in this order: ``$AEROKIT_MKL_BIN``, then a ``mkl_bin`` folder next to
+Optional packages outside site-packages are found through ``$AEROKIT_PYLIB`` (added to ``sys.path``). The MKL / Intel
+OpenMP DLLs are looked for in, in this order: ``$AEROKIT_MKL_BIN``, then a ``mkl_bin`` folder next to
 any ``sys.path`` entry that contains the ``pypardiso`` package. Load-order constraint (measured 13 Nov 2026 on
 Windows): torch and MKL each ship ``libiomp5md.dll``; loading MKL after torch aborts the process ("OMP: Error #15"),
 loading it first works. :func:`load` therefore refuses to load MKL once torch is imported.
@@ -19,7 +20,16 @@ __all__ = ["load", "available", "state"]
 _STATE: dict[str, Any] = {"module": None, "tried": False, "reason": ""}
 
 
+def _add_pylib() -> None:
+    """Put the folders of ``$AEROKIT_PYLIB`` (separated by ``os.pathsep``) on ``sys.path`` (optional native packages
+    such as pypardiso + MKL or gmsh installed outside site-packages)."""
+    for p in os.environ.get("AEROKIT_PYLIB", "").split(os.pathsep):
+        if p and os.path.isdir(p) and p not in sys.path:
+            sys.path.append(p)
+
+
 def _dll_folders() -> list[str]:
+    _add_pylib()
     out = []
     env = os.environ.get("AEROKIT_MKL_BIN")
     if env:

@@ -14,8 +14,17 @@
 !/src/aerokit/py.typed
 !/src/aerokit/references/
 !/src/aerokit/topo/
-/src/aerokit/references/_ideathon2026.py
-/src/aerokit/references/_task_*.py
+/src/aerokit/references/*
+!/src/aerokit/references/__init__.py
+!/src/aerokit/references/_core.py
+!/src/aerokit/references/_aero.py
+!/src/aerokit/references/_structures.py
+!/src/aerokit/references/_composites.py
+!/src/aerokit/references/_fem.py
+!/src/aerokit/references/_fem_dynamics.py
+!/src/aerokit/references/_optimization.py
+!/src/aerokit/references/_cad.py
+!/src/aerokit/references/_materials.py
 
 /tests/*
 !/tests/topo/

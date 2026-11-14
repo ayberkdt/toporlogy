@@ -160,7 +160,7 @@ def test_sweep_validates_every_combination_first(capsys, cfg, tmp_path):
 
 # ---------------------------------------------------------------------------------------------- real entry point
 def test_module_entry_point_subprocess(cfg, tmp_path):
-    env = dict(os.environ, PYTHONPATH=os.pathsep.join([str(ROOT / "src"), "D:/tmp_ideathon/pylib"]))
+    env = dict(os.environ, PYTHONPATH=os.pathsep.join([str(ROOT / "src"), *filter(None, os.environ.get("AEROKIT_PYLIB", "").split(os.pathsep))]))
     p = subprocess.run([sys.executable, "-m", "aerokit.topo", "run", str(cfg), "--out", str(tmp_path / "r"),
                         "--set", "run.max_iter=2", "-q"], capture_output=True, text=True, env=env, timeout=600)
     assert p.returncode == 1, p.stderr                                 # not converged after 2 iterations

@@ -8,7 +8,7 @@ and skip the gmsh-based checks.
 import os
 import sys
 
-for _p in os.environ.get("AEROKIT_PYLIB", "D:/tmp_ideathon/pylib").split(os.pathsep):
+for _p in os.environ.get("AEROKIT_PYLIB", "").split(os.pathsep):
     if _p and os.path.isdir(_p) and _p not in sys.path:
         sys.path.append(_p)
 

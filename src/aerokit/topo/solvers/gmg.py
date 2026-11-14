@@ -29,9 +29,14 @@ import numpy as np
 import torch
 
 from aerokit.topo.solvers import gmg_kernels as gk
+from aerokit.topo.solvers.gmg_deflation import IslandDeflation
 from aerokit.topo.solvers.gmg_transfer import BlackBoxTransfer
 
-__all__ = ["GMGSolver", "solve", "pcg"]
+__all__ = ["GMGSolver", "GMGConvergenceError", "solve", "pcg"]
+
+
+class GMGConvergenceError(RuntimeError):
+    """CG did not reach the requested relative residual within the iteration cap."""
 
 
 def pcg(A: Callable[[torch.Tensor], torch.Tensor], b: torch.Tensor, M: Callable[[torch.Tensor], torch.Tensor],
@@ -95,14 +100,15 @@ def _graphed(fn: Callable[..., Any], *examples: torch.Tensor) -> tuple[Callable[
 
 
 class _DenseCoarse:
-    """Dense inverse of the coarsest Galerkin level on the device (graph-capturable)."""
+    """Dense Cholesky factor of the coarsest Galerkin level on the device; the solve (two triangular solves,
+    ``cholesky_solve``) is graph-capturable. The factorisation runs in float64 (``cholesky_inverse`` was measured
+    16× slower than the factorisation at n = 3375 on the GTX 1660 Ti, so no explicit inverse is formed)."""
 
     kind = "dense"
 
     def __init__(self, L: gk.Level, dtype: torch.dtype) -> None:
         self.n = L.ndof
-        Ainv = torch.cholesky_inverse(torch.linalg.cholesky(self._dense(L)))
-        self.Ainv = Ainv.to(dtype)
+        self.Lc = torch.linalg.cholesky(self._dense(L)).to(dtype)
 
     @staticmethod
     def _dense(L: gk.Level) -> torch.Tensor:
@@ -114,13 +120,13 @@ class _DenseCoarse:
         return A.view(n, n) + torch.diag(L.fixed.reshape(-1).to(Ke.dtype))
 
     def refresh(self, new: _DenseCoarse) -> bool:
-        if new.Ainv.shape != self.Ainv.shape:
+        if new.Lc.shape != self.Lc.shape:
             return False
-        self.Ainv.copy_(new.Ainv)
+        self.Lc.copy_(new.Lc)
         return True
 
     def __call__(self, b: torch.Tensor) -> torch.Tensor:
-        return (self.Ainv @ b.reshape(-1, 1)).view_as(b)
+        return torch.cholesky_solve(b.reshape(-1, 1), self.Lc).view_as(b)
 
 
 class _HostCoarse:
@@ -205,11 +211,12 @@ class GMGSolver:
     """
 
     def __init__(self, shape: tuple[int, int, int], KE: Any, scale: float = 1.0, device: Any = None,
-                 vcycle_dtype: torch.dtype | None = None, graphs: bool | None = None, coarse: str = "amg",
-                 n_geometric: int | None = None, max_coarse_dof: int = 3000, amg_max_dof: int = 60000,
+                 vcycle_dtype: torch.dtype | None = None, graphs: bool | None = None, coarse: str = "dense",
+                 n_geometric: int | None = None, max_coarse_dof: int = 4000, amg_max_dof: int = 60000,
                  smoother_degree: int = 3, cheb_lo: float = 0.1, cheb_hi: float = 1.1, power_its: int = 15,
                  pin_rel: float = 0.0, tol: float = 1e-8, maxit: int = 500, amg_options: dict | None = None,
-                 amg_cycles: int = 1, transfer: Any = "trilinear", cycle: str = "K") -> None:
+                 amg_cycles: int = 1, transfer: Any = "trilinear", cycle: str = "K",
+                 deflate_tau: float | None = 1e-3) -> None:
         self.shape = tuple(int(v) for v in shape)
         if len(self.shape) != 3 or min(self.shape) < 1:
             raise ValueError("shape must be (nx, ny, nz)")
@@ -230,6 +237,8 @@ class GMGSolver:
         self.degree, self.cheb_lo, self.cheb_hi, self.power_its = int(smoother_degree), cheb_lo, cheb_hi, power_its
         self.pin_rel, self.tol, self.maxit = float(pin_rel), float(tol), int(maxit)
         self.amg_options, self.amg_cycles = amg_options, int(amg_cycles)
+        self.deflate_tau = deflate_tau
+        self.deflation: IslandDeflation | None = None
         self.scale = float(scale)
         self.KE = torch.as_tensor(np.asarray(KE, float), dtype=torch.float64, device=self.device)
         if self.KE.shape != (24, 24):
@@ -325,12 +334,25 @@ class GMGSolver:
         else:
             coarse = _HostCoarse(levels[-1], self.coarse_kind, self.amg_options, self.amg_cycles)
         t_c = time.perf_counter()
+        defl = None
+        if self.deflate_tau:
+            defl = IslandDeflation(L0, self.fixed_user, self.deflate_tau)
+            if defl.n == 0:
+                defl = None
+        t_d = time.perf_counter()
         coef = [self._cheb_coef(L.lmax) for L in levels[:-1]]
         vlev = [L.to(self.vdtype) for L in levels]
         vtr = [None if T is None else T.to(self.vdtype) for T in transfers]
-        structure = (tuple(L.shape for L in levels), self.coarse_kind, tuple(self._tr), self.cycle)
+        structure = (tuple(L.shape for L in levels), self.coarse_kind, tuple(self._tr), self.cycle,
+                     None if defl is None else (defl.n, int(defl.sel.numel()), defl.rank))
+        old_defl, self.deflation = self.deflation, defl
         reuse = self._structure == structure and self.graphs and self._A_call is not None
         if reuse:
+            if defl is not None and old_defl is not None:
+                for k in ("sel", "zid", "R", "free_sel", "Ginv"):
+                    getattr(old_defl, k).copy_(getattr(defl, k))
+                old_defl.n_components, old_defl.island_nodes = defl.n_components, defl.island_nodes
+                self.deflation = old_defl
             for old, new in zip(self.levels, vlev, strict=True):
                 for k in ("free", "fixed", "s", "Ke", "dinv"):
                     o, n = getattr(old, k), getattr(new, k)
@@ -361,7 +383,10 @@ class GMGSolver:
         self.last_setup = {"setup_s": time.perf_counter() - t0, "hierarchy_s": t_h - t0, "coarse_setup_s": t_c - t_h,
                            "levels": [list(L.shape) for L in levels], "coarse": self.coarse_kind,
                            "coarse_ndof": int(levels[-1].ndof), "lmax": [L.lmax for L in levels[:-1]],
-                           "n_pinned": self.n_pinned, "graph_reused": bool(reuse), "transfer": self.transfer, "cycle": self.cycle,
+                           "deflation_s": t_d - t_c,
+                           "deflation": None if defl is None else defl.info(),
+                           "n_pinned": self.n_pinned, "graph_reused": bool(reuse), "transfer": self.transfer,
+                           "cycle": self.cycle,
                            "trilinear_fallback_nodes": [0 if T is None else T.n_trilinear_fallback
                                                         for T in transfers]}
         if isinstance(coarse, _HostCoarse):
@@ -459,7 +484,10 @@ class GMGSolver:
 
     def vcycle(self, r: torch.Tensor) -> torch.Tensor:
         """One multigrid cycle (``self.cycle``) applied to a float64 residual (no graph)."""
-        return self._cycle(0, r.to(self.vdtype)).to(r.dtype)
+        b = r.to(self.vdtype)
+        if self.deflation is None:
+            return self._cycle(0, b).to(r.dtype)
+        return self.deflation.wrap(self.levels[0].apply, lambda q: self._cycle(0, q), b).to(r.dtype)
 
     def _build_calls(self) -> None:
         assert self.A64 is not None
@@ -506,7 +534,11 @@ class GMGSolver:
 
         ``E_elem`` None reuses the current hierarchy. ``F`` (and ``x0``) as nodal field ``(nx+1, ny+1, nz+1, 3)``,
         (ndof,) or (ndof, k); NumPy in → NumPy out, tensor in → tensor out (float64, on this solver's device).
-        Statistics of the last call: :attr:`last`.
+        Statistics of the last call: :attr:`last` — ``requested_tol``, ``achieved_true_rel_residual``
+        (‖F − K u‖/‖F‖ recomputed after CG, worst load case) and ``converged = achieved ≤ requested`` (no hidden
+        factor). When the recursive CG residual meets ``tol`` but the recomputed one does not, CG is restarted from
+        the current iterate (at most 5 times, within ``maxit`` in total). An unconverged result is returned with
+        ``converged = False``; raising is the caller's decision (:class:`ElasticityGMG` fails closed).
         """
         if E_elem is not None:
             self.update(E_elem, fixed_mask)
@@ -530,14 +562,24 @@ class GMGSolver:
         for c in range(Fm.shape[1]):
             b = free * Fm[:, c].reshape(self.node_shape)
             xi = None if X0 is None else free * X0[:, c].reshape(self.node_shape)
-            u, it, tres, hist = pcg(self._A_call, b, self._M_call, xi, tol, maxit)
+            u, it, tres, _ = pcg(self._A_call, b, self._M_call, xi, tol, maxit)
+            restarts = 0
+            while tres > tol and it < maxit and restarts < 5:      # recursive residual met tol, true one did not
+                u, it2, tres, _ = pcg(self._A_call, b, self._M_call, u, tol, maxit - it)
+                it += it2
+                restarts += 1
+                if it2 == 0:
+                    break
             out[:, c] = u.reshape(-1)
-            rows.append({"iters": it, "true_rel_residual": tres, "converged": bool(tres <= 10 * tol),
+            rows.append({"iters": it, "restarts": restarts, "requested_tol": tol, "achieved_true_rel_residual": tres,
+                         "converged": bool(tres <= tol),
                          "dropped_load_norm": float(((1 - free) * Fm[:, c].reshape(self.node_shape)).norm())})
         self._sync()
+        worst = max(r["achieved_true_rel_residual"] for r in rows)
         self.last = {"solve_s": time.perf_counter() - t0, "cases": rows,
-                     "iters": max(r["iters"] for r in rows), "converged": all(r["converged"] for r in rows),
-                     "true_rel_residual": max(r["true_rel_residual"] for r in rows)}
+                     "iters": max(r["iters"] for r in rows), "requested_tol": tol,
+                     "achieved_true_rel_residual": worst, "true_rel_residual": worst,
+                     "converged": all(r["converged"] for r in rows)}
         res = out[:, 0] if squeeze else out
         if Ft.shape == self.node_shape:
             res = res.reshape(self.node_shape)

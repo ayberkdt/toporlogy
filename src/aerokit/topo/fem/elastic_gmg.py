@@ -12,9 +12,14 @@ system of :class:`Elasticity` (its free set is ``active_dofs \\ fixed``).
 
 Fallback to the sparse direct solver (:class:`aerokit.topo.solvers.DirectSolver` through an :class:`Elasticity`
 built on first use): when the problem has fewer than ``direct_below`` active elements, or when CG does not reach
-``tol`` within ``maxit`` (only if the problem has at most ``fallback_max_elements`` active elements; otherwise the
-unconverged GMG result is kept and a warning issued). Every fallback is counted in :attr:`n_fallbacks` and logged in
-:attr:`fallback_log` with its reason.
+``tol`` within ``maxit`` and the problem has at most ``fallback_max_elements`` active elements. Every fallback is
+counted in :attr:`n_fallbacks` and logged in :attr:`fallback_log` with its reason.
+
+Tolerance contract (fail-closed): a solve is accepted only when the recomputed relative residual
+‖F − K u‖/‖F‖ ≤ ``tol``. If CG misses it and no direct fallback is allowed (problem larger than
+``fallback_max_elements``), :class:`aerokit.topo.solvers.gmg.GMGConvergenceError` is raised. Only with
+``allow_inexact=True`` is the unconverged result returned; it is then counted in :attr:`n_inexact`, logged in
+:attr:`fallback_log` (``"inexact": True``) and a ``RuntimeWarning`` is issued.
 """
 from __future__ import annotations
 
@@ -29,7 +34,7 @@ import torch
 from aerokit.topo.domain import Domain
 from aerokit.topo.fem.elements import element_matrix
 from aerokit.topo.solvers import gmg_kernels as gk
-from aerokit.topo.solvers.gmg import GMGSolver
+from aerokit.topo.solvers.gmg import GMGConvergenceError, GMGSolver
 
 __all__ = ["ElasticityGMG"]
 
@@ -54,6 +59,9 @@ class ElasticityGMG:
         Largest problem (active elements) for which the direct fallback is attempted.
     warm_start : bool
         Start CG from the previous solution of the same load case.
+    allow_inexact : bool
+        Default False (strict, fail-closed): an unconverged solve without a permitted direct fallback raises
+        :class:`GMGConvergenceError`. True keeps the unconverged result, marked in :attr:`n_inexact` / the log.
     device : optional
         Torch device of the solver (default CUDA when available).
     **gmg : keyword arguments of :class:`GMGSolver` (coarse, n_geometric, smoother_degree, pin_rel, …).
@@ -62,7 +70,7 @@ class ElasticityGMG:
     def __init__(self, domain: Domain, fixed: Sequence[int], nu: float = 0.3, element: str | None = None,
                  tol: float = 1e-8, maxit: int = 300, direct_below: int = 4000,
                  fallback_max_elements: int = 120_000, warm_start: bool = True, device: Any = None,
-                 **gmg: Any) -> None:
+                 allow_inexact: bool = False, **gmg: Any) -> None:
         if domain.dim != 3:
             raise ValueError("ElasticityGMG is 3-D only (use Elasticity in 2-D)")
         self.domain = domain
@@ -78,10 +86,10 @@ class ElasticityGMG:
         self.tol, self.maxit = float(tol), int(maxit)
         self.direct_below, self.fallback_max_elements = int(direct_below), int(fallback_max_elements)
         self.warm_start = bool(warm_start)
-        gmg.setdefault("coarse", "amg")
+        self.allow_inexact = bool(allow_inexact)
         ng = gmg.get("n_geometric")
         if ng is None:
-            ng = gmg["n_geometric"] = self._default_levels(domain.shape)
+            ng = gmg["n_geometric"] = self.default_levels(domain.shape, gmg.get("max_coarse_dof", 4000))
         m = 2 ** (int(ng) - 1)
         self.shape_pad = tuple(int(-(-s // m) * m) for s in domain.shape)
         self.gmg = GMGSolver(self.shape_pad, self.KE, self.geom, device=device, tol=tol, maxit=maxit, **gmg)
@@ -96,25 +104,33 @@ class ElasticityGMG:
         el[:nx, :ny, :nz] = domain.active
         self._pad_elements = torch.as_tensor(np.flatnonzero(el.ravel()), device=self.gmg.device)
         self._direct: Any = None
+        self._free: np.ndarray | None = None
         self._E_set: torch.Tensor | None = None
         self._token = 0
         self._prev: dict[int, torch.Tensor] = {}
         self.n_solves = 0
         self.n_adjoint_solves = 0
         self.n_fallbacks = 0
+        self.n_inexact = 0
         self.fallback_log: list[dict[str, Any]] = []
         self.solve_log: list[dict[str, Any]] = []
         self.last_iters = 0
 
+    @property
+    def strict(self) -> bool:
+        """True unless ``allow_inexact`` (fail-closed tolerance contract)."""
+        return not self.allow_inexact
+
     @staticmethod
-    def _default_levels(shape: Sequence[int]) -> int:
-        """Geometric grids so that the AMG level has ≲ 60k DOFs (measured choice, docs/olcumler/A2.md)."""
-        n = 3 * int(np.prod([s + 1 for s in shape]))
-        lev = 1
-        while n > 60_000 and lev < 6:
-            n //= 8
-            lev += 1
-        return max(lev, 2)
+    def default_levels(shape: Sequence[int], max_coarse_dof: int = 4000) -> int:
+        """Fewest geometric grids whose coarsest (after padding to multiples of 2^(levels−1)) has at most
+        ``max_coarse_dof`` DOFs (dense coarse solve)."""
+        for lev in range(2, 12):
+            m = 2 ** (lev - 1)
+            c = [-(-int(s) // m) for s in shape]
+            if 3 * int(np.prod([v + 1 for v in c])) <= max_coarse_dof:
+                return lev
+        return 12
 
     # ------------------------------------------------------------------ helpers
     @property
@@ -127,7 +143,10 @@ class ElasticityGMG:
 
     @property
     def free(self) -> np.ndarray:
-        return np.setdiff1d(self.domain.active_dofs, self.fixed)
+        r"""Free DOFs of the reduced system (``active_dofs \ fixed``, as in :class:`Elasticity`), cached."""
+        if self._free is None:
+            self._free = np.setdiff1d(self.domain.active_dofs, self.fixed)
+        return self._free
 
     def _grid_E(self, E_active: torch.Tensor) -> torch.Tensor:
         Eg = torch.zeros(int(np.prod(self.shape_pad)), dtype=torch.float64, device=self.gmg.device)
@@ -168,7 +187,8 @@ class ElasticityGMG:
                                   "solve": self.n_solves})
         return X
 
-    def _solve_box(self, E_active: torch.Tensor, B: np.ndarray, kind: str, x0: torch.Tensor | None = None) -> np.ndarray:
+    def _solve_box(self, E_active: torch.Tensor, B: np.ndarray, kind: str,
+                   x0: torch.Tensor | None = None) -> np.ndarray:
         """Solve K(E) X = B (box DOFs, (ndof, k)) by GMG with fallback. Returns X (ndof, k) NumPy."""
         E_cpu = E_active.detach().cpu().double()
         if self.n_elements < self.direct_below:
@@ -183,22 +203,29 @@ class ElasticityGMG:
             X[..., c] = self.gmg.solve(None, Bp[..., c], x0=xi, tol=self.tol, maxit=self.maxit)
             info = dict(self.gmg.last)
             info.update(kind=kind, case=c)
-            self.solve_log.append({k: info[k] for k in ("kind", "case", "iters", "true_rel_residual", "solve_s",
-                                                        "converged")})
+            self.solve_log.append({k: info[k] for k in ("kind", "case", "iters", "requested_tol",
+                                                        "achieved_true_rel_residual", "solve_s", "converged")})
             self.last_iters = info["iters"]
             if not info["converged"]:
                 bad.append((c, info))
         Xb = self._from_pad(X).cpu().numpy()
         for c, info in bad:
-            reason = (f"CG not converged: {info['iters']} iterations, true residual "
-                      f"{info['true_rel_residual']:.2e} > tol {self.tol:.1e}")
+            reason = (f"CG not converged ({kind}, load case {c}): {info['iters']} iterations, achieved true "
+                      f"relative residual {info['achieved_true_rel_residual']:.3e} > requested tol {self.tol:.3e}")
             if self.n_elements <= self.fallback_max_elements:
                 Xb[:, c] = self._fallback(reason, kind, E_cpu.numpy(), B[:, [c]])[:, 0]
+            elif self.allow_inexact:
+                self.n_inexact += 1
+                warnings.warn(f"ElasticityGMG: {reason}; allow_inexact=True, the unconverged result is returned",
+                              RuntimeWarning, stacklevel=3)
+                self.fallback_log.append({"reason": reason, "kind": kind, "inexact": True, "seconds": 0.0,
+                                          "solve": self.n_solves,
+                                          "achieved_true_rel_residual": info["achieved_true_rel_residual"]})
             else:
-                warnings.warn(f"ElasticityGMG: {reason}; no direct fallback above {self.fallback_max_elements} "
-                              "elements, the GMG result is kept", RuntimeWarning, stacklevel=3)
-                self.fallback_log.append({"reason": reason + " (fallback skipped: too large)", "kind": kind,
-                                          "seconds": 0.0, "solve": self.n_solves})
+                raise GMGConvergenceError(
+                    f"ElasticityGMG: {reason}; {self.n_elements} active elements > fallback_max_elements="
+                    f"{self.fallback_max_elements}, so no direct fallback. Raise maxit, loosen tol, or pass "
+                    "allow_inexact=True to accept the inexact result explicitly.")
         return Xb
 
     # ------------------------------------------------------------------ public
@@ -238,7 +265,8 @@ class ElasticityGMG:
     def stats(self) -> dict[str, Any]:
         it = [r["iters"] for r in self.solve_log]
         return {"n_solves": self.n_solves, "n_adjoint_solves": self.n_adjoint_solves,
-                "n_fallbacks": self.n_fallbacks, "fallback_reasons": [f["reason"] for f in self.fallback_log],
+                "n_fallbacks": self.n_fallbacks, "n_inexact": self.n_inexact,
+                "fallback_reasons": [f["reason"] for f in self.fallback_log],
                 "cg_iters_mean": float(np.mean(it)) if it else 0.0, "cg_iters_max": int(max(it)) if it else 0,
                 "padded_shape": self.shape_pad, "setup": getattr(self.gmg, "last_setup", None)}
 

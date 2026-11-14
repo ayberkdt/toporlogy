@@ -12,17 +12,17 @@ Domain ─► Chain (design → physical density) ─► Interpolation ─► Ph
 
 | Area | Module | State |
 |---|---|---|
-| Core: domain, chain (embed, density filter, tanh projection, passive), SIMP/RAMP, linear elasticity (H8, H8IM, Q4), compliance, volume, OC, Study loop, run folders | `domain`, `chain`, `interp`, `fem/elastic`, `responses`, `optim/oc`, `study`, `record` | done; reproduces the earlier 3-D voxel driver to ≤ 3e-11 and top88 to 1.4e-11 (relative compliance history) |
+| Core: domain, chain (embed, density filter, tanh projection, passive), SIMP/RAMP, linear elasticity (H8, H8IM, Q4), compliance, volume, OC, Study loop (final design re-evaluated), run folders | `domain`, `chain`, `interp`, `fem/elastic`, `responses`, `optim/oc`, `study`, `record` | done; reproduces the repository's earlier 3-D voxel driver to ≤ 3e-11 and its Python port of top88 to 1.4e-11 (relative compliance history). These are regression oracles, not independent references: a comparison against the original DTU MATLAB code is still open |
 | MMA (any number of constraints) | `optim/mma` | done; reproduces the earlier 2-D MMA driver to 2.4e-9 |
 | Boundary conditions and loads: geometric selectors (bore faces with normal filter, planes, shapes), fixed / roller / symmetry / pinned bore / elastic supports, distributed point loads, traction, pressure, bearing, remote force & moment, torque, body force, load cases, per-case supports, rigid-body and resultant checks | `bc` | done |
 | Geometry: CSG primitives, STL voxelisation with partial volumes, automatic bore detection | `geometry` | done |
 | Length scale: robust (eroded / blueprint / dilated) minimum solid and void size, maximum thickness (local volume), grey level, thickness measurement | `robust`, `lengthscale` | done |
-| Connectivity: one-body gate (thresholds, erosion, min-cut necks, enclosed voids), frozen minimum ties, conduction and coupling constraints, bridge repair | `connectivity`, `fem/heat` | done |
+| Connectivity: one-body gate (thresholds, erosion, min-cut necks, enclosed voids), frozen minimum ties, conduction and coupling constraints, bridge repair, one-call plan `one_body()` | `connectivity`, `fem/heat` | done; on the splitting benchmark plain compliance TO gives 2 bodies, `one_body()` gives PASS |
 | Manufacturing: AM overhang filter (±x/±y/±z), symmetry / extrusion / pattern tying, casting / milling pull direction | `manufacturing` | done |
 | Eigenfrequency: consistent mass, differentiable eigenvalues, KS aggregation, two-range interpolation against spurious modes | `fem/modal`, `dynamics` | done |
-| Post-processing: density → SDF, topology-preserving regularisation, exact functional faces, smoothing, mesh checks, T10 re-verification, export | `post/` | in progress |
-| Declarative studies: YAML/JSON config, component registry, CLI (`run`, `validate`, `show`, `compare`, `list`, sweeps) | `config`, `registry`, `cli` | done |
-| Fast solver: matrix-free geometric multigrid (CUDA mixed precision) with direct fallback | `solvers/gmg` | in progress — the first gate measurement failed on high-contrast fields (`docs/olcumler/A0.md`) |
+| Post-processing: density → SDF, topology-preserving regularisation, exact functional faces, smoothing, mesh checks, T10 re-verification, export | `post/` | done; T10 mesh convergence on optimised parts not yet established |
+| Declarative studies: YAML/JSON config, component registry (all feature modules), BC check in `validate`, CLI (`run`, `validate`, `show`, `compare`, `list`, sweeps) | `config`, `registry`, `cli` | done |
+| Fast solver: matrix-free geometric multigrid (CUDA mixed precision, K-cycle, rigid-island deflation) with direct fallback, exact tolerance contract, fail-closed by default | `solvers/gmg`, `fem/elastic_gmg` | done; solver gate passed (`docs/olcumler/A2.md`; measured on a loaded machine, ratios are bounds) |
 
 ## Install and run
 

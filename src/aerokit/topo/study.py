@@ -68,12 +68,21 @@ class Result:
     iterations: int
     converged: bool
     seconds: float
-    U: np.ndarray | None
+    U: np.ndarray | None               # displacements of the FINAL design (re-evaluated), None if not needed
     settings: dict[str, Any] = field(default_factory=dict)
+    final: Evaluation | None = None    # objective / constraints / U re-evaluated at ``x`` (the returned design)
 
     @property
     def objective(self) -> float:
-        return self.history["f0"][-1]
+        """Objective of the returned design (``final``); the history holds the designs analysed in the loop."""
+        return self.final.f0 if self.final is not None else self.history["f0"][-1]
+
+    @property
+    def constraint_values(self) -> dict[str, float]:
+        """Raw constraint response values of the returned design (keys = constraint names)."""
+        if self.final is None:
+            return {}
+        return {k: v for k, v in self.final.values.items() if k in self.settings.get("constraint_keys", ())}
 
 
 class Study:
@@ -238,9 +247,11 @@ class Study:
                 continue
             if change <= tol and self.schedule.finished:
                 break
-        xphys = self.physical(x)
-        res = Result(x, xphys, hist, it, change <= tol and self.schedule.finished, time.perf_counter() - t0,
-                     None if ev is None else ev.U, self.settings())
+        # The loop analysed x_k and then stepped to x_{k+1}: re-evaluate the RETURNED design so that its objective,
+        # constraints, U and x̄ belong to the same design (history[-1] belongs to the previous one).
+        final = self.evaluate(x, gradients=False)
+        res = Result(x, final.xphys, hist, it, change <= tol and self.schedule.finished, time.perf_counter() - t0,
+                     final.U, self.settings(), final)
         if move0 is not None:
             self.optimizer.move = move0                 # leave the optimizer as it was given
         if self.recorder is not None:
@@ -251,6 +262,7 @@ class Study:
         s: dict[str, Any] = {"domain": repr(self.domain), "optimizer": self.optimizer.name,
                              "objective": self.objective.name,
                              "constraints": [(c.key, c.upper) for c in self.constraints],
+                             "constraint_keys": [c.key for c in self.constraints],
                              "links": [type(m).__name__ for m in self.chain.links],
                              "interp": type(self.interp).__name__}
         for k in ("element", "nu"):

@@ -15,7 +15,7 @@ Etiketler: **[Ö]** ölçüldü (dosya/komut verilmiş), **[O]** koddan okundu, 
 |---|---|---|---|
 | D1 | Dizi altyapısı torch; türevler autograd, doğrusal çözüm tek özel adjoint | uygulandı | zincir ve yanıtlar yalnız ileri hesapla yazılıyor; her parça sonlu farkla test ediliyor (`tests/topo/test_gradients.py`) [Ö] |
 | D2 | Tam sınır kutusu üzerinde düzenli ızgara + maske + kısmi hacim | uygulandı | eski voksel sürücüsüyle aynı numaralama; maskeli alanlarda regresyon ≤ 1e-11 [Ö] |
-| D3 | Hızlı çözücü: matris tutmayan GMG-PCG | **açık** | A0 kapısı yüksek kontrastlı rastgele alanda kaldı, tekdüze alanda geçti (`docs/olcumler/A0.md`) [Ö]; A2 sürüyor |
+| D3 | Hızlı çözücü: matris tutmayan GMG-PCG | uygulandı | A0'da kaldı; A2'de K-döngüsü + ada deflasyonu ile kapı geçti: 49k'da PARDISO'dan 7,2×, 1e6 rastgele alan 361 iterasyonda 9,9e-9 (`docs/olcumler/A2.md`, yüklü makinede) [Ö] |
 | D4 | Paket yeri `src/aerokit/topo/` | uygulandı | `@cite` ve kaynakça altyapısı ortak |
 | D5 | git deposu | uygulandı | yayımlanan depo yalnız kütüphaneyi içerir (`.gitignore` beyaz liste) |
 
@@ -45,13 +45,13 @@ hata ≤ 1e-6, float64); eski sürücüler yalnız `tests/topo/topo_oracles/` al
 |---|---|---|---|
 | A0 | Çözücü kapısı (GMG prototipi) | ölçüldü: **kaldı** (rastgele yüksek kontrast), geçti (tekdüze) | `docs/olcumler/A0.md`, `A0.json` |
 | A1 | Çekirdek iskelet (CPU, doğrudan çözücü) | tamam | eski 3-D sürücüyle 7 senaryoda ≤ 3,4e-11, top88 ile 1,35e-11; gradyanlar ≤ 1e-6; 52 test |
-| A2 | Hızlı çözücü entegrasyonu | sürüyor | önce gerçek tasarım geçmişlerinde ölçüm, güçlü kaba uzay, PARDISO'ya düşme |
+| A2 | Hızlı çözücü entegrasyonu | tamam | gerçek tasarımlar 8–20 CG iterasyonu; 1e6 elemanlı optimizasyon ~12 s/iterasyon; tolerans sözleşmesi birebir, varsayılan fail-closed |
 | A3 | Özelliklerin 3-D taşınması | büyük kısmı tamam | robust min boyut, max kalınlık, AM, simetri, döküm; **gerilme P-norm henüz taşınmadı** |
 | A4 | Yeni fizik ve amaçlar | özfrekans tamam; ısı iletimi (bağlantılılık için) tamam | termoelastik, mekanizma, çok malzeme, burkulma yok |
-| A5 | Deney düzeni | tamam | YAML/JSON, registry, CLI, tarama (sweep) |
+| A5 | Deney düzeni | tamam | YAML/JSON, registry (tüm özellik modülleri), CLI, tarama; `validate` sınır koşulu kontrolünü çalıştırır |
 | B | Sınır koşulları + geometri | tamam | bileşke kontrolleri 1e-13; rijit-gövde modu tespiti; rulman yükü gerçek yüzeyden |
 | C | Bağlantılılık | tamam | düz uyum TO'su ayrışıyor; dondurulmuş bağ aşındırma testini geçiyor |
-| D | Üretim öncesi son işlem | sürüyor | |
+| D | Üretim öncesi son işlem | tamam | arayüz yüzeyleri birebir (delik yarıçapı 1634 noktada tam), hacim ±%0,44, min üçgen açısı 22–28°; T10 ağ yakınsaması açık |
 
 ## 4. Bilinen açıklar (ajan raporlarından, ölçülü)
 
@@ -68,6 +68,7 @@ hata ≤ 1e-6, float64); eski sürücüler yalnız `tests/topo/topo_oracles/` al
 * **Performans:** CPU'da float64 `conv3d` yavaş → filtre CPU'da seyrek matrisle; yük altında çok iş parçacıklı
   MKL/torch 10–25× yavaşlıyor.
 * **Gerilme kısıtlı 3-D TO** yeni çekirdeğe taşınmadı.
+* **Bağımsız referanslar:** top88 uyumu depodaki Python portuna karşı; DTU MATLAB, Top3D, NAFEMS ve geniş veri kümesi karşılaştırmaları açık (V&V yol haritası).
 
 ## 5. Yapılmayacaklar (şimdilik)
 

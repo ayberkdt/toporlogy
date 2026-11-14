@@ -70,3 +70,22 @@ def test_robust_3d_does_not_collapse_with_move_shrink():
     assert lv["eroded"] >= lv["intermediate"] >= lv["dilated"]
     assert lv["eroded"] < 20.0 * lv["dilated"]               # without the shrink: ~2 (all realisations ~1e7)
     assert lv["intermediate"] < 1e3
+
+
+@pytest.mark.parametrize("opt_name,iters", [("OC", 1), ("OC", 5), ("MMA", 2), ("MMA", 10)])
+def test_final_state_belongs_to_the_returned_design(opt_name, iters):
+    """Result.objective / constraint values / U / xphys are re-evaluated at Result.x (not taken from the last loop
+    iteration, which analysed the design before the final update)."""
+    d, fixed, F = _cantilever_2d()
+    chain = T.standard_chain(d, 1.5, beta=1.0)
+    opt = T.OC(move=0.2, dv_scale=d.n_active) if opt_name == "OC" else T.MMA()
+    st = T.Study(d, T.Elasticity(d, fixed), F, chain, T.SIMP(d), T.Compliance(),
+                 [T.Constraint(T.Volume(), 0.4)], opt, T.BetaContinuation(chain, 1.0, 8.0, every=3))
+    res = st.run(max_iter=iters)
+    ev = st.evaluate(res.x, gradients=False)
+    assert res.objective == pytest.approx(ev.f0, rel=1e-12)
+    assert res.constraint_values["volume"] == pytest.approx(ev.values["volume"], rel=1e-12)
+    assert np.allclose(res.U, ev.U, rtol=1e-12, atol=0)
+    assert np.array_equal(res.xphys, ev.xphys)
+    # the loop history is the design BEFORE the last update: generally different from the returned one
+    assert res.history["f0"][-1] != pytest.approx(res.objective, rel=1e-9)

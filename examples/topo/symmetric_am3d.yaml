@@ -1,0 +1,26 @@
+# Symmetric bridge printed upward (+z, build plate at z = 0): supported at the two bottom ends, point load at the
+# top centre. Mirror tying about x = mid and y = mid (the optimiser sees a quarter of the variables; group_average
+# keeps the filtered field tied), Langelaar AM filter (no overhang steeper than 45 deg from the build direction).
+# Units: consistent, dimensionless (h = 1, E0 = 1, unit load).
+#   python -m aerokit.topo run examples/topo/symmetric_am3d.yaml
+name: symmetric_am3d
+domain: {type: box, shape: [24, 8, 12], h: 1.0}
+material: {E0: 1.0, nu: 0.3}
+supports:
+  - {type: fixed, where: {type: in_box, lo: [min, min, min], hi: [2, max, min]}, name: left_foot}
+  - {type: fixed, where: {type: in_box, lo: [22, min, min], hi: [max, max, min]}, name: right_foot}
+load_cases:
+  - name: top
+    loads:
+      - {type: point, at: [mid, mid, max], force: [0, 0, -1], radius: 1.5}
+chain:
+  - {type: symmetry, planes: {x: mid, y: mid}}         # tying link first (embed follows automatically)
+  - {type: density_filter, rmin: 1.5}
+  - group_average
+  - {type: am_filter, build: +z}
+  - {type: heaviside_projection, beta: 1.0}
+constraints:
+  - {response: volume, upper: 0.2}
+optimizer: oc
+schedule: {type: beta_continuation, beta_max: 8.0, every: 20}
+run: {max_iter: 60, tol: 0.01}

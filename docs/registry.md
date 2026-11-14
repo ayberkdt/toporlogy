@@ -25,9 +25,10 @@ or in a module that is imported anyway).
 | kind            | returns                                                                 | used at            |
 |-----------------|-------------------------------------------------------------------------|--------------------|
 | `domain`        | `Domain`                                                                | `domain`           |
-| `selector`      | node numbers (int array; empty selection → raise `ValueError`)          | `where:` of supports/loads |
-| `support`       | fixed DOF numbers                                                       | `supports[]`       |
-| `load`          | load vector `(ndof,)` of one load case                                  | `load_cases[].loads[]` |
+| `shape`         | `geometry.Shape` with attribute `op` (add / cut / intersect)            | csg `shapes`, `keep`/`void`, `in_shape`, finalize `preserve` |
+| `selector`      | `bc.Selector`, or node numbers (int array; empty selection → raise `ValueError`) | `where:` of supports/loads |
+| `support`       | `bc.Support`, or fixed DOF numbers (converted to `bc.Fixed`)            | `supports[]`, `load_cases[].supports[]` |
+| `load`          | `bc.Load`, or a load vector `(ndof,)` of one case (converted to `bc.NodalForces`) | `load_cases[].loads[]` |
 | `link`          | `torch.nn.Module` on the element grid                                   | `chain[]`          |
 | `interpolation` | `torch.nn.Module` x̄ → E                                                 | `interpolation`    |
 | `solver`        | object with `factor(A_upper)` / `solve(B)`                              | `physics.solver`   |
@@ -35,7 +36,7 @@ or in a module that is imported anyway).
 | `response`      | `Response` (has `name`, `needs`, `__call__(ctx)`)                        | `objective`, `constraints[].response` |
 | `optimizer`     | `Optimizer`                                                             | `optimizer`        |
 | `schedule`      | `Schedule`                                                              | `schedule`         |
-| `post`          | callable `step(result, study, run_dir) -> dict | None` (dict goes into `summary.json["post"][name]`) | `post[]` |
+| `post`          | callable `step(result, study, run_dir) -> dict | None` (dict goes into `summary.json["post"][name]`; optional keys: `summary` = one CLI line, `passed: false` = exit 1) | `post[]` |
 
 ## Constructor conventions
 
@@ -53,9 +54,38 @@ or in a module that is imported anyway).
 * **Errors.** Raise `ValueError` with a plain message; the config layer prefixes it with the component's key path
   (`supports.0.where: selector plane: plane x = 3.3 selects no node ...`).
 
-Build order (each step may read what the previous ones put into `ctx`): domain → supports (`ctx.fixed`) → loads →
-physics (with its solver) → chain links (`ctx.chain`) → interpolation → objective → constraints → optimizer →
-schedule → post steps.
+Build order (each step may read what the previous ones put into `ctx`): domain → robust thresholds (`ctx.robust`)
+→ supports → loads → `bc.BoundaryConditions` (`ctx.bc`, `ctx.fixed`; connectivity interfaces `ctx.interfaces`, ties
+→ new domain) → `bc.check()` (errors raise `ConfigError`) → physics (with its solver) → chain links (`ctx.links`
+while building, then `ctx.chain`; `manufacturing.validate_chain`) → interpolation → objective (`ctx.objective`) →
+constraints (`ctx.constraints`) → optimizer → schedule → post steps.
+
+A response may carry `config_upper` (and `config_scale`): its default constraint bound when the config gives
+`upper: null` (`local_volume` with `t_max`, `min_frequency`, the connectivity responses).
+
+## Feature components (registered in `registry._register_features`)
+
+`python -m aerokit.topo list <kind>` prints every parameter with its default and unit.
+
+| kind | names |
+|------|-------|
+| domain | `box` (+ `keep`, `void` shapes), `csg` (shapes in order by `op`, h, padding, bounds, min_frac, connectivity), `stl` (path, h, scale, padding) |
+| shape | `box`, `ball` = `sphere` = `circle`, `cylinder`, `capsule`, `halfspace`, `polygon`, `prism`, `slot`, `bore` (auto-detected: `index` 1-based or `near`) |
+| selector | `plane`, `box`, `point` (node arrays, kept); `all`, `surface`, `in_box`, `on_plane` (axis + at or point + normal, `facing`), `half_space`, `on_cylinder`, `bore` (`index` / `near` / the only one), `in_sphere`, `in_shape`, `at_points`, `nearest`, `node_ids`, `union` / `intersect` / `subtract` (`of: [selectors]`) |
+| support | `fixed` (dofs: axes or vectors), `roller`, `symmetry`, `pinned_bore`, `elastic` |
+| load | `force` (total spread equally, kept), `point` (spread, zero moment), `surface_force`, `traction`, `pressure`, `bearing`, `remote_force`, `remote_moment`, `torque`, `body_force` |
+| link | `am_filter`, `casting`, `symmetry` / `extrusion` / `pattern` (tying: first link, `embed` is put after it), `group_average` |
+| interpolation | `two_range_simp` |
+| physics | `modal` (n_modes, mass linear / two_range, added_mass + added_mass_at; load_cases optional), `elasticity_gmg` (GMG-PCG, 3-D, axis-aligned fixed DOFs and one support set only; never a `solver`) |
+| response | `robust_compliance`, `dilated_volume`, `local_volume` (`t_max` in length → radius and bound), `grey_level`, `conduction_connectivity`, `coupling_compliance`, `frequency`, `eigenvalue`, `min_eigenvalue_ks`, `maximize` (negates a nested response), `min_frequency` |
+| schedule | `robust_continuation` |
+| post | `connectivity_gate`, `measure_lengthscale`, `finalize` (PostParams fields + `preserve`), `manufacturing_checks` (CheckThresholds fields), `reverify` (gmsh; bc selectors as callables), `export` |
+
+Top-level blocks handled by `config.py`: `robust` (min_solid / min_void in length → rmin written into the chain,
+thresholds; a `heaviside_projection` is added when missing), `connectivity` (one body via
+`connectivity.one_body`: interfaces, ties, constraint, gate, repair), `combinations`, per-case `supports`,
+`run.move_beta_ref`. Post steps that fail are recorded in `summary.json` (`passed: false`) and make the run exit 1;
+`manufacturing_checks`, `export` and `reverify` need a `finalize` before them. Examples: `examples/topo/*.yaml`.
 
 ## Chain ends
 

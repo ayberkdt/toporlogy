@@ -62,5 +62,6 @@ class Recorder:
         if self._snaps:
             np.savez_compressed(self.folder / "snapshots.npz", **self._snaps)
         out = {"iterations": res.iterations, "converged": res.converged, "seconds": res.seconds,
-               "objective": res.history["f0"][-1] if res.history["f0"] else None, "settings": res.settings}
+               "objective": res.objective if (res.final is not None or res.history["f0"]) else None,
+               "constraints": res.constraint_values, "settings": res.settings}
         (self.folder / "result.json").write_text(json.dumps(out, indent=1, default=str), encoding="utf-8")

@@ -1,7 +1,8 @@
 """Command line: ``python -m aerokit.topo <command>``.
 
 Commands: ``run``, ``validate``, ``show``, ``compare``, ``list`` (``python -m aerokit.topo <command> -h``).
-Exit codes: 0 = ok; 1 = run finished but not converged or a constraint violated; 2 = config or input error.
+Exit codes: 0 = ok; 1 = run finished but not converged, a constraint violated or a post step failed (connectivity
+verdict FAIL, manufacturing checks); 2 = config or input error (incl. boundary-condition check errors).
 Output is plain ASCII (safe on any console code page); errors go to stderr.
 """
 from __future__ import annotations
@@ -92,7 +93,9 @@ def component_str(kind: str, spec: dict[str, Any] | None) -> str:
 
 
 def vec(v: Sequence[float]) -> str:
-    return "(" + ", ".join(fval(x) for x in v) + ")"
+    """Components with 4 significant digits; round-off below 1e-12 of the largest one shown as 0."""
+    big = max((abs(float(x)) for x in v), default=0.0)
+    return "(" + ", ".join(fval(0.0 if abs(float(x)) <= 1e-12 * big else x) for x in v) + ")"
 
 
 def report_config_error(e: ConfigError, source: str, command: str) -> int:
@@ -165,13 +168,23 @@ def _finished(folder: Path) -> bool:
     return (folder / "summary.json").is_file() or (folder / "result.json").is_file()
 
 
+def _groups(ph: Any) -> list[Any]:
+    """The physics objects behind ``ph`` (one, or one per support set for bc.PerCaseSupports)."""
+    return [g for g, _ in ph.groups] if hasattr(ph, "groups") else [ph]
+
+
+def _free_dofs(ph: Any) -> str:
+    return " / ".join(str(len(g.free)) for g in _groups(ph))
+
+
 def _problem_line(s: C.Setup) -> str:
     st, d = s.study, s.study.domain
     grid = " x ".join(str(n) for n in d.shape)
-    el = getattr(st.physics, "element", "?")
+    el = getattr(_groups(st.physics)[0], "element", "?")
     nc = len(s.cases)
-    return (f"{grid} {el} | {d.n_design} design elements | {len(st.physics.free)} free DOFs | "
-            f"{nc} load case{'s' if nc != 1 else ''} | {st.optimizer.name} | "
+    cases = f"{nc} load case{'s' if nc != 1 else ''}" if nc else "modal"
+    return (f"{grid} {el} | {d.n_design} design elements | {_free_dofs(st.physics)} free DOFs | "
+            f"{cases} | {st.optimizer.name} | "
             f"{len(st.constraints)} constraint{'s' if len(st.constraints) != 1 else ''} | "
             f"max {s.config['run']['max_iter']} it")
 
@@ -211,10 +224,18 @@ def cmd_run(a: argparse.Namespace) -> int:
     for w in setup.warnings:
         out(kv("warning", w))
     prog = None if a.quiet else Progress(setup.study.objective.name, setup.constraint_names)
-    sm = C.run_setup(setup, folder, progress=prog, source=str(src), overrides=a.set)
+    sm = C.run_setup(setup, folder, progress=prog, source=str(src), overrides=a.set, post_progress=_post_line)
     out(kv("RESULT", _result_line(sm)))
     out(kv("NEXT", _next_after_run(sm, folder, src)))
     return EXIT_OK if sm["status"] == C.STATUS_OK else EXIT_FAIL
+
+
+def _post_line(name: str, result: dict[str, Any] | None, seconds: float) -> None:
+    """One line per post step: the label is printed when the step starts (some take minutes), the result after."""
+    if result is None:
+        print(kv("post", name), end="", flush=True)
+    else:
+        print(f"  {result.get('summary', 'done')} | {fsec(seconds)} s", flush=True)
 
 
 def _run_sweep(a: argparse.Namespace, raw: dict[str, Any]) -> int:
@@ -281,7 +302,7 @@ def cmd_validate(a: argparse.Namespace) -> int:
         return report_config_error(e, src, "validate")
     r, st = s.config, s.study
     d = st.domain
-    ph = st.physics
+    ph = _groups(st.physics)[0]
     size = " x ".join(fval(n * d.h) for n in d.shape)
     out(kv("CONFIG", f"{src}  valid"))
     out(kv("grid", f"{' x '.join(str(n) for n in d.shape)} elements ({d.dim}-D, {getattr(ph, 'element', '?')}), "
@@ -289,27 +310,66 @@ def cmd_validate(a: argparse.Namespace) -> int:
     out(kv("elements", f"{d.n_active} active | {d.n_design} design | {int(d.keep.sum())} keep | "
                        f"{int(d.void.sum())} void"))
     n_act = len(d.active_dofs)
-    out(kv("DOFs", f"{n_act} in the part | {len(ph.free)} free | {len(s.fixed)} fixed "
+    out(kv("DOFs", f"{n_act} in the part | {_free_dofs(st.physics)} free | {len(s.fixed)} fixed "
                    f"({len(r['supports'])} support{'s' if len(r['supports']) != 1 else ''})"))
-    out(kv("load cases", str(len(s.cases))))
+    out(kv("load cases", str(len(s.cases)) if s.cases else "none (modal analysis)"))
     for i, c in enumerate(s.cases, 1):
         out(f"  {i}  {c['name']:<10} weight {fval(c['weight'])}  resultant {vec(c['resultant'])}  "
-            f"on {c['n_nodes']} node{'s' if c['n_nodes'] != 1 else ''}")
+            f"on {c['n_nodes']} node{'s' if c['n_nodes'] != 1 else ''}"
+            + ("  (combination)" if c.get("combination") else ""))
+    _print_bc(s)
+    _print_features(s)
     out(kv("chain", " -> ".join(component_str("link", lk) for lk in r["chain"])))
     out(kv("interp", component_str("interpolation", r["interpolation"])))
     out(kv("objective", component_str("response", r["objective"])))
-    if r["constraints"]:
-        out(kv("constraints", "; ".join(f"{n} <= {fval(c['upper'])}" for n, c in zip(s.constraint_names,
-                                                                                    r["constraints"], strict=True))))
+    if st.constraints:
+        out(kv("constraints", "; ".join(f"{n} <= {fval(c.upper)}" for n, c in zip(s.constraint_names,
+                                                                                 st.constraints, strict=True))))
     else:
         out(kv("constraints", "none"))
     out(kv("optimizer", f"{component_str('optimizer', r['optimizer'])} | schedule "
                         f"{component_str('schedule', r['schedule'])}"))
     out(kv("run", f"max_iter {r['run']['max_iter']} | tol {fval(r['run']['tol'])} | output {r['output']['folder']}"))
+    if r["post"]:
+        out(kv("post", " -> ".join(p["type"] for p in r["post"])))
     for w in s.warnings:
         out(kv("warning", w))
     out(kv("NEXT", f"{PROG} run {src}"))
     return EXIT_OK
+
+
+def _print_bc(s: C.Setup) -> None:
+    """Load / support tables of the boundary conditions and the result of their check (errors never get here)."""
+    rep = s.bc_report
+    if rep is None:
+        return
+    n_w = len(rep.warnings)
+    out(kv("bc check", f"OK | {len(rep.errors)} errors | {n_w} warning{'s' if n_w != 1 else ''}"))
+    for line in s.bc_summary().rstrip().splitlines():
+        out(("  " + line).rstrip())
+    for it in rep.issues:
+        out(f"  {it}")
+
+
+def _print_features(s: C.Setup) -> None:
+    info = s.info
+    if info.get("bores"):
+        out(kv("bores", info["bores"]))
+    rb = info.get("robust")
+    if rb:
+        size = (f"min solid {fval(rb['solid_size'])} / void {fval(rb['void_size'])} -> rmin {fval(rb['rmin'])} el | "
+                if "rmin" in rb else "")
+        out(kv("robust", f"{size}eta_e {fval(rb['eta_e'])}, eta_d {fval(rb['eta_d'])}"))
+    cb = s.config.get("connectivity")
+    if cb is not None:
+        ties = (f"ties {info['ties']} cells + {info.get('frozen_interface_cells', 0)} interface cells frozen"
+                if info.get("ties") else "no ties")
+        con = "no constraint" if cb["constraint"] is None else f"{cb['constraint']} constraint"
+        gate = "gate" + (f" + {cb['repair']} repair" if cb["repair"] != "none" else "") if cb["gate"] else "no gate"
+        out(kv("connectivity", f"{len(s.interfaces)} interfaces | {ties} | {con} | {gate}"))
+        out("  " + ", ".join(f"{k} ({v} el)" for k, v in s.interfaces.items()))
+    for n in info.get("notes", []):
+        out(kv("note", n))
 
 
 # ============================================================================================== show / compare
@@ -441,7 +501,8 @@ def cmd_list(a: argparse.Namespace) -> int:
 def parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(prog=PROG, description="Density-based topology optimisation from a YAML/JSON "
                                 "config.", epilog=f"example: {PROG} run study.yaml --set run.max_iter=50   "
-                                "| exit codes: 0 ok, 1 not converged / constraint violated, 2 config error")
+                                "| exit codes: 0 ok, 1 not converged / constraint violated / post check failed, "
+                                "2 config error")
     sub = p.add_subparsers(dest="command", required=True, metavar="command")
     r = sub.add_parser("run", help="run a config (one run folder; with --sweep one subfolder per combination)")
     r.add_argument("config", help="YAML or JSON config file")

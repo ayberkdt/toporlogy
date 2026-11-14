@@ -907,7 +907,9 @@ class OneBodyPlan:
 
     def finish(self, xphys: np.ndarray, repair: bool = True,
                **kw: Any) -> tuple[np.ndarray, ConnectivityReport, BridgeResult | None]:
-        """Gate the design; if it is not PASS and ``repair``, join the bodies with :func:`bridge` and gate again.
+        """Gate the design; if it is not PASS and ``repair``, join the bodies with :func:`bridge` and gate again;
+        realisations that still split (a stricter threshold, the eroded solid) get section-3 bridges (x̄ = 1), up to
+        three rounds. ``BridgeResult.added`` holds all added cells.
 
         Returns (design, final report, bridge result or None). A repaired design must be re-verified (stiffness,
         stress) by the caller: bridges are geometric, not optimised.
@@ -916,7 +918,40 @@ class OneBodyPlan:
         if rep.verdict == "PASS" or not repair:
             return np.asarray(xphys, float), rep, None
         br = bridge(self.domain, xphys, self.interfaces, threshold=self.threshold, section=self.repair_section)
-        return br.xphys, self.gate(br.xphys, **kw), br
+        x = br.xphys
+        rep = self.gate(x, **kw)
+        # A bridge of section ≤ 2 vanishes under the one-element erosion of the gate, and bridge() adds nothing to a
+        # design that is one body at the nominal threshold but splits at a stricter realisation (FRAGILE). Repair
+        # each split realisation (threshold t > nominal, or the eroded solid) with section-3 paths set to x̄ = 1:
+        # such a path keeps a one-cell core after the erosion and is solid at every threshold.
+        for _ in range(3):
+            if rep.verdict == "PASS":
+                break
+            added = np.zeros(self.domain.shape, bool)
+            for c in rep.checks:
+                if c.connected:
+                    continue
+                if c.label == "eroded":
+                    solid = (x >= self.threshold) & self.domain.active
+                    frozen = self.domain.keep | np.logical_or.reduce(list(self.interfaces.values()))
+                    er = ndimage.binary_erosion(solid, structure=_structure(self.domain.dim, "face"),
+                                                border_value=0) | (solid & frozen)
+                    b2 = bridge(self.domain, er.astype(float), self.interfaces, section=3, drop_islands=False)
+                else:
+                    b2 = bridge(self.domain, x, self.interfaces, threshold=float(c.label[2:]), section=3,
+                                drop_islands=False)
+                added |= b2.added | b2.forced
+            if not added.any():
+                break
+            x = x.copy()
+            x[added] = 1.0
+            br.added = br.added | (added & ~br.added)
+            br.added_cells = int(br.added.sum())
+            br.added_volume = float((self.domain.frac * br.added).sum() * _cell_volume(self.domain))
+            br.solid = (x >= self.threshold) & self.domain.active
+            br.xphys = x
+            rep = self.gate(x, **kw)
+        return x, rep, br
 
 
 def one_body(domain: Domain, interfaces: Mapping[str, Any], *, ties: int | None = 1,
@@ -945,6 +980,10 @@ def one_body(domain: Domain, interfaces: Mapping[str, Any], *, ties: int | None 
     dom = domain
     if ties:
         tie_mask = tie_regions(domain, masks, section=int(ties))
+        # freeze the interface cells too: a tie ending on an interface cell that the optimiser empties is cut
+        # (measured on the splitting benchmark: interface cells at x̄ = 0.014 left 2 bodies despite the tie)
+        for m in masks.values():
+            tie_mask = tie_mask | m
         dom = with_keep(domain, tie_mask)
     cons: list[Any] = []
     if constraint == "conduction":
