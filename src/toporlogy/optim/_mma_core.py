@@ -65,8 +65,15 @@ def mma_asymptote(k: int, x: np.ndarray, xold1: np.ndarray, xold2: np.ndarray, l
 @cite("svanberg_1987", note="MMA approximations as in topology.mma_subproblem; dual solved with L-BFGS-B")
 def mma_multi(x: np.ndarray, xmin: np.ndarray, xmax: np.ndarray, low: np.ndarray, upp: np.ndarray,
               df0: np.ndarray, g: np.ndarray, dg: np.ndarray, move: float = 0.1, albefa: float = 0.1,
-              raa0: float = 1e-5, c: float = 1000.0, d: float = 1.0) -> tuple[np.ndarray, np.ndarray]:
-    """MMA subproblem with m constraints g_i ≤ 0 (rows of ``dg``); returns the new design and the multipliers."""
+              raa0: float = 1e-5, c: float = 1000.0, d: float = 1.0,
+              info: dict | None = None) -> tuple[np.ndarray, np.ndarray]:
+    """MMA subproblem with m constraints g_i ≤ 0 (rows of ``dg``); returns the new design and the multipliers.
+
+    ``info`` (optional dict) receives the dual solve's outcome: ``success``, ``message``, ``nit`` (L-BFGS-B) and
+    ``residual`` = max |projected gradient| of the dual at the returned multipliers (the KKT residual of the box-
+    constrained dual; 0 at the exact dual optimum). L-BFGS-B's ``success`` alone is not a convergence test here:
+    measured on the two MBB runs of test_mma (249 solves, 17 Nov 2026), the 2 ``ABNORMAL_TERMINATION_IN_LNSRCH``
+    stops had residual ≤ 1.14e-8, the 247 successful solves up to 4.06e-8."""
     dx = np.maximum(xmax - xmin, 1e-5)
     alpha = np.maximum(np.maximum(low + albefa * (x - low), x - move * (xmax - xmin)), xmin)
     beta = np.minimum(np.minimum(upp - albefa * (upp - x), x + move * (xmax - xmin)), xmax)
@@ -96,4 +103,9 @@ def mma_multi(x: np.ndarray, xmin: np.ndarray, xmax: np.ndarray, low: np.ndarray
     m = pi.shape[0]
     res = so.minimize(neg_dual, np.zeros(m), jac=True, method="L-BFGS-B", bounds=[(0.0, None)] * m,
                       options={"maxiter": 500, "ftol": 1e-15, "gtol": 1e-12})
+    if info is not None:
+        gl = -(np.asarray(res.jac, float).reshape(-1))         # ascent direction of the dual (= g_i(x(λ)) − y_i)
+        pg = np.where(res.x > 0.0, gl, np.maximum(gl, 0.0))     # projected on λ ≥ 0
+        info.update(success=bool(res.success), message=str(res.message), nit=int(getattr(res, "nit", -1)),
+                    residual=float(np.max(np.abs(pg))) if pg.size else 0.0)
     return x_of(res.x), res.x

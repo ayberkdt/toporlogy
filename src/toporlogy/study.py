@@ -314,4 +314,6 @@ class Study:
                 s[k] = getattr(self.physics, k)
         if hasattr(self.physics, "solver"):
             s["solver"] = getattr(self.physics.solver, "name", type(self.physics.solver).__name__)
+        if hasattr(self.optimizer, "subproblem_failures"):       # MMA: dual solves that did not converge this run
+            s["subproblem_failures"] = int(self.optimizer.subproblem_failures)
         return s
