@@ -313,10 +313,17 @@ class Slot(Shape):
         return ends.min(axis=0) - self.radius, ends.max(axis=0) + self.radius
 
 
+def _common_dim(shapes: Sequence[Shape], what: str) -> int:
+    dims = {s.dim for s in shapes}
+    if len(dims) != 1:
+        raise ValueError(f"{what} of shapes of different dimension: {sorted(dims)}")
+    return dims.pop()
+
+
 class Union(Shape):
     def __init__(self, *shapes: Shape) -> None:
         self.shapes = list(shapes)
-        self.dim = shapes[0].dim
+        self.dim = _common_dim(self.shapes, "Union")
 
     def sdf(self, P: np.ndarray) -> np.ndarray:
         return np.min([s.sdf(P) for s in self.shapes], axis=0)
@@ -329,7 +336,7 @@ class Union(Shape):
 class Intersection(Shape):
     def __init__(self, *shapes: Shape) -> None:
         self.shapes = list(shapes)
-        self.dim = shapes[0].dim
+        self.dim = _common_dim(self.shapes, "Intersection")
 
     def sdf(self, P: np.ndarray) -> np.ndarray:
         return np.max([s.sdf(P) for s in self.shapes], axis=0)
@@ -469,9 +476,12 @@ def read_stl(path: str | Path, merge_tol: float = 1e-9) -> tuple[np.ndarray, np.
     """
     raw = Path(path).read_bytes()
     tri: np.ndarray | None = None
-    if len(raw) >= 84:
+    # binary when the records fit in the file and it does not read as ASCII ("solid" + "facet"); bytes after the
+    # last record (padding some exporters add) are ignored. A binary header may itself start with "solid".
+    looks_ascii = raw[:512].lstrip().lower().startswith(b"solid") and b"facet" in raw[:1024].lower()
+    if len(raw) >= 84 and not looks_ascii:
         n = struct.unpack("<I", raw[80:84])[0]
-        if len(raw) == 84 + 50 * n:
+        if 84 + 50 * n <= len(raw):
             rec = np.dtype([("n", "<f4", 3), ("v", "<f4", (3, 3)), ("a", "<u2")])
             tri = np.frombuffer(raw, dtype=rec, count=n, offset=84)["v"].astype(float)
     if tri is None:
