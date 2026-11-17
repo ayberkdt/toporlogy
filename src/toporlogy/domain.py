@@ -171,11 +171,17 @@ class Domain:
         """Zero load array (ndof, n_cases)."""
         return np.zeros((self.ndof, n_cases))
 
-    def uniform_start(self, volume_fraction: float) -> np.ndarray:
+    def uniform_start(self, volume_fraction: float, weighted: bool = False) -> np.ndarray:
         """Design vector that gives mean x̄ = ``volume_fraction`` over the part before filtering (topo3d start rule).
 
-        Keep elements count as 1, void as 0; the free elements share the rest, clipped to [0, 1].
+        Keep elements count as 1, void as 0; the free elements share the rest, clipped to [0, 1]. ``weighted``: the
+        mean of :class:`~toporlogy.responses.Volume` ``(weighted=True)``, Σ frac·x̄ / Σ frac (partial voxels count by
+        their solid fraction); default: element count.
         """
+        if weighted:
+            fr = self.frac
+            start = (volume_fraction * fr.sum() - fr[self.keep].sum()) / max(float(fr[self.design].sum()), 1e-300)
+            return np.full(self.n_design, float(min(max(start, 0.0), 1.0)))
         start = (volume_fraction * self.n_active - self.keep.sum()) / max(self.n_design, 1)
         return np.full(self.n_design, float(min(max(start, 0.0), 1.0)))
 

@@ -238,7 +238,7 @@ class Study:
         x = None
         for c in self.constraints:
             if isinstance(c.response, Volume):
-                x = self.domain.uniform_start(c.upper)
+                x = self.domain.uniform_start(c.upper, weighted=bool(getattr(c.response, "weighted", False)))
                 break
         if x is None:
             x = np.full(self.domain.n_design, 0.5)

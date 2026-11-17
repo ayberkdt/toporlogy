@@ -299,3 +299,20 @@ def test_recorder_run_folder(tmp_path):
     assert out["iterations"] == 5 and np.isclose(out["objective"], res.objective)
     with np.load(folder / "snapshots.npz") as z:
         assert sorted(z.files) == ["it00002", "it00004"] and z["it00004"].dtype == np.float16
+
+
+def test_default_start_meets_the_weighted_volume_bound():
+    """B-15: with partial voxels, Volume(weighted=True) is Σ frac·x̄ / Σ frac, but the start design was always built
+    from the element count; the weighted volume of the start missed the bound. Now it starts exactly on it."""
+    shape = (12, 6)
+    frac = np.ones(shape)
+    frac[:, -2:] = 0.3                                       # a band of partial voxels
+    keep = np.zeros(shape, bool)
+    keep[0, :2] = True
+    d = Domain(shape, 1.0, frac=frac, keep=keep)
+    from toporlogy import Chain, Embed
+    for weighted in (False, True):
+        st = Study(d, Elasticity(d, d.dofs(d.nodes_where(lambda X: X[:, 0] < 1e-9))), d.load_vector(),
+                   Chain([Embed(d)]), SIMP(d), Compliance(), [Constraint(Volume(weighted=weighted), 0.4)], OC())
+        v = st.evaluate(st.default_start(), gradients=False).values["volume"]
+        assert v == pytest.approx(0.4, rel=1e-12), (weighted, v)
