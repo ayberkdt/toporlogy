@@ -147,3 +147,19 @@ def test_move_is_restored_when_the_run_raises():
         st.run(max_iter=20, tol=0.0, callback=stop)
     assert min(seen) < 0.2                                   # the move had been shrunk inside the run
     assert opt.move == 0.2
+
+
+def test_beta_continuation_without_projection_records_no_beta(tmp_path):
+    """B-17: without a projection link BetaContinuation.beta is NaN and was put into every history row, so
+    history.jsonl held a non-standard NaN token. The schedule now reports no state then."""
+    import json
+    d, fixed, F = _cantilever_2d()
+    chain = T.standard_chain(d, 1.5, projection=False)
+    sch = T.BetaContinuation(chain, 1.0, 16.0, every=3)
+    rec = T.Recorder(tmp_path / "run")
+    st = T.Study(d, T.Elasticity(d, fixed), F, chain, T.SIMP(d), T.Compliance(), [T.Constraint(T.Volume(), 0.4,
+                 scale=1.0)], T.OC(move=0.2, dv_scale=d.n_active), sch, recorder=rec)
+    res = st.run(max_iter=3, tol=0.0)
+    assert "beta" not in res.history
+    rows = (tmp_path / "run" / "history.jsonl").read_text(encoding="utf-8").splitlines()
+    assert rows and all("NaN" not in r and "beta" not in json.loads(r) for r in rows)

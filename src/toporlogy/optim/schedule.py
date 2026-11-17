@@ -60,4 +60,5 @@ class BetaContinuation(Schedule):
         return False
 
     def state(self) -> dict[str, float]:
-        return {"beta": self.beta}
+        # no projection: no β to report (a NaN column would reach history.jsonl as a non-standard NaN token)
+        return {"beta": self.beta} if self.proj is not None else {}
