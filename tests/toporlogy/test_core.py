@@ -12,7 +12,7 @@ import torch
 from topo_oracles import topo3d
 from topo_oracles.voxfem import H8_CORNER, VoxelMesh
 from topo_oracles import topology
-from toporlogy import (OC, SIMP, Compliance, Constraint, DensityFilter, Domain, Elasticity, Recorder, Response,
+from toporlogy import (MMA, OC, SIMP, Compliance, Constraint, DensityFilter, Domain, Elasticity, Recorder, Response,
                           Study, Volume, standard_chain)
 from toporlogy.solvers import DirectSolver
 
@@ -255,12 +255,15 @@ def test_study_rejects_bad_inputs():
         st.run(x0=np.full(d.n_design + 1, 0.4), max_iter=1)
     with pytest.raises(ValueError, match="weights"):
         Study(d, phys, F, chain, SIMP(d), Compliance(weights=[1.0, 2.0]), [vol], OC()).evaluate(np.full(d.n_design, .4))
-    # OC needs a gradient-free constraint function; a U-dependent constraint cannot give one
-    st_u = Study(d, phys, F, chain, SIMP(d), Compliance(), [Constraint(_UResponse(), 1.0)], OC())
+    # OC needs a gradient-free constraint function; a U-dependent constraint cannot give one: rejected when the
+    # study is built (B-07; before, the run failed at its first step)
+    with pytest.raises(ValueError, match="state solve"):
+        Study(d, phys, F, chain, SIMP(d), Compliance(), [Constraint(_UResponse(), 1.0)], OC())
+    st_u = Study(d, phys, F, chain, SIMP(d), Compliance(), [Constraint(_UResponse(), 1.0)], MMA())
     with pytest.raises(ValueError):
         st_u.constraint_values(np.full(d.n_design, 0.4))
-    with pytest.raises(ValueError, match="constraint_fn"):
-        st_u.run(max_iter=1)
+    with pytest.raises(ValueError, match="constraint_fn"):                 # OC itself still refuses to step blind
+        OC().step(np.full(4, 0.5), 1.0, -np.ones(4), np.array([-0.1]), np.ones((1, 4)))
     with pytest.raises(ValueError):
         OC(move=0.0)
 
