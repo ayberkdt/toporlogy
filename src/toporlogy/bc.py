@@ -725,6 +725,17 @@ class ElasticSupport(Support):
 
 
 # =============================================================================================== constraint set
+def _constraint_key(cs: ConstraintSet) -> bytes:
+    """Content of a resolved support set: fixed DOFs, local frames (node, constrained count, axes) and springs."""
+    parts = [np.asarray(cs.fixed, np.int64).tobytes(), b"|frames"]
+    for node in sorted(cs.frames):
+        T, k = cs.frames[node]
+        parts += [np.int64(node).tobytes(), np.int64(k).tobytes(), np.ascontiguousarray(T, np.float64).tobytes()]
+    parts += [b"|springs", np.asarray(cs.spring_nodes, np.int64).tobytes(),
+              np.ascontiguousarray(cs.spring_K, np.float64).tobytes()]
+    return b"".join(parts)
+
+
 @dataclass
 class ConstraintSet:
     """Supports resolved to DOFs: global fixed DOFs, local frames for oblique constraints, nodal springs."""
@@ -1544,28 +1555,33 @@ class BoundaryConditions:
                 except EmptySelectionError as exc:
                     raise EmptySelectionError(f"load case {c.name!r}, load {ld.name!r}: {exc}") from None
             self.applied[c.name] = out
-        # support sets, identified by the identity of the support objects
-        self._sets: list[tuple[tuple[int, ...], list[Support]]] = []
+        # support sets, identified by what they constrain on this part (fixed DOFs, local frames, springs), not by
+        # the identity of the support objects: equal supports built separately are one set (one factorisation, and
+        # combinations of their cases are valid)
+        self._sets: list[tuple[bytes, list[Support]]] = []
         self._case_set: list[int] = []
+        self._cs: dict[int, ConstraintSet] = {}
+        resolved: dict[tuple[int, ...], ConstraintSet] = {}
         for c in self.cases:
             sup = list(c.supports) if c.supports is not None else self.supports
-            key = tuple(id(s) for s in sup)
+            if not sup:
+                raise ValueError(f"load case {c.name!r} has no supports")
+            ids = tuple(id(s) for s in sup)
+            if ids not in resolved:
+                try:
+                    resolved[ids] = _resolve(sup, self.info)
+                except EmptySelectionError as exc:
+                    raise EmptySelectionError(f"supports of case {c.name!r}: {exc}") from None
+            cs = resolved[ids]
+            key = _constraint_key(cs)
             for k, (kk, _) in enumerate(self._sets):
                 if kk == key:
                     self._case_set.append(k)
                     break
             else:
                 self._sets.append((key, sup))
+                self._cs[len(self._sets) - 1] = cs
                 self._case_set.append(len(self._sets) - 1)
-        self._cs: dict[int, ConstraintSet] = {}
-        for k, (_, sup) in enumerate(self._sets):
-            if not sup:
-                raise ValueError("a load case has no supports")
-            try:
-                self._cs[k] = _resolve(sup, self.info)
-            except EmptySelectionError as exc:
-                cases = [c.name for c, s in zip(self.cases, self._case_set, strict=True) if s == k]
-                raise EmptySelectionError(f"supports of case(s) {cases}: {exc}") from None
         idx = {c.name: i for i, c in enumerate(self.cases)}
         for cb in self.combinations:
             miss = [n for n in cb.factors if n not in idx]

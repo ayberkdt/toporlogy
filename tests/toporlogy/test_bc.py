@@ -388,3 +388,22 @@ def test_remote_moment_does_not_modify_the_load_object():
     assert list(rm.F) == F0 and list(rm.point) == p0
     assert np.allclose(a1.ref_point, [0, 1, 1]) and np.allclose(a2.ref_point, [0, 3, 4])
     assert np.allclose(a1.force, 0.0) and np.allclose(a2.force, 0.0)
+
+
+def test_equal_supports_built_separately_are_one_set():
+    """B-11: support sets were told apart by the identity of the support objects, so the same clamp built twice made
+    two sets (two factorisations) and a combination of their cases raised "mixes cases with different supports"."""
+    d = block((8, 3, 3))
+    l1 = bc.SurfaceForce(bc.OnPlane([8, 0, 0], 0), [0, 0, -1.0])
+    l2 = bc.SurfaceForce(bc.OnPlane([0, 0, 3], 2), [0, 1.0, 0])
+    clamp = lambda: [bc.Fixed(bc.OnPlane([0, 0, 0], 0))]                        # noqa: E731
+    B = bc.BoundaryConditions(d, clamp(), [bc.LoadCase("a", [l1], supports=clamp()),
+                                           bc.LoadCase("b", [l2], supports=clamp())],
+                              combinations=[bc.Combination("a+b", {"a": 1.0, "b": 1.0})])
+    assert len(B._sets) == 1
+    F = B.F()
+    assert np.allclose(F[:, 2], F[:, 0] + F[:, 1])
+    other = [bc.Fixed(bc.OnPlane([8, 0, 0], 0))]                                  # really different: still refused
+    with pytest.raises(ValueError, match="different supports"):
+        bc.BoundaryConditions(d, clamp(), [bc.LoadCase("a", [l1]), bc.LoadCase("b", [l2], supports=other)],
+                              combinations=[bc.Combination("a+b", {"a": 1.0, "b": 1.0})])
