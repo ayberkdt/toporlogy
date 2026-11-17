@@ -270,38 +270,40 @@ class Study:
             self.recorder.start(self)
         it, change, ev = 0, 1.0, None
         move0 = getattr(self.optimizer, "move", None)
-        while it < max_iter:
-            it += 1
-            for k, v in self.schedule.state().items():
-                hist[k].append(v)
-            ev = self.evaluate(x)
-            hist["f0"].append(ev.f0)
-            for c in self.constraints:
-                hist[c.key].append(ev.values[c.key])
-            xnew = self.optimizer.step(x, ev.f0, ev.df0, ev.g, ev.dg, cfn)
-            change = float(np.max(np.abs(xnew - x))) if x.size else 0.0
-            x = xnew
-            hist["change"].append(change)
-            hist["seconds"].append(time.perf_counter() - t0)
-            if callback is not None:
-                callback(it, ev, change)
-            if self.recorder is not None:
-                self.recorder.log(it, ev, change, self.schedule.state())
-            if self.schedule.update(it, change):
-                self.optimizer.reset()
-                beta = self.schedule.state().get("beta")
-                if self.move_beta_ref is not None and move0 is not None and beta:
-                    self.optimizer.move = float(move0) * min(1.0, self.move_beta_ref / float(beta))
-                continue
-            if change <= tol and self.schedule.finished:
-                break
-        # The loop analysed x_k and then stepped to x_{k+1}: re-evaluate the RETURNED design so that its objective,
-        # constraints, U and x̄ belong to the same design (history[-1] belongs to the previous one).
-        final = self.evaluate(x, gradients=False)
-        res = Result(x, final.xphys, hist, it, change <= tol and self.schedule.finished, time.perf_counter() - t0,
-                     final.U, self.settings(), final)
-        if move0 is not None:
-            self.optimizer.move = move0                 # leave the optimizer as it was given
+        try:
+            while it < max_iter:
+                it += 1
+                for k, v in self.schedule.state().items():
+                    hist[k].append(v)
+                ev = self.evaluate(x)
+                hist["f0"].append(ev.f0)
+                for c in self.constraints:
+                    hist[c.key].append(ev.values[c.key])
+                xnew = self.optimizer.step(x, ev.f0, ev.df0, ev.g, ev.dg, cfn)
+                change = float(np.max(np.abs(xnew - x))) if x.size else 0.0
+                x = xnew
+                hist["change"].append(change)
+                hist["seconds"].append(time.perf_counter() - t0)
+                if callback is not None:
+                    callback(it, ev, change)
+                if self.recorder is not None:
+                    self.recorder.log(it, ev, change, self.schedule.state())
+                if self.schedule.update(it, change):
+                    self.optimizer.reset()
+                    beta = self.schedule.state().get("beta")
+                    if self.move_beta_ref is not None and move0 is not None and beta:
+                        self.optimizer.move = float(move0) * min(1.0, self.move_beta_ref / float(beta))
+                    continue
+                if change <= tol and self.schedule.finished:
+                    break
+            # The loop analysed x_k and then stepped to x_{k+1}: re-evaluate the RETURNED design so that its objective,
+            # constraints, U and x̄ belong to the same design (history[-1] belongs to the previous one).
+            final = self.evaluate(x, gradients=False)
+            res = Result(x, final.xphys, hist, it, change <= tol and self.schedule.finished, time.perf_counter() - t0,
+                         final.U, self.settings(), final)
+        finally:
+            if move0 is not None:
+                self.optimizer.move = move0             # leave the optimizer as it was given, also on an error
         if self.recorder is not None:
             self.recorder.finish(res)
         return res

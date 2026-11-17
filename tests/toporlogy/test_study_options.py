@@ -125,3 +125,25 @@ def test_robust_continuation_restarts_beta_and_volume_bound():
     assert sch.beta > 1.0 and vol.upper != 0.5
     r2 = st.run(max_iter=8, tol=0.0)
     assert np.array_equal(r1.x, r2.x) and r1.history["f0"] == r2.history["f0"]
+
+
+def test_move_is_restored_when_the_run_raises():
+    """B-14: with move_beta_ref the move limit shrinks at β steps; it was restored only on a normal return, so an
+    exception inside the loop (here from the callback, after a β step) left the optimizer with the shrunk move."""
+    d, fixed, F = _cantilever_2d()
+    chain = T.standard_chain(d, 1.5, beta=1.0)
+    opt = T.OC(move=0.2, dv_scale=d.n_active)
+    sch = T.BetaContinuation(chain, 1.0, 16.0, every=2)
+    st = T.Study(d, T.Elasticity(d, fixed), F, chain, T.SIMP(d), T.Compliance(), [T.Constraint(T.Volume(), 0.4,
+                 scale=1.0)], opt, sch, move_beta_ref=1.0)
+    seen = []
+
+    def stop(it, ev, ch):
+        seen.append(opt.move)
+        if sch.beta >= 4.0:
+            raise KeyboardInterrupt("stopped by the user")
+
+    with pytest.raises(KeyboardInterrupt):
+        st.run(max_iter=20, tol=0.0, callback=stop)
+    assert min(seen) < 0.2                                   # the move had been shrunk inside the run
+    assert opt.move == 0.2
