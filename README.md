@@ -27,7 +27,7 @@ python -m toporlogy run examples/lbracket_bore3d.yaml --out runs/lbracket
 That example builds an L-bracket from primitives, finds its bore, applies a bearing load, enforces a minimum and a
 maximum member size, keeps the part in one body, and exports a smoothed STL with a quality report.
 
-Optional extras: `pip install -e ".[post,fast,mesh,dev]"` adds pyvista/vtk (surfaces), pypardiso (MKL direct solver),
+Optional extras: `pip install -e ".[post,fast,mesh,dev]"` adds pyvista/vtk/numba (surfaces), pypardiso (MKL direct solver),
 gmsh (tetrahedral re-verification) and the test tools.
 
 ## What is inside
