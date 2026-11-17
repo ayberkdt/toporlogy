@@ -246,6 +246,11 @@ class Study:
     def run(self, x0: np.ndarray | None = None, max_iter: int = 100, tol: float = 0.01,
             callback: Callable[[int, Evaluation, float], None] | None = None) -> Result:
         t0 = time.perf_counter()
+        # a run starts from the initial continuation state and a fresh optimizer, whatever a previous run left
+        # (β, its counter, an updated volume bound, MMA asymptotes and iterates); before default_start, which
+        # reads the volume bound
+        self.schedule.reset()
+        self.optimizer.restart()
         x = self.default_start() if x0 is None else np.asarray(x0, float).copy()
         if x.shape != (self.n_var,):
             raise ValueError(f"x0 must have {self.n_var} entries")

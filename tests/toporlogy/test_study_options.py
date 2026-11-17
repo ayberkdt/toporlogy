@@ -89,3 +89,39 @@ def test_final_state_belongs_to_the_returned_design(opt_name, iters):
     assert np.array_equal(res.xphys, ev.xphys)
     # the loop history is the design BEFORE the last update: generally different from the returned one
     assert res.history["f0"][-1] != pytest.approx(res.objective, rel=1e-9)
+
+
+@pytest.mark.parametrize("optimizer", ["oc", "mma"])
+def test_second_run_of_a_study_repeats_the_first(optimizer):
+    """B-03: run() restarts the continuation schedule (β back to β0, counter 0) and the optimizer (MMA asymptotes,
+    iterates, objective scale), so two runs of one Study give the same design and history. Before, the second run
+    started at the β the first one ended with (and with the first run's MMA state)."""
+    d, fixed, F = _cantilever_2d()
+    chain = T.standard_chain(d, 1.5, beta=1.0)
+    opt = T.OC(move=0.2, dv_scale=d.n_active) if optimizer == "oc" else T.MMA(move=0.2)
+    sch = T.BetaContinuation(chain, 1.0, 8.0, every=3)
+    st = T.Study(d, T.Elasticity(d, fixed), F, chain, T.SIMP(d), T.Compliance(), [T.Constraint(T.Volume(), 0.4,
+                 scale=1.0)], opt, sch)
+    r1 = st.run(max_iter=12, tol=0.0)
+    assert sch.beta > 1.0                                    # the first run did step β
+    n1 = getattr(opt, "n_resets", None)
+    r2 = st.run(max_iter=12, tol=0.0)
+    assert r2.history["beta"][0] == 1.0
+    assert np.array_equal(r1.x, r2.x) and r1.history["f0"] == r2.history["f0"]
+    assert getattr(opt, "n_resets", None) == n1             # MMA counts the resets of the current run only
+
+
+def test_robust_continuation_restarts_beta_and_volume_bound():
+    """B-03 for RobustContinuation: β and the updated dilated-volume bound go back to their initial values."""
+    d, fixed, F = _cantilever_2d(30, 10)
+    s = robust_chain_settings(2.0, 2.0, 1.0, 2)
+    rs = RobustSet.from_settings(s)
+    chain = T.standard_chain(d, s["rmin"], projection=True, beta=1.0)
+    obj = RobustCompliance(rs)
+    vol = T.Constraint(DilatedVolume(rs), 0.5)
+    sch = RobustContinuation(chain, rs, 1.0, 8.0, every=3, volume=vol, target=0.4, volume_every=2, rescale=[obj])
+    st = T.Study(d, T.Elasticity(d, fixed), F, chain, T.SIMP(d), obj, [vol], T.MMA(move=0.2), sch)
+    r1 = st.run(max_iter=8, tol=0.0)
+    assert sch.beta > 1.0 and vol.upper != 0.5
+    r2 = st.run(max_iter=8, tol=0.0)
+    assert np.array_equal(r1.x, r2.x) and r1.history["f0"] == r2.history["f0"]

@@ -93,6 +93,11 @@ class MMA(Optimizer):
         self.n_resets = -1                                  # counts reset() calls after construction
         self.reset()
 
+    def restart(self) -> None:
+        """New run: ``reset()`` and count the resets of this run only (n_resets = β steps of the run)."""
+        self.reset()
+        self.n_resets = 0
+
     def reset(self) -> None:
         """Forget asymptotes, previous iterates, the step counter and the objective scale."""
         self.k = 0

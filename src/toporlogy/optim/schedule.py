@@ -15,6 +15,9 @@ class Schedule:
     def update(self, iteration: int, change: float) -> bool:
         return False
 
+    def reset(self) -> None:
+        """Back to the initial continuation state; Study.run calls it before the loop."""
+
     def state(self) -> dict[str, float]:
         return {}
 
@@ -30,8 +33,12 @@ class BetaContinuation(Schedule):
         link = chain.find(HeavisideProjection)
         self.proj: HeavisideProjection | None = link if isinstance(link, HeavisideProjection) else None
         self.beta_max, self.every, self.tol = float(beta_max), int(every), float(tol)
+        self.beta0 = float(beta0)
+        self.reset()
+
+    def reset(self) -> None:
         if self.proj is not None:
-            self.proj.beta = float(beta0)
+            self.proj.beta = self.beta0
         self._count = 0
 
     @property

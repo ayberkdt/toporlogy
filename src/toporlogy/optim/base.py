@@ -28,3 +28,7 @@ class Optimizer:
 
     def reset(self) -> None:
         """Forget history (asymptotes, previous iterates)."""
+
+    def restart(self) -> None:
+        """Start of a new run (Study.run): forget everything a previous run left. Default: ``reset()``."""
+        self.reset()

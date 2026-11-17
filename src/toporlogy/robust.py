@@ -444,7 +444,19 @@ class RobustContinuation(Schedule):
         if volume is not None and target is None:
             raise ValueError("target volume required with a volume constraint")
         self.rescale = list(rescale)
+        self._beta0 = float(beta0)
+        self._upper0 = None if volume is None else float(volume.upper)
         self._count = 0
+
+    def reset(self) -> None:
+        """β back to β0, counter 0, the volume bound back to its value at construction, automatic KS scales of
+        the ``rescale`` responses forgotten (Study.run calls it before the loop)."""
+        self._set_beta(self._beta0)
+        self._count = 0
+        if self.volume is not None and self._upper0 is not None:
+            self.volume.upper = self._upper0
+        for r in self.rescale:
+            r.reset_scale()
 
     def _set_beta(self, b: float) -> None:
         if self.proj is not None:
