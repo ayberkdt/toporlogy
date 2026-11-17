@@ -674,7 +674,9 @@ def build(resolved: dict[str, Any]) -> Setup:
             raise ConfigError(f"connectivity: {e}", "connectivity") from None
         ctx.interfaces = plan.interfaces
         if plan.ties is not None:
-            info["ties"] = int(plan.ties.sum())
+            # plan.ties also holds the interface cells (one_body freezes them with the ties) and may overlap keep;
+            # those are counted in frozen_interface_cells / the domain's keep, so count the new tie cells only
+            info["ties"] = int((plan.ties & ~d0.keep).sum())
             d = ctx.domain = plan.domain
             bcs = _boundary_conditions(d, default_sup, lcs, combos)
     ctx.bc = bcs
