@@ -9,6 +9,8 @@ description = "Modular density-based topology optimisation on regular 2-D/3-D gr
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = ["numpy>=1.26", "scipy>=1.11", "torch>=2.2", "pyyaml>=6"]
+# proprietary, all rights reserved (LICENSE); "Private :: Do Not Upload" makes PyPI reject an accidental upload
+classifiers = ["License :: Other/Proprietary License", "Private :: Do Not Upload"]
 
 [project.optional-dependencies]
 plot = ["matplotlib>=3.8"]
