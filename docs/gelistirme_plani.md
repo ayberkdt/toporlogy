@@ -16,7 +16,8 @@ bugünkü durumunu, bulunan açıkları ve sonraki işlerin sırasını tutar.
 | A-01–A-05 (§3.1) | tamam | `3e3a1cc` … `8bcaeeb` |
 | G0 güvenlik ağı | tamam | baseline (7 örnek, bit düzeyinde), API yüzeyi + `list`, katman kuralı + import sırası testleri |
 | G1 doğruluk düzeltmeleri | tamam | B-02 ve B-06 plandaki gibi G7'ye kaldı |
-| G2–G9 | başlamadı | G2'den önce K1 kararı gerekli |
+| G2 `registry.py`'yi böl | tamam | `configuration/` paketi; `registry.py` uyumluluk modülü (aşağıda) |
+| G3–G9 | başlamadı | K1 kararı verildi: sınırlı (K1-a) |
 | K5 lisans | kapandı | tescilli, tüm hakları saklı (`LICENSE`) |
 
 G1 bulgularının kapandığı commit'ler: B-01 `aeb3ac3`; B-03 `6dca762`; B-04 `a6b0bc6`; B-05 `cf83e40`; B-07 `54ff90f`,
@@ -27,6 +28,12 @@ iterasyon sayısı değişmiyor; kod değişmedi, regresyon testi eklendi).
 Uygulama sırasında plandan sapan iki ölçüm: B-04'te L-BFGS-B'nin başarı bayrağı tek başına yakınsama göstermedi
 (249 dual çözümde "başarısız" bitenlerin kalıntısı ≤ 1,1e-8, "başarılı" bitenlerinki ≤ 4,1e-8); uyarı dual kalıntısına
 bağlandı. B-08'de öngörülen boş `argmax` hatası yerine yanıltıcı bir "bodies [1] cannot be reached" iletisi gözlendi.
+
+G2 (K1-a ile): `registry.py`'nin 1854 satırı, kaynak metinden üretilerek `configuration/` altına taşındı:
+`registry.py` (mekanizma), `helpers.py`, `components/{core,geometry,boundary,design,physics,responses,schedules}.py`,
+`post_steps.py`, `boundary_mapping.py`. `toporlogy.registry` eski adların hepsini aynı nesnelerle yeniden dışa aktarıyor;
+kayıt sırası korundu. Planın G2 tablosundan iki sapma: son işlem adımları `configuration/post_steps.py`'de, BC eşlemesi
+`configuration/boundary_mapping.py`'de duruyor (K1-a'da `verification/` paketi açılmıyor).
 
 ---
 

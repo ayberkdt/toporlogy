@@ -4,6 +4,7 @@
    "attrs": [
     "beta",
     "finished",
+    "reset",
     "state",
     "update"
    ],
@@ -316,7 +317,9 @@
    "attrs": [
     "max_constraints",
     "name",
+    "needs_constraint_fn",
     "reset",
+    "restart",
     "step"
    ],
    "class": "MMA"
@@ -325,7 +328,9 @@
    "attrs": [
     "max_constraints",
     "name",
+    "needs_constraint_fn",
     "reset",
+    "restart",
     "step"
    ],
    "class": "OC"
@@ -334,7 +339,9 @@
    "attrs": [
     "max_constraints",
     "name",
+    "needs_constraint_fn",
     "reset",
+    "restart",
     "step"
    ],
    "class": "Optimizer"
@@ -539,6 +546,7 @@
   "Schedule": {
    "attrs": [
     "finished",
+    "reset",
     "state",
     "update"
    ],
@@ -1257,6 +1265,350 @@
   "study_from_dict": "study_from_dict(d,overrides)",
   "sweep_combinations": "sweep_combinations(sweep)",
   "write_resolved": "write_resolved(resolved,folder,source,overrides)"
+ },
+ "toporlogy.configuration": {
+  "REGISTRY": "<Registry>"
+ },
+ "toporlogy.configuration.boundary_mapping": {
+  "annotations": "<_Feature>",
+  "bc_callables": "bc_callables(bcs)",
+  "bc_mapping": "bc_mapping(bcs)",
+  "selector_callable": "selector_callable(sel,info,h)"
+ },
+ "toporlogy.configuration.components": {
+  "annotations": "<_Feature>",
+  "register_all": "register_all()"
+ },
+ "toporlogy.configuration.components.boundary": {
+  "BuildContext": {
+   "attrs": [
+    "bc",
+    "chain",
+    "domain",
+    "fixed",
+    "interfaces",
+    "interp",
+    "n_cases",
+    "objective",
+    "path",
+    "physics",
+    "robust",
+    "solver"
+   ],
+   "class": "BuildContext"
+  },
+  "annotations": "<_Feature>",
+  "as_selector": "as_selector(v)",
+  "checked_selector": "checked_selector(ctx,v,key)",
+  "find_bore": "find_bore(ctx,index,near,min_diameter,max_roundness,min_length)",
+  "register": "<method>",
+  "register_boundary": "register_boundary()"
+ },
+ "toporlogy.configuration.components.core": {
+  "BuildContext": {
+   "attrs": [
+    "bc",
+    "chain",
+    "domain",
+    "fixed",
+    "interfaces",
+    "interp",
+    "n_cases",
+    "objective",
+    "path",
+    "physics",
+    "robust",
+    "solver"
+   ],
+   "class": "BuildContext"
+  },
+  "REGISTRY": "<Registry>",
+  "SpreadForce": {
+   "attrs": [
+    "apply",
+    "kind",
+    "name"
+   ],
+   "class": "SpreadForce"
+  },
+  "annotations": "<_Feature>",
+  "checked_selector": "checked_selector(ctx,v,key)",
+  "join": "join(path,key)",
+  "register": "<method>",
+  "register_core": "register_core()"
+ },
+ "toporlogy.configuration.components.design": {
+  "BuildContext": {
+   "attrs": [
+    "bc",
+    "chain",
+    "domain",
+    "fixed",
+    "interfaces",
+    "interp",
+    "n_cases",
+    "objective",
+    "path",
+    "physics",
+    "robust",
+    "solver"
+   ],
+   "class": "BuildContext"
+  },
+  "annotations": "<_Feature>",
+  "register": "<method>",
+  "register_design": "register_design()"
+ },
+ "toporlogy.configuration.components.geometry": {
+  "BuildContext": {
+   "attrs": [
+    "bc",
+    "chain",
+    "domain",
+    "fixed",
+    "interfaces",
+    "interp",
+    "n_cases",
+    "objective",
+    "path",
+    "physics",
+    "robust",
+    "solver"
+   ],
+   "class": "BuildContext"
+  },
+  "annotations": "<_Feature>",
+  "find_bore": "find_bore(ctx,index,near,min_diameter,max_roundness,min_length)",
+  "register": "<method>",
+  "register_geometry": "register_geometry()"
+ },
+ "toporlogy.configuration.components.physics": {
+  "BuildContext": {
+   "attrs": [
+    "bc",
+    "chain",
+    "domain",
+    "fixed",
+    "interfaces",
+    "interp",
+    "n_cases",
+    "objective",
+    "path",
+    "physics",
+    "robust",
+    "solver"
+   ],
+   "class": "BuildContext"
+  },
+  "annotations": "<_Feature>",
+  "checked_selector": "checked_selector(ctx,v,key)",
+  "register": "<method>",
+  "register_physics": "register_physics()"
+ },
+ "toporlogy.configuration.components.responses": {
+  "BuildContext": {
+   "attrs": [
+    "bc",
+    "chain",
+    "domain",
+    "fixed",
+    "interfaces",
+    "interp",
+    "n_cases",
+    "objective",
+    "path",
+    "physics",
+    "robust",
+    "solver"
+   ],
+   "class": "BuildContext"
+  },
+  "annotations": "<_Feature>",
+  "register": "<method>",
+  "register_responses": "register_responses()"
+ },
+ "toporlogy.configuration.components.schedules": {
+  "BuildContext": {
+   "attrs": [
+    "bc",
+    "chain",
+    "domain",
+    "fixed",
+    "interfaces",
+    "interp",
+    "n_cases",
+    "objective",
+    "path",
+    "physics",
+    "robust",
+    "solver"
+   ],
+   "class": "BuildContext"
+  },
+  "annotations": "<_Feature>",
+  "register": "<method>",
+  "register_schedules": "register_schedules()"
+ },
+ "toporlogy.configuration.helpers": {
+  "Applied": {
+   "attrs": [
+    "force",
+    "intended_moment",
+    "moment"
+   ],
+   "class": "Applied"
+  },
+  "BuildContext": {
+   "attrs": [
+    "bc",
+    "chain",
+    "domain",
+    "fixed",
+    "interfaces",
+    "interp",
+    "n_cases",
+    "objective",
+    "path",
+    "physics",
+    "robust",
+    "solver"
+   ],
+   "class": "BuildContext"
+  },
+  "ConfigError": {
+   "attrs": [
+    "add_note",
+    "args",
+    "with_traceback"
+   ],
+   "class": "ConfigError"
+  },
+  "Load": {
+   "attrs": [
+    "apply",
+    "name"
+   ],
+   "class": "Load"
+  },
+  "SpreadForce": {
+   "attrs": [
+    "apply",
+    "kind",
+    "name"
+   ],
+   "class": "SpreadForce"
+  },
+  "annotations": "<_Feature>",
+  "as_selector": "as_selector(v)",
+  "checked_selector": "checked_selector(ctx,v,key)",
+  "find_bore": "find_bore(ctx,index,near,min_diameter,max_roundness,min_length)",
+  "join": "join(path,key)"
+ },
+ "toporlogy.configuration.post_steps": {
+  "BuildContext": {
+   "attrs": [
+    "bc",
+    "chain",
+    "domain",
+    "fixed",
+    "interfaces",
+    "interp",
+    "n_cases",
+    "objective",
+    "path",
+    "physics",
+    "robust",
+    "solver"
+   ],
+   "class": "BuildContext"
+  },
+  "ConfigError": {
+   "attrs": [
+    "add_note",
+    "args",
+    "with_traceback"
+   ],
+   "class": "ConfigError"
+  },
+  "REGISTRY": "<Registry>",
+  "annotations": "<_Feature>",
+  "bc_mapping": "bc_mapping(bcs)",
+  "export_step": "export_step(ctx,formats,name,print_stock)",
+  "join": "join(path,key)",
+  "register": "<method>",
+  "register_post_steps": "register_post_steps()",
+  "reverify_step": "reverify_step(ctx,E,nu,size,surface_edge,timeout,compare_voxel)"
+ },
+ "toporlogy.configuration.registry": {
+  "BuildContext": {
+   "attrs": [
+    "bc",
+    "chain",
+    "domain",
+    "fixed",
+    "interfaces",
+    "interp",
+    "n_cases",
+    "objective",
+    "path",
+    "physics",
+    "robust",
+    "solver"
+   ],
+   "class": "BuildContext"
+  },
+  "ConfigError": {
+   "attrs": [
+    "add_note",
+    "args",
+    "with_traceback"
+   ],
+   "class": "ConfigError"
+  },
+  "Entry": {
+   "attrs": [
+    "construct",
+    "context",
+    "doc",
+    "params",
+    "resolve_target",
+    "summary"
+   ],
+   "class": "Entry"
+  },
+  "KINDS": "<dict>",
+  "Param": {
+   "attrs": [
+    "coerce",
+    "default",
+    "nested",
+    "nullable",
+    "required",
+    "type",
+    "unit"
+   ],
+   "class": "Param"
+  },
+  "REGISTRY": "<Registry>",
+  "REQUIRED": "<_Required>",
+  "Registry": {
+   "attrs": [
+    "build",
+    "get",
+    "kinds",
+    "names",
+    "register",
+    "resolve",
+    "unregister"
+   ],
+   "class": "Registry"
+  },
+  "get": "<method>",
+  "join": "join(path,key)",
+  "names": "<method>",
+  "normalise_name": "normalise_name(name)",
+  "register": "<method>",
+  "suggest": "suggest(word,options)"
  },
  "toporlogy.connectivity": {
   "BridgeResult": {
@@ -2501,6 +2853,7 @@
    "attrs": [
     "beta",
     "finished",
+    "reset",
     "state",
     "update"
    ],
@@ -2510,7 +2863,9 @@
    "attrs": [
     "max_constraints",
     "name",
+    "needs_constraint_fn",
     "reset",
+    "restart",
     "step"
    ],
    "class": "MMA"
@@ -2519,7 +2874,9 @@
    "attrs": [
     "max_constraints",
     "name",
+    "needs_constraint_fn",
     "reset",
+    "restart",
     "step"
    ],
    "class": "OC"
@@ -2528,7 +2885,9 @@
    "attrs": [
     "max_constraints",
     "name",
+    "needs_constraint_fn",
     "reset",
+    "restart",
     "step"
    ],
    "class": "Optimizer"
@@ -2536,6 +2895,7 @@
   "Schedule": {
    "attrs": [
     "finished",
+    "reset",
     "state",
     "update"
    ],
@@ -2547,7 +2907,9 @@
    "attrs": [
     "max_constraints",
     "name",
+    "needs_constraint_fn",
     "reset",
+    "restart",
     "step"
    ],
    "class": "Optimizer"
@@ -2558,10 +2920,20 @@
    "attrs": [
     "max_constraints",
     "name",
+    "needs_constraint_fn",
     "reset",
+    "restart",
     "step"
    ],
    "class": "MMA"
+  },
+  "MMASubproblemWarning": {
+   "attrs": [
+    "add_note",
+    "args",
+    "with_traceback"
+   ],
+   "class": "MMASubproblemWarning"
   }
  },
  "toporlogy.optim.oc": {
@@ -2569,7 +2941,9 @@
    "attrs": [
     "max_constraints",
     "name",
+    "needs_constraint_fn",
     "reset",
+    "restart",
     "step"
    ],
    "class": "OC"
@@ -2580,6 +2954,7 @@
    "attrs": [
     "beta",
     "finished",
+    "reset",
     "state",
     "update"
    ],
@@ -2588,6 +2963,7 @@
   "Schedule": {
    "attrs": [
     "finished",
+    "reset",
     "state",
     "update"
    ],
@@ -3408,6 +3784,7 @@
    "attrs": [
     "beta",
     "finished",
+    "reset",
     "state",
     "update"
    ],
