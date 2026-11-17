@@ -11,6 +11,11 @@ which is symmetric when ``B`` is (balancing form). ``Z`` (rigid modes of each is
 zero on fixed DOFs) is never formed: ``Zᵀ r`` and ``Z c`` are index-add / gather operations over the island nodes,
 and ``Zᵀ A Z`` is assembled element by element. Deflation leaves the solution unchanged; only the preconditioner
 improves. Islands are rare in converged designs (none in the measured histories), common in random test fields.
+
+Node labels are the largest label of the adjacent elements, so a block anchored only through nodes it shares with a
+higher-labelled block is counted as floating and deflated. Measured (17 Nov 2026,
+``test_deflation_of_an_anchored_island_counted_as_floating_is_harmless``): no effect on the solution or the
+iteration count, as expected for a change of preconditioner only.
 """
 from __future__ import annotations
 
