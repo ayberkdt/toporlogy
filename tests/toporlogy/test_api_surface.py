@@ -3,13 +3,12 @@
 ``baseline/api_surface.json``: for every public toporlogy module, its public names and what they are (the
 ``__qualname__`` of classes and functions, ``<type>`` for other objects). A move keeps the old module path working
 (thin re-export) and the object the same, so every recorded name must still import from its recorded module and
-keep its qualname; new names are allowed. ``baseline/list.txt``: the exact output of ``python -m toporlogy list``.
+keep its fingerprint; new names and new class attributes are allowed. ``baseline/list.txt``: the exact output of ``python -m toporlogy list``.
 
     python tests/toporlogy/test_api_surface.py --write          # after an intended API change
 """
 from __future__ import annotations
 
-import hashlib
 import importlib
 import inspect
 import json
@@ -38,24 +37,31 @@ def _public_modules() -> list[str]:
     return sorted(names)
 
 
-def _describe(obj: Any) -> str | None:
+def _describe(obj: Any) -> Any:
     """A fingerprint that survives a move but tells two same-named objects apart (geometry.Shape vs
-    post.primitives.Shape): function -> qualname(parameter names); class -> qualname[hash of its public attribute
-    names]; data -> <type>. None for modules and objects defined outside toporlogy."""
+    post.primitives.Shape): function -> "qualname(parameter names)"; class -> {"class": qualname, "attrs": public
+    attribute names}; data -> "<type>". None for modules and objects defined outside toporlogy."""
     if inspect.ismodule(obj):
         return None
     if inspect.isclass(obj) or inspect.isfunction(obj):
         if not (getattr(obj, "__module__", "") or "").startswith("toporlogy"):
             return None
         if inspect.isclass(obj):
-            attrs = ",".join(sorted(a for a in dir(obj) if not a.startswith("_")))
-            return f"{obj.__qualname__}[{hashlib.sha1(attrs.encode()).hexdigest()[:10]}]"
+            return {"class": obj.__qualname__, "attrs": sorted(a for a in dir(obj) if not a.startswith("_"))}
         try:
             params = ",".join(inspect.signature(obj).parameters)
         except (TypeError, ValueError):
             params = "?"
         return f"{obj.__qualname__}({params})"
     return f"<{type(obj).__name__}>"
+
+
+def _compatible(want: Any, got: Any) -> bool:
+    """Same function signature / data type; for a class the same qualname and every recorded attribute still there
+    (new methods are additions, not breaks; a missing one or another class behind the name is a break)."""
+    if isinstance(want, dict):
+        return isinstance(got, dict) and got["class"] == want["class"] and set(want["attrs"]) <= set(got["attrs"])
+    return got == want
 
 
 def surface() -> dict[str, Any]:
@@ -107,8 +113,10 @@ def test_recorded_public_names_still_import_and_are_the_same_objects() -> None:
                 problems.append(f"{name}.{n}: missing")
                 continue
             got = _describe(getattr(mod, n))
-            if got != want:
-                problems.append(f"{name}.{n}: was {want}, now {got}")
+            if not _compatible(want, got):
+                if isinstance(want, dict) and isinstance(got, dict) and got["class"] == want["class"]:
+                    got = {"missing attrs": sorted(set(want["attrs"]) - set(got["attrs"]))}
+                problems.append(f"{name}.{n}: was {want if not isinstance(want, dict) else want['class']}, now {got}")
     assert not problems, "\n".join(problems)
 
 

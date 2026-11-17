@@ -1,77 +1,919 @@
 {
  "toporlogy": {
-  "BetaContinuation": "BetaContinuation[9af463bc7f]",
-  "Chain": "Chain[b473c005bb]",
-  "Compliance": "Compliance[f86e8374fb]",
-  "Constraint": "Constraint[0c7a689bc4]",
-  "DensityFilter": "DensityFilter[2cd0555670]",
-  "Domain": "Domain[139289122f]",
-  "Elasticity": "Elasticity[1a843bbe0c]",
-  "Embed": "Embed[dd0909d37b]",
-  "EvalContext": "EvalContext[8332eb7661]",
-  "Evaluation": "Evaluation[da39a3ee5e]",
-  "HeavisideProjection": "HeavisideProjection[dd0909d37b]",
-  "MMA": "MMA[cea730e883]",
-  "OC": "OC[cea730e883]",
-  "Optimizer": "Optimizer[cea730e883]",
-  "Passive": "Passive[dd0909d37b]",
-  "RAMP": "RAMP[dd0909d37b]",
-  "Recorder": "Recorder[8db6597474]",
-  "Response": "Response[d0c985c798]",
-  "Result": "Result[8a155aa5c8]",
-  "SIMP": "SIMP[dd0909d37b]",
-  "Schedule": "Schedule[969c6ec810]",
-  "Study": "Study[dc5636343a]",
-  "Volume": "Volume[d0c985c798]",
+  "BetaContinuation": {
+   "attrs": [
+    "beta",
+    "finished",
+    "state",
+    "update"
+   ],
+   "class": "BetaContinuation"
+  },
+  "Chain": {
+   "attrs": [
+    "T_destination",
+    "add_module",
+    "apply",
+    "bfloat16",
+    "buffers",
+    "call_super_init",
+    "children",
+    "compile",
+    "cpu",
+    "cuda",
+    "double",
+    "dump_patches",
+    "eval",
+    "extra_repr",
+    "find",
+    "float",
+    "forward",
+    "get_buffer",
+    "get_extra_state",
+    "get_parameter",
+    "get_submodule",
+    "half",
+    "ipu",
+    "load_state_dict",
+    "modules",
+    "mtia",
+    "named_buffers",
+    "named_children",
+    "named_modules",
+    "named_parameters",
+    "parameters",
+    "register_backward_hook",
+    "register_buffer",
+    "register_forward_hook",
+    "register_forward_pre_hook",
+    "register_full_backward_hook",
+    "register_full_backward_pre_hook",
+    "register_load_state_dict_post_hook",
+    "register_load_state_dict_pre_hook",
+    "register_module",
+    "register_parameter",
+    "register_state_dict_post_hook",
+    "register_state_dict_pre_hook",
+    "requires_grad_",
+    "set_extra_state",
+    "set_submodule",
+    "share_memory",
+    "state_dict",
+    "to",
+    "to_empty",
+    "train",
+    "type",
+    "xpu",
+    "zero_grad"
+   ],
+   "class": "Chain"
+  },
+  "Compliance": {
+   "attrs": [
+    "name",
+    "needs",
+    "per_case"
+   ],
+   "class": "Compliance"
+  },
+  "Constraint": {
+   "attrs": [
+    "g",
+    "key",
+    "name",
+    "scale"
+   ],
+   "class": "Constraint"
+  },
+  "DensityFilter": {
+   "attrs": [
+    "T_destination",
+    "add_module",
+    "apply",
+    "bfloat16",
+    "buffers",
+    "call_super_init",
+    "children",
+    "compile",
+    "cpu",
+    "cuda",
+    "double",
+    "dump_patches",
+    "eval",
+    "extra_repr",
+    "float",
+    "forward",
+    "get_buffer",
+    "get_extra_state",
+    "get_parameter",
+    "get_submodule",
+    "half",
+    "ipu",
+    "load_state_dict",
+    "matrix",
+    "modules",
+    "mtia",
+    "named_buffers",
+    "named_children",
+    "named_modules",
+    "named_parameters",
+    "parameters",
+    "register_backward_hook",
+    "register_buffer",
+    "register_forward_hook",
+    "register_forward_pre_hook",
+    "register_full_backward_hook",
+    "register_full_backward_pre_hook",
+    "register_load_state_dict_post_hook",
+    "register_load_state_dict_pre_hook",
+    "register_module",
+    "register_parameter",
+    "register_state_dict_post_hook",
+    "register_state_dict_pre_hook",
+    "requires_grad_",
+    "set_extra_state",
+    "set_submodule",
+    "share_memory",
+    "state_dict",
+    "to",
+    "to_empty",
+    "train",
+    "type",
+    "xpu",
+    "zero_grad"
+   ],
+   "class": "DensityFilter"
+  },
+  "Domain": {
+   "attrs": [
+    "active_dofs",
+    "active_elements",
+    "corners",
+    "design_elements",
+    "dofs",
+    "edof",
+    "element_centers",
+    "element_ijk",
+    "load_vector",
+    "n_active",
+    "n_design",
+    "ndof",
+    "ne",
+    "nn",
+    "node_coords",
+    "node_number",
+    "node_shape",
+    "nodes_where",
+    "to_grid",
+    "uniform_start"
+   ],
+   "class": "Domain"
+  },
+  "Elasticity": {
+   "attrs": [
+    "element_energy",
+    "factor",
+    "matrix",
+    "n_elements",
+    "solve",
+    "solve_numpy"
+   ],
+   "class": "Elasticity"
+  },
+  "Embed": {
+   "attrs": [
+    "T_destination",
+    "add_module",
+    "apply",
+    "bfloat16",
+    "buffers",
+    "call_super_init",
+    "children",
+    "compile",
+    "cpu",
+    "cuda",
+    "double",
+    "dump_patches",
+    "eval",
+    "extra_repr",
+    "float",
+    "forward",
+    "get_buffer",
+    "get_extra_state",
+    "get_parameter",
+    "get_submodule",
+    "half",
+    "ipu",
+    "load_state_dict",
+    "modules",
+    "mtia",
+    "named_buffers",
+    "named_children",
+    "named_modules",
+    "named_parameters",
+    "parameters",
+    "register_backward_hook",
+    "register_buffer",
+    "register_forward_hook",
+    "register_forward_pre_hook",
+    "register_full_backward_hook",
+    "register_full_backward_pre_hook",
+    "register_load_state_dict_post_hook",
+    "register_load_state_dict_pre_hook",
+    "register_module",
+    "register_parameter",
+    "register_state_dict_post_hook",
+    "register_state_dict_pre_hook",
+    "requires_grad_",
+    "set_extra_state",
+    "set_submodule",
+    "share_memory",
+    "state_dict",
+    "to",
+    "to_empty",
+    "train",
+    "type",
+    "xpu",
+    "zero_grad"
+   ],
+   "class": "Embed"
+  },
+  "EvalContext": {
+   "attrs": [
+    "F",
+    "U",
+    "chain",
+    "field_after",
+    "interp",
+    "physics",
+    "x"
+   ],
+   "class": "EvalContext"
+  },
+  "Evaluation": {
+   "attrs": [],
+   "class": "Evaluation"
+  },
+  "HeavisideProjection": {
+   "attrs": [
+    "T_destination",
+    "add_module",
+    "apply",
+    "bfloat16",
+    "buffers",
+    "call_super_init",
+    "children",
+    "compile",
+    "cpu",
+    "cuda",
+    "double",
+    "dump_patches",
+    "eval",
+    "extra_repr",
+    "float",
+    "forward",
+    "get_buffer",
+    "get_extra_state",
+    "get_parameter",
+    "get_submodule",
+    "half",
+    "ipu",
+    "load_state_dict",
+    "modules",
+    "mtia",
+    "named_buffers",
+    "named_children",
+    "named_modules",
+    "named_parameters",
+    "parameters",
+    "register_backward_hook",
+    "register_buffer",
+    "register_forward_hook",
+    "register_forward_pre_hook",
+    "register_full_backward_hook",
+    "register_full_backward_pre_hook",
+    "register_load_state_dict_post_hook",
+    "register_load_state_dict_pre_hook",
+    "register_module",
+    "register_parameter",
+    "register_state_dict_post_hook",
+    "register_state_dict_pre_hook",
+    "requires_grad_",
+    "set_extra_state",
+    "set_submodule",
+    "share_memory",
+    "state_dict",
+    "to",
+    "to_empty",
+    "train",
+    "type",
+    "xpu",
+    "zero_grad"
+   ],
+   "class": "HeavisideProjection"
+  },
+  "MMA": {
+   "attrs": [
+    "max_constraints",
+    "name",
+    "reset",
+    "step"
+   ],
+   "class": "MMA"
+  },
+  "OC": {
+   "attrs": [
+    "max_constraints",
+    "name",
+    "reset",
+    "step"
+   ],
+   "class": "OC"
+  },
+  "Optimizer": {
+   "attrs": [
+    "max_constraints",
+    "name",
+    "reset",
+    "step"
+   ],
+   "class": "Optimizer"
+  },
+  "Passive": {
+   "attrs": [
+    "T_destination",
+    "add_module",
+    "apply",
+    "bfloat16",
+    "buffers",
+    "call_super_init",
+    "children",
+    "compile",
+    "cpu",
+    "cuda",
+    "double",
+    "dump_patches",
+    "eval",
+    "extra_repr",
+    "float",
+    "forward",
+    "get_buffer",
+    "get_extra_state",
+    "get_parameter",
+    "get_submodule",
+    "half",
+    "ipu",
+    "load_state_dict",
+    "modules",
+    "mtia",
+    "named_buffers",
+    "named_children",
+    "named_modules",
+    "named_parameters",
+    "parameters",
+    "register_backward_hook",
+    "register_buffer",
+    "register_forward_hook",
+    "register_forward_pre_hook",
+    "register_full_backward_hook",
+    "register_full_backward_pre_hook",
+    "register_load_state_dict_post_hook",
+    "register_load_state_dict_pre_hook",
+    "register_module",
+    "register_parameter",
+    "register_state_dict_post_hook",
+    "register_state_dict_pre_hook",
+    "requires_grad_",
+    "set_extra_state",
+    "set_submodule",
+    "share_memory",
+    "state_dict",
+    "to",
+    "to_empty",
+    "train",
+    "type",
+    "xpu",
+    "zero_grad"
+   ],
+   "class": "Passive"
+  },
+  "RAMP": {
+   "attrs": [
+    "T_destination",
+    "add_module",
+    "apply",
+    "bfloat16",
+    "buffers",
+    "call_super_init",
+    "children",
+    "compile",
+    "cpu",
+    "cuda",
+    "double",
+    "dump_patches",
+    "eval",
+    "extra_repr",
+    "float",
+    "forward",
+    "get_buffer",
+    "get_extra_state",
+    "get_parameter",
+    "get_submodule",
+    "half",
+    "ipu",
+    "load_state_dict",
+    "modules",
+    "mtia",
+    "named_buffers",
+    "named_children",
+    "named_modules",
+    "named_parameters",
+    "parameters",
+    "register_backward_hook",
+    "register_buffer",
+    "register_forward_hook",
+    "register_forward_pre_hook",
+    "register_full_backward_hook",
+    "register_full_backward_pre_hook",
+    "register_load_state_dict_post_hook",
+    "register_load_state_dict_pre_hook",
+    "register_module",
+    "register_parameter",
+    "register_state_dict_post_hook",
+    "register_state_dict_pre_hook",
+    "requires_grad_",
+    "set_extra_state",
+    "set_submodule",
+    "share_memory",
+    "state_dict",
+    "to",
+    "to_empty",
+    "train",
+    "type",
+    "xpu",
+    "zero_grad"
+   ],
+   "class": "RAMP"
+  },
+  "Recorder": {
+   "attrs": [
+    "finish",
+    "log",
+    "start"
+   ],
+   "class": "Recorder"
+  },
+  "Response": {
+   "attrs": [
+    "name",
+    "needs"
+   ],
+   "class": "Response"
+  },
+  "Result": {
+   "attrs": [
+    "constraint_values",
+    "final",
+    "objective"
+   ],
+   "class": "Result"
+  },
+  "SIMP": {
+   "attrs": [
+    "T_destination",
+    "add_module",
+    "apply",
+    "bfloat16",
+    "buffers",
+    "call_super_init",
+    "children",
+    "compile",
+    "cpu",
+    "cuda",
+    "double",
+    "dump_patches",
+    "eval",
+    "extra_repr",
+    "float",
+    "forward",
+    "get_buffer",
+    "get_extra_state",
+    "get_parameter",
+    "get_submodule",
+    "half",
+    "ipu",
+    "load_state_dict",
+    "modules",
+    "mtia",
+    "named_buffers",
+    "named_children",
+    "named_modules",
+    "named_parameters",
+    "parameters",
+    "register_backward_hook",
+    "register_buffer",
+    "register_forward_hook",
+    "register_forward_pre_hook",
+    "register_full_backward_hook",
+    "register_full_backward_pre_hook",
+    "register_load_state_dict_post_hook",
+    "register_load_state_dict_pre_hook",
+    "register_module",
+    "register_parameter",
+    "register_state_dict_post_hook",
+    "register_state_dict_pre_hook",
+    "requires_grad_",
+    "set_extra_state",
+    "set_submodule",
+    "share_memory",
+    "state_dict",
+    "to",
+    "to_empty",
+    "train",
+    "type",
+    "xpu",
+    "zero_grad"
+   ],
+   "class": "SIMP"
+  },
+  "Schedule": {
+   "attrs": [
+    "finished",
+    "state",
+    "update"
+   ],
+   "class": "Schedule"
+  },
+  "Study": {
+   "attrs": [
+    "constraint_values",
+    "context",
+    "default_start",
+    "evaluate",
+    "evaluate_density",
+    "physical",
+    "run",
+    "settings"
+   ],
+   "class": "Study"
+  },
+  "Volume": {
+   "attrs": [
+    "name",
+    "needs"
+   ],
+   "class": "Volume"
+  },
   "gradcheck": "gradcheck(fn,x,n_dirs,h,seed)",
   "grey_fraction": "grey_fraction(xphys,mask,lo,hi)",
   "standard_chain": "standard_chain(domain,rmin,projection,beta,eta)",
   "study_gradcheck": "study_gradcheck(study,x,which,kw)"
  },
  "toporlogy.bc": {
-  "AllNodes": "AllNodes[e0becfdb4d]",
-  "Applied": "Applied[212581e8ce]",
-  "AtPoints": "AtPoints[e0becfdb4d]",
-  "BearingLoad": "BearingLoad[566895679f]",
-  "BodyForce": "BodyForce[566895679f]",
-  "BodyForceCompliance": "BodyForceCompliance[8dc27aac82]",
+  "AllNodes": {
+   "attrs": [
+    "mask",
+    "select",
+    "surface"
+   ],
+   "class": "AllNodes"
+  },
+  "Applied": {
+   "attrs": [
+    "force",
+    "intended_moment",
+    "moment"
+   ],
+   "class": "Applied"
+  },
+  "AtPoints": {
+   "attrs": [
+    "mask",
+    "select",
+    "surface"
+   ],
+   "class": "AtPoints"
+  },
+  "BearingLoad": {
+   "attrs": [
+    "apply",
+    "kind",
+    "name"
+   ],
+   "class": "BearingLoad"
+  },
+  "BodyForce": {
+   "attrs": [
+    "apply",
+    "kind",
+    "name"
+   ],
+   "class": "BodyForce"
+  },
+  "BodyForceCompliance": {
+   "attrs": [
+    "loads",
+    "name",
+    "needs"
+   ],
+   "class": "BodyForceCompliance"
+  },
   "BoreFace": "BoreFace(bore,p1,radius,kw)",
-  "BoundaryConditions": "BoundaryConditions[0737b042f3]",
-  "CheckReport": "CheckReport[245d893d6f]",
-  "Combination": "Combination[da39a3ee5e]",
-  "ConstrainedElasticity": "ConstrainedElasticity[1a843bbe0c]",
-  "ConstraintSet": "ConstraintSet[8db7b70bf7]",
-  "ElasticSupport": "ElasticSupport[7b5344874b]",
-  "EmptySelectionError": "EmptySelectionError[022f2cc7a4]",
-  "Fixed": "Fixed[7b5344874b]",
-  "HalfSpaceNodes": "HalfSpaceNodes[e0becfdb4d]",
-  "InBox": "InBox[e0becfdb4d]",
-  "InShape": "InShape[e0becfdb4d]",
-  "InSphere": "InSphere[e0becfdb4d]",
-  "Issue": "Issue[6406510c31]",
-  "Load": "Load[89083ca951]",
-  "LoadCase": "LoadCase[8a14711da8]",
-  "Nearest": "Nearest[e0becfdb4d]",
-  "NodalForces": "NodalForces[89083ca951]",
-  "NodeIds": "NodeIds[e0becfdb4d]",
-  "OnCylinder": "OnCylinder[24da94c8a6]",
-  "OnPlane": "OnPlane[e0becfdb4d]",
-  "PartInfo": "PartInfo[1135f1a581]",
-  "PerCaseSupports": "PerCaseSupports[f544e4c95b]",
-  "PinnedBore": "PinnedBore[7b5344874b]",
-  "PointLoad": "PointLoad[566895679f]",
-  "Pressure": "Pressure[566895679f]",
-  "RemoteForce": "RemoteForce[566895679f]",
-  "RemoteMoment": "RemoteMoment[566895679f]",
-  "Roller": "Roller[7b5344874b]",
-  "Selector": "Selector[e0becfdb4d]",
-  "Support": "Support[7b5344874b]",
-  "SurfaceForce": "SurfaceForce[566895679f]",
-  "SurfaceNodes": "SurfaceNodes[e0becfdb4d]",
+  "BoundaryConditions": {
+   "attrs": [
+    "F",
+    "bc_nodes",
+    "case_vector",
+    "check",
+    "constraints",
+    "fixed_dofs",
+    "keep_mask",
+    "names",
+    "physics",
+    "physics_per_support_set",
+    "summary"
+   ],
+   "class": "BoundaryConditions"
+  },
+  "CheckReport": {
+   "attrs": [
+    "codes",
+    "errors",
+    "ok",
+    "raise_on_error",
+    "warnings"
+   ],
+   "class": "CheckReport"
+  },
+  "Combination": {
+   "attrs": [],
+   "class": "Combination"
+  },
+  "ConstrainedElasticity": {
+   "attrs": [
+    "element_energy",
+    "factor",
+    "matrix",
+    "n_elements",
+    "solve",
+    "solve_numpy"
+   ],
+   "class": "ConstrainedElasticity"
+  },
+  "ConstraintSet": {
+   "attrs": [
+    "constrained_directions",
+    "needs_extension"
+   ],
+   "class": "ConstraintSet"
+  },
+  "ElasticSupport": {
+   "attrs": [
+    "directions",
+    "kind",
+    "name",
+    "nodes",
+    "springs"
+   ],
+   "class": "ElasticSupport"
+  },
+  "EmptySelectionError": {
+   "attrs": [
+    "add_note",
+    "args",
+    "with_traceback"
+   ],
+   "class": "EmptySelectionError"
+  },
+  "Fixed": {
+   "attrs": [
+    "directions",
+    "kind",
+    "name",
+    "nodes",
+    "springs"
+   ],
+   "class": "Fixed"
+  },
+  "HalfSpaceNodes": {
+   "attrs": [
+    "mask",
+    "select",
+    "surface"
+   ],
+   "class": "HalfSpaceNodes"
+  },
+  "InBox": {
+   "attrs": [
+    "mask",
+    "select",
+    "surface"
+   ],
+   "class": "InBox"
+  },
+  "InShape": {
+   "attrs": [
+    "mask",
+    "select",
+    "surface"
+   ],
+   "class": "InShape"
+  },
+  "InSphere": {
+   "attrs": [
+    "mask",
+    "select",
+    "surface"
+   ],
+   "class": "InSphere"
+  },
+  "Issue": {
+   "attrs": [
+    "case"
+   ],
+   "class": "Issue"
+  },
+  "Load": {
+   "attrs": [
+    "apply",
+    "name"
+   ],
+   "class": "Load"
+  },
+  "LoadCase": {
+   "attrs": [
+    "supports"
+   ],
+   "class": "LoadCase"
+  },
+  "Nearest": {
+   "attrs": [
+    "mask",
+    "select",
+    "surface"
+   ],
+   "class": "Nearest"
+  },
+  "NodalForces": {
+   "attrs": [
+    "apply",
+    "name"
+   ],
+   "class": "NodalForces"
+  },
+  "NodeIds": {
+   "attrs": [
+    "mask",
+    "select",
+    "surface"
+   ],
+   "class": "NodeIds"
+  },
+  "OnCylinder": {
+   "attrs": [
+    "bands",
+    "coords",
+    "from_bore",
+    "mask",
+    "select",
+    "surface"
+   ],
+   "class": "OnCylinder"
+  },
+  "OnPlane": {
+   "attrs": [
+    "mask",
+    "select",
+    "surface"
+   ],
+   "class": "OnPlane"
+  },
+  "PartInfo": {
+   "attrs": [
+    "faces",
+    "normals",
+    "patch",
+    "patch_normals"
+   ],
+   "class": "PartInfo"
+  },
+  "PerCaseSupports": {
+   "attrs": [
+    "solve"
+   ],
+   "class": "PerCaseSupports"
+  },
+  "PinnedBore": {
+   "attrs": [
+    "directions",
+    "kind",
+    "name",
+    "nodes",
+    "springs"
+   ],
+   "class": "PinnedBore"
+  },
+  "PointLoad": {
+   "attrs": [
+    "apply",
+    "kind",
+    "name"
+   ],
+   "class": "PointLoad"
+  },
+  "Pressure": {
+   "attrs": [
+    "apply",
+    "kind",
+    "name"
+   ],
+   "class": "Pressure"
+  },
+  "RemoteForce": {
+   "attrs": [
+    "apply",
+    "kind",
+    "name"
+   ],
+   "class": "RemoteForce"
+  },
+  "RemoteMoment": {
+   "attrs": [
+    "apply",
+    "kind",
+    "name"
+   ],
+   "class": "RemoteMoment"
+  },
+  "Roller": {
+   "attrs": [
+    "directions",
+    "kind",
+    "name",
+    "nodes",
+    "springs"
+   ],
+   "class": "Roller"
+  },
+  "Selector": {
+   "attrs": [
+    "mask",
+    "select",
+    "surface"
+   ],
+   "class": "Selector"
+  },
+  "Support": {
+   "attrs": [
+    "directions",
+    "kind",
+    "name",
+    "nodes",
+    "springs"
+   ],
+   "class": "Support"
+  },
+  "SurfaceForce": {
+   "attrs": [
+    "apply",
+    "kind",
+    "name"
+   ],
+   "class": "SurfaceForce"
+  },
+  "SurfaceNodes": {
+   "attrs": [
+    "mask",
+    "select",
+    "surface"
+   ],
+   "class": "SurfaceNodes"
+  },
   "Symmetry": "Symmetry(point,normal,tol,name)",
-  "Torque": "Torque[566895679f]",
-  "Traction": "Traction[566895679f]",
-  "Where": "Where[e0becfdb4d]",
+  "Torque": {
+   "attrs": [
+    "apply",
+    "kind",
+    "name"
+   ],
+   "class": "Torque"
+  },
+  "Traction": {
+   "attrs": [
+    "apply",
+    "kind",
+    "name"
+   ],
+   "class": "Traction"
+  },
+  "Where": {
+   "attrs": [
+    "mask",
+    "select",
+    "surface"
+   ],
+   "class": "Where"
+  },
   "body_force_matrix": "body_force_matrix(domain,acceleration,density)",
   "clearance_mask": "clearance_mask(domain,shape,threshold)",
   "design_load_solve": "design_load_solve(physics,E_active,F)",
@@ -80,11 +922,298 @@
   "rigid_distribution": "rigid_distribution(X,w,point,force,moment,rtol)"
  },
  "toporlogy.chain": {
-  "Chain": "Chain[b473c005bb]",
-  "DensityFilter": "DensityFilter[2cd0555670]",
-  "Embed": "Embed[dd0909d37b]",
-  "HeavisideProjection": "HeavisideProjection[dd0909d37b]",
-  "Passive": "Passive[dd0909d37b]",
+  "Chain": {
+   "attrs": [
+    "T_destination",
+    "add_module",
+    "apply",
+    "bfloat16",
+    "buffers",
+    "call_super_init",
+    "children",
+    "compile",
+    "cpu",
+    "cuda",
+    "double",
+    "dump_patches",
+    "eval",
+    "extra_repr",
+    "find",
+    "float",
+    "forward",
+    "get_buffer",
+    "get_extra_state",
+    "get_parameter",
+    "get_submodule",
+    "half",
+    "ipu",
+    "load_state_dict",
+    "modules",
+    "mtia",
+    "named_buffers",
+    "named_children",
+    "named_modules",
+    "named_parameters",
+    "parameters",
+    "register_backward_hook",
+    "register_buffer",
+    "register_forward_hook",
+    "register_forward_pre_hook",
+    "register_full_backward_hook",
+    "register_full_backward_pre_hook",
+    "register_load_state_dict_post_hook",
+    "register_load_state_dict_pre_hook",
+    "register_module",
+    "register_parameter",
+    "register_state_dict_post_hook",
+    "register_state_dict_pre_hook",
+    "requires_grad_",
+    "set_extra_state",
+    "set_submodule",
+    "share_memory",
+    "state_dict",
+    "to",
+    "to_empty",
+    "train",
+    "type",
+    "xpu",
+    "zero_grad"
+   ],
+   "class": "Chain"
+  },
+  "DensityFilter": {
+   "attrs": [
+    "T_destination",
+    "add_module",
+    "apply",
+    "bfloat16",
+    "buffers",
+    "call_super_init",
+    "children",
+    "compile",
+    "cpu",
+    "cuda",
+    "double",
+    "dump_patches",
+    "eval",
+    "extra_repr",
+    "float",
+    "forward",
+    "get_buffer",
+    "get_extra_state",
+    "get_parameter",
+    "get_submodule",
+    "half",
+    "ipu",
+    "load_state_dict",
+    "matrix",
+    "modules",
+    "mtia",
+    "named_buffers",
+    "named_children",
+    "named_modules",
+    "named_parameters",
+    "parameters",
+    "register_backward_hook",
+    "register_buffer",
+    "register_forward_hook",
+    "register_forward_pre_hook",
+    "register_full_backward_hook",
+    "register_full_backward_pre_hook",
+    "register_load_state_dict_post_hook",
+    "register_load_state_dict_pre_hook",
+    "register_module",
+    "register_parameter",
+    "register_state_dict_post_hook",
+    "register_state_dict_pre_hook",
+    "requires_grad_",
+    "set_extra_state",
+    "set_submodule",
+    "share_memory",
+    "state_dict",
+    "to",
+    "to_empty",
+    "train",
+    "type",
+    "xpu",
+    "zero_grad"
+   ],
+   "class": "DensityFilter"
+  },
+  "Embed": {
+   "attrs": [
+    "T_destination",
+    "add_module",
+    "apply",
+    "bfloat16",
+    "buffers",
+    "call_super_init",
+    "children",
+    "compile",
+    "cpu",
+    "cuda",
+    "double",
+    "dump_patches",
+    "eval",
+    "extra_repr",
+    "float",
+    "forward",
+    "get_buffer",
+    "get_extra_state",
+    "get_parameter",
+    "get_submodule",
+    "half",
+    "ipu",
+    "load_state_dict",
+    "modules",
+    "mtia",
+    "named_buffers",
+    "named_children",
+    "named_modules",
+    "named_parameters",
+    "parameters",
+    "register_backward_hook",
+    "register_buffer",
+    "register_forward_hook",
+    "register_forward_pre_hook",
+    "register_full_backward_hook",
+    "register_full_backward_pre_hook",
+    "register_load_state_dict_post_hook",
+    "register_load_state_dict_pre_hook",
+    "register_module",
+    "register_parameter",
+    "register_state_dict_post_hook",
+    "register_state_dict_pre_hook",
+    "requires_grad_",
+    "set_extra_state",
+    "set_submodule",
+    "share_memory",
+    "state_dict",
+    "to",
+    "to_empty",
+    "train",
+    "type",
+    "xpu",
+    "zero_grad"
+   ],
+   "class": "Embed"
+  },
+  "HeavisideProjection": {
+   "attrs": [
+    "T_destination",
+    "add_module",
+    "apply",
+    "bfloat16",
+    "buffers",
+    "call_super_init",
+    "children",
+    "compile",
+    "cpu",
+    "cuda",
+    "double",
+    "dump_patches",
+    "eval",
+    "extra_repr",
+    "float",
+    "forward",
+    "get_buffer",
+    "get_extra_state",
+    "get_parameter",
+    "get_submodule",
+    "half",
+    "ipu",
+    "load_state_dict",
+    "modules",
+    "mtia",
+    "named_buffers",
+    "named_children",
+    "named_modules",
+    "named_parameters",
+    "parameters",
+    "register_backward_hook",
+    "register_buffer",
+    "register_forward_hook",
+    "register_forward_pre_hook",
+    "register_full_backward_hook",
+    "register_full_backward_pre_hook",
+    "register_load_state_dict_post_hook",
+    "register_load_state_dict_pre_hook",
+    "register_module",
+    "register_parameter",
+    "register_state_dict_post_hook",
+    "register_state_dict_pre_hook",
+    "requires_grad_",
+    "set_extra_state",
+    "set_submodule",
+    "share_memory",
+    "state_dict",
+    "to",
+    "to_empty",
+    "train",
+    "type",
+    "xpu",
+    "zero_grad"
+   ],
+   "class": "HeavisideProjection"
+  },
+  "Passive": {
+   "attrs": [
+    "T_destination",
+    "add_module",
+    "apply",
+    "bfloat16",
+    "buffers",
+    "call_super_init",
+    "children",
+    "compile",
+    "cpu",
+    "cuda",
+    "double",
+    "dump_patches",
+    "eval",
+    "extra_repr",
+    "float",
+    "forward",
+    "get_buffer",
+    "get_extra_state",
+    "get_parameter",
+    "get_submodule",
+    "half",
+    "ipu",
+    "load_state_dict",
+    "modules",
+    "mtia",
+    "named_buffers",
+    "named_children",
+    "named_modules",
+    "named_parameters",
+    "parameters",
+    "register_backward_hook",
+    "register_buffer",
+    "register_forward_hook",
+    "register_forward_pre_hook",
+    "register_full_backward_hook",
+    "register_full_backward_pre_hook",
+    "register_load_state_dict_post_hook",
+    "register_load_state_dict_pre_hook",
+    "register_module",
+    "register_parameter",
+    "register_state_dict_post_hook",
+    "register_state_dict_pre_hook",
+    "requires_grad_",
+    "set_extra_state",
+    "set_submodule",
+    "share_memory",
+    "state_dict",
+    "to",
+    "to_empty",
+    "train",
+    "type",
+    "xpu",
+    "zero_grad"
+   ],
+   "class": "Passive"
+  },
   "standard_chain": "standard_chain(domain,rmin,projection,beta,eta)"
  },
  "toporlogy.checks": {
@@ -96,10 +1225,25 @@
   "main": "main(argv)"
  },
  "toporlogy.config": {
-  "ConfigError": "ConfigError[022f2cc7a4]",
+  "ConfigError": {
+   "attrs": [
+    "add_note",
+    "args",
+    "with_traceback"
+   ],
+   "class": "ConfigError"
+  },
   "SCHEMA_KEYS": "<tuple>",
   "STATUS_OK": "<str>",
-  "Setup": "Setup[ac2c7743f4]",
+  "Setup": {
+   "attrs": [
+    "bc",
+    "bc_report",
+    "bc_summary",
+    "run_options"
+   ],
+   "class": "Setup"
+  },
   "apply_overrides": "apply_overrides(raw,overrides)",
   "build": "build(resolved)",
   "build_setup": "build_setup(raw,overrides)",
@@ -115,14 +1259,66 @@
   "write_resolved": "write_resolved(resolved,folder,source,overrides)"
  },
  "toporlogy.connectivity": {
-  "BridgeResult": "BridgeResult[da39a3ee5e]",
-  "ConductionConnectivity": "ConductionConnectivity[11959394cf]",
-  "ConnectivityReport": "ConnectivityReport[fbe65baac2]",
-  "CouplingCompliance": "CouplingCompliance[486d0fa7e8]",
-  "Neck": "Neck[da39a3ee5e]",
-  "OneBodyPlan": "OneBodyPlan[9edc84390f]",
-  "SplitBenchmark": "SplitBenchmark[da39a3ee5e]",
-  "ThresholdCheck": "ThresholdCheck[da39a3ee5e]",
+  "BridgeResult": {
+   "attrs": [],
+   "class": "BridgeResult"
+  },
+  "ConductionConnectivity": {
+   "attrs": [
+    "aggregate_kind",
+    "field",
+    "name",
+    "needs",
+    "ratios",
+    "ratios_of",
+    "raw",
+    "resistances",
+    "solid_reference"
+   ],
+   "class": "ConductionConnectivity"
+  },
+  "ConnectivityReport": {
+   "attrs": [
+    "min_neck",
+    "ok",
+    "summary"
+   ],
+   "class": "ConnectivityReport"
+  },
+  "CouplingCompliance": {
+   "attrs": [
+    "aggregate_kind",
+    "compliances",
+    "field",
+    "name",
+    "needs",
+    "ratios",
+    "raw",
+    "solid_reference"
+   ],
+   "class": "CouplingCompliance"
+  },
+  "Neck": {
+   "attrs": [],
+   "class": "Neck"
+  },
+  "OneBodyPlan": {
+   "attrs": [
+    "finish",
+    "gate",
+    "repair_section",
+    "threshold"
+   ],
+   "class": "OneBodyPlan"
+  },
+  "SplitBenchmark": {
+   "attrs": [],
+   "class": "SplitBenchmark"
+  },
+  "ThresholdCheck": {
+   "attrs": [],
+   "class": "ThresholdCheck"
+  },
   "analyse_connectivity": "analyse_connectivity(domain,xphys,interfaces,threshold,connectivity,robust_thresholds,erosion,necks,voids)",
   "bridge": "bridge(domain,xphys,interfaces,threshold,section,connectivity,void_cost,solid_cost,drop_islands,binary)",
   "elements_touching_nodes": "elements_touching_nodes(domain,nodes,active_only)",
@@ -134,33 +1330,312 @@
   "with_keep": "with_keep(domain,extra_keep)"
  },
  "toporlogy.domain": {
-  "Domain": "Domain[139289122f]"
+  "Domain": {
+   "attrs": [
+    "active_dofs",
+    "active_elements",
+    "corners",
+    "design_elements",
+    "dofs",
+    "edof",
+    "element_centers",
+    "element_ijk",
+    "load_vector",
+    "n_active",
+    "n_design",
+    "ndof",
+    "ne",
+    "nn",
+    "node_coords",
+    "node_number",
+    "node_shape",
+    "nodes_where",
+    "to_grid",
+    "uniform_start"
+   ],
+   "class": "Domain"
+  }
  },
  "toporlogy.dynamics": {
-  "Eigenvalue": "Eigenvalue[d0c985c798]",
-  "EigenvalueGap": "EigenvalueGap[d0c985c798]",
-  "Frequency": "Frequency[d0c985c798]",
-  "FrequencyMargin": "FrequencyMargin[d0c985c798]",
-  "LinearMass": "LinearMass[dd0909d37b]",
-  "MinEigenvalueKS": "MinEigenvalueKS[c25085623b]",
-  "Negated": "Negated[d0c985c798]",
-  "TwoRangeMass": "TwoRangeMass[dd0909d37b]",
-  "TwoRangeSIMP": "TwoRangeSIMP[dd0909d37b]",
+  "Eigenvalue": {
+   "attrs": [
+    "name",
+    "needs"
+   ],
+   "class": "Eigenvalue"
+  },
+  "EigenvalueGap": {
+   "attrs": [
+    "name",
+    "needs"
+   ],
+   "class": "EigenvalueGap"
+  },
+  "Frequency": {
+   "attrs": [
+    "name",
+    "needs"
+   ],
+   "class": "Frequency"
+  },
+  "FrequencyMargin": {
+   "attrs": [
+    "name",
+    "needs"
+   ],
+   "class": "FrequencyMargin"
+  },
+  "LinearMass": {
+   "attrs": [
+    "T_destination",
+    "add_module",
+    "apply",
+    "bfloat16",
+    "buffers",
+    "call_super_init",
+    "children",
+    "compile",
+    "cpu",
+    "cuda",
+    "double",
+    "dump_patches",
+    "eval",
+    "extra_repr",
+    "float",
+    "forward",
+    "get_buffer",
+    "get_extra_state",
+    "get_parameter",
+    "get_submodule",
+    "half",
+    "ipu",
+    "load_state_dict",
+    "modules",
+    "mtia",
+    "named_buffers",
+    "named_children",
+    "named_modules",
+    "named_parameters",
+    "parameters",
+    "register_backward_hook",
+    "register_buffer",
+    "register_forward_hook",
+    "register_forward_pre_hook",
+    "register_full_backward_hook",
+    "register_full_backward_pre_hook",
+    "register_load_state_dict_post_hook",
+    "register_load_state_dict_pre_hook",
+    "register_module",
+    "register_parameter",
+    "register_state_dict_post_hook",
+    "register_state_dict_pre_hook",
+    "requires_grad_",
+    "set_extra_state",
+    "set_submodule",
+    "share_memory",
+    "state_dict",
+    "to",
+    "to_empty",
+    "train",
+    "type",
+    "xpu",
+    "zero_grad"
+   ],
+   "class": "LinearMass"
+  },
+  "MinEigenvalueKS": {
+   "attrs": [
+    "aggregate",
+    "name",
+    "needs",
+    "reset_scale"
+   ],
+   "class": "MinEigenvalueKS"
+  },
+  "Negated": {
+   "attrs": [
+    "name",
+    "needs"
+   ],
+   "class": "Negated"
+  },
+  "TwoRangeMass": {
+   "attrs": [
+    "T_destination",
+    "add_module",
+    "apply",
+    "bfloat16",
+    "buffers",
+    "call_super_init",
+    "children",
+    "compile",
+    "cpu",
+    "cuda",
+    "double",
+    "dump_patches",
+    "eval",
+    "extra_repr",
+    "float",
+    "forward",
+    "get_buffer",
+    "get_extra_state",
+    "get_parameter",
+    "get_submodule",
+    "half",
+    "ipu",
+    "load_state_dict",
+    "modules",
+    "mtia",
+    "named_buffers",
+    "named_children",
+    "named_modules",
+    "named_parameters",
+    "parameters",
+    "register_backward_hook",
+    "register_buffer",
+    "register_forward_hook",
+    "register_forward_pre_hook",
+    "register_full_backward_hook",
+    "register_full_backward_pre_hook",
+    "register_load_state_dict_post_hook",
+    "register_load_state_dict_pre_hook",
+    "register_module",
+    "register_parameter",
+    "register_state_dict_post_hook",
+    "register_state_dict_pre_hook",
+    "requires_grad_",
+    "set_extra_state",
+    "set_submodule",
+    "share_memory",
+    "state_dict",
+    "to",
+    "to_empty",
+    "train",
+    "type",
+    "xpu",
+    "zero_grad"
+   ],
+   "class": "TwoRangeMass"
+  },
+  "TwoRangeSIMP": {
+   "attrs": [
+    "T_destination",
+    "add_module",
+    "apply",
+    "bfloat16",
+    "buffers",
+    "call_super_init",
+    "children",
+    "compile",
+    "cpu",
+    "cuda",
+    "double",
+    "dump_patches",
+    "eval",
+    "extra_repr",
+    "float",
+    "forward",
+    "get_buffer",
+    "get_extra_state",
+    "get_parameter",
+    "get_submodule",
+    "half",
+    "ipu",
+    "load_state_dict",
+    "modules",
+    "mtia",
+    "named_buffers",
+    "named_children",
+    "named_modules",
+    "named_parameters",
+    "parameters",
+    "register_backward_hook",
+    "register_buffer",
+    "register_forward_hook",
+    "register_forward_pre_hook",
+    "register_full_backward_hook",
+    "register_full_backward_pre_hook",
+    "register_load_state_dict_post_hook",
+    "register_load_state_dict_pre_hook",
+    "register_module",
+    "register_parameter",
+    "register_state_dict_post_hook",
+    "register_state_dict_pre_hook",
+    "requires_grad_",
+    "set_extra_state",
+    "set_submodule",
+    "share_memory",
+    "state_dict",
+    "to",
+    "to_empty",
+    "train",
+    "type",
+    "xpu",
+    "zero_grad"
+   ],
+   "class": "TwoRangeSIMP"
+  },
   "eigenvalues": "eigenvalues(ctx,n)",
   "min_frequency_constraint": "min_frequency_constraint(f_min,n_modes,rho,E_unit,rho_unit,length_unit)",
   "omega_squared_factor": "omega_squared_factor(E_unit,rho_unit,length_unit)"
  },
  "toporlogy.fem": {
-  "Elasticity": "Elasticity[1a843bbe0c]",
-  "ElasticityGMG": "ElasticityGMG[215a8758ef]",
+  "Elasticity": {
+   "attrs": [
+    "element_energy",
+    "factor",
+    "matrix",
+    "n_elements",
+    "solve",
+    "solve_numpy"
+   ],
+   "class": "Elasticity"
+  },
+  "ElasticityGMG": {
+   "attrs": [
+    "default_levels",
+    "edof",
+    "element_energy",
+    "free",
+    "n_elements",
+    "solve",
+    "solve_numpy",
+    "stats",
+    "strict"
+   ],
+   "class": "ElasticityGMG"
+  },
   "element_matrix": "element_matrix(dim,element,nu)"
  },
  "toporlogy.fem.elastic": {
-  "Elasticity": "Elasticity[1a843bbe0c]",
+  "Elasticity": {
+   "attrs": [
+    "element_energy",
+    "factor",
+    "matrix",
+    "n_elements",
+    "solve",
+    "solve_numpy"
+   ],
+   "class": "Elasticity"
+  },
   "element_matrix": "element_matrix(dim,element,nu)"
  },
  "toporlogy.fem.elastic_gmg": {
-  "ElasticityGMG": "ElasticityGMG[215a8758ef]"
+  "ElasticityGMG": {
+   "attrs": [
+    "default_levels",
+    "edof",
+    "element_energy",
+    "free",
+    "n_elements",
+    "solve",
+    "solve_numpy",
+    "stats",
+    "strict"
+   ],
+   "class": "ElasticityGMG"
+  }
  },
  "toporlogy.fem.elements": {
   "D_iso": "D_iso(nu)",
@@ -174,35 +1649,250 @@
   "ke_q4": "ke_q4(nu)"
  },
  "toporlogy.fem.heat": {
-  "ConductivityInterp": "ConductivityInterp[dd0909d37b]",
-  "HeatConduction": "HeatConduction[50c2d1c57f]",
+  "ConductivityInterp": {
+   "attrs": [
+    "T_destination",
+    "add_module",
+    "apply",
+    "bfloat16",
+    "buffers",
+    "call_super_init",
+    "children",
+    "compile",
+    "cpu",
+    "cuda",
+    "double",
+    "dump_patches",
+    "eval",
+    "extra_repr",
+    "float",
+    "forward",
+    "get_buffer",
+    "get_extra_state",
+    "get_parameter",
+    "get_submodule",
+    "half",
+    "ipu",
+    "load_state_dict",
+    "modules",
+    "mtia",
+    "named_buffers",
+    "named_children",
+    "named_modules",
+    "named_parameters",
+    "parameters",
+    "register_backward_hook",
+    "register_buffer",
+    "register_forward_hook",
+    "register_forward_pre_hook",
+    "register_full_backward_hook",
+    "register_full_backward_pre_hook",
+    "register_load_state_dict_post_hook",
+    "register_load_state_dict_pre_hook",
+    "register_module",
+    "register_parameter",
+    "register_state_dict_post_hook",
+    "register_state_dict_pre_hook",
+    "requires_grad_",
+    "set_extra_state",
+    "set_submodule",
+    "share_memory",
+    "state_dict",
+    "to",
+    "to_empty",
+    "train",
+    "type",
+    "xpu",
+    "zero_grad"
+   ],
+   "class": "ConductivityInterp"
+  },
+  "HeatConduction": {
+   "attrs": [
+    "element_energy",
+    "factor",
+    "matrix",
+    "n_elements",
+    "nn",
+    "solve",
+    "solve_numpy"
+   ],
+   "class": "HeatConduction"
+  },
   "assemble_conduction": "assemble_conduction(domain,k_active)",
   "conduction_matrix": "conduction_matrix(dim)",
   "element_nodes": "element_nodes(domain,elements)"
  },
  "toporlogy.fem.modal": {
-  "Modal": "Modal[f44922fe38]",
-  "RepeatedEigenvalueWarning": "RepeatedEigenvalueWarning[022f2cc7a4]",
+  "Modal": {
+   "attrs": [
+    "add_point_mass",
+    "check_cluster_weights",
+    "density",
+    "eigenvalues",
+    "element_modal_energies",
+    "full_modes",
+    "low_density_share",
+    "mass_matrix",
+    "modes_numpy",
+    "n_elements",
+    "n_free",
+    "solve_numpy",
+    "stiffness"
+   ],
+   "class": "Modal"
+  },
+  "RepeatedEigenvalueWarning": {
+   "attrs": [
+    "add_note",
+    "args",
+    "with_traceback"
+   ],
+   "class": "RepeatedEigenvalueWarning"
+  },
   "SPLU_MAX_DOF": "<int>",
   "element_mass": "element_mass(dim)",
   "find_clusters": "find_clusters(lam,rel_tol)"
  },
  "toporlogy.geometry": {
-  "Ball": "Ball[f157c6ab66]",
-  "Bore": "Bore[5ba08a1c6d]",
-  "Box": "Box[f157c6ab66]",
-  "Capsule": "Capsule[f157c6ab66]",
-  "Circle": "Ball[f157c6ab66]",
-  "Cylinder": "Cylinder[f157c6ab66]",
-  "Difference": "Difference[f157c6ab66]",
-  "HalfSpace": "HalfSpace[f157c6ab66]",
-  "Intersection": "Intersection[f157c6ab66]",
-  "Polygon": "Polygon[f157c6ab66]",
-  "Prism": "Prism[f157c6ab66]",
-  "Shape": "Shape[f157c6ab66]",
-  "Slot": "Slot[f157c6ab66]",
-  "Sphere": "Ball[f157c6ab66]",
-  "Union": "Union[f157c6ab66]",
+  "Ball": {
+   "attrs": [
+    "bbox",
+    "dim",
+    "inside",
+    "sdf"
+   ],
+   "class": "Ball"
+  },
+  "Bore": {
+   "attrs": [
+    "axis",
+    "dim",
+    "endpoints",
+    "id",
+    "roundness",
+    "shape",
+    "span"
+   ],
+   "class": "Bore"
+  },
+  "Box": {
+   "attrs": [
+    "bbox",
+    "dim",
+    "inside",
+    "sdf"
+   ],
+   "class": "Box"
+  },
+  "Capsule": {
+   "attrs": [
+    "bbox",
+    "dim",
+    "inside",
+    "sdf"
+   ],
+   "class": "Capsule"
+  },
+  "Circle": {
+   "attrs": [
+    "bbox",
+    "dim",
+    "inside",
+    "sdf"
+   ],
+   "class": "Ball"
+  },
+  "Cylinder": {
+   "attrs": [
+    "bbox",
+    "dim",
+    "inside",
+    "sdf"
+   ],
+   "class": "Cylinder"
+  },
+  "Difference": {
+   "attrs": [
+    "bbox",
+    "dim",
+    "inside",
+    "sdf"
+   ],
+   "class": "Difference"
+  },
+  "HalfSpace": {
+   "attrs": [
+    "bbox",
+    "dim",
+    "inside",
+    "sdf"
+   ],
+   "class": "HalfSpace"
+  },
+  "Intersection": {
+   "attrs": [
+    "bbox",
+    "dim",
+    "inside",
+    "sdf"
+   ],
+   "class": "Intersection"
+  },
+  "Polygon": {
+   "attrs": [
+    "bbox",
+    "dim",
+    "inside",
+    "sdf"
+   ],
+   "class": "Polygon"
+  },
+  "Prism": {
+   "attrs": [
+    "bbox",
+    "dim",
+    "inside",
+    "sdf"
+   ],
+   "class": "Prism"
+  },
+  "Shape": {
+   "attrs": [
+    "bbox",
+    "dim",
+    "inside",
+    "sdf"
+   ],
+   "class": "Shape"
+  },
+  "Slot": {
+   "attrs": [
+    "bbox",
+    "dim",
+    "inside",
+    "sdf"
+   ],
+   "class": "Slot"
+  },
+  "Sphere": {
+   "attrs": [
+    "bbox",
+    "dim",
+    "inside",
+    "sdf"
+   ],
+   "class": "Ball"
+  },
+  "Union": {
+   "attrs": [
+    "bbox",
+    "dim",
+    "inside",
+    "sdf"
+   ],
+   "class": "Union"
+  },
   "coverage": "coverage(shape,grid,sub,chunk)",
   "coverage_mesh": "coverage_mesh(V,F,gshape,h,origin,sub)",
   "csg": "csg(operations)",
@@ -218,13 +1908,149 @@
   "write_stl": "write_stl(path,V,F)"
  },
  "toporlogy.interp": {
-  "RAMP": "RAMP[dd0909d37b]",
-  "SIMP": "SIMP[dd0909d37b]"
+  "RAMP": {
+   "attrs": [
+    "T_destination",
+    "add_module",
+    "apply",
+    "bfloat16",
+    "buffers",
+    "call_super_init",
+    "children",
+    "compile",
+    "cpu",
+    "cuda",
+    "double",
+    "dump_patches",
+    "eval",
+    "extra_repr",
+    "float",
+    "forward",
+    "get_buffer",
+    "get_extra_state",
+    "get_parameter",
+    "get_submodule",
+    "half",
+    "ipu",
+    "load_state_dict",
+    "modules",
+    "mtia",
+    "named_buffers",
+    "named_children",
+    "named_modules",
+    "named_parameters",
+    "parameters",
+    "register_backward_hook",
+    "register_buffer",
+    "register_forward_hook",
+    "register_forward_pre_hook",
+    "register_full_backward_hook",
+    "register_full_backward_pre_hook",
+    "register_load_state_dict_post_hook",
+    "register_load_state_dict_pre_hook",
+    "register_module",
+    "register_parameter",
+    "register_state_dict_post_hook",
+    "register_state_dict_pre_hook",
+    "requires_grad_",
+    "set_extra_state",
+    "set_submodule",
+    "share_memory",
+    "state_dict",
+    "to",
+    "to_empty",
+    "train",
+    "type",
+    "xpu",
+    "zero_grad"
+   ],
+   "class": "RAMP"
+  },
+  "SIMP": {
+   "attrs": [
+    "T_destination",
+    "add_module",
+    "apply",
+    "bfloat16",
+    "buffers",
+    "call_super_init",
+    "children",
+    "compile",
+    "cpu",
+    "cuda",
+    "double",
+    "dump_patches",
+    "eval",
+    "extra_repr",
+    "float",
+    "forward",
+    "get_buffer",
+    "get_extra_state",
+    "get_parameter",
+    "get_submodule",
+    "half",
+    "ipu",
+    "load_state_dict",
+    "modules",
+    "mtia",
+    "named_buffers",
+    "named_children",
+    "named_modules",
+    "named_parameters",
+    "parameters",
+    "register_backward_hook",
+    "register_buffer",
+    "register_forward_hook",
+    "register_forward_pre_hook",
+    "register_full_backward_hook",
+    "register_full_backward_pre_hook",
+    "register_load_state_dict_post_hook",
+    "register_load_state_dict_pre_hook",
+    "register_module",
+    "register_parameter",
+    "register_state_dict_post_hook",
+    "register_state_dict_pre_hook",
+    "requires_grad_",
+    "set_extra_state",
+    "set_submodule",
+    "share_memory",
+    "state_dict",
+    "to",
+    "to_empty",
+    "train",
+    "type",
+    "xpu",
+    "zero_grad"
+   ],
+   "class": "SIMP"
+  }
  },
  "toporlogy.lengthscale": {
-  "GreyLevel": "GreyLevel[d0c985c798]",
-  "LengthScaleReport": "LengthScaleReport[8f57ed29c8]",
-  "LocalVolume": "LocalVolume[0e985a83a4]",
+  "GreyLevel": {
+   "attrs": [
+    "name",
+    "needs"
+   ],
+   "class": "GreyLevel"
+  },
+  "LengthScaleReport": {
+   "attrs": [
+    "resolution",
+    "solid_map",
+    "summary",
+    "upsample",
+    "void_map"
+   ],
+   "class": "LengthScaleReport"
+  },
+  "LocalVolume": {
+   "attrs": [
+    "field",
+    "name",
+    "needs"
+   ],
+   "class": "LocalVolume"
+  },
   "ball_kernel": "ball_kernel(radius,dim)",
   "closing_residue": "closing_residue(xphys,h,radius,kw)",
   "grey_measure": "grey_measure(xphys,mask)",
@@ -236,13 +2062,431 @@
   "slab_fraction": "slab_fraction(u,dim,member)"
  },
  "toporlogy.manufacturing": {
-  "AMFilter": "AMFilter[b8e359d6fc]",
-  "Casting": "Casting[dd0909d37b]",
-  "Extrusion": "Extrusion[f891ddd21b]",
-  "GroupAverage": "GroupAverage[dd0909d37b]",
-  "Pattern": "Pattern[c4a853152b]",
-  "Symmetry": "Symmetry[f891ddd21b]",
-  "Tying": "Tying[f891ddd21b]",
+  "AMFilter": {
+   "attrs": [
+    "T_destination",
+    "add_module",
+    "apply",
+    "bfloat16",
+    "buffers",
+    "call_super_init",
+    "children",
+    "compile",
+    "cpu",
+    "cuda",
+    "double",
+    "dump_patches",
+    "eval",
+    "extra_repr",
+    "float",
+    "forward",
+    "forward_torch",
+    "get_buffer",
+    "get_extra_state",
+    "get_parameter",
+    "get_submodule",
+    "half",
+    "ipu",
+    "load_state_dict",
+    "modules",
+    "mtia",
+    "named_buffers",
+    "named_children",
+    "named_modules",
+    "named_parameters",
+    "parameters",
+    "register_backward_hook",
+    "register_buffer",
+    "register_forward_hook",
+    "register_forward_pre_hook",
+    "register_full_backward_hook",
+    "register_full_backward_pre_hook",
+    "register_load_state_dict_post_hook",
+    "register_load_state_dict_pre_hook",
+    "register_module",
+    "register_parameter",
+    "register_state_dict_post_hook",
+    "register_state_dict_pre_hook",
+    "requires_grad_",
+    "set_extra_state",
+    "set_submodule",
+    "share_memory",
+    "state_dict",
+    "to",
+    "to_empty",
+    "train",
+    "type",
+    "xpu",
+    "zero_grad"
+   ],
+   "class": "AMFilter"
+  },
+  "Casting": {
+   "attrs": [
+    "T_destination",
+    "add_module",
+    "apply",
+    "bfloat16",
+    "buffers",
+    "call_super_init",
+    "children",
+    "compile",
+    "cpu",
+    "cuda",
+    "double",
+    "dump_patches",
+    "eval",
+    "extra_repr",
+    "float",
+    "forward",
+    "get_buffer",
+    "get_extra_state",
+    "get_parameter",
+    "get_submodule",
+    "half",
+    "ipu",
+    "load_state_dict",
+    "modules",
+    "mtia",
+    "named_buffers",
+    "named_children",
+    "named_modules",
+    "named_parameters",
+    "parameters",
+    "register_backward_hook",
+    "register_buffer",
+    "register_forward_hook",
+    "register_forward_pre_hook",
+    "register_full_backward_hook",
+    "register_full_backward_pre_hook",
+    "register_load_state_dict_post_hook",
+    "register_load_state_dict_pre_hook",
+    "register_module",
+    "register_parameter",
+    "register_state_dict_post_hook",
+    "register_state_dict_pre_hook",
+    "requires_grad_",
+    "set_extra_state",
+    "set_submodule",
+    "share_memory",
+    "state_dict",
+    "to",
+    "to_empty",
+    "train",
+    "type",
+    "xpu",
+    "zero_grad"
+   ],
+   "class": "Casting"
+  },
+  "Extrusion": {
+   "attrs": [
+    "T_destination",
+    "add_module",
+    "apply",
+    "bfloat16",
+    "buffers",
+    "call_super_init",
+    "children",
+    "compile",
+    "cpu",
+    "cuda",
+    "double",
+    "dump_patches",
+    "eval",
+    "expand",
+    "extra_repr",
+    "float",
+    "forward",
+    "get_buffer",
+    "get_extra_state",
+    "get_parameter",
+    "get_submodule",
+    "half",
+    "ipu",
+    "load_state_dict",
+    "modules",
+    "mtia",
+    "named_buffers",
+    "named_children",
+    "named_modules",
+    "named_parameters",
+    "parameters",
+    "project",
+    "reduce",
+    "register_backward_hook",
+    "register_buffer",
+    "register_forward_hook",
+    "register_forward_pre_hook",
+    "register_full_backward_hook",
+    "register_full_backward_pre_hook",
+    "register_load_state_dict_post_hook",
+    "register_load_state_dict_pre_hook",
+    "register_module",
+    "register_parameter",
+    "register_state_dict_post_hook",
+    "register_state_dict_pre_hook",
+    "report",
+    "requires_grad_",
+    "set_extra_state",
+    "set_submodule",
+    "share_memory",
+    "state_dict",
+    "to",
+    "to_empty",
+    "train",
+    "type",
+    "xpu",
+    "zero_grad"
+   ],
+   "class": "Extrusion"
+  },
+  "GroupAverage": {
+   "attrs": [
+    "T_destination",
+    "add_module",
+    "apply",
+    "bfloat16",
+    "buffers",
+    "call_super_init",
+    "children",
+    "compile",
+    "cpu",
+    "cuda",
+    "double",
+    "dump_patches",
+    "eval",
+    "extra_repr",
+    "float",
+    "forward",
+    "get_buffer",
+    "get_extra_state",
+    "get_parameter",
+    "get_submodule",
+    "half",
+    "ipu",
+    "load_state_dict",
+    "modules",
+    "mtia",
+    "named_buffers",
+    "named_children",
+    "named_modules",
+    "named_parameters",
+    "parameters",
+    "register_backward_hook",
+    "register_buffer",
+    "register_forward_hook",
+    "register_forward_pre_hook",
+    "register_full_backward_hook",
+    "register_full_backward_pre_hook",
+    "register_load_state_dict_post_hook",
+    "register_load_state_dict_pre_hook",
+    "register_module",
+    "register_parameter",
+    "register_state_dict_post_hook",
+    "register_state_dict_pre_hook",
+    "requires_grad_",
+    "set_extra_state",
+    "set_submodule",
+    "share_memory",
+    "state_dict",
+    "to",
+    "to_empty",
+    "train",
+    "type",
+    "xpu",
+    "zero_grad"
+   ],
+   "class": "GroupAverage"
+  },
+  "Pattern": {
+   "attrs": [
+    "T_destination",
+    "add_module",
+    "apply",
+    "bfloat16",
+    "buffers",
+    "call_super_init",
+    "children",
+    "compile",
+    "cpu",
+    "cuda",
+    "cyclic",
+    "double",
+    "dump_patches",
+    "eval",
+    "expand",
+    "extra_repr",
+    "float",
+    "forward",
+    "get_buffer",
+    "get_extra_state",
+    "get_parameter",
+    "get_submodule",
+    "half",
+    "ipu",
+    "load_state_dict",
+    "modules",
+    "mtia",
+    "named_buffers",
+    "named_children",
+    "named_modules",
+    "named_parameters",
+    "parameters",
+    "project",
+    "reduce",
+    "register_backward_hook",
+    "register_buffer",
+    "register_forward_hook",
+    "register_forward_pre_hook",
+    "register_full_backward_hook",
+    "register_full_backward_pre_hook",
+    "register_load_state_dict_post_hook",
+    "register_load_state_dict_pre_hook",
+    "register_module",
+    "register_parameter",
+    "register_state_dict_post_hook",
+    "register_state_dict_pre_hook",
+    "report",
+    "requires_grad_",
+    "set_extra_state",
+    "set_submodule",
+    "share_memory",
+    "state_dict",
+    "to",
+    "to_empty",
+    "train",
+    "translational",
+    "type",
+    "xpu",
+    "zero_grad"
+   ],
+   "class": "Pattern"
+  },
+  "Symmetry": {
+   "attrs": [
+    "T_destination",
+    "add_module",
+    "apply",
+    "bfloat16",
+    "buffers",
+    "call_super_init",
+    "children",
+    "compile",
+    "cpu",
+    "cuda",
+    "double",
+    "dump_patches",
+    "eval",
+    "expand",
+    "extra_repr",
+    "float",
+    "forward",
+    "get_buffer",
+    "get_extra_state",
+    "get_parameter",
+    "get_submodule",
+    "half",
+    "ipu",
+    "load_state_dict",
+    "modules",
+    "mtia",
+    "named_buffers",
+    "named_children",
+    "named_modules",
+    "named_parameters",
+    "parameters",
+    "project",
+    "reduce",
+    "register_backward_hook",
+    "register_buffer",
+    "register_forward_hook",
+    "register_forward_pre_hook",
+    "register_full_backward_hook",
+    "register_full_backward_pre_hook",
+    "register_load_state_dict_post_hook",
+    "register_load_state_dict_pre_hook",
+    "register_module",
+    "register_parameter",
+    "register_state_dict_post_hook",
+    "register_state_dict_pre_hook",
+    "report",
+    "requires_grad_",
+    "set_extra_state",
+    "set_submodule",
+    "share_memory",
+    "state_dict",
+    "to",
+    "to_empty",
+    "train",
+    "type",
+    "xpu",
+    "zero_grad"
+   ],
+   "class": "Symmetry"
+  },
+  "Tying": {
+   "attrs": [
+    "T_destination",
+    "add_module",
+    "apply",
+    "bfloat16",
+    "buffers",
+    "call_super_init",
+    "children",
+    "compile",
+    "cpu",
+    "cuda",
+    "double",
+    "dump_patches",
+    "eval",
+    "expand",
+    "extra_repr",
+    "float",
+    "forward",
+    "get_buffer",
+    "get_extra_state",
+    "get_parameter",
+    "get_submodule",
+    "half",
+    "ipu",
+    "load_state_dict",
+    "modules",
+    "mtia",
+    "named_buffers",
+    "named_children",
+    "named_modules",
+    "named_parameters",
+    "parameters",
+    "project",
+    "reduce",
+    "register_backward_hook",
+    "register_buffer",
+    "register_forward_hook",
+    "register_forward_pre_hook",
+    "register_full_backward_hook",
+    "register_full_backward_pre_hook",
+    "register_load_state_dict_post_hook",
+    "register_load_state_dict_pre_hook",
+    "register_module",
+    "register_parameter",
+    "register_state_dict_post_hook",
+    "register_state_dict_pre_hook",
+    "report",
+    "requires_grad_",
+    "set_extra_state",
+    "set_submodule",
+    "share_memory",
+    "state_dict",
+    "to",
+    "to_empty",
+    "train",
+    "type",
+    "xpu",
+    "zero_grad"
+   ],
+   "class": "Tying"
+  },
   "combine_tying": "combine_tying(links)",
   "manufacturing_chain": "manufacturing_chain(domain,rmin,tying,am,casting,projection,beta,eta,regroup)",
   "overhang_map": "overhang_map(xphys,build,domain,threshold,base_layer,include_keep)",
@@ -253,43 +2497,310 @@
   "validate_chain": "validate_chain(chain)"
  },
  "toporlogy.optim": {
-  "BetaContinuation": "BetaContinuation[9af463bc7f]",
-  "MMA": "MMA[cea730e883]",
-  "OC": "OC[cea730e883]",
-  "Optimizer": "Optimizer[cea730e883]",
-  "Schedule": "Schedule[969c6ec810]"
+  "BetaContinuation": {
+   "attrs": [
+    "beta",
+    "finished",
+    "state",
+    "update"
+   ],
+   "class": "BetaContinuation"
+  },
+  "MMA": {
+   "attrs": [
+    "max_constraints",
+    "name",
+    "reset",
+    "step"
+   ],
+   "class": "MMA"
+  },
+  "OC": {
+   "attrs": [
+    "max_constraints",
+    "name",
+    "reset",
+    "step"
+   ],
+   "class": "OC"
+  },
+  "Optimizer": {
+   "attrs": [
+    "max_constraints",
+    "name",
+    "reset",
+    "step"
+   ],
+   "class": "Optimizer"
+  },
+  "Schedule": {
+   "attrs": [
+    "finished",
+    "state",
+    "update"
+   ],
+   "class": "Schedule"
+  }
  },
  "toporlogy.optim.base": {
-  "Optimizer": "Optimizer[cea730e883]"
+  "Optimizer": {
+   "attrs": [
+    "max_constraints",
+    "name",
+    "reset",
+    "step"
+   ],
+   "class": "Optimizer"
+  }
  },
  "toporlogy.optim.mma": {
-  "MMA": "MMA[cea730e883]"
+  "MMA": {
+   "attrs": [
+    "max_constraints",
+    "name",
+    "reset",
+    "step"
+   ],
+   "class": "MMA"
+  }
  },
  "toporlogy.optim.oc": {
-  "OC": "OC[cea730e883]"
+  "OC": {
+   "attrs": [
+    "max_constraints",
+    "name",
+    "reset",
+    "step"
+   ],
+   "class": "OC"
+  }
  },
  "toporlogy.optim.schedule": {
-  "BetaContinuation": "BetaContinuation[9af463bc7f]",
-  "Schedule": "Schedule[969c6ec810]"
+  "BetaContinuation": {
+   "attrs": [
+    "beta",
+    "finished",
+    "state",
+    "update"
+   ],
+   "class": "BetaContinuation"
+  },
+  "Schedule": {
+   "attrs": [
+    "finished",
+    "state",
+    "update"
+   ],
+   "class": "Schedule"
+  }
  },
  "toporlogy.post": {
-  "Bound": "Bound[84f44dbdc8]",
-  "Box": "Box[51d7bb8700]",
-  "CheckResult": "CheckResult[9b74f96bb2]",
-  "CheckThresholds": "CheckThresholds[ba18a6b499]",
-  "Cut": "Cut[84f44dbdc8]",
-  "Cylinder": "Cylinder[e7cb87f673]",
-  "GridShape": "GridShape[51d7bb8700]",
-  "Implicit": "Implicit[4ff88aaddb]",
-  "ImplicitShape": "Implicit[6d7dbb24b7]",
-  "Keep": "Keep[84f44dbdc8]",
-  "Plane": "Plane[51d7bb8700]",
-  "PostParams": "PostParams[6991c517a5]",
-  "PostResult": "PostResult[76067f3912]",
-  "Role": "Role[84f44dbdc8]",
-  "Shape": "Shape[51d7bb8700]",
-  "Sphere": "Sphere[51d7bb8700]",
-  "TetMesh": "TetMesh[a3c0c0e6d3]",
+  "Bound": {
+   "attrs": [
+    "describe",
+    "functional",
+    "name",
+    "oriented",
+    "oriented_grad",
+    "role",
+    "sign",
+    "stock"
+   ],
+   "class": "Bound"
+  },
+  "Box": {
+   "attrs": [
+    "describe",
+    "grad",
+    "kind",
+    "offset",
+    "project",
+    "sdf"
+   ],
+   "class": "Box"
+  },
+  "CheckResult": {
+   "attrs": [
+    "as_dict",
+    "table"
+   ],
+   "class": "CheckResult"
+  },
+  "CheckThresholds": {
+   "attrs": [
+    "build_direction",
+    "max_bodies",
+    "max_overhang_fraction",
+    "max_voids",
+    "min_concave_radius",
+    "min_wall",
+    "overhang_deg",
+    "plate_level",
+    "wall_method",
+    "wall_statistic"
+   ],
+   "class": "CheckThresholds"
+  },
+  "Cut": {
+   "attrs": [
+    "describe",
+    "functional",
+    "name",
+    "oriented",
+    "oriented_grad",
+    "role",
+    "sign",
+    "stock"
+   ],
+   "class": "Cut"
+  },
+  "Cylinder": {
+   "attrs": [
+    "axial",
+    "describe",
+    "grad",
+    "kind",
+    "length",
+    "offset",
+    "project",
+    "radial",
+    "sdf"
+   ],
+   "class": "Cylinder"
+  },
+  "GridShape": {
+   "attrs": [
+    "describe",
+    "grad",
+    "kind",
+    "offset",
+    "project",
+    "sdf"
+   ],
+   "class": "GridShape"
+  },
+  "Implicit": {
+   "attrs": [
+    "free"
+   ],
+   "class": "Implicit"
+  },
+  "ImplicitShape": {
+   "attrs": [
+    "describe",
+    "grad",
+    "kind",
+    "name",
+    "offset",
+    "project",
+    "sdf"
+   ],
+   "class": "Implicit"
+  },
+  "Keep": {
+   "attrs": [
+    "describe",
+    "functional",
+    "name",
+    "oriented",
+    "oriented_grad",
+    "role",
+    "sign",
+    "stock"
+   ],
+   "class": "Keep"
+  },
+  "Plane": {
+   "attrs": [
+    "describe",
+    "grad",
+    "kind",
+    "offset",
+    "project",
+    "sdf"
+   ],
+   "class": "Plane"
+  },
+  "PostParams": {
+   "attrs": [
+    "adaptive_radius",
+    "feature_angle_deg",
+    "feature_tol",
+    "fill_voids",
+    "interp_order",
+    "keep_bodies",
+    "lam",
+    "level",
+    "max_close_gain",
+    "max_open_loss",
+    "mu",
+    "pass_band",
+    "project_to_implicit",
+    "r_close",
+    "r_fillet_min",
+    "r_open",
+    "radius_factor",
+    "radius_trials",
+    "relax_iter",
+    "sigma",
+    "smooth_iter",
+    "smoothing",
+    "target_faces",
+    "upsample",
+    "volume_match"
+   ],
+   "class": "PostParams"
+  },
+  "PostResult": {
+   "attrs": [
+    "checks",
+    "export"
+   ],
+   "class": "PostResult"
+  },
+  "Role": {
+   "attrs": [
+    "describe",
+    "functional",
+    "name",
+    "oriented",
+    "oriented_grad",
+    "role",
+    "sign",
+    "stock"
+   ],
+   "class": "Role"
+  },
+  "Shape": {
+   "attrs": [
+    "describe",
+    "grad",
+    "kind",
+    "offset",
+    "project",
+    "sdf"
+   ],
+   "class": "Shape"
+  },
+  "Sphere": {
+   "attrs": [
+    "describe",
+    "grad",
+    "kind",
+    "offset",
+    "project",
+    "sdf"
+   ],
+   "class": "Sphere"
+  },
+  "TetMesh": {
+   "attrs": [
+    "boundary_nodes",
+    "ndof",
+    "volume"
+   ],
+   "class": "TetMesh"
+  },
   "assemble": "assemble(phi_free,roles,X,cache)",
   "element_fraction": "element_fraction(domain,shape,samples)",
   "export_result": "export_result(res,folder,name,formats,checks,print_stock,extra)",
@@ -311,8 +2822,28 @@
   "write_stl": "write_stl(path,V,F,name)"
  },
  "toporlogy.post.checks": {
-  "CheckResult": "CheckResult[9b74f96bb2]",
-  "CheckThresholds": "CheckThresholds[ba18a6b499]",
+  "CheckResult": {
+   "attrs": [
+    "as_dict",
+    "table"
+   ],
+   "class": "CheckResult"
+  },
+  "CheckThresholds": {
+   "attrs": [
+    "build_direction",
+    "max_bodies",
+    "max_overhang_fraction",
+    "max_voids",
+    "min_concave_radius",
+    "min_wall",
+    "overhang_deg",
+    "plate_level",
+    "wall_method",
+    "wall_statistic"
+   ],
+   "class": "CheckThresholds"
+  },
   "concave_radius_test": "concave_radius_test(res,r)",
   "local_thickness": "local_thickness(phi,h)",
   "manufacturing_checks": "manufacturing_checks(res,thresholds,kw)",
@@ -346,9 +2877,49 @@
   "volume": "volume(V,F)"
  },
  "toporlogy.post.pipeline": {
-  "Implicit": "Implicit[4ff88aaddb]",
-  "PostParams": "PostParams[6991c517a5]",
-  "PostResult": "PostResult[76067f3912]",
+  "Implicit": {
+   "attrs": [
+    "free"
+   ],
+   "class": "Implicit"
+  },
+  "PostParams": {
+   "attrs": [
+    "adaptive_radius",
+    "feature_angle_deg",
+    "feature_tol",
+    "fill_voids",
+    "interp_order",
+    "keep_bodies",
+    "lam",
+    "level",
+    "max_close_gain",
+    "max_open_loss",
+    "mu",
+    "pass_band",
+    "project_to_implicit",
+    "r_close",
+    "r_fillet_min",
+    "r_open",
+    "radius_factor",
+    "radius_trials",
+    "relax_iter",
+    "sigma",
+    "smooth_iter",
+    "smoothing",
+    "target_faces",
+    "upsample",
+    "volume_match"
+   ],
+   "class": "PostParams"
+  },
+  "PostResult": {
+   "attrs": [
+    "checks",
+    "export"
+   ],
+   "class": "PostResult"
+  },
   "finalize": "finalize(domain,xphys,preserve,params,envelope,target_volume,log)",
   "measure_interfaces": "measure_interfaces(V,F,roles,h,band,angle_deg)",
   "optimised_volume": "optimised_volume(domain,xphys)",
@@ -356,18 +2927,150 @@
   "remesh": "remesh(res,edge,target_faces,relax_iter,max_halvings)"
  },
  "toporlogy.post.primitives": {
-  "Bound": "Bound[84f44dbdc8]",
-  "Box": "Box[51d7bb8700]",
-  "Cut": "Cut[84f44dbdc8]",
-  "Cylinder": "Cylinder[e7cb87f673]",
-  "GridShape": "GridShape[51d7bb8700]",
-  "Implicit": "Implicit[6d7dbb24b7]",
-  "Keep": "Keep[84f44dbdc8]",
-  "Offset": "Offset[51d7bb8700]",
-  "Plane": "Plane[51d7bb8700]",
-  "Role": "Role[84f44dbdc8]",
-  "Shape": "Shape[51d7bb8700]",
-  "Sphere": "Sphere[51d7bb8700]",
+  "Bound": {
+   "attrs": [
+    "describe",
+    "functional",
+    "name",
+    "oriented",
+    "oriented_grad",
+    "role",
+    "sign",
+    "stock"
+   ],
+   "class": "Bound"
+  },
+  "Box": {
+   "attrs": [
+    "describe",
+    "grad",
+    "kind",
+    "offset",
+    "project",
+    "sdf"
+   ],
+   "class": "Box"
+  },
+  "Cut": {
+   "attrs": [
+    "describe",
+    "functional",
+    "name",
+    "oriented",
+    "oriented_grad",
+    "role",
+    "sign",
+    "stock"
+   ],
+   "class": "Cut"
+  },
+  "Cylinder": {
+   "attrs": [
+    "axial",
+    "describe",
+    "grad",
+    "kind",
+    "length",
+    "offset",
+    "project",
+    "radial",
+    "sdf"
+   ],
+   "class": "Cylinder"
+  },
+  "GridShape": {
+   "attrs": [
+    "describe",
+    "grad",
+    "kind",
+    "offset",
+    "project",
+    "sdf"
+   ],
+   "class": "GridShape"
+  },
+  "Implicit": {
+   "attrs": [
+    "describe",
+    "grad",
+    "kind",
+    "name",
+    "offset",
+    "project",
+    "sdf"
+   ],
+   "class": "Implicit"
+  },
+  "Keep": {
+   "attrs": [
+    "describe",
+    "functional",
+    "name",
+    "oriented",
+    "oriented_grad",
+    "role",
+    "sign",
+    "stock"
+   ],
+   "class": "Keep"
+  },
+  "Offset": {
+   "attrs": [
+    "describe",
+    "grad",
+    "kind",
+    "offset",
+    "project",
+    "sdf"
+   ],
+   "class": "Offset"
+  },
+  "Plane": {
+   "attrs": [
+    "describe",
+    "grad",
+    "kind",
+    "offset",
+    "project",
+    "sdf"
+   ],
+   "class": "Plane"
+  },
+  "Role": {
+   "attrs": [
+    "describe",
+    "functional",
+    "name",
+    "oriented",
+    "oriented_grad",
+    "role",
+    "sign",
+    "stock"
+   ],
+   "class": "Role"
+  },
+  "Shape": {
+   "attrs": [
+    "describe",
+    "grad",
+    "kind",
+    "offset",
+    "project",
+    "sdf"
+   ],
+   "class": "Shape"
+  },
+  "Sphere": {
+   "attrs": [
+    "describe",
+    "grad",
+    "kind",
+    "offset",
+    "project",
+    "sdf"
+   ],
+   "class": "Sphere"
+  },
   "assemble": "assemble(phi_free,roles,X,cache)",
   "element_fraction": "element_fraction(domain,shape,samples)",
   "oriented": "oriented(role,X)"
@@ -380,7 +3083,17 @@
   "remove_islands": "remove_islands(phi_free,combine,keep_masks,h,mode)"
  },
  "toporlogy.post.sdf": {
-  "Grid": "Grid[08baf2cac6]",
+  "Grid": {
+   "attrs": [
+    "axes",
+    "index_coords",
+    "points",
+    "sample",
+    "size",
+    "to_image"
+   ],
+   "class": "Grid"
+  },
   "closing": "closing(phi,r,h)",
   "dilate": "dilate(phi,r,h)",
   "envelope_field": "envelope_field(domain,grid)",
@@ -397,7 +3110,15 @@
   "volume_threshold": "volume_threshold(rf,grid,target,combine,lo,hi,iterations,redistanced)"
  },
  "toporlogy.post.smooth": {
-  "Features": "Features[8798fcb422]",
+  "Features": {
+   "attrs": [
+    "angle_deg",
+    "locked",
+    "project",
+    "update"
+   ],
+   "class": "Features"
+  },
   "curvature_weights": "curvature_weights(V,kappa,radius)",
   "project_implicit": "project_implicit(V,phi,step,iterations,max_move)",
   "relax": "relax(V,F,iterations,alpha,features,phi,phi_step,max_move)",
@@ -413,7 +3134,14 @@
   "same_topology": "same_topology(a,b)"
  },
  "toporlogy.post.verify": {
-  "TetMesh": "TetMesh[a3c0c0e6d3]",
+  "TetMesh": {
+   "attrs": [
+    "boundary_nodes",
+    "ndof",
+    "volume"
+   ],
+   "class": "TetMesh"
+  },
   "d_iso": "d_iso(E,nu)",
   "reverify": "reverify(res,supports,load_cases,E,nu,size,exclusions,domain,xphys,timeout,penal,surface_edge)",
   "solve_t10": "solve_t10(m,supports,load_cases,E,nu,exclusions)",
@@ -423,26 +3151,105 @@
   "voxel_reference": "voxel_reference(domain,xphys,supports,load_cases,E,nu,penal,emin_ratio)"
  },
  "toporlogy.record": {
-  "Recorder": "Recorder[8db6597474]",
+  "Recorder": {
+   "attrs": [
+    "finish",
+    "log",
+    "start"
+   ],
+   "class": "Recorder"
+  },
   "git_revision": "git_revision(path)"
  },
  "toporlogy.references": {
   "REFERENCES": "<mappingproxy>",
-  "Reference": "Reference[75045dbf4c]",
+  "Reference": {
+   "attrs": [
+    "doi",
+    "edition",
+    "format",
+    "note",
+    "publisher",
+    "url"
+   ],
+   "class": "Reference"
+  },
   "cite": "cite(keys,note)",
   "format_bibliography": "format_bibliography(keys)",
   "references_of": "references_of(obj)"
  },
  "toporlogy.registry": {
-  "BuildContext": "BuildContext[739aedf2d0]",
-  "ConfigError": "ConfigError[022f2cc7a4]",
-  "Entry": "Entry[47835f2982]",
+  "BuildContext": {
+   "attrs": [
+    "bc",
+    "chain",
+    "domain",
+    "fixed",
+    "interfaces",
+    "interp",
+    "n_cases",
+    "objective",
+    "path",
+    "physics",
+    "robust",
+    "solver"
+   ],
+   "class": "BuildContext"
+  },
+  "ConfigError": {
+   "attrs": [
+    "add_note",
+    "args",
+    "with_traceback"
+   ],
+   "class": "ConfigError"
+  },
+  "Entry": {
+   "attrs": [
+    "construct",
+    "context",
+    "doc",
+    "params",
+    "resolve_target",
+    "summary"
+   ],
+   "class": "Entry"
+  },
   "KINDS": "<dict>",
-  "Param": "Param[4ba6d1d2fe]",
+  "Param": {
+   "attrs": [
+    "coerce",
+    "default",
+    "nested",
+    "nullable",
+    "required",
+    "type",
+    "unit"
+   ],
+   "class": "Param"
+  },
   "REGISTRY": "<Registry>",
   "REQUIRED": "<_Required>",
-  "Registry": "Registry[ab15b01989]",
-  "SpreadForce": "SpreadForce[566895679f]",
+  "Registry": {
+   "attrs": [
+    "build",
+    "get",
+    "kinds",
+    "names",
+    "register",
+    "resolve",
+    "unregister"
+   ],
+   "class": "Registry"
+  },
+  "SpreadForce": {
+   "attrs": [
+    "apply",
+    "kind",
+    "name"
+   ],
+   "class": "SpreadForce"
+  },
   "as_selector": "as_selector(v)",
   "bc_callables": "bc_callables(bcs)",
   "bc_mapping": "bc_mapping(bcs)",
@@ -456,21 +3263,167 @@
   "suggest": "suggest(word,options)"
  },
  "toporlogy.responses": {
-  "Compliance": "Compliance[f86e8374fb]",
-  "EvalContext": "EvalContext[8332eb7661]",
-  "Response": "Response[d0c985c798]",
-  "Volume": "Volume[d0c985c798]"
+  "Compliance": {
+   "attrs": [
+    "name",
+    "needs",
+    "per_case"
+   ],
+   "class": "Compliance"
+  },
+  "EvalContext": {
+   "attrs": [
+    "F",
+    "U",
+    "chain",
+    "field_after",
+    "interp",
+    "physics",
+    "x"
+   ],
+   "class": "EvalContext"
+  },
+  "Response": {
+   "attrs": [
+    "name",
+    "needs"
+   ],
+   "class": "Response"
+  },
+  "Volume": {
+   "attrs": [
+    "name",
+    "needs"
+   ],
+   "class": "Volume"
+  }
  },
  "toporlogy.robust": {
-  "BoundObjective": "BoundObjective[d0c985c798]",
-  "BoundSplit": "BoundSplit[5d16f571ca]",
-  "DilatedVolume": "DilatedVolume[d0c985c798]",
-  "RealisationBound": "RealisationBound[d0c985c798]",
-  "RealisationVolume": "RealisationVolume[d0c985c798]",
-  "Robust": "Robust[8636779106]",
-  "RobustCompliance": "RobustCompliance[8636779106]",
-  "RobustContinuation": "RobustContinuation[9af463bc7f]",
-  "RobustSet": "RobustSet[82a9fa2e7c]",
+  "BoundObjective": {
+   "attrs": [
+    "name",
+    "needs"
+   ],
+   "class": "BoundObjective"
+  },
+  "BoundSplit": {
+   "attrs": [
+    "T_destination",
+    "add_module",
+    "apply",
+    "bfloat16",
+    "buffers",
+    "call_super_init",
+    "children",
+    "compile",
+    "cpu",
+    "cuda",
+    "double",
+    "dump_patches",
+    "eval",
+    "extra_repr",
+    "float",
+    "forward",
+    "get_buffer",
+    "get_extra_state",
+    "get_parameter",
+    "get_submodule",
+    "half",
+    "ipu",
+    "load_state_dict",
+    "modules",
+    "mtia",
+    "named_buffers",
+    "named_children",
+    "named_modules",
+    "named_parameters",
+    "parameters",
+    "reduce",
+    "register_backward_hook",
+    "register_buffer",
+    "register_forward_hook",
+    "register_forward_pre_hook",
+    "register_full_backward_hook",
+    "register_full_backward_pre_hook",
+    "register_load_state_dict_post_hook",
+    "register_load_state_dict_pre_hook",
+    "register_module",
+    "register_parameter",
+    "register_state_dict_post_hook",
+    "register_state_dict_pre_hook",
+    "requires_grad_",
+    "set_extra_state",
+    "set_submodule",
+    "share_memory",
+    "state_dict",
+    "to",
+    "to_empty",
+    "train",
+    "type",
+    "xpu",
+    "zero_grad"
+   ],
+   "class": "BoundSplit"
+  },
+  "DilatedVolume": {
+   "attrs": [
+    "name",
+    "needs"
+   ],
+   "class": "DilatedVolume"
+  },
+  "RealisationBound": {
+   "attrs": [
+    "name",
+    "needs"
+   ],
+   "class": "RealisationBound"
+  },
+  "RealisationVolume": {
+   "attrs": [
+    "name",
+    "needs"
+   ],
+   "class": "RealisationVolume"
+  },
+  "Robust": {
+   "attrs": [
+    "name",
+    "needs",
+    "reset_scale",
+    "values"
+   ],
+   "class": "Robust"
+  },
+  "RobustCompliance": {
+   "attrs": [
+    "name",
+    "needs",
+    "reset_scale",
+    "values"
+   ],
+   "class": "RobustCompliance"
+  },
+  "RobustContinuation": {
+   "attrs": [
+    "beta",
+    "finished",
+    "state",
+    "update"
+   ],
+   "class": "RobustContinuation"
+  },
+  "RobustSet": {
+   "attrs": [
+    "beta_of",
+    "context",
+    "field",
+    "from_settings",
+    "realisation",
+    "thresholds"
+   ],
+   "class": "RobustSet"
+  },
   "blueprint_size": "blueprint_size(eta_e,rmin,dim,eta_i)",
   "bound_formulation": "bound_formulation(chain,robust,n_design,response,realisations,reference,factor,z0)",
   "eta_for_size": "eta_for_size(b_over_r)",
@@ -480,25 +3433,93 @@
   "robust_chain_settings": "robust_chain_settings(min_solid,min_void,h,dim,eta_max,kernel)"
  },
  "toporlogy.solvers": {
-  "DirectSolver": "DirectSolver[67545c64d4]",
-  "GMGConvergenceError": "GMGConvergenceError[022f2cc7a4]",
-  "GMGSolver": "GMGSolver[d78315bd5f]"
+  "DirectSolver": {
+   "attrs": [
+    "factor",
+    "name",
+    "release",
+    "solve"
+   ],
+   "class": "DirectSolver"
+  },
+  "GMGConvergenceError": {
+   "attrs": [
+    "add_note",
+    "args",
+    "with_traceback"
+   ],
+   "class": "GMGConvergenceError"
+  },
+  "GMGSolver": {
+   "attrs": [
+    "free_mask",
+    "operator",
+    "solve",
+    "update",
+    "vcycle"
+   ],
+   "class": "GMGSolver"
+  }
  },
  "toporlogy.solvers.direct": {
-  "DirectSolver": "DirectSolver[67545c64d4]"
+  "DirectSolver": {
+   "attrs": [
+    "factor",
+    "name",
+    "release",
+    "solve"
+   ],
+   "class": "DirectSolver"
+  }
  },
  "toporlogy.solvers.gmg": {
-  "GMGConvergenceError": "GMGConvergenceError[022f2cc7a4]",
-  "GMGSolver": "GMGSolver[d78315bd5f]",
+  "GMGConvergenceError": {
+   "attrs": [
+    "add_note",
+    "args",
+    "with_traceback"
+   ],
+   "class": "GMGConvergenceError"
+  },
+  "GMGSolver": {
+   "attrs": [
+    "free_mask",
+    "operator",
+    "solve",
+    "update",
+    "vcycle"
+   ],
+   "class": "GMGSolver"
+  },
   "pcg": "pcg(A,b,M,x0,tol,maxit)",
   "solve": "solve(E_elem,F,fixed_mask,KE,scale,x0,tol,kw)"
  },
  "toporlogy.solvers.gmg_deflation": {
-  "IslandDeflation": "IslandDeflation[c030169048]"
+  "IslandDeflation": {
+   "attrs": [
+    "Q",
+    "Z",
+    "Zt",
+    "info",
+    "wrap"
+   ],
+   "class": "IslandDeflation"
+  }
  },
  "toporlogy.solvers.gmg_kernels": {
   "CORNERS": "<tuple>",
-  "Level": "Level[39506bdc47]",
+  "Level": {
+   "attrs": [
+    "apply",
+    "diag",
+    "element_matrices",
+    "ndof",
+    "raw",
+    "raw_diag",
+    "to"
+   ],
+   "class": "Level"
+  },
   "chebyshev": "chebyshev(L,x,b,degree,lo,hi)",
   "children": "children(a,shape)",
   "edof_grid": "edof_grid(shape)",
@@ -513,7 +3534,16 @@
   "scatter": "scatter(fe,shape,out)"
  },
  "toporlogy.solvers.gmg_transfer": {
-  "BlackBoxTransfer": "BlackBoxTransfer[1f4e9f2716]"
+  "BlackBoxTransfer": {
+   "attrs": [
+    "element_P",
+    "galerkin",
+    "prolong",
+    "restrict",
+    "to"
+   ],
+   "class": "BlackBoxTransfer"
+  }
  },
  "toporlogy.solvers.pardiso": {
   "available": "available()",
@@ -521,10 +3551,43 @@
   "state": "state()"
  },
  "toporlogy.study": {
-  "Constraint": "Constraint[0c7a689bc4]",
-  "DensityEvaluation": "DensityEvaluation[da39a3ee5e]",
-  "Evaluation": "Evaluation[da39a3ee5e]",
-  "Result": "Result[8a155aa5c8]",
-  "Study": "Study[dc5636343a]"
+  "Constraint": {
+   "attrs": [
+    "g",
+    "key",
+    "name",
+    "scale"
+   ],
+   "class": "Constraint"
+  },
+  "DensityEvaluation": {
+   "attrs": [],
+   "class": "DensityEvaluation"
+  },
+  "Evaluation": {
+   "attrs": [],
+   "class": "Evaluation"
+  },
+  "Result": {
+   "attrs": [
+    "constraint_values",
+    "final",
+    "objective"
+   ],
+   "class": "Result"
+  },
+  "Study": {
+   "attrs": [
+    "constraint_values",
+    "context",
+    "default_start",
+    "evaluate",
+    "evaluate_density",
+    "physical",
+    "run",
+    "settings"
+   ],
+   "class": "Study"
+  }
  }
 }
