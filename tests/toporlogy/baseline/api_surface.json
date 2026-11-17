@@ -1275,6 +1275,52 @@
   "bc_mapping": "bc_mapping(bcs)",
   "selector_callable": "selector_callable(sel,info,h)"
  },
+ "toporlogy.configuration.build": {
+  "BuildContext": {
+   "attrs": [
+    "bc",
+    "chain",
+    "domain",
+    "fixed",
+    "interfaces",
+    "interp",
+    "n_cases",
+    "objective",
+    "path",
+    "physics",
+    "robust",
+    "solver"
+   ],
+   "class": "BuildContext"
+  },
+  "ConfigError": {
+   "attrs": [
+    "add_note",
+    "args",
+    "with_traceback"
+   ],
+   "class": "ConfigError"
+  },
+  "REGISTRY": "<Registry>",
+  "Setup": {
+   "attrs": [
+    "bc",
+    "bc_report",
+    "bc_summary",
+    "run_options"
+   ],
+   "class": "Setup"
+  },
+  "annotations": "<_Feature>",
+  "apply_overrides": "apply_overrides(raw,overrides)",
+  "build": "build(resolved)",
+  "build_setup": "build_setup(raw,overrides)",
+  "join": "join(path,key)",
+  "load_config": "load_config(path,overrides)",
+  "read_config": "read_config(path)",
+  "resolve": "resolve(raw)",
+  "study_from_dict": "study_from_dict(d,overrides)"
+ },
  "toporlogy.configuration.components": {
   "annotations": "<_Feature>",
   "register_all": "register_all()"
@@ -1610,6 +1656,75 @@
   "register": "<method>",
   "suggest": "suggest(word,options)"
  },
+ "toporlogy.configuration.resolve": {
+  "BuildContext": {
+   "attrs": [
+    "bc",
+    "chain",
+    "domain",
+    "fixed",
+    "interfaces",
+    "interp",
+    "n_cases",
+    "objective",
+    "path",
+    "physics",
+    "robust",
+    "solver"
+   ],
+   "class": "BuildContext"
+  },
+  "ConfigError": {
+   "attrs": [
+    "add_note",
+    "args",
+    "with_traceback"
+   ],
+   "class": "ConfigError"
+  },
+  "Param": {
+   "attrs": [
+    "coerce",
+    "default",
+    "nested",
+    "nullable",
+    "required",
+    "type",
+    "unit"
+   ],
+   "class": "Param"
+  },
+  "REGISTRY": "<Registry>",
+  "SCHEMA_KEYS": "<tuple>",
+  "annotations": "<_Feature>",
+  "apply_overrides": "apply_overrides(raw,overrides)",
+  "combination_label": "combination_label(combo)",
+  "join": "join(path,key)",
+  "normalise_name": "normalise_name(name)",
+  "parse_sweep": "parse_sweep(items)",
+  "read_config": "read_config(path)",
+  "resolve": "resolve(raw)",
+  "set_path": "set_path(d,key,value,flag)",
+  "suggest": "suggest(word,options)",
+  "sweep_combinations": "sweep_combinations(sweep)"
+ },
+ "toporlogy.configuration.schema": {
+  "Param": {
+   "attrs": [
+    "coerce",
+    "default",
+    "nested",
+    "nullable",
+    "required",
+    "type",
+    "unit"
+   ],
+   "class": "Param"
+  },
+  "SCHEMA_KEYS": "<tuple>",
+  "STATUS_OK": "<str>",
+  "annotations": "<_Feature>"
+ },
  "toporlogy.connectivity": {
   "BridgeResult": {
    "attrs": [],
@@ -1930,6 +2045,30 @@
   "eigenvalues": "eigenvalues(ctx,n)",
   "min_frequency_constraint": "min_frequency_constraint(f_min,n_modes,rho,E_unit,rho_unit,length_unit)",
   "omega_squared_factor": "omega_squared_factor(E_unit,rho_unit,length_unit)"
+ },
+ "toporlogy.execution": {},
+ "toporlogy.execution.runner": {
+  "Setup": {
+   "attrs": [
+    "bc",
+    "bc_report",
+    "bc_summary",
+    "run_options"
+   ],
+   "class": "Setup"
+  },
+  "annotations": "<_Feature>",
+  "run_setup": "run_setup(setup,folder,progress,source,overrides,post_progress)",
+  "status_of": "status_of(summary)",
+  "write_resolved": "write_resolved(resolved,folder,source,overrides)"
+ },
+ "toporlogy.execution.runs": {
+  "STATUS_OK": "<str>",
+  "annotations": "<_Feature>",
+  "read_run": "read_run(folder)",
+  "status_of": "status_of(summary)",
+  "write_resolved": "write_resolved(resolved,folder,source,overrides)",
+  "write_sweep_csv": "write_sweep_csv(path,rows,keys)"
  },
  "toporlogy.fem": {
   "Elasticity": {

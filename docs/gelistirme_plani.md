@@ -17,7 +17,8 @@ bugünkü durumunu, bulunan açıkları ve sonraki işlerin sırasını tutar.
 | G0 güvenlik ağı | tamam | baseline (7 örnek, bit düzeyinde), API yüzeyi + `list`, katman kuralı + import sırası testleri |
 | G1 doğruluk düzeltmeleri | tamam | B-02 ve B-06 plandaki gibi G7'ye kaldı |
 | G2 `registry.py`'yi böl | tamam | `configuration/` paketi; `registry.py` uyumluluk modülü (aşağıda) |
-| G3–G9 | başlamadı | K1 kararı verildi: sınırlı (K1-a) |
+| G3 `config.py`'yi böl | tamam | `configuration/{schema,resolve,build}.py`, `execution/{runner,runs}.py`; `config.py` uyumluluk modülü |
+| G4–G9 | başlamadı | K1 kararı verildi: sınırlı (K1-a) |
 | K5 lisans | kapandı | tescilli, tüm hakları saklı (`LICENSE`) |
 
 G1 bulgularının kapandığı commit'ler: B-01 `aeb3ac3`; B-03 `6dca762`; B-04 `a6b0bc6`; B-05 `cf83e40`; B-07 `54ff90f`,
@@ -34,6 +35,13 @@ G2 (K1-a ile): `registry.py`'nin 1854 satırı, kaynak metinden üretilerek `con
 `post_steps.py`, `boundary_mapping.py`. `toporlogy.registry` eski adların hepsini aynı nesnelerle yeniden dışa aktarıyor;
 kayıt sırası korundu. Planın G2 tablosundan iki sapma: son işlem adımları `configuration/post_steps.py`'de, BC eşlemesi
 `configuration/boundary_mapping.py`'de duruyor (K1-a'da `verification/` paketi açılmıyor).
+
+G3: `config.py`'nin 1053 satırı aynı yöntemle taşındı: `configuration/schema.py` (şema belgesi, varsayılanlar),
+`configuration/resolve.py` (okuma, çözümleme, geçersiz kılma, tarama), `configuration/build.py` (`Setup`, `build`),
+`execution/runner.py` (`run_setup`), `execution/runs.py` (`write_resolved`, `status_of`, `write_sweep_csv`,
+`read_run`). Plandan sapma: `status_of` `runner` yerine `runs`'ta, çünkü `read_run` onu kullanıyor ve `runner` →
+`runs` → `runner` döngüsü oluşuyordu. Katman testine bir `compat` katmanı eklendi: `toporlogy.config` ve
+`toporlogy.registry` her şeyi yeniden dışa aktarabilir, paketin içinde yalnız yürütme katmanı onları içe aktarabilir.
 
 ---
 

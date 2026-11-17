@@ -29,7 +29,8 @@ LAYER_OF = {
     "connectivity": "optimization", "dynamics": "optimization", "checks": "optimization", "optim": "optimization",
     "optimization": "optimization", "record": "optimization",
     "post": "postprocessing", "postprocessing": "postprocessing", "verification": "postprocessing",
-    "registry": "configuration", "config": "configuration", "configuration": "configuration",
+    "configuration": "configuration",
+    "registry": "compat", "config": "compat",               # compatibility modules after G2/G3 (re-exports only)
     "cli": "execution", "__main__": "execution", "execution": "execution",
     "": "package",                                          # toporlogy/__init__.py
 }
@@ -45,7 +46,11 @@ ALLOWED = {
     "configuration": {"base", "geometry", "solvers", "physics", "design", "boundary", "optimization",
                       "postprocessing", "package"},
     "execution": {"base", "geometry", "solvers", "physics", "design", "boundary", "optimization", "postprocessing",
-                  "configuration", "package"},
+                  "configuration", "package", "compat"},
+    # old module paths kept for users: they may re-export anything, but inside the package only the top layer may
+    # still import them (new code imports the new modules)
+    "compat": {"base", "geometry", "solvers", "physics", "design", "boundary", "optimization", "postprocessing",
+               "configuration", "execution", "package"},
     "package": {"base", "geometry", "solvers", "physics", "design", "boundary", "optimization", "postprocessing"},
 }
 # (importer, imported) known violations; docs/gelistirme_plani.md §4.3. Remove entries as they are fixed.

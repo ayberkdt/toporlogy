@@ -22,7 +22,8 @@ Etiketler: **[Ö]** ölçüldü (dosya/komut verilmiş), **[O]** koddan okundu, 
 ## 2. Katmanlar ve modüller
 
 ```
-Study (bildirimsel kurulum: config.py + configuration/ (kayıt, bileşenler; registry.py uyumluluk modülü), CLI: cli.py)
+Study (bildirimsel kurulum: configuration/ (şema, çözümleme, kurulum, kayıt, bileşenler), koşu: execution/;
+       config.py ve registry.py uyumluluk modülü, CLI: cli.py)
   ├── Domain           domain.py        ızgara, frac, keep/void, numaralama;  geometry.py  CSG / STL / delik bulma
   ├── Sınır koşulları  bc.py            seçiciler, mesnetler, yükler, yük durumları, kontroller
   ├── Chain            chain.py         Embed ► DensityFilter ► [AM / Casting] ► Projection ► Passive
