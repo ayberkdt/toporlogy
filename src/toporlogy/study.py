@@ -131,6 +131,10 @@ class Study:
         self.optimizer, self.schedule, self.recorder = optimizer, schedule or Schedule(), recorder
         if optimizer.max_constraints is not None and len(self.constraints) > optimizer.max_constraints:
             raise ValueError(f"{optimizer.name} handles at most {optimizer.max_constraints} constraint(s)")
+        if getattr(optimizer, "needs_constraint_fn", False) and "u" in self._needs([c.response for c in constraints]):
+            names = [c.key for c in self.constraints if "u" in c.response.needs]
+            raise ValueError(f"{optimizer.name} evaluates the constraint inside its step and cannot use constraint(s) "
+                             f"that need a state solve: {names}; use MMA")
         keys = [c.key for c in self.constraints]
         if len(set(keys)) != len(keys):
             raise ValueError(f"constraint names must be unique: {keys}; set Constraint(name=...)")

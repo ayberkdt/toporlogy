@@ -244,3 +244,19 @@ def test_duplicate_response_names_rejected():
     raw["constraints"][1]["name"] = "volume_b"
     s = C.build_setup(raw)
     assert s.constraint_names == ["volume", "volume_b"]
+
+
+def test_oc_with_a_state_dependent_constraint_is_rejected_at_build():
+    """B-07: OC evaluates its constraint inside the bisection without a solve, so a constraint that needs U failed
+    at the first step ("OC needs constraint_fn"). It is now rejected when the study is built, from YAML and Python."""
+    raw = mbb()
+    raw["objective"] = "volume"
+    raw["constraints"] = [{"response": "compliance", "name": "stiffness", "upper": 500.0}]
+    errs = errors_of(raw)
+    assert "state solve" in errs["constraints"] and "stiffness" in errs["constraints"] and "MMA" in errs["constraints"]
+    raw["optimizer"] = "mma"
+    assert C.build_setup(raw).study.optimizer.name == "MMA"              # MMA takes it
+    d = Domain((6, 3))
+    with pytest.raises(ValueError, match="state solve"):
+        Study(d, Elasticity(d, d.dofs(d.nodes_where(lambda X: X[:, 0] < 1e-9))), d.load_vector(), standard_chain(d, 1.5),
+              SIMP(d), Volume(), [Constraint(Compliance(), 1.0)], OC())

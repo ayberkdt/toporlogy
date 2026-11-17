@@ -21,6 +21,7 @@ class Optimizer:
 
     name = "optimizer"
     max_constraints: int | None = None
+    needs_constraint_fn = False             # True: step() evaluates g(x_new) itself, so constraints must not need U
 
     def step(self, x: np.ndarray, f0: float, df0: np.ndarray, g: np.ndarray, dg: np.ndarray,
              constraint_fn: Callable[[np.ndarray], np.ndarray] | None = None) -> np.ndarray:  # pragma: no cover
