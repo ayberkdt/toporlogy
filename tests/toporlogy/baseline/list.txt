@@ -1,0 +1,149 @@
+domain  - design domain builder -> Domain (3)
+  box  shape=?  h=1.0 [length]  origin=null [length]  thickness=1.0 [length]  keep=null  void=null
+  csg  shapes=?  h=? [length]  padding=0  bounds=null [length]  sub=4  min_frac=0.05
+       connectivity=largest  keep=null  void=null  thickness=1.0 [length]
+  stl  path=?  h=? [length]  scale=1.0  padding=1  sub=3  min_frac=0.05  connectivity=largest
+       bounds=null [length]  keep=null  void=null
+
+shape  - geometric shape (CSG primitive; op: add | cut | intersect) (11)
+  ball       center=? [length]  radius=? [length]  op=add
+  bore       index=null  near=null [length]  extra_radius=0.0 [length]  extend=0.0 [length]
+             through=true  op=cut
+  box        lo=? [length]  hi=? [length]  op=add
+  capsule    p0=? [length]  p1=? [length]  radius=? [length]  op=add
+  circle     center=? [length]  radius=? [length]  op=add
+  cylinder   p0=? [length]  p1=? [length]  radius=? [length]  op=add
+  halfspace  point=? [length]  normal=?  op=intersect
+  polygon    vertices=? [length]  op=add
+  prism      polygon=? [length]  axis=z  range=[0.0, 1.0] [length]  op=add
+  slot       p0=? [length]  p1=? [length]  radius=? [length]  depth=? [length]  op=add
+  sphere     center=? [length]  radius=? [length]  op=add
+
+selector  - node selection of the part (18)
+  all          (no parameters)
+  at_points    points=? [length]  tol=null [length]
+  bore         index=null  near=null [length]  band=null [length]  facing=inward
+               max_angle=60.0 [deg]  extend=0.0 [length]  min_diameter=null [length]
+  box          min=null [length]  max=null [length]
+  half_space   point=? [length]  normal=?  surface=false  tol=null [length]
+  in_box       lo=null [length]  hi=null [length]  surface=false  tol=null [length]
+  in_shape     shape=?  surface=false  tol=null [length]
+  in_sphere    center=? [length]  radius=? [length]  surface=false
+  intersect    of=?
+  nearest      points=? [length]  k=1  surface=true
+  node_ids     ids=?
+  on_cylinder  p0=? [length]  radius=? [length]  p1=null [length]  band=null [length]
+               facing=inward  max_angle=60.0 [deg]  extend=0.0 [length]
+  on_plane     axis=null  at=null [length]  point=null [length]  normal=null  tol=null [length]
+               facing=any  max_angle=60.0 [deg]
+  plane        axis=?  at=? [length]
+  point        at=? [length]
+  subtract     of=?
+  surface      (no parameters)
+  union        of=?
+
+support  - support (zero displacement, roller, pin, springs) (5)
+  elastic      where=?  k=0.0 [force/length^3]  direction=normal  total=null [force/length]
+               name=null
+  fixed        where=?  dofs=all  name=null
+  pinned_bore  bore=?  axial=false  tangential=false  name=null
+  roller       where=?  normal=?  name=null
+  symmetry     axis=null  at=null [length]  point=null [length]  normal=null  tol=null [length]
+               name=null
+
+load  - load of one load case (10)
+  bearing        bore=?  force=? [force (total)]  mode=parallel  on=surface  name=null
+  body_force     acceleration=? [length/time^2]  density=null [mass/length^3]  name=null
+  force          where=?  force=? [force (total)]  name=null
+  point          at=? [length]  force=? [force]  radius=null [length]  name=null
+  pressure       where=?  p=? [force/length^2]  normals=faces  name=null
+  remote_force   where=?  force=? [force]  point=? [length]  moment=null [force*length]
+                 weights=area  name=null
+  remote_moment  where=?  moment=? [force*length]  point=null [length]  weights=area  name=null
+  surface_force  where=?  force=? [force (total)]  name=null
+  torque         bore=?  torque=? [force*length]  name=null
+  traction       where=?  traction=? [force/length^2]  geometric=true  name=null
+
+link  - chain link (design -> physical density) (10)
+  am_filter             build=null  base_layer=0  base_coordinate=null [length]  P=40.0
+                        eps=0.0001  xi0=0.5  masked=true  autograd=false
+  casting               direction=+z  parting=null [length]  p=40.0
+  density_filter        rmin=? [elements]  backend=auto
+  embed                 (no parameters)
+  extrusion             axis=?
+  group_average         (no parameters)
+  heaviside_projection  beta=1.0  eta=0.5
+  passive               (no parameters)
+  pattern               kind=translational  offset=null [length]  n=null  center=null [length]
+                        axis=z
+  symmetry              planes=? [length]
+
+interpolation  - physical density -> element modulus (3)
+  ramp            q=8.0  emin_ratio=1e-06
+  simp            penal=3.0  emin_ratio=1e-06
+  two_range_simp  penal=3.0  threshold=0.1  q=1.0  emin_ratio=1e-09
+
+solver  - linear solver (1)
+  direct  method=auto
+
+physics  - physics model (state solve) (3)
+  elasticity      element=null  solver=direct
+  elasticity_gmg  element=null  tol=1e-08  maxit=300  direct_below=4000 [active elements]
+                  fallback_max_elements=120000 [active elements]  warm_start=true
+                  allow_inexact=false
+  modal           element=null  n_modes=6  sigma=0.0 [eigenvalue]  tol=0.0  mass=linear
+                  rhomin_ratio=0.0  mass_threshold=0.1  mass_q=6.0  added_mass=0.0 [mass (total)]
+                  added_mass_at=null  cluster_tol=0.001  repeated=warn
+
+response  - objective or constraint response (13)
+  compliance               weights=null
+  conduction_connectivity  sink=null  kmin_ratio=0.001  penal=3.0  aggregate=pnorm  p=8.0  eta=0.7
+                           reference=solid
+  coupling_compliance      held=null  aggregate=pnorm  p=8.0  eta=0.7  reference=first
+  dilated_volume           weighted=false
+  eigenvalue               k=1
+  frequency                k=1  E_unit=1.0  rho_unit=1.0  length_unit=1.0
+  grey_level               source=xphys
+  local_volume             t_max=null [length]  radius=null [elements]  member=null  p=16.0
+                           aggregate=pmean  adaptive=0.0  outside=void  source=xphys
+  maximize                 response=?
+  min_eigenvalue_ks        n_modes=3  rho=50.0  scale=null  kind=ks
+  min_frequency            f_min=? [Hz]  n_modes=1  rho=50.0  E_unit=1.0  rho_unit=1.0
+                           length_unit=1.0
+  robust_compliance        realisations=["eroded", "intermediate", "dilated"]  aggregate=ks
+                           rho=50.0  p=16.0  scale=null  weights=null
+  volume                   weighted=false
+
+optimizer  - optimizer (2)
+  mma  move=0.2  asyinit=0.5  asydecr=0.7  asyincr=1.2  asymin=0.01  asymax=10.0  albefa=0.1
+       raa0=1e-05  c=1000.0  d=1.0  normalise=first
+  oc   move=0.2  l1=0.0  l2=1000000000.0  bisection_tol=0.0001  max_bisect=80  dv_scale=null
+
+schedule  - continuation schedule (2)
+  beta_continuation    beta0=1.0  beta_max=16.0  every=25  tol=null
+  robust_continuation  beta0=1.0  beta_max=32.0  every=50  tol=null  volume_every=20  target=null
+                       update_volume=true
+
+post  - post-processing step after the run (6)
+  connectivity_gate     threshold=0.5  connectivity=face  robust_thresholds=[0.3, 0.7]
+                        erosion=true  voids=fail  repair=none  section=2
+  export                formats=["stl"]  name=part  print_stock=true
+  finalize              preserve=null  name=part  write=true  upsample=4  interp_order=1
+                        sigma=null [length]  volume_match=threshold  level=0.5
+                        r_open=null [length]  max_open_loss=0.02  r_close=null [length]
+                        r_fillet_min=0.0 [length]  max_close_gain=0.05  radius_factor=0.75
+                        radius_trials=6  keep_bodies=interfaces  fill_voids=true  smoothing=taubin
+                        smooth_iter=20  lam=0.5  mu=-0.53  pass_band=0.1  relax_iter=5
+                        project_to_implicit=true  feature_tol=null  feature_angle_deg=60.0
+                        adaptive_radius=0.0  target_faces=null
+  manufacturing_checks  max_bodies=1  max_voids=0  min_wall=null [length]  wall_statistic=p1
+                        wall_method=ray  build_direction=[0.0, 0.0, 1.0]  overhang_deg=45.0
+                        plate_level=null [length]  max_overhang_fraction=null
+                        min_concave_radius=null [length]
+  measure_lengthscale   threshold=0.5  outside=void  upsample=null  smooth=0.0 [elements]
+                        margin=0.0 [length]  percentiles=[1.0, 5.0, 50.0]  radii=[] [length]
+  reverify              E=null [force/length^2]  nu=null  size=null [length]  surface_edge=null
+                        timeout=600.0  compare_voxel=true
+
+? = required.  Units: lengths in the unit of h, forces in force units, E0 in force/length^2.
+NEXT          python -m toporlogy validate <config>
