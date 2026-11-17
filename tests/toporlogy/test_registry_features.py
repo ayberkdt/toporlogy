@@ -328,6 +328,48 @@ def test_gate_verdict_in_summary_and_exit_code(capsys, tmp_path):
     assert (tmp_path / "b" / "result_repaired.npz").is_file()
 
 
+def test_bridge_repair_is_a_variant_not_a_mutation(tmp_path):
+    """The repair leaves the optimisation result alone (x, xphys, objective, final all describe the optimised
+    design), stores the repaired density as a variant that later steps of the same result use, re-evaluates its
+    objective and constraints, and fails the gate when the added material breaks a constraint."""
+    s = C.build_setup(split(ties=None, constraint="none", repair="bridge"))
+    res = s.study.run(max_iter=1, tol=0.0)
+    x0, xp0, f0, fin0 = res.x.copy(), res.xphys.copy(), res.objective, dict(res.final.values)
+    name, step = s.post[0]
+    assert name == "connectivity_gate"
+    out = step(res, s.study, tmp_path)
+    assert np.array_equal(res.x, x0) and np.array_equal(res.xphys, xp0)
+    assert res.objective == f0 and res.final.values == fin0
+    rep = np.load(tmp_path / "result_repaired.npz")["xphys"]
+    assert not np.array_equal(rep, xp0) and out["design"] == "repaired" and out["verdict_before_repair"] == "FAIL"
+    # re-evaluated at the repaired density: volume by the response's own formula, compliance by a fresh solve
+    act = s.study.domain.active
+    rd = out["repaired_design"]
+    vol = next(c for c in rd["constraints"] if c["name"] == "volume")
+    assert vol["value"] == pytest.approx(rep[act].sum() / act.sum(), rel=1e-12)
+    assert rd["objective"] < f0                                    # more material, stiffer
+    # this repair more than doubles the volume (bound 0.15): before, the gate reported passed for it
+    assert vol["value"] > 0.15 * 1.01 and vol["satisfied"] is False and rd["feasible"] is False
+    assert out["passed"] is False and "repaired design violates volume" in out["summary"]
+    again = step(res, s.study, tmp_path)                           # a later step of the same result: the variant
+    assert again["design"] == "repaired" and "repair" not in again
+    res2 = s.study.run(max_iter=1, tol=0.0)                         # a new result does not inherit the variant
+    assert step(res2, s.study, tmp_path)["verdict_before_repair"] == "FAIL"
+
+
+def test_evaluate_density_matches_evaluate_and_skips_chain_responses():
+    """evaluate_density(x̄ of x) equals evaluate(x) for responses of x̄ and U; a response of the chain's filtered
+    field (conduction connectivity on the eroded field) gets no value but a reason."""
+    s = C.build_setup(split(ties=1, constraint="conduction"))
+    res = s.study.run(max_iter=1, tol=0.0)
+    de = s.study.evaluate_density(res.xphys)
+    assert de.values["compliance"] == pytest.approx(res.final.values["compliance"], rel=1e-12)
+    assert de.values["volume"] == pytest.approx(res.final.values["volume"], rel=1e-12)
+    assert "connectivity" not in de.values and "no chain" in de.skipped["connectivity"]
+    with pytest.raises(ValueError, match="shape"):
+        s.study.evaluate_density(res.xphys.ravel())
+
+
 # ---------------------------------------------------------------------------------------------- validate output
 def test_validate_prints_bc_summary_and_rejects_under_support(capsys, tmp_path):
     p = tmp_path / "plate.yaml"

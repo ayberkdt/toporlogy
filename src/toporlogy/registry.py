@@ -823,6 +823,41 @@ def _post_state(ctx: BuildContext) -> dict[str, Any]:
     return ctx.extra.setdefault("post_state", {})
 
 
+def _design(state: dict[str, Any], res: Any) -> tuple[np.ndarray, str]:
+    """x̄ for the geometry steps and its label: the repaired variant of ``res`` when a connectivity_gate repaired
+    this result ("repaired"), else ``res.xphys`` ("optimized"). ``res`` itself is never modified, so its x, xphys,
+    objective, constraints and U keep describing the optimised design."""
+    d = state.get("design")
+    if d is not None and d["source"] is res:
+        return d["xphys"], d["label"]
+    return res.xphys, "optimized"
+
+
+def _reevaluate(study: Any, xphys: np.ndarray, run: dict[str, Any]) -> dict[str, Any]:
+    """Objective and constraints of a repaired density (Study.evaluate_density), with the run_setup feasibility
+    rule. Constraints that need the design chain are listed with ``value: None`` and the reason; ``feasible`` is
+    False if an evaluated constraint is violated, None if none is violated but some could not be evaluated."""
+    ev = study.evaluate_density(xphys)
+    ftol = float(run.get("feasibility_tol", 1e-3))
+    cons = []
+    for c in study.constraints:
+        if c.key in ev.values:
+            v = ev.values[c.key]
+            cons.append({"name": c.key, "value": v, "upper": c.upper,
+                         "satisfied": bool(v <= c.upper + ftol * max(abs(c.upper), 1e-12))})
+        else:
+            cons.append({"name": c.key, "value": None, "upper": c.upper, "satisfied": None,
+                         "not_evaluated": ev.skipped[c.key]})
+    obj = study.objective.name
+    feasible: bool | None = True
+    if any(c["satisfied"] is False for c in cons):
+        feasible = False
+    elif any(c["satisfied"] is None for c in cons):
+        feasible = None
+    return {"objective": ev.values.get(obj), "objective_name": obj, "constraints": cons, "feasible": feasible,
+            **({"objective_not_evaluated": ev.skipped[obj]} if obj in ev.skipped else {})}
+
+
 def _rel(files: dict[str, str], folder: Any) -> dict[str, str]:
     from pathlib import Path
     out = {}
@@ -1401,35 +1436,44 @@ def _register_features() -> None:
                           robust_thresholds: list | None = (0.3, 0.7), erosion: bool = True, voids: str = "fail",
                           repair: str = "none", section: int = 2) -> Any:
         """One-body gate (analyse_connectivity) over the interfaces; verdict PASS / FRAGILE / FAIL into
-        summary.json (FAIL: exit 1). repair bridge: on FAIL join the bodies (result_repaired.npz; later steps use
-        it) and gate again."""
+        summary.json (FAIL: exit 1). repair bridge: on FAIL join the bodies into a repaired variant
+        (result_repaired.npz; later geometry steps use it, the optimisation result is not modified), gate it again
+        and re-evaluate its objective and constraints ("repaired_design"); a repair that violates a constraint
+        fails the gate."""
         from toporlogy.connectivity import analyse_connectivity, bridge
         if repair not in ("none", "bridge"):
             raise ValueError(f'repair: none | bridge, got "{repair}"')
         masks = _interfaces(ctx)
+        state = _post_state(ctx)
 
         def gate(dom: Any, x: np.ndarray) -> Any:
             return analyse_connectivity(dom, x, masks, threshold, connectivity, robust_thresholds, erosion,
                                         voids=voids)
 
         def step(res: Any, study: Any, folder: Any) -> dict[str, Any]:
-            rep = gate(study.domain, res.xphys)
-            out: dict[str, Any] = {"verdict": rep.verdict, **_gate_dict(rep)}
+            x0, label = _design(state, res)
+            rep = gate(study.domain, x0)
+            out: dict[str, Any] = {"verdict": rep.verdict, "design": label, **_gate_dict(rep)}
             if rep.verdict == "FAIL" and repair == "bridge":        # FRAGILE is one body already: nothing to join
-                br = bridge(study.domain, res.xphys, masks, threshold=threshold, section=section)
+                br = bridge(study.domain, x0, masks, threshold=threshold, section=section)
                 rep2 = gate(study.domain, br.xphys)
                 np.savez_compressed(f"{folder}/result_repaired.npz", xphys=br.xphys)
-                res.xphys = br.xphys
-                out = {"verdict": rep2.verdict, "verdict_before_repair": rep.verdict, **_gate_dict(rep2),
+                state["design"] = {"source": res, "xphys": br.xphys, "label": "repaired"}
+                out = {"verdict": rep2.verdict, "verdict_before_repair": rep.verdict, "design": "repaired",
+                       **_gate_dict(rep2),
                        "repair": {"bridges": br.n_bridges, "added_cells": br.added_cells,
                                   "added_volume": br.added_volume, "removed_cells": br.removed_cells,
-                                  "file": "result_repaired.npz"}}
-            out["passed"] = out["verdict"] != "FAIL"
+                                  "file": "result_repaired.npz"},
+                       "repaired_design": _reevaluate(study, br.xphys, ctx.run)}
+            rd = out.get("repaired_design")
+            out["passed"] = out["verdict"] != "FAIL" and (rd is None or rd["feasible"] is not False)
             rp = out.get("repair")
+            bad = [c["name"] for c in rd["constraints"] if c["satisfied"] is False] if rd else []
             out["summary"] = (f"{out['verdict']} ({out['n_bodies']} bod{'y' if out['n_bodies'] == 1 else 'ies'}"
                               f"{', unattached ' + ', '.join(out['unattached']) if out['unattached'] else ''})"
                               + (f" after {rp['bridges']} bridge(s), +{rp['added_cells']} cells; was "
-                                 f"{out['verdict_before_repair']}" if rp else ""))
+                                 f"{out['verdict_before_repair']}" if rp else "")
+                              + (f"; repaired design violates {', '.join(bad)}" if bad else ""))
             return out
         return step
 
@@ -1438,14 +1482,17 @@ def _register_features() -> None:
                          percentiles: list = (1.0, 5.0, 50.0), radii: list = ()) -> Any:
         """Measure member thickness and void size of the final design (lengths in the unit of h)."""
         from toporlogy.lengthscale import measure_lengthscale
+        state = _post_state(ctx)
 
         def step(res: Any, study: Any, folder: Any) -> dict[str, Any]:
             d = study.domain
-            rep = measure_lengthscale(res.xphys, d.h, threshold, outside, upsample, d.active, percentiles, radii,
+            xp, label = _design(state, res)
+            rep = measure_lengthscale(xp, d.h, threshold, outside, upsample, d.active, percentiles, radii,
                                       margin, smooth)
             keys = ("solid_min", "solid_max", "void_min", "void_max", "grey_fraction", "m_nd", "solid_fraction",
                     "resolution")
-            out = {k: float(getattr(rep, k)) for k in keys}
+            out: dict[str, Any] = {k: float(getattr(rep, k)) for k in keys}
+            out["design"] = label
             out.update(solid_percentiles=rep.solid_percentiles, void_percentiles=rep.void_percentiles,
                        opening_residue=rep.opening_residue, closing_residue=rep.closing_residue)
             out["summary"] = (f"solid {out['solid_min']:.3g} .. {out['solid_max']:.3g}, void min "
@@ -1558,12 +1605,14 @@ def _make_finalize() -> Callable[..., Any]:
         state = _post_state(ctx)
 
         def step(res: Any, study: Any, folder: Any) -> dict[str, Any]:
-            pr = finalize(study.domain, res.xphys, preserve=roles, params=pp)
+            xp, label = _design(state, res)
+            pr = finalize(study.domain, xp, preserve=roles, params=pp)
             state["result"] = pr
+            state["result_design"] = label
             rep = pr.report
             files = _rel(export_result(pr, folder, name, ("stl",), print_stock=False), folder) if write else {}
             topo = rep.get("topology_mesh", {})
-            out = {"triangles": int(len(pr.F)), "volume_mesh": rep.get("volume_mesh"),
+            out = {"design": label, "triangles": int(len(pr.F)), "volume_mesh": rep.get("volume_mesh"),
                    "volume_vs_target": rep.get("volume_vs_target"), "topology": topo, "edges": rep.get("edges"),
                    "interfaces": rep.get("interfaces"), "seconds": rep.get("seconds", {}).get("total"),
                    "files": files}
@@ -1643,9 +1692,11 @@ def reverify_step(ctx: BuildContext, E: float | None = None, nu: float | None = 
     def step(res: Any, study: Any, folder: Any) -> dict[str, Any]:
         from toporlogy.post import reverify
         pr = _need_result(state, "reverify")
+        xp, label = _design(state, res)                 # the voxel model of the same design that was finalized
         out = reverify(pr, supports, cases, E_, nu_, size=size, surface_edge=surface_edge,
-                       domain=study.domain if compare_voxel else None, xphys=res.xphys if compare_voxel else None,
+                       domain=study.domain if compare_voxel else None, xphys=xp if compare_voxel else None,
                        timeout=timeout)
+        out["design"] = state.get("result_design", label)
         out["notes"] = notes
         state["reverify"] = out
         ch = out.get("change") or []

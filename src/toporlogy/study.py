@@ -25,7 +25,7 @@ from toporlogy.optim.base import Optimizer
 from toporlogy.optim.schedule import Schedule
 from toporlogy.responses import EvalContext, Response, Volume
 
-__all__ = ["Constraint", "Study", "Result", "Evaluation"]
+__all__ = ["Constraint", "Study", "Result", "Evaluation", "DensityEvaluation"]
 
 
 @dataclass
@@ -58,6 +58,20 @@ class Evaluation:
     xphys: np.ndarray
     U: np.ndarray | None
     values: dict[str, float]
+
+
+@dataclass
+class DensityEvaluation:
+    """Responses of a physical density x̄ that the chain did not produce (e.g. a repaired design).
+
+    ``values``: objective and constraint values (keys as in :attr:`Evaluation.values`) of the responses that need
+    only x̄ (and U). ``skipped``: key → reason for the responses that need the design chain or the design vector
+    (robust realisations, eroded-field connectivity, bound formulation); they get no value rather than a wrong one.
+    """
+
+    values: dict[str, float]
+    skipped: dict[str, str]
+    U: np.ndarray | None
 
 
 @dataclass
@@ -177,6 +191,31 @@ class Study:
         return Evaluation(float(f0), df0, np.array([float(g) for g in gs]), dg,
                           ctx.xphys.detach().numpy().copy(),
                           None if ctx.U is None else ctx.U.detach().numpy().copy(), values)
+
+    def evaluate_density(self, xphys: np.ndarray) -> DensityEvaluation:
+        """Objective and constraint responses of the physical density ``xphys`` (domain.shape) without the chain.
+
+        For a density the optimiser did not return (connectivity.bridge adds solid cells to x̄; there is no design
+        vector x that maps to it). No gradients. A response that needs the chain or x raises inside (no chain or x
+        in the context) and is reported in ``skipped`` instead of a value; a failing state solve raises.
+        """
+        xp = np.asarray(xphys, float)
+        if xp.shape != tuple(self.domain.shape):
+            raise ValueError(f"xphys has shape {xp.shape}, the domain {tuple(self.domain.shape)}")
+        rs = [(self.objective.name, self.objective)] + [(c.key, c.response) for c in self.constraints]
+        with torch.no_grad():
+            xt = torch.as_tensor(xp, dtype=torch.float64)
+            E = self.interp(xt)
+            U = self.physics.solve(E.reshape(-1)[self._active], self.F) if "u" in self._needs(
+                [r for _, r in rs]) else None
+            ctx = EvalContext(self.domain, xt, E, U, self.F, physics=self.physics, interp=self.interp)
+            values, skipped = {}, {}
+            for key, r in rs:
+                try:
+                    values[key] = float(r(ctx))
+                except (ValueError, KeyError, IndexError, TypeError, AttributeError) as e:
+                    skipped[key] = f"{type(e).__name__}: {e}"
+        return DensityEvaluation(values, skipped, None if U is None else U.detach().numpy().copy())
 
     def constraint_values(self, x: np.ndarray) -> np.ndarray:
         """Constraints g(x) without gradients (only for constraints that need no state solve)."""
