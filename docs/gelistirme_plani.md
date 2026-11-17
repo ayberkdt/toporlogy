@@ -9,6 +9,25 @@ mimari inceleme (7 belge; bulgularından kodla doğrulananlar §3'te).
 Bu belge `mimari_plan.md`'nin yerine geçmez: o belge yöntem kararlarını ve aşamaları (A0–D) tutar, bu belge kodun
 bugünkü durumunu, bulunan açıkları ve sonraki işlerin sırasını tutar.
 
+### Durum (17 Kasım 2026, `g0-safety-net` dalı)
+
+| Aşama | Durum | Not |
+|---|---|---|
+| A-01–A-05 (§3.1) | tamam | `3e3a1cc` … `8bcaeeb` |
+| G0 güvenlik ağı | tamam | baseline (7 örnek, bit düzeyinde), API yüzeyi + `list`, katman kuralı + import sırası testleri |
+| G1 doğruluk düzeltmeleri | tamam | B-02 ve B-06 plandaki gibi G7'ye kaldı |
+| G2–G9 | başlamadı | G2'den önce K1 kararı gerekli |
+| K5 lisans | kapandı | tescilli, tüm hakları saklı (`LICENSE`) |
+
+G1 bulgularının kapandığı commit'ler: B-01 `aeb3ac3`; B-03 `6dca762`; B-04 `a6b0bc6`; B-05 `cf83e40`; B-07 `54ff90f`,
+`d648f7a`; B-08 `7994862`; B-09 `fbb0c9c`; B-10 `b19ec1c`; B-11 `a4fe49d`; B-12 ve B-13 `9fba67b`; B-14 `3d98811`;
+B-15 `6881fab`; B-16 `a7f3fd0`; B-17 `9fe2d0f`; B-18 `5033fd9`. B-19 ölçüldü, etkisi yok (`419f444`: çözüm ve
+iterasyon sayısı değişmiyor; kod değişmedi, regresyon testi eklendi).
+
+Uygulama sırasında plandan sapan iki ölçüm: B-04'te L-BFGS-B'nin başarı bayrağı tek başına yakınsama göstermedi
+(249 dual çözümde "başarısız" bitenlerin kalıntısı ≤ 1,1e-8, "başarılı" bitenlerinki ≤ 4,1e-8); uyarı dual kalıntısına
+bağlandı. B-08'de öngörülen boş `argmax` hatası yerine yanıltıcı bir "bodies [1] cannot be reached" iletisi gözlendi.
+
 ---
 
 ## 1. Özet
