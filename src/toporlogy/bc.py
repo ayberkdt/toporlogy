@@ -1040,9 +1040,10 @@ class RemoteForce(Load):
         self.name = name or f"RemoteForce {where!r}"
 
     def apply(self, info: PartInfo) -> Applied:
+        return self._apply(info, _vec(self.F, info.dim, "force"), _vec(self.point, info.dim, "point"))
+
+    def _apply(self, info: PartInfo, F: np.ndarray, p: np.ndarray) -> Applied:
         n = self.where.select(info)
-        F = _vec(self.F, info.dim, "force")
-        p = _vec(self.point, info.dim, "point")
         M = _mom(np.zeros(3 if info.dim == 3 else 1) if self.M is None else self.M, info.dim)
         notes: list[str] = []
         w = _weights(info, n, self.wmode, notes)
@@ -1067,12 +1068,15 @@ class RemoteMoment(RemoteForce):
         self._auto = point is None
 
     def apply(self, info: PartInfo) -> Applied:
-        self.F = np.zeros(info.dim)
+        # zero force and the reference point are local to this part: the load object is not modified, so it can be
+        # applied to several parts (cases, sweeps) and read afterwards
         if self._auto:
             n = self.where.select(info)
             w = _weights(info, n, self.wmode, [])
-            self.point = (w[:, None] * info.X[n]).sum(axis=0) / w.sum()
-        return super().apply(info)
+            p = (w[:, None] * info.X[n]).sum(axis=0) / w.sum()
+        else:
+            p = _vec(self.point, info.dim, "point")
+        return self._apply(info, np.zeros(info.dim), p)
 
 
 class PointLoad(Load):

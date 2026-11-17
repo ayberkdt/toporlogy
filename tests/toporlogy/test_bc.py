@@ -375,3 +375,16 @@ def test_summary_of_a_case_without_loads():
     s = B.summary()
     assert 'Load case "empty": no loads' in s and 'Load case "a": 1 load(s)' in s
     assert not B.F()[:, 1].any()
+
+
+def test_remote_moment_does_not_modify_the_load_object():
+    """B-18: RemoteMoment.apply overwrote the object's F and point (its zero force and the part's centroid), so a
+    load applied to one part changed what it held for the next. Applying it now leaves the object as built and
+    gives each part its own centroid."""
+    rm = bc.RemoteMoment(bc.OnPlane([0, 0, 0], 0), [0.0, 0.0, 5.0])
+    F0, p0 = list(rm.F), list(rm.point)
+    a1 = rm.apply(bc.part_info(Domain((4, 2, 2))))
+    a2 = rm.apply(bc.part_info(Domain((4, 6, 8))))
+    assert list(rm.F) == F0 and list(rm.point) == p0
+    assert np.allclose(a1.ref_point, [0, 1, 1]) and np.allclose(a2.ref_point, [0, 3, 4])
+    assert np.allclose(a1.force, 0.0) and np.allclose(a2.force, 0.0)
