@@ -21,7 +21,7 @@ def bc_mapping(bcs: Any) -> dict[str, Any]:
     else "equivalent" (every support and load mapped by type with no known approximation; the nodal distribution
     on the tetrahedral mesh still differs from the voxel grid's). Only an "equivalent" re-analysis is the
     optimisation's problem."""
-    from toporlogy import bc as B
+    from toporlogy import boundary as B
     info, h = bcs.info, bcs.domain.h
     mapped: list[dict[str, str]] = []
 
@@ -93,7 +93,7 @@ def selector_callable(sel: Any, info: Any, h: float) -> Callable[[np.ndarray], n
     they pick on the grid."""
     from scipy.spatial import cKDTree
 
-    from toporlogy import bc as B
+    from toporlogy import boundary as B
     t = 0.5 * h
     if isinstance(sel, B.InBox):
         lo, hi = sel.lo, sel.hi

@@ -29,7 +29,7 @@ from toporlogy.study import Constraint, Evaluation, Result, Study
 # bc (supports, loads, checks), geometry (CSG / STL domains, bores), lengthscale (min/max thickness, measurement),
 # robust (eroded/blueprint/dilated), connectivity (one-body gate, prevention, repair), manufacturing (AM, symmetry,
 # extrusion, casting), dynamics (eigenfrequency responses), fem.heat, fem.modal, config / registry / cli.
-from toporlogy import bc, connectivity, dynamics, geometry, lengthscale, manufacturing, robust  # noqa: F401
+from toporlogy import bc, boundary, connectivity, dynamics, geometry, lengthscale, manufacturing, robust  # noqa: F401
 
 __all__ = ["Domain", "Chain", "Embed", "DensityFilter", "HeavisideProjection", "Passive", "standard_chain",
            "SIMP", "RAMP", "Elasticity", "Response", "EvalContext", "Compliance", "Volume", "Optimizer", "OC", "MMA",

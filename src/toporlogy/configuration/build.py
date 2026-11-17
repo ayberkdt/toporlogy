@@ -53,7 +53,7 @@ def _resultant(f: np.ndarray, dim: int) -> list[float]:
 
 def _as_supports(obj: Any, dim: int, name: str) -> list[Any]:
     """A built support: a bc.Support, or fixed DOF numbers (components that predate bc) → Fixed per direction."""
-    from toporlogy.bc import Fixed, NodeIds, Support
+    from toporlogy.boundary import Fixed, NodeIds, Support
     if isinstance(obj, Support):
         return [obj]
     dofs = np.unique(np.asarray(obj, np.int64).reshape(-1))
@@ -65,7 +65,7 @@ def _as_supports(obj: Any, dim: int, name: str) -> list[Any]:
 
 def _as_load(obj: Any, dim: int, ndof: int, name: str) -> Any:
     """A built load: a bc.Load, or a load vector (ndof,) (components that predate bc) → NodalForces."""
-    from toporlogy.bc import Load, NodalForces, NodeIds
+    from toporlogy.boundary import Load, NodalForces, NodeIds
     if isinstance(obj, Load):
         return obj
     f = np.asarray(obj, float).reshape(-1)
@@ -79,7 +79,7 @@ def _as_load(obj: Any, dim: int, ndof: int, name: str) -> Any:
 
 
 def _supports(ctx: BuildContext, specs: Sequence[dict[str, Any]], path: str, prefix: str) -> list[Any]:
-    from toporlogy.bc import EmptySelectionError, part_info
+    from toporlogy.boundary import EmptySelectionError, part_info
     out = []
     info = part_info(ctx.domain)
     for i, s in enumerate(specs):
@@ -100,7 +100,7 @@ def _supports(ctx: BuildContext, specs: Sequence[dict[str, Any]], path: str, pre
 
 
 def _loads(ctx: BuildContext, specs: Sequence[dict[str, Any]], path: str, prefix: str) -> list[Any]:
-    from toporlogy.bc import EmptySelectionError, part_info
+    from toporlogy.boundary import EmptySelectionError, part_info
     out = []
     info = part_info(ctx.domain)
     for j, ld in enumerate(specs):
@@ -118,7 +118,7 @@ def _loads(ctx: BuildContext, specs: Sequence[dict[str, Any]], path: str, prefix
 
 
 def _boundary_conditions(domain: Any, supports: list[Any], cases: list[Any], combos: list[Any]) -> Any:
-    from toporlogy.bc import BoundaryConditions
+    from toporlogy.boundary import BoundaryConditions
     try:
         return BoundaryConditions(domain, supports, cases, combos)
     except ValueError as e:
@@ -127,7 +127,7 @@ def _boundary_conditions(domain: Any, supports: list[Any], cases: list[Any], com
 
 def _default_interfaces(bcs: Any) -> dict[str, np.ndarray]:
     """One interface per support and per load (bc node sets → elements touching them); body forces left out."""
-    from toporlogy.bc import BodyForce
+    from toporlogy.boundary import BodyForce
     from toporlogy.connectivity import elements_touching_nodes
     d = bcs.domain
     out: dict[str, np.ndarray] = {}
@@ -147,7 +147,7 @@ def _default_interfaces(bcs: Any) -> dict[str, np.ndarray]:
 
 
 def _explicit_interfaces(ctx: BuildContext, specs: dict[str, Any]) -> dict[str, np.ndarray]:
-    from toporlogy.bc import EmptySelectionError
+    from toporlogy.boundary import EmptySelectionError
     from toporlogy.connectivity import elements_touching_nodes
     from toporlogy.configuration.helpers import as_selector
     out = {}
@@ -181,7 +181,7 @@ def _check_bc(bcs: Any, cases: list[dict[str, Any]]) -> Any:
 
 def build(resolved: dict[str, Any]) -> Setup:
     """Construct every component of a resolved config (see :func:`resolve`) into a :class:`Setup`."""
-    from toporlogy.bc import AllNodes, Combination, LoadCase
+    from toporlogy.boundary import AllNodes, Combination, LoadCase
     from toporlogy.chain import Chain, DensityFilter, HeavisideProjection
     from toporlogy.manufacturing import GroupAverage, Tying, validate_chain
     from toporlogy.configuration.helpers import SpreadForce

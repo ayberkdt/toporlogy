@@ -129,7 +129,7 @@ result.objective, result.constraint_values, result.xphys   # all of the returned
 ```
 
 Each `run()` starts from the schedule's initial state and a fresh optimizer, so running a study twice gives the
-same result. Boundary conditions by geometry instead of DOF numbers: `toporlogy.bc` (`BoundaryConditions`,
+same result. Boundary conditions by geometry instead of DOF numbers: `toporlogy.boundary` (`BoundaryConditions`,
 `OnCylinder`, `BearingLoad`, `RemoteForce`, `check()`). Surfaces: `toporlogy.post.finalize(...)`.
 
 ## What is inside
@@ -139,7 +139,7 @@ The library follows the optimisation pipeline; every stage is a module that can 
 | Stage | Module | Provides |
 |:---|:---|:---|
 | Geometry | `geometry` | CSG primitives, STL voxelisation with partial volumes, bore detection |
-| Boundary conditions | `bc` | 18 geometric selectors; 5 support types (fixed, roller, symmetry, pinned bore, springs); nodal and 9 distributed load types incl. bearing and remote loads; load cases and combinations; resultant and rigid-body checks |
+| Boundary conditions | `boundary` | 18 geometric selectors; 5 support types (fixed, roller, symmetry, pinned bore, springs); nodal and 9 distributed load types incl. bearing and remote loads; load cases and combinations; resultant and rigid-body checks |
 | Design chain | `chain`, `manufacturing` | density filter, tanh projection, keep/void regions; AM overhang filter, symmetry, extrusion and pattern tying, casting/milling pull direction |
 | Physics | `fem`, `solvers` | H8, H8IM and Q4 elasticity, heat conduction, modal analysis; PARDISO/SuperLU, or matrix-free multigrid on CUDA with a direct fallback |
 | Responses | `responses`, `robust`, `lengthscale`, `connectivity`, `dynamics` | compliance, volume; robust minimum solid/void size; maximum thickness; one-body constraints; eigenfrequencies |

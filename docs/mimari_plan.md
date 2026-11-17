@@ -25,7 +25,7 @@ Etiketler: **[Ö]** ölçüldü (dosya/komut verilmiş), **[O]** koddan okundu, 
 Study (bildirimsel kurulum: configuration/ (şema, çözümleme, kurulum, kayıt, bileşenler), koşu: execution/;
        config.py ve registry.py uyumluluk modülü, CLI: cli.py)
   ├── Domain           domain.py        ızgara, frac, keep/void, numaralama;  geometry.py  CSG / STL / delik bulma
-  ├── Sınır koşulları  bc.py            seçiciler, mesnetler, yükler, yük durumları, kontroller
+  ├── Sınır koşulları  boundary/        seçiciler, mesnetler, yükler, yük durumları, kontroller (bc.py uyumluluk)
   ├── Chain            chain.py         Embed ► DensityFilter ► [AM / Casting] ► Projection ► Passive
   │                    manufacturing.py simetri / ekstrüzyon / desen bağlama, AM, döküm yönü
   ├── Interpolation    interp.py        SIMP, RAMP;  dynamics.py  iki aralıklı kütle/rijitlik

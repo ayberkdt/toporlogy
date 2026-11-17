@@ -85,7 +85,7 @@ def register_core() -> None:
     register("selector", "point", point, units={"at": "length"})
 
     # ---------------------------------------------------------------- supports and loads
-    from toporlogy.bc import Fixed
+    from toporlogy.boundary import Fixed
 
     def fixed(ctx: BuildContext, where: Any, dofs: Any = "all", name: str | None = None) -> Fixed:
         """Zero displacement of the selected nodes in the directions ``dofs`` ("all", "x", "xy", [x, z], or

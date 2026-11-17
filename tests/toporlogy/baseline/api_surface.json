@@ -929,6 +929,1166 @@
   "reaction_forces": "reaction_forces(physics,E_active,U,F)",
   "rigid_distribution": "rigid_distribution(X,w,point,force,moment,rtol)"
  },
+ "toporlogy.boundary": {
+  "AllNodes": {
+   "attrs": [
+    "mask",
+    "select",
+    "surface"
+   ],
+   "class": "AllNodes"
+  },
+  "Applied": {
+   "attrs": [
+    "force",
+    "intended_moment",
+    "moment"
+   ],
+   "class": "Applied"
+  },
+  "AtPoints": {
+   "attrs": [
+    "mask",
+    "select",
+    "surface"
+   ],
+   "class": "AtPoints"
+  },
+  "BearingLoad": {
+   "attrs": [
+    "apply",
+    "kind",
+    "name"
+   ],
+   "class": "BearingLoad"
+  },
+  "BodyForce": {
+   "attrs": [
+    "apply",
+    "kind",
+    "name"
+   ],
+   "class": "BodyForce"
+  },
+  "BodyForceCompliance": {
+   "attrs": [
+    "loads",
+    "name",
+    "needs"
+   ],
+   "class": "BodyForceCompliance"
+  },
+  "BoreFace": "BoreFace(bore,p1,radius,kw)",
+  "BoundaryConditions": {
+   "attrs": [
+    "F",
+    "bc_nodes",
+    "case_vector",
+    "check",
+    "constraints",
+    "fixed_dofs",
+    "keep_mask",
+    "names",
+    "physics",
+    "physics_per_support_set",
+    "summary"
+   ],
+   "class": "BoundaryConditions"
+  },
+  "CheckReport": {
+   "attrs": [
+    "codes",
+    "errors",
+    "ok",
+    "raise_on_error",
+    "warnings"
+   ],
+   "class": "CheckReport"
+  },
+  "Combination": {
+   "attrs": [],
+   "class": "Combination"
+  },
+  "ConstrainedElasticity": {
+   "attrs": [
+    "element_energy",
+    "factor",
+    "matrix",
+    "n_elements",
+    "solve",
+    "solve_numpy"
+   ],
+   "class": "ConstrainedElasticity"
+  },
+  "ConstraintSet": {
+   "attrs": [
+    "constrained_directions",
+    "needs_extension"
+   ],
+   "class": "ConstraintSet"
+  },
+  "ElasticSupport": {
+   "attrs": [
+    "directions",
+    "kind",
+    "name",
+    "nodes",
+    "springs"
+   ],
+   "class": "ElasticSupport"
+  },
+  "EmptySelectionError": {
+   "attrs": [
+    "add_note",
+    "args",
+    "with_traceback"
+   ],
+   "class": "EmptySelectionError"
+  },
+  "Fixed": {
+   "attrs": [
+    "directions",
+    "kind",
+    "name",
+    "nodes",
+    "springs"
+   ],
+   "class": "Fixed"
+  },
+  "HalfSpaceNodes": {
+   "attrs": [
+    "mask",
+    "select",
+    "surface"
+   ],
+   "class": "HalfSpaceNodes"
+  },
+  "InBox": {
+   "attrs": [
+    "mask",
+    "select",
+    "surface"
+   ],
+   "class": "InBox"
+  },
+  "InShape": {
+   "attrs": [
+    "mask",
+    "select",
+    "surface"
+   ],
+   "class": "InShape"
+  },
+  "InSphere": {
+   "attrs": [
+    "mask",
+    "select",
+    "surface"
+   ],
+   "class": "InSphere"
+  },
+  "Issue": {
+   "attrs": [
+    "case"
+   ],
+   "class": "Issue"
+  },
+  "Load": {
+   "attrs": [
+    "apply",
+    "name"
+   ],
+   "class": "Load"
+  },
+  "LoadCase": {
+   "attrs": [
+    "supports"
+   ],
+   "class": "LoadCase"
+  },
+  "Nearest": {
+   "attrs": [
+    "mask",
+    "select",
+    "surface"
+   ],
+   "class": "Nearest"
+  },
+  "NodalForces": {
+   "attrs": [
+    "apply",
+    "name"
+   ],
+   "class": "NodalForces"
+  },
+  "NodeIds": {
+   "attrs": [
+    "mask",
+    "select",
+    "surface"
+   ],
+   "class": "NodeIds"
+  },
+  "OnCylinder": {
+   "attrs": [
+    "bands",
+    "coords",
+    "from_bore",
+    "mask",
+    "select",
+    "surface"
+   ],
+   "class": "OnCylinder"
+  },
+  "OnPlane": {
+   "attrs": [
+    "mask",
+    "select",
+    "surface"
+   ],
+   "class": "OnPlane"
+  },
+  "PartInfo": {
+   "attrs": [
+    "faces",
+    "normals",
+    "patch",
+    "patch_normals"
+   ],
+   "class": "PartInfo"
+  },
+  "PerCaseSupports": {
+   "attrs": [
+    "solve"
+   ],
+   "class": "PerCaseSupports"
+  },
+  "PinnedBore": {
+   "attrs": [
+    "directions",
+    "kind",
+    "name",
+    "nodes",
+    "springs"
+   ],
+   "class": "PinnedBore"
+  },
+  "PointLoad": {
+   "attrs": [
+    "apply",
+    "kind",
+    "name"
+   ],
+   "class": "PointLoad"
+  },
+  "Pressure": {
+   "attrs": [
+    "apply",
+    "kind",
+    "name"
+   ],
+   "class": "Pressure"
+  },
+  "RemoteForce": {
+   "attrs": [
+    "apply",
+    "kind",
+    "name"
+   ],
+   "class": "RemoteForce"
+  },
+  "RemoteMoment": {
+   "attrs": [
+    "apply",
+    "kind",
+    "name"
+   ],
+   "class": "RemoteMoment"
+  },
+  "Roller": {
+   "attrs": [
+    "directions",
+    "kind",
+    "name",
+    "nodes",
+    "springs"
+   ],
+   "class": "Roller"
+  },
+  "Selector": {
+   "attrs": [
+    "mask",
+    "select",
+    "surface"
+   ],
+   "class": "Selector"
+  },
+  "Support": {
+   "attrs": [
+    "directions",
+    "kind",
+    "name",
+    "nodes",
+    "springs"
+   ],
+   "class": "Support"
+  },
+  "SurfaceForce": {
+   "attrs": [
+    "apply",
+    "kind",
+    "name"
+   ],
+   "class": "SurfaceForce"
+  },
+  "SurfaceNodes": {
+   "attrs": [
+    "mask",
+    "select",
+    "surface"
+   ],
+   "class": "SurfaceNodes"
+  },
+  "Symmetry": "Symmetry(point,normal,tol,name)",
+  "Torque": {
+   "attrs": [
+    "apply",
+    "kind",
+    "name"
+   ],
+   "class": "Torque"
+  },
+  "Traction": {
+   "attrs": [
+    "apply",
+    "kind",
+    "name"
+   ],
+   "class": "Traction"
+  },
+  "Where": {
+   "attrs": [
+    "mask",
+    "select",
+    "surface"
+   ],
+   "class": "Where"
+  },
+  "body_force_matrix": "body_force_matrix(domain,acceleration,density)",
+  "clearance_mask": "clearance_mask(domain,shape,threshold)",
+  "design_load_solve": "design_load_solve(physics,E_active,F)",
+  "part_info": "part_info(domain)",
+  "reaction_forces": "reaction_forces(physics,E_active,U,F)",
+  "rigid_distribution": "rigid_distribution(X,w,point,force,moment,rtol)"
+ },
+ "toporlogy.boundary.cases": {
+  "Applied": {
+   "attrs": [
+    "force",
+    "intended_moment",
+    "moment"
+   ],
+   "class": "Applied"
+  },
+  "BoundaryConditions": {
+   "attrs": [
+    "F",
+    "bc_nodes",
+    "case_vector",
+    "check",
+    "constraints",
+    "fixed_dofs",
+    "keep_mask",
+    "names",
+    "physics",
+    "physics_per_support_set",
+    "summary"
+   ],
+   "class": "BoundaryConditions"
+  },
+  "CheckReport": {
+   "attrs": [
+    "codes",
+    "errors",
+    "ok",
+    "raise_on_error",
+    "warnings"
+   ],
+   "class": "CheckReport"
+  },
+  "Combination": {
+   "attrs": [],
+   "class": "Combination"
+  },
+  "ConstrainedElasticity": {
+   "attrs": [
+    "element_energy",
+    "factor",
+    "matrix",
+    "n_elements",
+    "solve",
+    "solve_numpy"
+   ],
+   "class": "ConstrainedElasticity"
+  },
+  "ConstraintSet": {
+   "attrs": [
+    "constrained_directions",
+    "needs_extension"
+   ],
+   "class": "ConstraintSet"
+  },
+  "Domain": {
+   "attrs": [
+    "active_dofs",
+    "active_elements",
+    "corners",
+    "design_elements",
+    "dofs",
+    "edof",
+    "element_centers",
+    "element_ijk",
+    "load_vector",
+    "n_active",
+    "n_design",
+    "ndof",
+    "ne",
+    "nn",
+    "node_coords",
+    "node_number",
+    "node_shape",
+    "nodes_where",
+    "to_grid",
+    "uniform_start"
+   ],
+   "class": "Domain"
+  },
+  "Elasticity": {
+   "attrs": [
+    "element_energy",
+    "factor",
+    "matrix",
+    "n_elements",
+    "solve",
+    "solve_numpy"
+   ],
+   "class": "Elasticity"
+  },
+  "EmptySelectionError": {
+   "attrs": [
+    "add_note",
+    "args",
+    "with_traceback"
+   ],
+   "class": "EmptySelectionError"
+  },
+  "Issue": {
+   "attrs": [
+    "case"
+   ],
+   "class": "Issue"
+  },
+  "Load": {
+   "attrs": [
+    "apply",
+    "name"
+   ],
+   "class": "Load"
+  },
+  "LoadCase": {
+   "attrs": [
+    "supports"
+   ],
+   "class": "LoadCase"
+  },
+  "PerCaseSupports": {
+   "attrs": [
+    "solve"
+   ],
+   "class": "PerCaseSupports"
+  },
+  "Shape": {
+   "attrs": [
+    "bbox",
+    "dim",
+    "inside",
+    "sdf"
+   ],
+   "class": "Shape"
+  },
+  "Support": {
+   "attrs": [
+    "directions",
+    "kind",
+    "name",
+    "nodes",
+    "springs"
+   ],
+   "class": "Support"
+  },
+  "annotations": "<_Feature>",
+  "clearance_mask": "clearance_mask(domain,shape,threshold)",
+  "part_info": "part_info(domain)"
+ },
+ "toporlogy.boundary.checks": {
+  "CheckReport": {
+   "attrs": [
+    "codes",
+    "errors",
+    "ok",
+    "raise_on_error",
+    "warnings"
+   ],
+   "class": "CheckReport"
+  },
+  "Issue": {
+   "attrs": [
+    "case"
+   ],
+   "class": "Issue"
+  },
+  "annotations": "<_Feature>"
+ },
+ "toporlogy.boundary.constrained": {
+  "ConstrainedElasticity": {
+   "attrs": [
+    "element_energy",
+    "factor",
+    "matrix",
+    "n_elements",
+    "solve",
+    "solve_numpy"
+   ],
+   "class": "ConstrainedElasticity"
+  },
+  "ConstraintSet": {
+   "attrs": [
+    "constrained_directions",
+    "needs_extension"
+   ],
+   "class": "ConstraintSet"
+  },
+  "Domain": {
+   "attrs": [
+    "active_dofs",
+    "active_elements",
+    "corners",
+    "design_elements",
+    "dofs",
+    "edof",
+    "element_centers",
+    "element_ijk",
+    "load_vector",
+    "n_active",
+    "n_design",
+    "ndof",
+    "ne",
+    "nn",
+    "node_coords",
+    "node_number",
+    "node_shape",
+    "nodes_where",
+    "to_grid",
+    "uniform_start"
+   ],
+   "class": "Domain"
+  },
+  "Elasticity": {
+   "attrs": [
+    "element_energy",
+    "factor",
+    "matrix",
+    "n_elements",
+    "solve",
+    "solve_numpy"
+   ],
+   "class": "Elasticity"
+  },
+  "PartInfo": {
+   "attrs": [
+    "faces",
+    "normals",
+    "patch",
+    "patch_normals"
+   ],
+   "class": "PartInfo"
+  },
+  "PerCaseSupports": {
+   "attrs": [
+    "solve"
+   ],
+   "class": "PerCaseSupports"
+  },
+  "Support": {
+   "attrs": [
+    "directions",
+    "kind",
+    "name",
+    "nodes",
+    "springs"
+   ],
+   "class": "Support"
+  },
+  "annotations": "<_Feature>",
+  "reaction_forces": "reaction_forces(physics,E_active,U,F)"
+ },
+ "toporlogy.boundary.loads": {
+  "Applied": {
+   "attrs": [
+    "force",
+    "intended_moment",
+    "moment"
+   ],
+   "class": "Applied"
+  },
+  "BearingLoad": {
+   "attrs": [
+    "apply",
+    "kind",
+    "name"
+   ],
+   "class": "BearingLoad"
+  },
+  "BodyForce": {
+   "attrs": [
+    "apply",
+    "kind",
+    "name"
+   ],
+   "class": "BodyForce"
+  },
+  "BodyForceCompliance": {
+   "attrs": [
+    "loads",
+    "name",
+    "needs"
+   ],
+   "class": "BodyForceCompliance"
+  },
+  "Bore": {
+   "attrs": [
+    "axis",
+    "dim",
+    "endpoints",
+    "id",
+    "roundness",
+    "shape",
+    "span"
+   ],
+   "class": "Bore"
+  },
+  "Domain": {
+   "attrs": [
+    "active_dofs",
+    "active_elements",
+    "corners",
+    "design_elements",
+    "dofs",
+    "edof",
+    "element_centers",
+    "element_ijk",
+    "load_vector",
+    "n_active",
+    "n_design",
+    "ndof",
+    "ne",
+    "nn",
+    "node_coords",
+    "node_number",
+    "node_shape",
+    "nodes_where",
+    "to_grid",
+    "uniform_start"
+   ],
+   "class": "Domain"
+  },
+  "Elasticity": {
+   "attrs": [
+    "element_energy",
+    "factor",
+    "matrix",
+    "n_elements",
+    "solve",
+    "solve_numpy"
+   ],
+   "class": "Elasticity"
+  },
+  "EmptySelectionError": {
+   "attrs": [
+    "add_note",
+    "args",
+    "with_traceback"
+   ],
+   "class": "EmptySelectionError"
+  },
+  "EvalContext": {
+   "attrs": [
+    "F",
+    "U",
+    "chain",
+    "field_after",
+    "interp",
+    "physics",
+    "x"
+   ],
+   "class": "EvalContext"
+  },
+  "InSphere": {
+   "attrs": [
+    "mask",
+    "select",
+    "surface"
+   ],
+   "class": "InSphere"
+  },
+  "Load": {
+   "attrs": [
+    "apply",
+    "name"
+   ],
+   "class": "Load"
+  },
+  "NodalForces": {
+   "attrs": [
+    "apply",
+    "name"
+   ],
+   "class": "NodalForces"
+  },
+  "NodeIds": {
+   "attrs": [
+    "mask",
+    "select",
+    "surface"
+   ],
+   "class": "NodeIds"
+  },
+  "OnCylinder": {
+   "attrs": [
+    "bands",
+    "coords",
+    "from_bore",
+    "mask",
+    "select",
+    "surface"
+   ],
+   "class": "OnCylinder"
+  },
+  "PartInfo": {
+   "attrs": [
+    "faces",
+    "normals",
+    "patch",
+    "patch_normals"
+   ],
+   "class": "PartInfo"
+  },
+  "PerCaseSupports": {
+   "attrs": [
+    "solve"
+   ],
+   "class": "PerCaseSupports"
+  },
+  "PointLoad": {
+   "attrs": [
+    "apply",
+    "kind",
+    "name"
+   ],
+   "class": "PointLoad"
+  },
+  "Pressure": {
+   "attrs": [
+    "apply",
+    "kind",
+    "name"
+   ],
+   "class": "Pressure"
+  },
+  "RemoteForce": {
+   "attrs": [
+    "apply",
+    "kind",
+    "name"
+   ],
+   "class": "RemoteForce"
+  },
+  "RemoteMoment": {
+   "attrs": [
+    "apply",
+    "kind",
+    "name"
+   ],
+   "class": "RemoteMoment"
+  },
+  "Response": {
+   "attrs": [
+    "name",
+    "needs"
+   ],
+   "class": "Response"
+  },
+  "Selector": {
+   "attrs": [
+    "mask",
+    "select",
+    "surface"
+   ],
+   "class": "Selector"
+  },
+  "SurfaceForce": {
+   "attrs": [
+    "apply",
+    "kind",
+    "name"
+   ],
+   "class": "SurfaceForce"
+  },
+  "Torque": {
+   "attrs": [
+    "apply",
+    "kind",
+    "name"
+   ],
+   "class": "Torque"
+  },
+  "Traction": {
+   "attrs": [
+    "apply",
+    "kind",
+    "name"
+   ],
+   "class": "Traction"
+  },
+  "annotations": "<_Feature>",
+  "body_force_matrix": "body_force_matrix(domain,acceleration,density)",
+  "design_load_solve": "design_load_solve(physics,E_active,F)",
+  "part_info": "part_info(domain)",
+  "rigid_distribution": "rigid_distribution(X,w,point,force,moment,rtol)"
+ },
+ "toporlogy.boundary.part": {
+  "Domain": {
+   "attrs": [
+    "active_dofs",
+    "active_elements",
+    "corners",
+    "design_elements",
+    "dofs",
+    "edof",
+    "element_centers",
+    "element_ijk",
+    "load_vector",
+    "n_active",
+    "n_design",
+    "ndof",
+    "ne",
+    "nn",
+    "node_coords",
+    "node_number",
+    "node_shape",
+    "nodes_where",
+    "to_grid",
+    "uniform_start"
+   ],
+   "class": "Domain"
+  },
+  "EmptySelectionError": {
+   "attrs": [
+    "add_note",
+    "args",
+    "with_traceback"
+   ],
+   "class": "EmptySelectionError"
+  },
+  "PartInfo": {
+   "attrs": [
+    "faces",
+    "normals",
+    "patch",
+    "patch_normals"
+   ],
+   "class": "PartInfo"
+  },
+  "annotations": "<_Feature>",
+  "part_info": "part_info(domain)"
+ },
+ "toporlogy.boundary.selectors": {
+  "AllNodes": {
+   "attrs": [
+    "mask",
+    "select",
+    "surface"
+   ],
+   "class": "AllNodes"
+  },
+  "AtPoints": {
+   "attrs": [
+    "mask",
+    "select",
+    "surface"
+   ],
+   "class": "AtPoints"
+  },
+  "Bore": {
+   "attrs": [
+    "axis",
+    "dim",
+    "endpoints",
+    "id",
+    "roundness",
+    "shape",
+    "span"
+   ],
+   "class": "Bore"
+  },
+  "BoreFace": "BoreFace(bore,p1,radius,kw)",
+  "Domain": {
+   "attrs": [
+    "active_dofs",
+    "active_elements",
+    "corners",
+    "design_elements",
+    "dofs",
+    "edof",
+    "element_centers",
+    "element_ijk",
+    "load_vector",
+    "n_active",
+    "n_design",
+    "ndof",
+    "ne",
+    "nn",
+    "node_coords",
+    "node_number",
+    "node_shape",
+    "nodes_where",
+    "to_grid",
+    "uniform_start"
+   ],
+   "class": "Domain"
+  },
+  "EmptySelectionError": {
+   "attrs": [
+    "add_note",
+    "args",
+    "with_traceback"
+   ],
+   "class": "EmptySelectionError"
+  },
+  "HalfSpaceNodes": {
+   "attrs": [
+    "mask",
+    "select",
+    "surface"
+   ],
+   "class": "HalfSpaceNodes"
+  },
+  "InBox": {
+   "attrs": [
+    "mask",
+    "select",
+    "surface"
+   ],
+   "class": "InBox"
+  },
+  "InShape": {
+   "attrs": [
+    "mask",
+    "select",
+    "surface"
+   ],
+   "class": "InShape"
+  },
+  "InSphere": {
+   "attrs": [
+    "mask",
+    "select",
+    "surface"
+   ],
+   "class": "InSphere"
+  },
+  "Nearest": {
+   "attrs": [
+    "mask",
+    "select",
+    "surface"
+   ],
+   "class": "Nearest"
+  },
+  "NodeIds": {
+   "attrs": [
+    "mask",
+    "select",
+    "surface"
+   ],
+   "class": "NodeIds"
+  },
+  "OnCylinder": {
+   "attrs": [
+    "bands",
+    "coords",
+    "from_bore",
+    "mask",
+    "select",
+    "surface"
+   ],
+   "class": "OnCylinder"
+  },
+  "OnPlane": {
+   "attrs": [
+    "mask",
+    "select",
+    "surface"
+   ],
+   "class": "OnPlane"
+  },
+  "PartInfo": {
+   "attrs": [
+    "faces",
+    "normals",
+    "patch",
+    "patch_normals"
+   ],
+   "class": "PartInfo"
+  },
+  "Selector": {
+   "attrs": [
+    "mask",
+    "select",
+    "surface"
+   ],
+   "class": "Selector"
+  },
+  "Shape": {
+   "attrs": [
+    "bbox",
+    "dim",
+    "inside",
+    "sdf"
+   ],
+   "class": "Shape"
+  },
+  "SurfaceNodes": {
+   "attrs": [
+    "mask",
+    "select",
+    "surface"
+   ],
+   "class": "SurfaceNodes"
+  },
+  "Where": {
+   "attrs": [
+    "mask",
+    "select",
+    "surface"
+   ],
+   "class": "Where"
+  },
+  "annotations": "<_Feature>",
+  "part_info": "part_info(domain)"
+ },
+ "toporlogy.boundary.supports": {
+  "Bore": {
+   "attrs": [
+    "axis",
+    "dim",
+    "endpoints",
+    "id",
+    "roundness",
+    "shape",
+    "span"
+   ],
+   "class": "Bore"
+  },
+  "ElasticSupport": {
+   "attrs": [
+    "directions",
+    "kind",
+    "name",
+    "nodes",
+    "springs"
+   ],
+   "class": "ElasticSupport"
+  },
+  "Fixed": {
+   "attrs": [
+    "directions",
+    "kind",
+    "name",
+    "nodes",
+    "springs"
+   ],
+   "class": "Fixed"
+  },
+  "OnCylinder": {
+   "attrs": [
+    "bands",
+    "coords",
+    "from_bore",
+    "mask",
+    "select",
+    "surface"
+   ],
+   "class": "OnCylinder"
+  },
+  "OnPlane": {
+   "attrs": [
+    "mask",
+    "select",
+    "surface"
+   ],
+   "class": "OnPlane"
+  },
+  "PartInfo": {
+   "attrs": [
+    "faces",
+    "normals",
+    "patch",
+    "patch_normals"
+   ],
+   "class": "PartInfo"
+  },
+  "PinnedBore": {
+   "attrs": [
+    "directions",
+    "kind",
+    "name",
+    "nodes",
+    "springs"
+   ],
+   "class": "PinnedBore"
+  },
+  "Roller": {
+   "attrs": [
+    "directions",
+    "kind",
+    "name",
+    "nodes",
+    "springs"
+   ],
+   "class": "Roller"
+  },
+  "Selector": {
+   "attrs": [
+    "mask",
+    "select",
+    "surface"
+   ],
+   "class": "Selector"
+  },
+  "Support": {
+   "attrs": [
+    "directions",
+    "kind",
+    "name",
+    "nodes",
+    "springs"
+   ],
+   "class": "Support"
+  },
+  "Symmetry": "Symmetry(point,normal,tol,name)",
+  "annotations": "<_Feature>"
+ },
  "toporlogy.chain": {
   "Chain": {
    "attrs": [

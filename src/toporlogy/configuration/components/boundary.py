@@ -16,7 +16,7 @@ from toporlogy.configuration.registry import BuildContext, register
 
 def register_boundary() -> None:
     """Register the boundary components (moved from registry._register_features)."""
-    from toporlogy import bc as B
+    from toporlogy import boundary as B
 
     length = "length"
 

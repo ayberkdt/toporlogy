@@ -7,7 +7,7 @@ from typing import Any
 
 import numpy as np
 
-from toporlogy.bc import Applied, Load
+from toporlogy.boundary import Applied, Load
 from toporlogy.configuration.registry import BuildContext, ConfigError, join
 
 
@@ -101,7 +101,7 @@ def _directions(dofs: Any, dim: int) -> list[Any]:
 
 def as_selector(v: Any) -> Any:
     """A built selector (bc.Selector, or node numbers from a node-array selector) as a bc.Selector."""
-    from toporlogy.bc import NodeIds, Selector
+    from toporlogy.boundary import NodeIds, Selector
     if isinstance(v, Selector):
         return v
     a = np.asarray(v)
@@ -112,7 +112,7 @@ def as_selector(v: Any) -> Any:
 
 def checked_selector(ctx: BuildContext, v: Any, key: str = "where") -> Any:
     """:func:`as_selector`, and the selection must not be empty (reported at ``<component path>.<key>``)."""
-    from toporlogy.bc import EmptySelectionError
+    from toporlogy.boundary import EmptySelectionError
     s = as_selector(v)
     try:
         s.select(ctx.domain)
@@ -202,7 +202,7 @@ def find_bore(ctx: BuildContext, index: int | None, near: list | None, min_diame
 
 
 def _is_cylinder(s: Any, what: str) -> Any:
-    from toporlogy.bc import OnCylinder
+    from toporlogy.boundary import OnCylinder
     if not isinstance(s, OnCylinder):
         raise ValueError(f"{what} needs a bore / cylinder selector (type bore or on_cylinder), got {s!r}")
     return s

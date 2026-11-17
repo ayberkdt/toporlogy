@@ -18,7 +18,8 @@ bugünkü durumunu, bulunan açıkları ve sonraki işlerin sırasını tutar.
 | G1 doğruluk düzeltmeleri | tamam | B-02 ve B-06 plandaki gibi G7'ye kaldı |
 | G2 `registry.py`'yi böl | tamam | `configuration/` paketi; `registry.py` uyumluluk modülü (aşağıda) |
 | G3 `config.py`'yi böl | tamam | `configuration/{schema,resolve,build}.py`, `execution/{runner,runs}.py`; `config.py` uyumluluk modülü |
-| G4–G9 | başlamadı | K1 kararı verildi: sınırlı (K1-a) |
+| G4 `bc.py`'yi böl | tamam | `boundary/{part,selectors,supports,constrained,loads,checks,cases}.py`; `bc.py` uyumluluk modülü |
+| G5–G9 | başlamadı | K1 kararı verildi: sınırlı (K1-a) |
 | K5 lisans | kapandı | tescilli, tüm hakları saklı (`LICENSE`) |
 
 G1 bulgularının kapandığı commit'ler: B-01 `aeb3ac3`; B-03 `6dca762`; B-04 `a6b0bc6`; B-05 `cf83e40`; B-07 `54ff90f`,
@@ -42,6 +43,14 @@ G3: `config.py`'nin 1053 satırı aynı yöntemle taşındı: `configuration/sch
 `read_run`). Plandan sapma: `status_of` `runner` yerine `runs`'ta, çünkü `read_run` onu kullanıyor ve `runner` →
 `runs` → `runner` döngüsü oluşuyordu. Katman testine bir `compat` katmanı eklendi: `toporlogy.config` ve
 `toporlogy.registry` her şeyi yeniden dışa aktarabilir, paketin içinde yalnız yürütme katmanı onları içe aktarabilir.
+
+G4: `bc.py`'nin 1912 satırı `boundary/` paketine taşındı: `part.py` (`PartInfo`, `part_info` ve önbelleği),
+`selectors.py`, `supports.py`, `constrained.py` (`ConstraintSet`, `ConstrainedElasticity`, `PerCaseSupports`),
+`loads.py`, `checks.py` (rapor ve tablo yardımcıları), `cases.py` (`LoadCase`, `Combination`, `BoundaryConditions`).
+`toporlogy.boundary` `bc`'nin açık adlarını aynen sunuyor; `bc.py` özel adlar dahil hepsini yeniden dışa aktarıyor.
+Paketin içindeki 16 içe aktarma `toporlogy.boundary`'ye taşındı. Plandan sapma: plandaki `assembly.py` ve
+`validation.py` ayrı modül olmadı, çünkü birleştirme ve kontroller `BoundaryConditions` sınıfının yöntemleri; sınıfın
+dışındaki yardımcılar `checks.py`'de.
 
 ---
 
