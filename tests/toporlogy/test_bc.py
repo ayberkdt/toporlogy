@@ -364,3 +364,14 @@ def test_lbracket_bearing_load_mesh_convergence():
     assert all(np.isfinite(v) and v > 0 for v in c.values())
     assert c[1.25] == pytest.approx(601.34, rel=1e-3) and c[2.0] == pytest.approx(587.60, rel=1e-3)
     assert abs(c[1.25] / c[2.0] - 1) < 0.05
+
+
+def test_summary_of_a_case_without_loads():
+    """B-09: BoundaryConditions accepts a load case with an empty load list (zero load vector), but summary() failed
+    on it with max() of an empty sequence; the case is now listed as having no loads."""
+    d = block((6, 3, 3))
+    l1 = bc.SurfaceForce(bc.OnPlane([6, 0, 0], 0), [0, 0, -1.0])
+    B = bc.BoundaryConditions(d, [bc.Fixed(bc.OnPlane([0, 0, 0], 0))], [bc.LoadCase("a", [l1]), bc.LoadCase("empty", [])])
+    s = B.summary()
+    assert 'Load case "empty": no loads' in s and 'Load case "a": 1 load(s)' in s
+    assert not B.F()[:, 1].any()

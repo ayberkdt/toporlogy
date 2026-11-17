@@ -1818,6 +1818,9 @@ class BoundaryConditions:
                     e = max(e, np.linalg.norm(M - a.intended_moment) / info.L / scale)
                 errs.append(e)
                 rows.append([a.name, a.kind, len(a.nodes), Fi, F, M, e])
+            if not rows:                                   # a case without loads (zero load vector)
+                lines += [f'Load case "{c.name}": no loads', ""]
+                continue
             ok = max(errs) <= rtol
             lines.append(f'Load case "{c.name}": {len(rows)} load(s), resultants '
                          f'{"match" if ok else "DO NOT match"} the intended values (max rel. error {max(errs):.1e})')
