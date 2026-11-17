@@ -242,6 +242,18 @@ def test_bridge_unreachable_raises():
         bridge(d, x, {"a": _box(shape, np.s_[0]), "b": _box(shape, np.s_[19])})
 
 
+def test_bridge_interface_entirely_in_void_raises_clearly():
+    """B-08: an interface with no cell in the design domain made the first body's label 0 (the background); here
+    that gave a misleading "bodies [1] cannot be reached" (an empty-argmax error once the loop ends). It is now a
+    ValueError that names the interface."""
+    shape = (20, 10)
+    void = _box(shape, np.s_[0:3, :])
+    d = Domain(shape, void=void)
+    x = _box(shape, np.s_[5:8], np.s_[15:20]).astype(float)
+    with pytest.raises(ValueError, match=r"interface\(s\) \['a'\] have no cell"):
+        bridge(d, x, {"a": _box(shape, np.s_[0]), "b": _box(shape, np.s_[19])})
+
+
 # ============================================================================================== responses
 def _small_problem(dim):
     if dim == 2:

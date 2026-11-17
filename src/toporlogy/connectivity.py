@@ -783,6 +783,10 @@ def bridge(domain: Domain, xphys: np.ndarray, interfaces: Mapping[str, Any], thr
     x = np.clip(np.asarray(xphys, float).reshape(domain.shape), 0.0, 1.0)
     masks = _interfaces(domain, interfaces)
     allowed = domain.active & ~domain.void
+    unreachable = [n for n, m in masks.items() if not (m & allowed).any()]
+    if unreachable:
+        raise ValueError(f"bridge: interface(s) {unreachable} have no cell in the design domain (all inactive or "
+                         "void): nothing can be joined to them")
     iface = np.logical_or.reduce(list(masks.values())) & allowed
     solid = (x >= threshold) & domain.active
     forced = iface & ~solid
