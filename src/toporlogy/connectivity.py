@@ -54,8 +54,8 @@ import torch
 from scipy import ndimage
 from scipy.sparse import csgraph
 
-from toporlogy.chain import DensityFilter, HeavisideProjection, Passive
-from toporlogy.domain import Domain
+from toporlogy.design.chain import DensityFilter, HeavisideProjection, Passive
+from toporlogy.core.domain import Domain
 from toporlogy.fem.elastic import Elasticity
 from toporlogy.fem.heat import ConductivityInterp, HeatConduction, element_nodes
 from toporlogy.responses import EvalContext, Response

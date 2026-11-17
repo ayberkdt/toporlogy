@@ -45,7 +45,7 @@ import scipy.sparse as sp
 import scipy.sparse.linalg as spla
 import torch
 
-from toporlogy.domain import Domain
+from toporlogy.core.domain import Domain
 from toporlogy.fem.elastic import Elasticity
 from toporlogy.solvers.direct import DirectSolver
 

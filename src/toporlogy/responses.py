@@ -12,7 +12,7 @@ from typing import Any
 import numpy as np
 import torch
 
-from toporlogy.domain import Domain
+from toporlogy.core.domain import Domain
 
 __all__ = ["EvalContext", "Response", "Compliance", "Volume"]
 

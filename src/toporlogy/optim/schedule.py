@@ -1,7 +1,7 @@
 """Continuation schedules (β of the projection, later SIMP penalty, move limits)."""
 from __future__ import annotations
 
-from toporlogy.chain import Chain, HeavisideProjection
+from toporlogy.design.chain import Chain, HeavisideProjection
 
 __all__ = ["Schedule", "BetaContinuation"]
 

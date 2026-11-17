@@ -29,7 +29,7 @@ import scipy.sparse as sp
 import torch
 from scipy import ndimage
 
-from toporlogy.domain import Domain
+from toporlogy.core.domain import Domain
 from toporlogy.fem.elastic import _LinearSolve
 from toporlogy.solvers.direct import DirectSolver
 

@@ -19,11 +19,11 @@ SRC = REPO / "src" / "toporlogy"
 
 # prefix (relative to toporlogy) -> layer; the longest matching prefix wins
 LAYER_OF = {
-    "references": "base", "domain": "base", "core": "base",
+    "references": "base", "core": "base",
     "geometry": "geometry",
     "solvers": "solvers",
     "fem": "physics", "physics": "physics",
-    "chain": "design", "interp": "design", "manufacturing": "design", "design": "design",
+    "design": "design",
     "boundary": "boundary",
     "responses": "optimization", "study": "optimization", "robust": "optimization", "lengthscale": "optimization",
     "connectivity": "optimization", "dynamics": "optimization", "checks": "optimization", "optim": "optimization",
@@ -31,6 +31,7 @@ LAYER_OF = {
     "post": "postprocessing", "postprocessing": "postprocessing", "verification": "postprocessing",
     "configuration": "configuration",
     "registry": "compat", "config": "compat", "bc": "compat",  # compatibility modules after G2-G4 (re-exports)
+    "domain": "compat", "chain": "compat", "interp": "compat", "manufacturing": "compat",   # G5 aliases
     "cli": "execution", "__main__": "execution", "execution": "execution",
     "": "package",                                          # toporlogy/__init__.py
 }

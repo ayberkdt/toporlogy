@@ -15,11 +15,11 @@ from toporlogy.solvers import pardiso as _pardiso
 
 _pardiso.load()
 
-from toporlogy.chain import Chain, DensityFilter, Embed, HeavisideProjection, Passive, standard_chain
+from toporlogy.design.chain import Chain, DensityFilter, Embed, HeavisideProjection, Passive, standard_chain
 from toporlogy.checks import grey_fraction, gradcheck, study_gradcheck
-from toporlogy.domain import Domain
+from toporlogy.core.domain import Domain
 from toporlogy.fem import Elasticity
-from toporlogy.interp import RAMP, SIMP
+from toporlogy.design.interp import RAMP, SIMP
 from toporlogy.optim import MMA, OC, BetaContinuation, Optimizer, Schedule
 from toporlogy.record import Recorder
 from toporlogy.responses import Compliance, EvalContext, Response, Volume

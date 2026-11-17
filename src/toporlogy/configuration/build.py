@@ -182,8 +182,8 @@ def _check_bc(bcs: Any, cases: list[dict[str, Any]]) -> Any:
 def build(resolved: dict[str, Any]) -> Setup:
     """Construct every component of a resolved config (see :func:`resolve`) into a :class:`Setup`."""
     from toporlogy.boundary import AllNodes, Combination, LoadCase
-    from toporlogy.chain import Chain, DensityFilter, HeavisideProjection
-    from toporlogy.manufacturing import GroupAverage, Tying, validate_chain
+    from toporlogy.design.chain import Chain, DensityFilter, HeavisideProjection
+    from toporlogy.design.manufacturing import GroupAverage, Tying, validate_chain
     from toporlogy.configuration.helpers import SpreadForce
     from toporlogy.study import Constraint, Study
 

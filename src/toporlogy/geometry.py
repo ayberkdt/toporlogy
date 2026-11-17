@@ -48,7 +48,7 @@ import numpy as np
 from scipy import ndimage
 
 from toporlogy.references import cite
-from toporlogy.domain import Domain
+from toporlogy.core.domain import Domain
 
 __all__ = ["Shape", "Box", "Ball", "Sphere", "Circle", "Capsule", "HalfSpace", "Polygon", "Cylinder", "Prism",
            "Slot", "Union", "Intersection", "Difference", "csg", "grid_for", "coverage", "voxelize",

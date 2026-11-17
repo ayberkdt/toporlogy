@@ -13,7 +13,7 @@ from toporlogy.configuration.registry import BuildContext, register
 def register_geometry() -> None:
     """Register the geometry components (moved from registry._register_features)."""
     from toporlogy import geometry as G
-    from toporlogy.domain import Domain
+    from toporlogy.core.domain import Domain
 
     length = "length"
 

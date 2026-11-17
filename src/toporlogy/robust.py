@@ -59,7 +59,7 @@ import numpy as np
 import torch
 
 from toporlogy.references import cite
-from toporlogy.chain import Chain, DensityFilter, HeavisideProjection, Passive
+from toporlogy.design.chain import Chain, DensityFilter, HeavisideProjection, Passive
 from toporlogy.optim.schedule import Schedule
 from toporlogy.responses import Compliance, EvalContext, Response, Volume
 from toporlogy.study import Constraint

@@ -31,7 +31,7 @@ from typing import Any
 import numpy as np
 import torch
 
-from toporlogy.domain import Domain
+from toporlogy.core.domain import Domain
 from toporlogy.fem.elements import element_matrix
 from toporlogy.solvers import gmg_kernels as gk
 from toporlogy.solvers.gmg import GMGConvergenceError, GMGSolver

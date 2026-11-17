@@ -5,7 +5,7 @@ from __future__ import annotations
 import math
 from collections.abc import Callable, Sequence
 from scipy.spatial import cKDTree
-from toporlogy.domain import Domain
+from toporlogy.core.domain import Domain
 from toporlogy.geometry import Bore, Shape
 from typing import Any
 

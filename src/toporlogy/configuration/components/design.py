@@ -10,8 +10,7 @@ from toporlogy.configuration.registry import BuildContext, register
 
 def register_design() -> None:
     """Register the design components (moved from registry._register_features)."""
-    from toporlogy import manufacturing as MF
-
+    from toporlogy.design import manufacturing as MF
     length = "length"
 
     # ---------------------------------------------------------------- chain links (manufacturing)

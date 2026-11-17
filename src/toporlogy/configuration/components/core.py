@@ -16,9 +16,9 @@ from toporlogy.configuration.registry import BuildContext, REGISTRY, join, regis
 # ============================================================================================== core components
 # Imported here (not at the top) so that toporlogy's import-order guard (PARDISO before torch) runs first.
 def register_core() -> None:
-    from toporlogy.chain import DensityFilter, Embed, HeavisideProjection, Passive
-    from toporlogy.domain import Domain
-    from toporlogy.interp import RAMP, SIMP
+    from toporlogy.design.chain import DensityFilter, Embed, HeavisideProjection, Passive
+    from toporlogy.core.domain import Domain
+    from toporlogy.design.interp import RAMP, SIMP
     from toporlogy.optim.oc import OC
     from toporlogy.optim.schedule import BetaContinuation
     from toporlogy.responses import Compliance, Volume

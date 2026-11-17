@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import weakref
-from toporlogy.domain import Domain
+from toporlogy.core.domain import Domain
 from typing import Any
 
 import numpy as np

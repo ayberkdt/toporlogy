@@ -20,7 +20,7 @@ import numpy as np
 import scipy.sparse as sp
 import torch
 
-from toporlogy.domain import Domain
+from toporlogy.core.domain import Domain
 from toporlogy.solvers.direct import DirectSolver
 
 __all__ = ["Elasticity", "element_matrix"]

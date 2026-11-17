@@ -43,7 +43,7 @@ from typing import Any
 
 import torch
 
-from toporlogy.domain import Domain
+from toporlogy.core.domain import Domain
 from toporlogy.fem.modal import Modal
 from toporlogy.responses import EvalContext, Response
 from toporlogy.study import Constraint

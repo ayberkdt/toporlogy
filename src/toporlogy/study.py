@@ -19,8 +19,8 @@ from typing import Any
 import numpy as np
 import torch
 
-from toporlogy.chain import Chain
-from toporlogy.domain import Domain
+from toporlogy.design.chain import Chain
+from toporlogy.core.domain import Domain
 from toporlogy.optim.base import Optimizer
 from toporlogy.optim.schedule import Schedule
 from toporlogy.responses import EvalContext, Response, Volume

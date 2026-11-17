@@ -7,7 +7,7 @@ import scipy.sparse as sp
 import torch
 from collections.abc import Sequence
 from dataclasses import dataclass, field
-from toporlogy.domain import Domain
+from toporlogy.core.domain import Domain
 from toporlogy.fem.elastic import Elasticity
 from toporlogy.geometry import Bore
 from toporlogy.responses import EvalContext, Response
