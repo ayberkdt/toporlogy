@@ -203,7 +203,11 @@ def test_pardiso_equals_superlu():
     E = 1e-3 + rng.random(d.n_active)
     F = rng.standard_normal((d.ndof, 3))
     pard, slu = DirectSolver("auto"), DirectSolver("splu")
-    assert pard.method == "pardiso", "PARDISO not loaded (conftest imports toporlogy before torch)"
+    from toporlogy.solvers import pardiso
+    if pard.method != "pardiso" and str(pardiso.state()["reason"]).startswith("ModuleNotFoundError"):
+        pytest.skip(f"pypardiso not installed ({pardiso.state()['reason']}); set TOPORLOGY_PYLIB to test it")
+    # any other reason (torch imported before toporlogy: MKL refused) is the failure this test exists for
+    assert pard.method == "pardiso", f"PARDISO not loaded: {pardiso.state()['reason']}"
     assert slu.method == "splu"
     U1 = Elasticity(d, fixed, solver=pard).solve_numpy(E, F)
     U2 = Elasticity(d, fixed, solver=slu).solve_numpy(E, F)
