@@ -373,25 +373,56 @@ def _line(o: dict[str, Any]) -> str:
 
 
 # ============================================================================================== tests
+def gate_failures(o: dict[str, Any]) -> list[str]:
+    """Every pre-registered gating criterion (robustness.md §2.2) that ``o`` fails, not only ``o["criteria"]``:
+    criteria 1-6 as recorded, criterion 3 also against the exact solid for analytic inputs (the recorded
+    ``criteria`` check only the target, robustness.md §5), and the T10 re-check (ratio change between the two tet
+    sizes <= 5 %) where it ran. ``extra_criteria`` are "recorded, not gated" and stay out."""
+    bad = [k for k, v in o["criteria"].items() if v is False]
+    if o.get("dV_vs_exact") is not None and abs(o["dV_vs_exact"]) > 0.01:
+        bad.append(f"volume_exact_1pct ({100 * o['dV_vs_exact']:+.2f} %)")
+    if "t10" in o and not o["t10"]["converged_5pct"]:
+        bad.append(f"t10_converged_5pct (ratio change {100 * o['t10']['ratio_rel_change']:.1f} %)")
+    return bad
+
+
+# Inputs that fail the gate in the stored records (docs/olcumler/robustness.json, "post"; runs of 2026-11-14).
+# strict: a fix turns into XPASS and fails the run until the entry is removed. Causes not investigated.
+KNOWN_GATE_FAILURES = {
+    "p05_thin_plate": "volume vs exact solid +5.6 % (1.25-element plate; vs target -1.0 %)",
+    "r1_cantilever": "T10/voxel compliance ratio 0.972 -> 0.865 between tet sizes 1.0 h and 0.5 h (12.4 % > 5 %)",
+    "r2_mbb": "volume -1.67 % (> 1 %), Hausdorff 0.72 h_f (> 0.6 h_f)",
+    "r3_bores": "Hausdorff 0.79 h_f (> 0.6 h_f)",
+    "r4_robust": "Hausdorff 0.67 h_f (> 0.6 h_f)",
+}
+
+
+def _gated(names: list[str]) -> list[Any]:
+    return [pytest.param(n, marks=pytest.mark.xfail(reason=KNOWN_GATE_FAILURES[n], strict=True))
+            if n in KNOWN_GATE_FAILURES else n for n in names]
+
+
 @pytest.mark.parametrize("name", FAST)
 def test_fast_post(name):
     o = evaluate(ANALYTIC[name]())
     print("\n" + _line(o))
-    assert o["passed"], o["criteria"]
+    assert not gate_failures(o), gate_failures(o)
 
 
+# The sweeps measure (TOPORLOGY_SWEEP_RECORD keeps every input's numbers, written before any assert) AND gate:
+# each input must pass every pre-registered criterion, not only be watertight.
 @pytest.mark.slow
-@pytest.mark.parametrize("name", list(ANALYTIC))
+@pytest.mark.parametrize("name", _gated(list(ANALYTIC)))
 def test_sweep_post_analytic(name):
     o = evaluate(ANALYTIC[name]())
     print("\n" + _line(o) + f"  extra {o['extra_criteria']}")
-    assert o["watertight"]
+    assert not gate_failures(o), gate_failures(o)
 
 
 @pytest.mark.slow
 @pytest.mark.timeout(5400)                                    # optimisation + finalize + two gmsh/T10 solves
-@pytest.mark.parametrize("name", list(REAL))
+@pytest.mark.parametrize("name", _gated(list(REAL)))
 def test_sweep_post_real(name):
     o = evaluate(REAL[name](), t10=name in ("r1_cantilever", "r2_mbb"))
     print("\n" + _line(o) + (f"\n  T10 {o['t10']}" if "t10" in o else ""))
-    assert o["watertight"]
+    assert not gate_failures(o), gate_failures(o)
