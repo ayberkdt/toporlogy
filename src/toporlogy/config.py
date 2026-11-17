@@ -954,8 +954,9 @@ def run_setup(setup: Setup, folder: str | Path, progress: Callable[[int, dict[st
     res = st.run(max_iter=int(run["max_iter"]), tol=float(run["tol"]), callback=cb)
     ftol = float(run["feasibility_tol"])
     cons = []
+    final = res.constraint_values               # returned design, as res.objective (history[-1] is the step before)
     for c, n in zip(st.constraints, setup.constraint_names, strict=True):
-        v = float(res.history[n][-1]) if res.history[n] else float("nan")
+        v = float(final[c.key])
         ok = bool(v <= c.upper + ftol * max(abs(c.upper), 1e-12))
         cons.append({"name": n, "value": v, "upper": c.upper, "satisfied": ok})
     summary: dict[str, Any] = {

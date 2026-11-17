@@ -370,5 +370,5 @@ def test_maximise_fundamental_eigenvalue_clamped_beam():
     print(f"    same design with plain SIMP p=3: lam1 = {lam_p[0]:.4e}, low-density share = "
           f"{m.low_density_share(xp, rho, modes_p)[0]:.3f}")
     assert lam_hist[-1, 0] > 1.3 * lam_hist[0, 0]
-    assert res.history["volume"][-1] <= vf * 1.01
+    assert res.constraint_values["volume"] <= vf * 1.01           # of the returned design (res.xphys above)
     assert share.max() < 0.05
