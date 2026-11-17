@@ -47,7 +47,7 @@ import numpy as np
 
 __all__ = ["KINDS", "REQUIRED", "ConfigError", "Param", "Entry", "BuildContext", "Registry", "REGISTRY", "register",
            "get", "names", "normalise_name", "suggest", "as_selector", "checked_selector", "find_bore", "SpreadForce",
-           "bc_callables", "selector_callable"]
+           "bc_callables", "bc_mapping", "selector_callable"]
 
 KINDS: dict[str, str] = {
     "domain": "design domain builder -> Domain",
@@ -1687,7 +1687,8 @@ def reverify_step(ctx: BuildContext, E: float | None = None, nu: float | None = 
     state = _post_state(ctx)
     E_ = float(ctx.material["E0"] if E is None else E)
     nu_ = float(ctx.material["nu"] if nu is None else nu)
-    supports, cases, notes = bc_callables(ctx.bc)
+    bcm = bc_mapping(ctx.bc)
+    supports, cases = bcm["supports"], bcm["cases"]
 
     def step(res: Any, study: Any, folder: Any) -> dict[str, Any]:
         from toporlogy.post import reverify
@@ -1697,33 +1698,51 @@ def reverify_step(ctx: BuildContext, E: float | None = None, nu: float | None = 
                        domain=study.domain if compare_voxel else None, xphys=xp if compare_voxel else None,
                        timeout=timeout)
         out["design"] = state.get("result_design", label)
-        out["notes"] = notes
+        # the T10 / voxel comparison is between two meshes under the SAME mapped conditions; whether those are the
+        # optimisation's conditions is bc_fidelity ("equivalent" only when nothing was approximated or left out)
+        out["notes"] = bcm["notes"]
+        out["bc_fidelity"] = bcm["fidelity"]
+        out["bc_mapping"] = bcm["items"]
         state["reverify"] = out
         ch = out.get("change") or []
         out["summary"] = (", ".join(f"{c['name']} compliance x{c['compliance_ratio']:.3f}" for c in ch)
                           or f"{len(out['t10']['cases'])} case(s) solved") + f" ({out['t10']['elements']} T10)"
+        if bcm["fidelity"] != "equivalent":
+            out["summary"] += f"; {bcm['fidelity']} BC mapping ({len(bcm['items'])} item(s), see bc_mapping)"
         return out
     return step
 
 
-def bc_callables(bcs: Any) -> tuple[list[Any], dict[str, list[Any]], list[str]]:
+def bc_mapping(bcs: Any) -> dict[str, Any]:
     """Supports ``[(select, dirs)]`` and load cases ``{name: [(select, force)]}`` for
-    :func:`toporlogy.post.reverify` from a :class:`~toporlogy.bc.BoundaryConditions`: the bc selectors as
-    callables ``select(X (n, dim)) -> bool`` in physical coordinates. Approximations are listed in ``notes``."""
+    :func:`toporlogy.post.reverify` from a :class:`~toporlogy.bc.BoundaryConditions` (the bc selectors as callables
+    ``select(X (n, dim)) -> bool`` in physical coordinates), and how faithful that translation is.
+
+    Returns ``{"supports", "cases", "items", "notes", "fidelity"}``. ``items``: one ``{"name", "fidelity",
+    "note"}`` per support or load that is not carried over as it is: "approximate" (carried over as a different
+    condition: pinned bore as fixed, oblique as fixed in all directions, bearing / remote force as an area-spread
+    resultant, first case's supports for every case) or "unsupported" (left out: springs, body forces, pure
+    moments, other support types). ``fidelity``: "unsupported" if any item is, else "approximate" if any item is,
+    else "equivalent" (every support and load mapped by type with no known approximation; the nodal distribution
+    on the tetrahedral mesh still differs from the voxel grid's). Only an "equivalent" re-analysis is the
+    optimisation's problem."""
     from toporlogy import bc as B
     info, h = bcs.info, bcs.domain.h
-    notes: list[str] = []
+    mapped: list[dict[str, str]] = []
+
+    def note(name: str, fidelity: str, text: str) -> None:
+        mapped.append({"name": str(name), "fidelity": fidelity, "note": text})
     sup_list = bcs.cases[0].supports if bcs.cases[0].supports is not None else bcs.supports
     if any(c.supports is not None for c in bcs.cases):
-        notes.append("per-case supports: the supports of the first case are used for every case")
+        note("per-case supports", "approximate", "the supports of the first case are used for every case")
     supports = []
     for s in sup_list:
         if isinstance(s, B.ElasticSupport):
-            notes.append(f"{s.name}: springs are not re-verified (left free)")
+            note(s.name, "unsupported", "springs are not re-verified (left free)")
             continue
         if isinstance(s, B.PinnedBore):
             supports.append((selector_callable(s.sel, info, h), (0, 1, 2)))
-            notes.append(f"{s.name}: pinned bore re-verified as a fixed bore")
+            note(s.name, "approximate", "pinned bore re-verified as a fixed bore")
             continue
         if isinstance(s, B.Fixed):
             rows = np.eye(info.dim) if s.dirs is None else np.array(
@@ -1731,11 +1750,11 @@ def bc_callables(bcs: Any) -> tuple[list[Any], dict[str, list[Any]], list[str]]:
                  for r in s.dirs])
             ax = [int(np.argmax(np.abs(r))) for r in rows if np.isclose(np.abs(r).max(), 1.0)]
             if len(ax) != len(rows):
-                notes.append(f"{s.name}: oblique direction(s) re-verified as fixed in all directions")
+                note(s.name, "approximate", "oblique direction(s) re-verified as fixed in all directions")
                 ax = [0, 1, 2]
             supports.append((selector_callable(s.where, info, h), tuple(sorted(set(ax)))))
             continue
-        notes.append(f"{s.name}: support type {type(s).__name__} not re-verified")
+        note(s.name, "unsupported", f"support type {type(s).__name__} not re-verified")
     if not supports:
         raise ValueError("reverify: no support can be re-verified")
     cases: dict[str, list[Any]] = {}
@@ -1744,24 +1763,33 @@ def bc_callables(bcs: Any) -> tuple[list[Any], dict[str, list[Any]], list[str]]:
         for ld, a in zip(c.loads, bcs.applied[c.name], strict=True):
             F = np.asarray(a.force, float)
             if isinstance(ld, B.BodyForce) or not np.linalg.norm(F) > 0:
-                notes.append(f"{a.name}: {'body force' if isinstance(ld, B.BodyForce) else 'pure moment'} not "
-                             "re-verified")
+                note(a.name, "unsupported", f"{'body force' if isinstance(ld, B.BodyForce) else 'pure moment'} not "
+                                             "re-verified")
                 continue
             if isinstance(ld, B.PointLoad):
                 sel = B.InSphere(ld.point, 1.5 * h if ld.radius is None else float(ld.radius))
             else:
                 sel = getattr(ld, "where", None) or getattr(ld, "sel", None)
             if sel is None:
-                notes.append(f"{a.name}: no selection, not re-verified")
+                note(a.name, "unsupported", "no selection, not re-verified")
                 continue
             if isinstance(ld, B.BearingLoad | B.RemoteForce):
-                notes.append(f"{a.name}: re-verified as the resultant spread by area (no cosine / moment)")
+                note(a.name, "approximate", "re-verified as the resultant spread by area (no cosine / moment)")
             items.append((selector_callable(sel, info, h), F))
         if items:
             cases[c.name] = items
     if not cases:
         raise ValueError("reverify: no load can be re-verified")
-    return supports, cases, notes
+    levels = {it["fidelity"] for it in mapped}
+    fidelity = "unsupported" if "unsupported" in levels else "approximate" if levels else "equivalent"
+    return {"supports": supports, "cases": cases, "items": mapped,
+            "notes": [f"{it['name']}: {it['note']}" for it in mapped], "fidelity": fidelity}
+
+
+def bc_callables(bcs: Any) -> tuple[list[Any], dict[str, list[Any]], list[str]]:
+    """``(supports, cases, notes)`` of :func:`bc_mapping` (kept for callers that need no fidelity)."""
+    m = bc_mapping(bcs)
+    return m["supports"], m["cases"], m["notes"]
 
 
 def selector_callable(sel: Any, info: Any, h: float) -> Callable[[np.ndarray], np.ndarray]:

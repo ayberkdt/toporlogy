@@ -452,6 +452,29 @@ def test_post_order_and_reverify_build():
     assert sup[0][1] == (1,) and sup[0][0](X).sum() > 0 and list(cases) == ["case1"]
 
 
+def test_bc_mapping_labels_what_reverify_cannot_carry_over():
+    """bc_mapping: equivalent when every support and load maps by type; a bearing load (area-spread resultant)
+    makes it approximate; springs (left out) make it unsupported. bc_callables keeps its (supports, cases,
+    notes) contract with the same note texts."""
+    from toporlogy.registry import bc_callables, bc_mapping
+    m = bc_mapping(C.build_setup(plate()).bc)
+    assert m["fidelity"] == "equivalent" and m["items"] == [] and m["notes"] == []
+    raw = plate()
+    raw["load_cases"][0]["loads"].append({"type": "bearing", "bore": {"type": "bore"}, "force": [0, -1]})
+    m = bc_mapping(C.build_setup(raw).bc)
+    assert m["fidelity"] == "approximate" and [it["fidelity"] for it in m["items"]] == ["approximate"]
+    assert "no cosine / moment" in m["items"][0]["note"]
+    raw["supports"].append({"type": "elastic", "where": {"type": "on_plane", "axis": "y", "at": "max"}, "k": 0.1,
+                            "name": "spring"})
+    bcs = C.build_setup(raw).bc
+    m = bc_mapping(bcs)
+    assert m["fidelity"] == "unsupported"
+    assert {(it["name"], it["fidelity"]) for it in m["items"]} >= {("spring", "unsupported")}
+    sup, cases, notes = bc_callables(bcs)
+    assert notes == m["notes"] and "spring: springs are not re-verified (left free)" in notes
+    assert len(sup) == len(m["supports"]) and list(cases) == list(m["cases"])
+
+
 def test_move_beta_ref_reaches_study():
     s = C.build_setup(box2d(run={"max_iter": 2, "move_beta_ref": 2.0}))
     assert s.study.move_beta_ref == 2.0
