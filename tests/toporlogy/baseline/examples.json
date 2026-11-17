@@ -1,0 +1,128 @@
+{
+ "meta": {
+  "created": "2026-11-17T14:55:44",
+  "git": "cf83e40",
+  "max_iter": 10,
+  "solver": "SuperLU (torch imported first)",
+  "python": "3.12.1",
+  "numpy": "2.2.6",
+  "torch": "2.5.1+cu121",
+  "scipy": "1.14.1",
+  "machine": "Windows-11-10.0.26200-SP0"
+ },
+ "examples": {
+  "cantilever3d": {
+   "returncode": 1,
+   "status": "not converged",
+   "iterations": 10,
+   "objective": 934.6315106023299,
+   "constraints": {
+    "volume": 0.3000013744324767
+   },
+   "x": "3afb33c50d45dfcfb59d6c909aaec1bfd503d64abc296c3b4de8efa4fb05b4f5",
+   "xphys": "cbb19d16c58b2f705f5e7c87f2ae14f59926d87b843eb0ac059b61993625eb66",
+   "post_steps": [],
+   "post_errors": [],
+   "geometry_files": {}
+  },
+  "eigenfrequency2d": {
+   "returncode": 1,
+   "status": "not converged",
+   "iterations": 10,
+   "objective": -8.780609827115406e-05,
+   "constraints": {
+    "volume": 0.4988506435376808
+   },
+   "x": "d7a82b3f36300ab4c25cf3b71d6c1f2b9d435d2c3f6eac7ac6f73bacb43fc612",
+   "xphys": "c115a844b0e51a81a6349ca6c5bc267b985c97ed6f5a4912451d0dbd9177a95f",
+   "post_steps": [],
+   "post_errors": [],
+   "geometry_files": {}
+  },
+  "lbracket_bore3d": {
+   "returncode": 1,
+   "status": "not converged",
+   "iterations": 10,
+   "objective": 285.4339522160699,
+   "constraints": {
+    "volume_dilated": 0.398441608002679,
+    "local_volume": 0.2982022001246167,
+    "connectivity": 9.764504065502914
+   },
+   "x": "71e6b102779fba4743739a35b0e77227591d3398dc739dfcf60eb230dc8d9515",
+   "xphys": "39cfe13d10e22602a597b881445f2302a10601046f6d0d861deb429c6dc22455",
+   "post_steps": [
+    "connectivity_gate",
+    "export",
+    "finalize",
+    "manufacturing_checks",
+    "measure_lengthscale"
+   ],
+   "post_errors": [],
+   "geometry_files": {
+    "part.ply": "b7f63621270f18c1812008b7a8f00d8c5275cacac3ee8b390b18db0909eeb0ce",
+    "part.stl": "b1f3c5a6b843bd7f692c23f7ed638806e12229814f5301dc8f1c20861814510a",
+    "part_print_stock.stl": "823e4aa2a77fd8e76d730389a79ba8672e38aeec894d1f3c838e7ad2a88522a4"
+   }
+  },
+  "mbb2d": {
+   "returncode": 1,
+   "status": "not converged",
+   "iterations": 10,
+   "objective": 286.35382321673757,
+   "constraints": {
+    "volume": 0.4999302124524384
+   },
+   "x": "2eb73f4305dfa28471e1439a2f8dd7c356b0ad0a01c45abb3678ec2920527add",
+   "xphys": "551c38229edb210a6745713645d38ac379616dee8df295819ee7193c6d45e430",
+   "post_steps": [],
+   "post_errors": [],
+   "geometry_files": {}
+  },
+  "multiload3d": {
+   "returncode": 1,
+   "status": "not converged",
+   "iterations": 10,
+   "objective": 259.89521614379606,
+   "constraints": {
+    "volume": 0.24745268410436452
+   },
+   "x": "a73677314636acc21de4b04f6b063b194cc2b7209c4c3493cbfad0c527d7fdda",
+   "xphys": "c9c6be463e78b2892d211c0f8d6ff1be545cc7e27b30bfcba89385c5d25740bf",
+   "post_steps": [],
+   "post_errors": [],
+   "geometry_files": {}
+  },
+  "split_connectivity2d": {
+   "returncode": 1,
+   "status": "not converged",
+   "iterations": 10,
+   "objective": 9.36385699436977,
+   "constraints": {
+    "volume": 0.14968757096164517,
+    "connectivity": 18.791536456525535
+   },
+   "x": "e283d58845a5fa309524f0caa3a3266f59add5d3caf7b37dd6166985a8d88e4c",
+   "xphys": "77695ababf1cb1c1a89d3975732560a3068da060f053e285b82f3c28d1002f3b",
+   "post_steps": [
+    "connectivity_gate"
+   ],
+   "post_errors": [],
+   "geometry_files": {}
+  },
+  "symmetric_am3d": {
+   "returncode": 1,
+   "status": "not converged",
+   "iterations": 10,
+   "objective": 1.6465969807339553,
+   "constraints": {
+    "volume": 0.20000043377451499
+   },
+   "x": "27f09958a9458c10ce132f2da2d99d8f8b357d40ec387c05c403cf2ecb208c23",
+   "xphys": "d35a5f265793ea068894a7a28a413313672fd079d8f5f3d2b1944edb8860c77c",
+   "post_steps": [],
+   "post_errors": [],
+   "geometry_files": {}
+  }
+ }
+}

@@ -31,7 +31,8 @@ testpaths = ["tests"]
 pythonpath = ["src"]
 addopts = "--import-mode=importlib -ra"
 timeout = 900
-markers = ["slow: long-running benchmark (deselect with -m 'not slow')"]
+markers = ["slow: long-running benchmark (deselect with -m 'not slow')",
+           "baseline: bitwise comparison of the examples with tests/toporlogy/baseline (run with -m baseline)"]
 
 [tool.ruff]
 line-length = 120
