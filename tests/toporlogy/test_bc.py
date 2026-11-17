@@ -407,3 +407,31 @@ def test_equal_supports_built_separately_are_one_set():
     with pytest.raises(ValueError, match="different supports"):
         bc.BoundaryConditions(d, clamp(), [bc.LoadCase("a", [l1]), bc.LoadCase("b", [l2], supports=other)],
                               combinations=[bc.Combination("a+b", {"a": 1.0, "b": 1.0})])
+
+
+def test_design_dependent_body_force_with_per_case_supports():
+    """B-10: with load cases that have different supports, physics() is PerCaseSupports, which offers only solve();
+    BodyForceCompliance (design_load_solve) needed solve_numpy/_solve_free/factor and raised AttributeError. Each
+    support group is now solved by its own physics. Reference: the two cases solved as two separate problems."""
+    d = block((6, 2, 3))
+    G = bc.body_force_matrix(d, [0, 0, -9.81], density=2.0)
+    left, right = bc.Fixed(bc.OnPlane([0, 0, 0], 0)), bc.Fixed(bc.OnPlane([6, 0, 0], 0))
+    la = bc.SurfaceForce(bc.OnPlane([6, 0, 0], 0), [0, 0, -1.0])
+    lb = bc.SurfaceForce(bc.OnPlane([0, 0, 0], 0), [0, 0, -1.0])
+    B = bc.BoundaryConditions(d, [left], [bc.LoadCase("a", [la]), bc.LoadCase("b", [lb], supports=[right])])
+    assert isinstance(B.physics(), bc.PerCaseSupports)
+    x = np.random.default_rng(3).uniform(0.3, 0.8, d.n_design)
+
+    def value(Bx, F0, factors):
+        st = Study(d, Bx.physics(), F0, standard_chain(d, 1.5), SIMP(d, penal=3.0),
+                   bc.BodyForceCompliance(F0, G, factors=factors), [Constraint(Volume(), 0.5)], OC())
+        return st, st.evaluate(x, gradients=False).f0
+
+    st, both = value(B, B.F(), [0.05, 0.05])
+    sa, a = value(bc.BoundaryConditions(d, [left], [bc.LoadCase("a", [la])]), B.F()[:, :1], [0.05])
+    sb, b = value(bc.BoundaryConditions(d, [right], [bc.LoadCase("b", [lb])]), B.F()[:, 1:], [0.05])
+    assert both == pytest.approx(a + b, rel=1e-12)
+    g = st.evaluate(x).df0
+    assert np.max(np.abs(g - sa.evaluate(x).df0 - sb.evaluate(x).df0)) <= 1e-12 * np.max(np.abs(g))
+    # h = 1e-4: at the default step the FD truncation error is ~2e-6 here, and 7.7e-6 for case "a" alone (measured)
+    assert study_gradcheck(st, x, h=1e-4)["max_rel_error"] < 1e-6

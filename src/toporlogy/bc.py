@@ -1386,8 +1386,16 @@ class _LoadSolve(torch.autograd.Function):
 
 
 def design_load_solve(physics: Elasticity, E_active: torch.Tensor, F: torch.Tensor) -> torch.Tensor:
-    """Differentiable ``U = K(E)⁻¹ F`` where the load ``F`` (ndof, n_cases) is a tensor too (∂/∂F = λ, the adjoint)."""
+    """Differentiable ``U = K(E)⁻¹ F`` where the load ``F`` (ndof, n_cases) is a tensor too (∂/∂F = λ, the adjoint).
+
+    With :class:`PerCaseSupports` (cases with different supports) each column group is solved by its own physics and
+    the columns are put back in case order (torch ops, so the gradient flows through both)."""
     F2 = F[:, None] if F.ndim == 1 else F
+    if isinstance(physics, PerCaseSupports):
+        if F2.shape[1] != physics.n_cases:
+            raise ValueError(f"F has {F2.shape[1]} columns, the support groups cover {physics.n_cases}")
+        parts = [design_load_solve(p, E_active, F2[:, torch.as_tensor(c, device=F2.device)]) for p, c in physics.groups]
+        return torch.cat(parts, dim=1).index_select(1, physics._inv.to(F2.device))
     return _LoadSolve.apply(E_active, F2, physics)
 
 
