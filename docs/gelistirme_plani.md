@@ -23,7 +23,8 @@ bugünkü durumunu, bulunan açıkları ve sonraki işlerin sırasını tutar.
 | Adlandırma temizliği | tamam | eski yollar ve takma adlar kaldırıldı, karışan adlar düzeltildi (aşağıda) |
 | G7 sonuç sözleşmesi | kısmen | `termination`, `feasible`, `max_violation`, `kkt_residual`, özet `flags` (`a7a5631`); `DesignVariant`, `SOLVER_FAILURE` yok |
 | V1 bağımsız FEM doğrulaması | tamam | üretilmiş çözümler, Q4/H8/H8IM'de O(h²) (`fd4f4de`) |
-| mypy | tamam | 219 hata → 0; CI adımı artık hata kabul etmiyor |
+| mypy | tamam | 219 hata → 0; CI'ın en güncel sürümleriyle de 0 (43 hata sürüm farkındandı); CI adımı hata kabul etmiyor |
+| B-22, B-23 | kapandı | tekil sistem denetimi (`fem/mechanisms.py`), `read_run` nihai kısıtları |
 | G6, G8, G9 | başlamadı | G9'un ilk parçası (CI) eklendi |
 | K5 lisans | kapandı | tescilli, tüm hakları saklı (`LICENSE`) |
 
@@ -75,10 +76,31 @@ hücrelik ada bu geçici durumdan kalıyordu. 300 iterasyonla 219'da yakınsıyo
 artık "tek gövde" iddiasından önce uygunluğu sınıyor; bu, 2-D durumda da aynı sorunu gösterdi (120 iterasyonda
 `coupling` 2,93 > 2,5, eski test geçiyordu). Her iki boyutta bütçe 300.
 
-B-22 (18 Kasım 2026, açık): `Elasticity.solve_numpy` tekil (mekanizma) bir sistemde hata vermiyor; mesnede bağlı
-olmayan yüzen bir parçada çözüm 1e15 mertebesinde anlamsız sayılar döndürüyor (değişmez testlerinde rastgele bir
-boşluk deseniyle görüldü). Yapılandırma yolunda `validate`'in rijit-gövde kontrolü bunu yakalıyor; doğrudan Python
-API'sinde koruma yok.
+B-22 (18 Kasım 2026, kapandı): `Elasticity.solve_numpy` tekil (mekanizma) bir sistemde hata vermiyordu; mesnede
+bağlı olmayan yüzen bir parçada çözüm 1e15 mertebesinde, sonlu ama anlamsız sayılar döndürüyordu (değişmez
+testlerinde rastgele bir boşluk deseniyle görüldü). Düzeltme iki katmanlı: (1) ilk çarpanlara ayırmadan önce
+kinematik denetim (`fem/mechanisms.py`): yüzden bağlı eleman kümeleri katı hareket eder, kenar ya da düğümle bağlı
+kümeler mafsal gibi davranır; mesnet satırları (sabit DOF, eğik kısıt yönleri, yaylar) ile birlikte sıfır enerjili
+hareket sayısı küçük bir doğrusal sistemin rankından tam olarak çıkar, sıfır değilse `MechanismError` hangi kümenin
+serbest olduğunu yazar. `Elasticity`, `ConstrainedElasticity` ve `ElasticityGMG` bunu kullanıyor; serbest titreşim
+analizi (`Modal`) kullanmıyor, çünkü orada katı modlar meşru. (2) Her çözümde ölçekli kalıntı
+‖Kx − b‖ / ‖b‖ ≤ 1e-6 denetimi (`SolveResidualError`; doğrudan çözücüde ölçülen 1e-15 mertebesi). Doğrulama
+modelden bağımsız: küçük problemlerde yoğun indirgenmiş rijitliğin sıfır özdeğer sayısı; 160 rastgele boşluk deseni ve
+mesnet kümesinde (2-D ve 3-D) sayılar birebir aynı; kümeler arası tutarlılık ya da mesnet satırları çıkarılınca testler
+düşüyor.
+
+B-23 (18 Kasım 2026, dış incelemeden, kapandı): `read_run`, `summary.json` olmayan (Python `Recorder` ile kaydedilmiş)
+koşularda kısıt değerlerini `history.jsonl`'nin son satırından okuyordu; o satır son güncellemeden önceki tasarıma
+ait. Artık `result.json["constraints"]` okunuyor; son satır yalnız bu alanı olmayan eski dosyalarda, kaynağı
+`constraint_source` alanında yazılarak kullanılıyor. Regresyon testinde iki kaynak 0,1 farklı; eski davranış testi
+düşürüyor.
+
+CI'da mypy (18 Kasım 2026): yerelde 0 hata varken CI 43 hata buluyordu. Neden sürüm farkı: CI en güncel sürümleri
+kuruyor (numpy 2.5.5, torch 2.15.0, mypy 2.4.1; yerelde 2.2.6 / 2.5.1 / 2.1.0). torch 2.15 `nn.Module` özniteliklerini
+`Tensor | Module` olarak tipliyor (33 hata, `register_buffer` ile kaydedilen tamponlar sınıf düzeyinde
+`torch.Tensor` olarak bildirildi); numpy 2.5 `isscalar` ile daraltıyor (eski sürüm için eklenen 6 `cast` gereksiz
+kaldı, iki sürümde de geçen biçimde yeniden yazıldı). CI'ın kurduğu sürümlerle kurulan ayrı bir ortamda da yerelde de
+mypy 0 hata.
 
 B-21 (18 Kasım 2026, dış incelemeden, düzeltildi): A-02'nin kapısı, onarılmış tasarımın değerlendirilemeyen kısıtlarını
 (`feasible=None`) geçer sayıyordu. `lbracket_bore3d`'de onarılmış bir yoğunlukta amaç ve üç kısıtın hiçbiri
@@ -475,10 +497,12 @@ türler `optimization/types.py`'ye çekilerek kaldırılır; bu da saf taşımad
 
 #### G6 — Geometri ve IO'yu birleştir (davranış değişebilir)
 
-1. Ortak `ImplicitSolid` sözleşmesi: `sdf(points)`, `dim`, `bounds()`. `geometry.Shape` ve `post.primitives.Primitive` bunu
-   uygular.
+1. Tek işaretli uzaklık hiyerarşisi: yapıldı. `post.primitives.Primitive` artık `geometry.Shape`'ten türüyor (3-D,
+   üstüne tam gradyan, izdüşüm ve ofset); sınırlı ilkellerin `bbox()`'ı var, sınırsızlar bunu söyleyerek hata
+   veriyor. İlkeller geometri CSG'sine ve vokselleştirmeye katılıyor (aynı uzaklıklı geometri şekilleriyle aynı
+   alanı veriyor); `sdf` yöntemi olan her sınıfın `geometry.Shape`'ten türemesini mimari testi denetliyor.
 2. Ad çakışması giderildi: CSG katısı `geometry.Cylinder`, işlevsel yüz `post.primitives.CylinderPrimitive`
-   (adlandırma temizliği). İkisinin tek bir `ImplicitSolid` sözleşmesinde birleşmesi (1. madde) açık.
+   (adlandırma temizliği); ikisi de `geometry.Shape`.
 3. Tek STL okuyucu/yazıcı: yapıldı, `geometry.read_stl` / `write_stl` (ikili + ASCII, birleştirme toleransı);
    `post.export`'taki kopya silindi.
 4. İki `local_thickness` açık adlar aldı: `voxel_local_thickness`, `sdf_local_thickness` (adlandırma temizliği, takma ad yok).

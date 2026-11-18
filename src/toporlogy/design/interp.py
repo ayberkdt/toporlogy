@@ -13,6 +13,8 @@ __all__ = ["SIMP", "RAMP"]
 class SIMP(torch.nn.Module):
     """``E_e = (Emin + x̄_e^p (E0 − Emin)) · frac_e`` with ``Emin = emin_ratio · E0``; ``penal`` may be scheduled."""
 
+    frac: torch.Tensor
+
     def __init__(self, domain: Domain, E0: float = 1.0, penal: float = 3.0, emin_ratio: float = 1e-6) -> None:
         super().__init__()
         self.E0, self.penal, self.emin_ratio = float(E0), float(penal), float(emin_ratio)
@@ -29,6 +31,8 @@ class RAMP(torch.nn.Module):
     Stolpe & Svanberg (2001) form; source NOT read in this session (docs/mimari_plan.md §7 rule) — experimental,
     not used by any default.
     """
+
+    frac: torch.Tensor
 
     def __init__(self, domain: Domain, E0: float = 1.0, q: float = 8.0, emin_ratio: float = 1e-6) -> None:
         super().__init__()

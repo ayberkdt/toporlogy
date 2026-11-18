@@ -177,3 +177,33 @@ def test_run_summary_carries_the_result_contract(tmp_path):
     import json
     rj = json.loads((tmp_path / "run" / "result.json").read_text(encoding="utf-8"))
     assert rj["termination"] == sm["termination"] and rj["feasible"] == sm["feasible"]
+
+
+# ---------------------------------------------------------------------------------------------- read_run
+def test_read_run_reports_the_returned_designs_constraints(tmp_path):
+    """A run recorded from Python (no summary.json): read_run must report the constraint values of the design the
+    run returned (result.json), not those of the last history row, which belong to the design before the final
+    update. Before the fix it read history[-1]."""
+    import json
+
+    from toporlogy.execution.runs import read_run
+    st = _mbb(T.MMA(move=0.1), vf=0.3)                  # from 0.6 the volume falls ~0.1 per step: designs differ
+    st.recorder = T.Recorder(tmp_path / "run")
+    res = st.run(x0=np.full(st.n_var, 0.6), max_iter=2, tol=0.0)
+    s = read_run(tmp_path / "run")
+    v = {c["name"]: c["value"] for c in s["constraints"]}
+    again = st.evaluate(res.x).values                                   # the returned design, re-evaluated
+    assert v["volume"] == res.constraint_values["volume"] == pytest.approx(again["volume"], rel=1e-12)
+    last = s["history"][-1]["volume"]
+    assert abs(last - v["volume"]) > 1e-3                               # the old source really is a different design
+    assert s["constraint_source"] == "result.json"
+    assert s["termination"] == res.termination and s["feasible"] == res.feasible
+    assert s["max_violation"] == pytest.approx(res.max_violation, abs=1e-15)
+    assert [c["satisfied"] for c in s["constraints"]] == [bool(res.feasible)]
+    # a result.json written before "constraints" existed: the fallback is used and says what it is
+    rj = tmp_path / "run" / "result.json"
+    old = json.loads(rj.read_text(encoding="utf-8"))
+    del old["constraints"]
+    rj.write_text(json.dumps(old), encoding="utf-8")
+    s_old = read_run(tmp_path / "run")
+    assert s_old["constraints"][0]["value"] == last and s_old["constraint_source"].startswith("history.jsonl")

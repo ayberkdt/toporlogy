@@ -7,7 +7,7 @@ import torch
 from collections.abc import Sequence
 from dataclasses import dataclass
 from toporlogy.core.domain import Domain
-from toporlogy.fem.elastic import Elasticity
+from toporlogy.fem.elastic import Elasticity, checked_residual
 from typing import Any
 
 import numpy as np
@@ -102,8 +102,8 @@ def _resolve(supports: Sequence[Support], info: PartInfo) -> ConstraintSet:
         for k in np.flatnonzero(~all_axis):
             node = int(N[starts[k]])
             Dn = D[starts[k]:ends[k]]
-            _, s, Vt = np.linalg.svd(Dn)
-            rank = int((s > 1e-9 * s[0]).sum())
+            _, sv, Vt = np.linalg.svd(Dn)
+            rank = int((sv > 1e-9 * sv[0]).sum())
             redundant += len(Dn) - rank
             if rank == dim:
                 fixed.append(dim * node + np.arange(dim))
@@ -168,6 +168,16 @@ class ConstrainedElasticity(Elasticity):
         self.S = S
         self.constraints = constraints
 
+    def _kinematic_rows(self) -> dict[int, np.ndarray]:
+        """Fixed DOFs, plus the constrained directions of every local frame (u ⊥ them) and the rows of every spring
+        (a spring stores energy unless K_s u = 0)."""
+        rows = {n: [r] for n, r in super()._kinematic_rows().items()}
+        for n, (T, k) in self.constraints.frames.items():
+            rows.setdefault(int(n), []).append(np.linalg.inv(T)[:k])     # local coordinates 0..k-1 are zero
+        for n, K in zip(self.constraints.spring_nodes, self.constraints.spring_K, strict=True):
+            rows.setdefault(int(n), []).append(np.asarray(K, float))
+        return {n: np.vstack(r) for n, r in rows.items()}
+
     def matrix(self, E_active: np.ndarray) -> sp.csr_matrix:
         A = super().matrix(E_active)
         K = (A + sp.triu(A, k=1).T + self.S).tocsr()
@@ -182,6 +192,7 @@ class ConstrainedElasticity(Elasticity):
         b2 = b[:, None] if b.ndim == 1 else b
         bl = (self.T.T @ b2)[self.keep]
         y = np.asarray(self.solver.solve(bl)).reshape(bl.shape)
+        self.last_residual = checked_residual(self._A, y, bl)
         z = np.zeros_like(b2)
         z[self.keep] = y
         x = self.T @ z

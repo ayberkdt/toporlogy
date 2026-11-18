@@ -214,6 +214,8 @@ class ConductivityInterp(torch.nn.Module):
     conductor, so a grey film cannot fake a connection).
     """
 
+    frac: torch.Tensor
+
     def __init__(self, domain: Domain, k0: float = 1.0, penal: float = 3.0, kmin_ratio: float = 1e-3) -> None:
         super().__init__()
         if not 0 < kmin_ratio < 1:

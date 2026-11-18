@@ -57,6 +57,8 @@ __all__ = ["LinearMass", "TwoRangeMass", "TwoRangeSIMP", "eigenvalues", "Eigenva
 class LinearMass(torch.nn.Module):
     """``ρ_e = ρ0 (ρmin + (1 − ρmin) x̄_e) · frac_e`` with ``ρmin = rhomin_ratio``."""
 
+    frac: torch.Tensor
+
     def __init__(self, domain: Domain, rho0: float = 1.0, rhomin_ratio: float = 0.0) -> None:
         super().__init__()
         self.rho0, self.rhomin_ratio = float(rho0), float(rhomin_ratio)
@@ -69,6 +71,8 @@ class LinearMass(torch.nn.Module):
 
 class TwoRangeMass(torch.nn.Module):
     """``ρ = ρ0 · frac · m(x̄)``, ``m = x̄`` for x̄ ≥ x_t, ``x̄^q / x_t^(q−1)`` below (C0 at x_t; module notes)."""
+
+    frac: torch.Tensor
 
     def __init__(self, domain: Domain, rho0: float = 1.0, threshold: float = 0.1, q: float = 6.0) -> None:
         super().__init__()
@@ -89,6 +93,8 @@ class TwoRangeSIMP(torch.nn.Module):
 
     ``penal`` may be scheduled like :class:`toporlogy.design.interp.SIMP`.
     """
+
+    frac: torch.Tensor
 
     def __init__(self, domain: Domain, E0: float = 1.0, penal: float = 3.0, threshold: float = 0.1,
                  q: float = 1.0, emin_ratio: float = 1e-9) -> None:
