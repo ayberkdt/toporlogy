@@ -17,7 +17,7 @@ Coordinates: node (ix, iy[, iz]) sits at ``origin + h·(ix, iy[, iz])``.
 from __future__ import annotations
 
 from collections.abc import Callable, Sequence
-from typing import Any
+from typing import Any, cast
 
 import numpy as np
 
@@ -47,7 +47,7 @@ class Domain:
         Out-of-plane thickness (2-D only).
     """
 
-    def __init__(self, shape: Sequence[int], h: float = 1.0, origin: Sequence[float] | None = None,
+    def __init__(self, shape: Sequence[int], h: float = 1.0, origin: Sequence[float] | np.ndarray | None = None,
                  frac: Any = None, keep: Any = None, void: Any = None, thickness: float = 1.0) -> None:
         self.shape = tuple(int(s) for s in shape)
         if len(self.shape) not in (2, 3) or min(self.shape) < 1:
@@ -57,7 +57,7 @@ class Domain:
         self.dim = len(self.shape)
         self.h = float(h)
         self.thickness = float(thickness)
-        self.origin = np.zeros(self.dim) if origin is None else np.asarray(origin, float).reshape(self.dim)
+        self.origin: np.ndarray = np.zeros(self.dim) if origin is None else np.asarray(origin, float).reshape(self.dim)
         self.frac = np.ones(self.shape) if frac is None else np.asarray(frac, float).reshape(self.shape).copy()
         if (self.frac < 0).any() or (self.frac > 1).any():
             raise ValueError("frac must lie in [0, 1]")
@@ -162,7 +162,8 @@ class Domain:
 
     def dofs(self, nodes: np.ndarray, directions: Sequence[int] | int | None = None) -> np.ndarray:
         """DOF numbers of ``nodes`` in ``directions`` (default all), sorted."""
-        d = range(self.dim) if directions is None else ([directions] if np.isscalar(directions) else directions)
+        d = range(self.dim) if directions is None else \
+            cast(Sequence[int], [directions] if np.isscalar(directions) else directions)
         nodes = np.asarray(nodes, np.int64)
         return np.sort(np.concatenate([self.dim * nodes + int(k) for k in d])) if len(nodes) else \
             np.zeros(0, np.int64)
@@ -175,8 +176,8 @@ class Domain:
         """Design vector that gives mean x̄ = ``volume_fraction`` over the part before filtering (topo3d start rule).
 
         Keep elements count as 1, void as 0; the free elements share the rest, clipped to [0, 1]. ``weighted``: the
-        mean of :class:`~toporlogy.responses.Volume` ``(weighted=True)``, Σ frac·x̄ / Σ frac (partial voxels count by
-        their solid fraction); default: element count.
+        mean of :class:`~toporlogy.optimization.responses.Volume` ``(weighted=True)``, Σ frac·x̄ / Σ frac (partial
+        voxels count by their solid fraction); default: element count.
         """
         if weighted:
             fr = self.frac

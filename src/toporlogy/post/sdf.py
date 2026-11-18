@@ -32,7 +32,7 @@ import numba
 import numpy as np
 from scipy import ndimage
 
-__all__ = ["Grid", "grid_for_domain", "upsample", "normalised_blur", "partial_volume", "volume", "redistance",
+__all__ = ["Grid", "grid_for_domain", "upsample", "normalised_blur", "partial_volume", "solid_volume", "redistance",
            "erode", "dilate", "extrapolate", "opening", "closing", "mask_shape", "volume_threshold", "envelope_field"]
 
 
@@ -125,7 +125,7 @@ def partial_volume(phi: np.ndarray, h: float) -> np.ndarray:
     return np.clip(0.5 - np.asarray(phi, float) / h, 0.0, 1.0)
 
 
-def volume(phi: np.ndarray, h: float) -> float:
+def solid_volume(phi: np.ndarray, h: float) -> float:
     return float(partial_volume(phi, h).sum()) * h ** 3
 
 
@@ -264,13 +264,13 @@ def closing(phi: np.ndarray, r: float, h: float) -> np.ndarray:
 
 
 def mask_shape(mask: np.ndarray, grid: Grid, smooth: float = 0.0, name: str = "mask") -> Any:
-    """:class:`~toporlogy.post.primitives.GridShape` of a boolean mask on ``grid`` (surface half-way between
+    """:class:`~toporlogy.post.primitives.GridPrimitive` of a boolean mask on ``grid`` (surface half-way between
     samples). ``smooth`` = Gaussian σ in samples applied to the indicator first (removes the staircase)."""
-    from toporlogy.post.primitives import GridShape
+    from toporlogy.post.primitives import GridPrimitive
     ind = np.asarray(mask, float)
     if smooth > 0:
         ind = ndimage.gaussian_filter(ind, smooth)
-    return GridShape(redistance(0.5 - ind, grid.h), grid.origin, grid.h, name=name)
+    return GridPrimitive(redistance(0.5 - ind, grid.h), grid.origin, grid.h, name=name)
 
 
 def envelope_field(domain: Any, grid: Grid) -> np.ndarray:
@@ -307,7 +307,7 @@ def volume_threshold(rf: np.ndarray, grid: Grid, target: float, combine: Any = N
         return (t - rf) / gm
 
     def vol(t: float) -> float:
-        return volume(comb(field(t)), grid.h)
+        return solid_volume(comb(field(t)), grid.h)
 
     a, b = lo, hi
     va, vb = vol(a), vol(b)
@@ -321,13 +321,13 @@ def volume_threshold(rf: np.ndarray, grid: Grid, target: float, combine: Any = N
     dt = 1e-3
     slope = (vol(t + dt) - vol(t - dt)) / (2 * dt)              # dV/dt (< 0) of the cheap estimate
     phi = redistance(field(t), grid.h)
-    v = volume(comb(phi), grid.h)
+    v = solid_volume(comb(phi), grid.h)
     for _ in range(2):
         if abs(v - target) <= 1e-5 * target or slope >= 0:
             break
         t = float(np.clip(t - (v - target) / slope, lo, hi))
         phi = redistance(field(t), grid.h)
-        v = volume(comb(phi), grid.h)
+        v = solid_volume(comb(phi), grid.h)
     return t, phi, v
 
 

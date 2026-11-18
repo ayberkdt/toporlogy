@@ -1,7 +1,7 @@
-"""Manufacturing-constraint links (toporlogy.manufacturing): AM overhang filter, tying, casting, composition.
+"""Manufacturing-constraint links (toporlogy.design.manufacturing): AM overhang filter, tying, casting, composition.
 
 Pre-registered thresholds: oracle equality of the AM forward pass ≤ 1e-12 (max abs); finite-difference gradients
-≤ 1e-6 relative (:func:`toporlogy.checks.gradcheck`, float64); tied optimisation results exact to 1e-12.
+≤ 1e-6 relative (:func:`toporlogy.optimization.diagnostics.gradcheck`, float64); tied optimisation results exact to 1e-12.
 
 Oracles: :class:`topo_oracles.am_filter.AMFilter2D` (2-D, array (nely, nelx), row 0 at the top) and
 :class:`topo_oracles.topo3d.AMFilter3D` (3-D, VoxelMesh of the full box = C-order of :class:`Domain`). Side names
@@ -18,9 +18,9 @@ import torch
 
 from toporlogy import (OC, SIMP, Compliance, Constraint, DensityFilter, Domain, Elasticity, Embed,
                           HeavisideProjection, Passive, Study, Volume, gradcheck)
-from toporlogy.chain import Chain
+from toporlogy.design.chain import Chain
 from toporlogy.solvers import DirectSolver
-from toporlogy.manufacturing import (AMFilter, Casting, Extrusion, GroupAverage, Pattern, Symmetry, Tying,
+from toporlogy.design.manufacturing import (AMFilter, Casting, ExtrusionTying, GroupAverage, PatternTying, SymmetryTying, Tying,
                                         combine_tying, manufacturing_chain, overhang_map, overhang_violations,
                                         parse_direction, undercut_map, undercuts, validate_chain)
 
@@ -124,7 +124,7 @@ def test_parse_direction():
     assert parse_direction("-x", 2) == (0, -1)
     assert parse_direction("y", 3) == (1, 1)
     assert parse_direction((2, -1), 3) == (2, -1)
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='not\\ valid\\ in\\ 2\\-D'):
         parse_direction("+z", 2)
 
 
@@ -225,13 +225,13 @@ def _is_projection(t: Tying, rng) -> float:
 def test_symmetry_off_grid_plane_and_two_planes():
     rng = np.random.default_rng(6)
     d = Domain((10, 9, 5))
-    t = Symmetry(d, {"y": 3.7})                        # 2c = 7.4 → partner of iy is 6 − iy; iy = 7, 8 have none
+    t = SymmetryTying(d, {"y": 3.7})                        # 2c = 7.4 → partner of iy is 6 − iy; iy = 7, 8 have none
     rep = t.report()
     print(f"\n  symmetry y=3.7: {rep}")
     assert rep["unpaired"]["outside_box"] == 2 * 10 * 5
     assert rep["n_groups"] == 10 * 5 * 6                 # per line: pairs (0,6) (1,5) (2,4), single 3, singles 7, 8
     assert _closed(t) and _is_projection(t, rng) < 1e-12
-    t2 = Symmetry(d, [("y", 4.5), ("x", 5.0)])
+    t2 = SymmetryTying(d, [("y", 4.5), ("x", 5.0)])
     g = t2.group_np.reshape(d.shape)
     np.testing.assert_array_equal(g, g[:, ::-1, :])
     np.testing.assert_array_equal(g, g[::-1, :, :])
@@ -243,7 +243,7 @@ def test_symmetry_off_grid_plane_and_two_planes():
 def test_symmetry_gradient_is_group_sum():
     rng = np.random.default_rng(7)
     d = _masked_3d()
-    t = Symmetry(d, {"y": 1.4, "z": 1.25})
+    t = SymmetryTying(d, {"y": 1.4, "z": 1.25})
     rep = t.report()
     print(f"\n  symmetry on masked domain: {rep}")
     assert rep["unpaired"]["outside_part"] > 0 and rep["unpaired"]["keep"] > 0
@@ -264,12 +264,12 @@ def test_pattern_cyclic_closure_non_mutual():
     """Nearest-cell rotation by 60° on a square grid is not an involution; the closure still gives a projection."""
     rng = np.random.default_rng(8)
     d = Domain((12, 12))
-    t = Pattern.cyclic(d, 6, center=(6.0, 6.0))
+    t = PatternTying.cyclic(d, 6, center=(6.0, 6.0))
     rep = t.report()
     print(f"\n  cyclic n=6: {rep}")
     assert rep["non_mutual_relations"] > 0
     assert _closed(t) and _is_projection(t, rng) < 1e-12
-    t4 = Pattern.cyclic(Domain((8, 8, 3)), 4, center=(4.0, 4.0, 0.0), axis="z")
+    t4 = PatternTying.cyclic(Domain((8, 8, 3)), 4, center=(4.0, 4.0, 0.0), axis="z")
     g = t4.group_np.reshape(8, 8, 3)
     np.testing.assert_array_equal(g, np.rot90(g, 1, axes=(0, 1)))      # 90° is exact on the grid
     assert t4.report()["non_mutual_relations"] == 0
@@ -278,13 +278,13 @@ def test_pattern_cyclic_closure_non_mutual():
 def test_pattern_translational_and_extrusion():
     rng = np.random.default_rng(9)
     d = Domain((12, 4, 3))
-    t = Pattern.translational(d, (4.0, 0.0, 0.0))
+    t = PatternTying.translational(d, (4.0, 0.0, 0.0))
     assert set(np.bincount(t.group_np)) == {3} and t.n_in == 4 * 4 * 3
     g = t.group_np.reshape(d.shape)
     np.testing.assert_array_equal(g[:4], g[4:8])
     np.testing.assert_array_equal(g[:4], g[8:])
     dm = _masked_3d()
-    e = Extrusion(dm, "z")
+    e = ExtrusionTying(dm, "z")
     rep = e.report()
     print(f"\n  extrusion z on masked domain: {rep}")
     assert rep["unpaired"]["outside_part"] > 0 and rep["unpaired"]["keep"] > 0 and rep["unpaired"]["void"] > 0
@@ -295,7 +295,7 @@ def test_pattern_translational_and_extrusion():
             col = gz[i, j][gz[i, j] >= 0]
             assert len(set(col)) <= 1
     assert _closed(e) and _is_projection(e, rng) < 1e-12
-    c = combine_tying(Symmetry(dm, {"y": 1.5}), e)
+    c = combine_tying(SymmetryTying(dm, {"y": 1.5}), e)
     assert _closed(c) and c.n_in < e.n_in
     w = torch.as_tensor(rng.standard_normal(dm.n_design))
     r = gradcheck(lambda z: (w * c(z) ** 2).sum(), _interior(rng, c.n_in), n_dirs=NDIR)
@@ -305,7 +305,7 @@ def test_pattern_translational_and_extrusion():
 def test_group_average_gradcheck():
     rng = np.random.default_rng(10)
     d = _masked_3d()
-    t = Extrusion(d, "x")
+    t = ExtrusionTying(d, "x")
     ga = GroupAverage(t)
     flt = DensityFilter(d, 1.8)
     obj = _lin(rng, d.shape)
@@ -372,18 +372,18 @@ def test_casting_blocking_and_undercut_map():
 # ================================================================================================== composition
 def test_manufacturing_chain_order():
     d = _masked_3d()
-    t = Symmetry(d, {"y": 1.5})
+    t = SymmetryTying(d, {"y": 1.5})
     ch = manufacturing_chain(d, 1.5, tying=t, am={"build": "+z"}, casting=None)
-    assert [type(m).__name__ for m in ch.links] == ["Symmetry", "Embed", "DensityFilter", "GroupAverage",
+    assert [type(m).__name__ for m in ch.links] == ["SymmetryTying", "Embed", "DensityFilter", "GroupAverage",
                                                     "AMFilter", "HeavisideProjection", "Passive"]
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='must\\ be\\ the\\ first\\ link'):
         validate_chain(Chain([Embed(d), t]))
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='out\\ of\\ order'):
         validate_chain(Chain([Embed(d), DensityFilter(d, 1.5), HeavisideProjection(), AMFilter(d), Passive(d)]))
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='need\\ a\\ DensityFilter'):
         validate_chain(Chain([Embed(d), AMFilter(d), Passive(d)]))
     rng = np.random.default_rng(13)
-    ch2 = manufacturing_chain(d, 1.5, tying=[t, Extrusion(d, "x")], casting={"direction": "-z"})
+    ch2 = manufacturing_chain(d, 1.5, tying=[t, ExtrusionTying(d, "x")], casting={"direction": "-z"})
     obj = _lin(rng, d.shape)
     r = gradcheck(lambda z: obj(ch2(z)), _interior(rng, ch2[0].n_in), n_dirs=NDIR)
     print(f"\n  gradcheck full manufacturing chain: {r['max_rel_error']:.2e}")
@@ -420,21 +420,39 @@ def test_symmetric_optimisation_exact(cantilever):
     d, F, fixed = cantilever
     free = _run(d, F, fixed, manufacturing_chain(d, 1.5, projection=False), 6)
     asym_free = np.abs(free.xphys - free.xphys[:, ::-1, :]).max()
-    one = _run(d, F, fixed, manufacturing_chain(d, 1.5, tying=Symmetry(d, {"y": 6.0}), projection=False), 6)
-    two = _run(d, F, fixed, manufacturing_chain(d, 1.5, tying=Symmetry(d, {"y": 6.0, "z": 4.0}),
+    one = _run(d, F, fixed, manufacturing_chain(d, 1.5, tying=SymmetryTying(d, {"y": 6.0}), projection=False), 6)
+    two = _run(d, F, fixed, manufacturing_chain(d, 1.5, tying=SymmetryTying(d, {"y": 6.0, "z": 4.0}),
                                                projection=False), 6)
     a1 = np.abs(one.xphys - one.xphys[:, ::-1, :]).max()
     a2 = max(np.abs(two.xphys - two.xphys[:, ::-1, :]).max(), np.abs(two.xphys - two.xphys[:, :, ::-1]).max())
     print(f"\n  24x12x8, 6 it: untied asym_y = {asym_free:.1e} (c = {free.objective:.4f}); y-sym {a1:.1e} "
           f"(c = {one.objective:.4f}, {one.seconds:.1f} s); y+z-sym {a2:.1e} (c = {two.objective:.4f})")
     assert a1 <= 1e-12 and a2 <= 1e-12
+    # a symmetric problem: the tie costs nothing (measured 18 Nov 2026: the same c to 4 digits)
+    assert one.objective == pytest.approx(free.objective, rel=1e-6)
+    # The symmetric load alone cannot tell a working tie from a no-op: the untied design is symmetric too, up to
+    # round-off (measured 6.8e-12). With an off-centre load the untied design is clearly asymmetric and the tie must
+    # force the mirror image against the physics.
+    X = d.node_coords()
+    side = d.nodes_where(lambda X: (abs(X[:, 0] - d.shape[0]) < 1e-6) & (abs(X[:, 1] - 2.0) < 1e-6)
+                         & (abs(X[:, 2] - d.shape[2] / 2) < 1e-6))
+    assert len(side) == 1 and X[side[0], 1] == 2.0
+    Fa = F.copy()
+    Fa[d.dofs(side, 2), 0] += -1.0
+    free_a = _run(d, Fa, fixed, manufacturing_chain(d, 1.5, projection=False), 6)
+    tied_a = _run(d, Fa, fixed, manufacturing_chain(d, 1.5, tying=SymmetryTying(d, {"y": 6.0}), projection=False), 6)
+    asym_a = np.abs(free_a.xphys - free_a.xphys[:, ::-1, :]).max()
+    tied_asym = np.abs(tied_a.xphys - tied_a.xphys[:, ::-1, :]).max()
+    print(f"  off-centre load: untied asym_y = {asym_a:.2e} (c = {free_a.objective:.4f}); tied {tied_asym:.1e} "
+          f"(c = {tied_a.objective:.4f})")
+    assert asym_a > 1e-2 and tied_asym <= 1e-12
 
 
 def test_extrusion_and_pattern_optimisation_exact():
     d, F, fixed = _cantilever_3d((16, 8, 6))
-    ex = _run(d, F, fixed, manufacturing_chain(d, 1.5, tying=Extrusion(d, "y"), projection=False), 6)
+    ex = _run(d, F, fixed, manufacturing_chain(d, 1.5, tying=ExtrusionTying(d, "y"), projection=False), 6)
     a_ex = np.abs(ex.xphys - ex.xphys[:, :1, :]).max()
-    pt = _run(d, F, fixed, manufacturing_chain(d, 1.5, tying=Pattern.translational(d, (8.0, 0, 0)),
+    pt = _run(d, F, fixed, manufacturing_chain(d, 1.5, tying=PatternTying.translational(d, (8.0, 0, 0)),
                                               projection=False), 6)
     a_pt = np.abs(pt.xphys[:8] - pt.xphys[8:]).max()
     print(f"\n  16x8x6, 6 it: extrusion y: max |xbar - xbar(y=0)| = {a_ex:.1e} (c = {ex.objective:.4f}); "

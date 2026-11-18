@@ -1,4 +1,4 @@
-"""Component constructors: design (moved from toporlogy.registry).
+"""Component constructors: design.
 """
 from __future__ import annotations
 
@@ -9,7 +9,7 @@ from toporlogy.configuration.registry import BuildContext, register
 
 
 def register_design() -> None:
-    """Register the design components (moved from registry._register_features)."""
+    """Register the design components."""
     from toporlogy.design import manufacturing as MF
     length = "length"
 
@@ -19,7 +19,7 @@ def register_design() -> None:
         link of the chain."""
         items = list(planes.items()) if isinstance(planes, dict) else [tuple(p) for p in planes]
         d = ctx.domain
-        return MF.Symmetry(d, [(_axis(a, d.dim), _coord(c, _axis(a, d.dim), d)) for a, c in items])
+        return MF.SymmetryTying(d, [(_axis(a, d.dim), _coord(c, _axis(a, d.dim), d)) for a, c in items])
 
     def pattern(ctx: BuildContext, kind: str = "translational", offset: list | None = None, n: int | None = None,
                 center: list | None = None, axis: Any = "z") -> Any:
@@ -28,11 +28,11 @@ def register_design() -> None:
         if kind == "translational":
             if offset is None:
                 raise ValueError("translational pattern needs offset")
-            return MF.Pattern.translational(d, offset)
+            return MF.PatternTying.translational(d, offset)
         if kind == "cyclic":
             if n is None or center is None:
                 raise ValueError("cyclic pattern needs n and center")
-            return MF.Pattern.cyclic(d, n, _point(center, d, "center"), axis)
+            return MF.PatternTying.cyclic(d, n, _point(center, d, "center"), axis)
         raise ValueError(f'kind: translational | cyclic, got "{kind}"')
 
     def group_average(ctx: BuildContext) -> Any:
@@ -47,6 +47,6 @@ def register_design() -> None:
     register("link", "casting", MF.Casting, context=("domain",), types={"direction": None},
              units={"parting": length})
     register("link", "symmetry", symmetry_link, types={"planes": None}, units={"planes": length})
-    register("link", "extrusion", MF.Extrusion, context=("domain",), types={"axis": None})
+    register("link", "extrusion", MF.ExtrusionTying, context=("domain",), types={"axis": None})
     register("link", "pattern", pattern, types={"axis": None}, units={"offset": length, "center": length})
     register("link", "group_average", group_average)

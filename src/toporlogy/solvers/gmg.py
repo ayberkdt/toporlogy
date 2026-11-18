@@ -23,7 +23,7 @@ from __future__ import annotations
 
 import time
 from collections.abc import Callable
-from typing import Any
+from typing import Any, cast
 
 import numpy as np
 import torch
@@ -151,7 +151,8 @@ class _HostCoarse:
             B = gk.rigid_body_modes((nx + 1, ny + 1, nz + 1))[self.free_idx]
             self.ml = pyamg.smoothed_aggregation_solver(Af, B=B, **opts)
             self._M = self.ml.aspreconditioner(cycle="V")
-            self.info = {"levels": len(self.ml.levels), "operator_complexity": float(self.ml.operator_complexity())}
+            self.info: dict[str, Any] = {"levels": len(self.ml.levels),
+                                         "operator_complexity": float(self.ml.operator_complexity())}
         elif kind == "direct":
             from toporlogy.solvers.direct import DirectSolver
             self._ds = DirectSolver()
@@ -217,7 +218,7 @@ class GMGSolver:
                  pin_rel: float = 0.0, tol: float = 1e-8, maxit: int = 500, amg_options: dict | None = None,
                  amg_cycles: int = 1, transfer: Any = "trilinear", cycle: str = "K",
                  deflate_tau: float | None = 1e-3) -> None:
-        self.shape = tuple(int(v) for v in shape)
+        self.shape = cast("tuple[int, int, int]", tuple(int(v) for v in shape))   # length checked below
         if len(self.shape) != 3 or min(self.shape) < 1:
             raise ValueError("shape must be (nx, ny, nz)")
         if coarse not in ("amg", "dense", "direct"):
@@ -312,6 +313,7 @@ class GMGSolver:
                 Kc = T.galerkin(L)
                 transfers.append(T)
             elif L.Ke is None:
+                assert L.s is not None and L.KE is not None
                 Kc = gk.galerkin_from_scale(L.s, L.KE, L.shape, L.free, self._Pl)
                 transfers.append(None)
             else:
@@ -359,13 +361,14 @@ class GMGSolver:
                     if o is not None:
                         o.copy_(n)
                 old.lmax = new.lmax
-            for old, new in zip(self._coef, coef, strict=True):
-                old.copy_(new)
-            for old, new in zip(self.transfers, vtr, strict=True):
-                if old is not None:
-                    for p in old.W:
-                        old.W[p].copy_(new.W[p])
-            assert self.A64 is not None
+            for old_c, new_c in zip(self._coef, coef, strict=True):
+                old_c.copy_(new_c)
+            for old_t, new_t in zip(self.transfers, vtr, strict=True):
+                if old_t is not None:
+                    assert new_t is not None                # same structure → same transfer pattern
+                    for p in old_t.W:
+                        old_t.W[p].copy_(new_t.W[p])
+            assert self.A64 is not None and self.A64.s is not None and L0.s is not None
             self.A64.free.copy_(L0.free)
             self.A64.fixed.copy_(L0.fixed)
             self.A64.s.copy_(L0.s)

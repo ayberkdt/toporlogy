@@ -49,11 +49,9 @@ jobs:
         run: python -m pytest tests/toporlogy -m "not slow" -q
 
   mypy:
-    name: mypy error budget
+    name: mypy (no errors)
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    env:
-      MYPY_BUDGET: "219"      # errors in src/toporlogy when the budget was set; lower it when errors are fixed
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -65,14 +63,5 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
           python -m pip install -e ".[post,dev]"
-      - name: mypy must not exceed the budget
-        shell: bash
-        run: |
-          out=$(python -m mypy src/toporlogy | tail -1) || true
-          echo "$out"
-          n=$(echo "$out" | sed -n 's/^Found \([0-9]*\) error.*/\1/p')
-          n=${n:-0}
-          if [ "$n" -gt "$MYPY_BUDGET" ]; then
-            echo "::error::mypy reports $n errors, the budget is $MYPY_BUDGET"
-            exit 1
-          fi
+      - name: mypy
+        run: python -m mypy src/toporlogy

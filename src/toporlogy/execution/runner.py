@@ -1,4 +1,4 @@
-"""Running a built study into a run folder: ``run_setup`` (moved from toporlogy.config).
+"""Running a built study into a run folder: ``run_setup``.
 """
 from __future__ import annotations
 
@@ -11,7 +11,7 @@ from typing import Any
 import numpy as np
 
 from toporlogy.configuration.build import Setup
-from toporlogy.execution.runs import status_of, write_resolved
+from toporlogy.execution.runs import flags_of, status_of, write_resolved
 
 
 def run_setup(setup: Setup, folder: str | Path, progress: Callable[[int, dict[str, Any]], None] | None = None,
@@ -20,16 +20,16 @@ def run_setup(setup: Setup, folder: str | Path, progress: Callable[[int, dict[st
     """Run a built study into ``folder``; returns the summary (also written to ``summary.json``).
 
     Folder content: ``config.resolved.yaml``, ``setup.json``, ``history.jsonl``, ``result.npz``, ``result.json``
-    (:class:`~toporlogy.record.Recorder`), ``snapshots.npz`` (if ``output.snapshot_every`` > 0), ``summary.json``,
-    and what the post steps write (STL, reports, ``result_repaired.npz``).
+    (:class:`~toporlogy.execution.record.Recorder`), ``snapshots.npz`` (if ``output.snapshot_every`` > 0),
+    ``summary.json``, and what the post steps write (STL, reports, ``result_repaired.npz``).
     ``progress(it, row)`` gets ``row = {objective, <constraint names>, change, <schedule state>, seconds}``;
     ``post_progress(name, out, seconds)`` is called before each post step (``out`` None) and after it. A post step
     that raises is recorded as ``{"passed": false, "error": ...}`` and the remaining steps still run.
     """
     import torch
 
-    from toporlogy.optimization.checks import grey_fraction
-    from toporlogy.record import Recorder
+    from toporlogy.optimization.diagnostics import grey_fraction
+    from toporlogy.execution.record import Recorder
 
     folder = Path(folder)
     r, st = setup.config, setup.study
@@ -47,7 +47,8 @@ def run_setup(setup: Setup, folder: str | Path, progress: Callable[[int, dict[st
                **st.schedule.state(), "seconds": time.perf_counter() - t0}
         progress(it, row)
 
-    res = st.run(max_iter=int(run["max_iter"]), tol=float(run["tol"]), callback=cb)
+    res = st.run(max_iter=int(run["max_iter"]), tol=float(run["tol"]), callback=cb,
+                 feasibility_tol=float(run["feasibility_tol"]))
     ftol = float(run["feasibility_tol"])
     cons = []
     final = res.constraint_values               # returned design, as res.objective (history[-1] is the step before)
@@ -58,7 +59,8 @@ def run_setup(setup: Setup, folder: str | Path, progress: Callable[[int, dict[st
     summary: dict[str, Any] = {
         "name": r["name"], "objective_name": st.objective.name, "objective": res.objective,
         "constraints": cons, "iterations": res.iterations, "max_iter": int(run["max_iter"]),
-        "converged": bool(res.converged), "seconds": res.seconds,
+        "converged": bool(res.converged), "termination": res.termination, "feasible": res.feasible,
+        "max_violation": res.max_violation, "kkt_residual": res.kkt_residual, "seconds": res.seconds,
         "grey_fraction": grey_fraction(res.xphys, st.domain.active), "tol": float(run["tol"]),
         "config": "config.resolved.yaml", "source": source, "created": time.strftime("%Y-%m-%dT%H:%M:%S"),
         "post": {}}
@@ -82,5 +84,6 @@ def run_setup(setup: Setup, folder: str | Path, progress: Callable[[int, dict[st
         if post_progress is not None:
             post_progress(key, out or {}, time.perf_counter() - tp)
     summary["status"] = status_of(summary)
+    summary["flags"] = flags_of(summary)
     (folder / "summary.json").write_text(json.dumps(summary, indent=1, default=str), encoding="utf-8")
     return summary

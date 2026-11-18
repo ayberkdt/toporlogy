@@ -15,25 +15,18 @@ from toporlogy.solvers import pardiso as _pardiso
 
 _pardiso.load()
 
-from toporlogy.design.chain import Chain, DensityFilter, Embed, HeavisideProjection, Passive, standard_chain
-from toporlogy.optimization.checks import grey_fraction, gradcheck, study_gradcheck
 from toporlogy.core.domain import Domain
-from toporlogy.fem import Elasticity
+from toporlogy.design.chain import Chain, DensityFilter, Embed, HeavisideProjection, Passive, standard_chain
 from toporlogy.design.interp import RAMP, SIMP
-from toporlogy.optim import MMA, OC, BetaContinuation, Optimizer, Schedule
-from toporlogy.record import Recorder
+from toporlogy.fem import Elasticity
 from toporlogy.optimization.responses import Compliance, EvalContext, Response, Volume
+from toporlogy.optimizers import MMA, OC, BetaContinuation, Optimizer, Schedule
 from toporlogy.optimization.study import Constraint, Evaluation, Result, Study
+from toporlogy.optimization.diagnostics import grey_fraction, gradcheck, study_gradcheck
+from toporlogy.execution.record import Recorder
 
-# Feature modules (import as toporlogy.<module>; their classes are not flattened into this namespace):
-# bc (supports, loads, checks), geometry (CSG / STL domains, bores), lengthscale (min/max thickness, measurement),
-# robust (eroded/blueprint/dilated), connectivity (one-body gate, prevention, repair), manufacturing (AM, symmetry,
-# extrusion, casting), dynamics (eigenfrequency responses), fem.heat, fem.modal, config / registry / cli.
-from toporlogy import bc, boundary, connectivity, dynamics, geometry, lengthscale, manufacturing, robust  # noqa: F401
-
-# Old module names that were package attributes before the G5 moves (docs/gelistirme_plani.md): importing their aliases
-# keeps `import toporlogy; toporlogy.study.Study` working (tests/toporlogy/test_api_surface.py).
-from toporlogy import chain, checks, domain, interp, responses, study  # noqa: E402, F401
+# Feature modules are imported from their own packages, e.g. ``from toporlogy.boundary import Fixed``,
+# ``from toporlogy.optimization.connectivity import one_body``; only the core names above are flattened here.
 
 __all__ = ["Domain", "Chain", "Embed", "DensityFilter", "HeavisideProjection", "Passive", "standard_chain",
            "SIMP", "RAMP", "Elasticity", "Response", "EvalContext", "Compliance", "Volume", "Optimizer", "OC", "MMA",

@@ -1,17 +1,17 @@
-"""Supports and loads as callables for the T10 re-analysis, with their fidelity (moved from toporlogy.registry).
+"""Supports and loads as callables for the T10 re-analysis, with their fidelity.
 """
 from __future__ import annotations
 
 from collections.abc import Callable
-from typing import Any
+from typing import Any, cast
 
 import numpy as np
 
 
 def bc_mapping(bcs: Any) -> dict[str, Any]:
     """Supports ``[(select, dirs)]`` and load cases ``{name: [(select, force)]}`` for
-    :func:`toporlogy.post.reverify` from a :class:`~toporlogy.bc.BoundaryConditions` (the bc selectors as callables
-    ``select(X (n, dim)) -> bool`` in physical coordinates), and how faithful that translation is.
+    :func:`toporlogy.post.reverify` from a :class:`~toporlogy.boundary.BoundaryConditions` (the bc selectors as
+    callables ``select(X (n, dim)) -> bool`` in physical coordinates), and how faithful that translation is.
 
     Returns ``{"supports", "cases", "items", "notes", "fidelity"}``. ``items``: one ``{"name", "fidelity",
     "note"}`` per support or load that is not carried over as it is: "approximate" (carried over as a different
@@ -30,7 +30,7 @@ def bc_mapping(bcs: Any) -> dict[str, Any]:
     sup_list = bcs.cases[0].supports if bcs.cases[0].supports is not None else bcs.supports
     if any(c.supports is not None for c in bcs.cases):
         note("per-case supports", "approximate", "the supports of the first case are used for every case")
-    supports = []
+    supports: list[tuple[Callable[[np.ndarray], np.ndarray], tuple[int, ...]]] = []
     for s in sup_list:
         if isinstance(s, B.ElasticSupport):
             note(s.name, "unsupported", "springs are not re-verified (left free)")
@@ -41,7 +41,7 @@ def bc_mapping(bcs: Any) -> dict[str, Any]:
             continue
         if isinstance(s, B.Fixed):
             rows = np.eye(info.dim) if s.dirs is None else np.array(
-                [np.eye(info.dim)[int(r)] if np.isscalar(r) else np.asarray(r, float) / np.linalg.norm(r)
+                [np.eye(info.dim)[int(cast(int, r))] if np.isscalar(r) else np.asarray(r, float) / np.linalg.norm(r)
                  for r in s.dirs])
             ax = [int(np.argmax(np.abs(r))) for r in rows if np.isclose(np.abs(r).max(), 1.0)]
             if len(ax) != len(rows):
@@ -61,6 +61,7 @@ def bc_mapping(bcs: Any) -> dict[str, Any]:
                 note(a.name, "unsupported", f"{'body force' if isinstance(ld, B.BodyForce) else 'pure moment'} not "
                                              "re-verified")
                 continue
+            sel: B.Selector | None
             if isinstance(ld, B.PointLoad):
                 sel = B.InSphere(ld.point, 1.5 * h if ld.radius is None else float(ld.radius))
             else:

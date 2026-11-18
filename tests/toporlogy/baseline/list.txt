@@ -5,19 +5,17 @@ domain  - design domain builder -> Domain (3)
   stl  path=?  h=? [length]  scale=1.0  padding=1  sub=3  min_frac=0.05  connectivity=largest
        bounds=null [length]  keep=null  void=null
 
-shape  - geometric shape (CSG primitive; op: add | cut | intersect) (11)
+shape  - geometric shape (CSG primitive; op: add | cut | intersect) (9)
   ball       center=? [length]  radius=? [length]  op=add
   bore       index=null  near=null [length]  extra_radius=0.0 [length]  extend=0.0 [length]
              through=true  op=cut
   box        lo=? [length]  hi=? [length]  op=add
   capsule    p0=? [length]  p1=? [length]  radius=? [length]  op=add
-  circle     center=? [length]  radius=? [length]  op=add
   cylinder   p0=? [length]  p1=? [length]  radius=? [length]  op=add
   halfspace  point=? [length]  normal=?  op=intersect
   polygon    vertices=? [length]  op=add
   prism      polygon=? [length]  axis=z  range=[0.0, 1.0] [length]  op=add
   slot       p0=? [length]  p1=? [length]  radius=? [length]  depth=? [length]  op=add
-  sphere     center=? [length]  radius=? [length]  op=add
 
 selector  - node selection of the part (18)
   all          (no parameters)

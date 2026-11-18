@@ -22,7 +22,8 @@ from typing import Any
 import numpy as np
 
 from toporlogy.post import sdf as S
-from toporlogy.post.topology import enclosed_voids, grid_topology, label_bodies, same_topology
+from toporlogy.core.bodies import label_bodies
+from toporlogy.post.topology import enclosed_voids, grid_topology, same_topology
 
 __all__ = ["remove_islands", "fill_voids", "adaptive_opening", "adaptive_closing", "radii"]
 
@@ -44,12 +45,12 @@ def remove_islands(phi_free: np.ndarray, combine: Callable[[np.ndarray], np.ndar
     """Remove bodies of combine(φ_free) that are not kept. ``mode``: "largest" | "interfaces" (largest + every body
     touching a Keep mask) | "all" (nothing removed)."""
     solid = combine(phi_free) < 0
-    lab, n = label_bodies(solid)
+    lab, sizes = label_bodies(solid, "vertex")                  # 26-connected; label 1 = the largest body
+    n = len(sizes)
     info: dict[str, Any] = {"bodies_before": int(n), "removed": 0, "removed_volume": 0.0, "mode": mode}
     if n <= 1 or mode == "all":
         return phi_free, info
-    sizes = np.bincount(lab.ravel())[1:]
-    keep = {1 + int(np.argmax(sizes))}
+    keep = {1}
     if mode == "interfaces":
         for m in keep_masks:
             keep |= set(np.unique(lab[m & solid]).tolist()) - {0}
@@ -79,7 +80,7 @@ def _trial(phi_new: np.ndarray, combine: Callable, topo_ref: dict[str, Any], v_r
            sign: int, bound: float) -> dict[str, Any]:
     comp = combine(phi_new)
     topo = grid_topology(comp < 0)
-    v = S.volume(comp, h)
+    v = S.solid_volume(comp, h)
     change = (v - v_ref) / v_ref
     ok = same_topology(topo, topo_ref) and sign * change <= bound + 1e-12
     return {"r": r, "volume": v, "change": change, "topology": topo, "accepted": bool(ok)}
@@ -91,7 +92,7 @@ def adaptive_opening(phi: np.ndarray, combine: Callable[[np.ndarray], np.ndarray
     """Largest opening radius from the trial list that keeps topology and loses ≤ ``max_loss`` volume."""
     comp0 = combine(phi)
     topo0 = grid_topology(comp0 < 0)
-    v0 = S.volume(comp0, h)
+    v0 = S.solid_volume(comp0, h)
     log = []
     for r in radii(r_start, factor, n_trials, 0.5 * h):
         if r == 0.0:
@@ -111,7 +112,7 @@ def adaptive_closing(phi: np.ndarray, combine: Callable[[np.ndarray], np.ndarray
     """Largest closing radius from the trial list that keeps topology and adds ≤ ``max_gain`` volume."""
     comp0 = combine(phi)
     topo0 = grid_topology(comp0 < 0)
-    v0 = S.volume(comp0, h)
+    v0 = S.solid_volume(comp0, h)
     log = []
     for r in radii(r_start, factor, n_trials, 0.5 * h):
         if r == 0.0:

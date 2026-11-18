@@ -15,7 +15,7 @@ import pytest
 
 from toporlogy import (OC, SIMP, BetaContinuation, Compliance, Constraint, Domain, Elasticity, Study, Volume,
                           standard_chain)
-from toporlogy.post import Box, Keep, finalize, manufacturing_checks, reverify
+from toporlogy.post import BoxPrimitive, Keep, finalize, manufacturing_checks, reverify
 
 
 @pytest.mark.slow
@@ -36,7 +36,7 @@ def test_cantilever_full_chain(tmp_path) -> None:
                BetaContinuation(chain, 1.0, 8.0, 15, 0.01))
     opt = st.run(max_iter=40, tol=0.01)
     x = opt.xphys
-    pads = [Keep(Box((0, 0, 0), (1, ny, nz)), name="clamp plate"), Keep(Box((L - 1, 0, 0), (L, ny, 1)), name="load pad")]
+    pads = [Keep(BoxPrimitive((0, 0, 0), (1, ny, nz)), name="clamp plate"), Keep(BoxPrimitive((L - 1, 0, 0), (L, ny, 1)), name="load pad")]
     res = finalize(d, x, preserve=pads)
     r = res.report
     assert r["topology_mesh"]["bodies"] == 1 and r["topology_grid"]["bodies"] == 1

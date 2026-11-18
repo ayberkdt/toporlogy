@@ -25,15 +25,16 @@ from typing import Any
 
 import numpy as np
 
-__all__ = ["Shape", "Sphere", "Cylinder", "Plane", "Box", "Implicit", "GridShape", "Offset", "Role", "Keep",
-           "Cut", "Bound", "assemble", "oriented", "element_fraction"]
+__all__ = ["Primitive", "SpherePrimitive", "CylinderPrimitive", "PlanePrimitive", "BoxPrimitive", "ImplicitPrimitive",
+           "GridPrimitive", "OffsetPrimitive", "Role", "Keep", "Cut", "Bound", "assemble", "oriented",
+           "element_fraction"]
 
 
 def _x(X: Any) -> np.ndarray:
     return np.atleast_2d(np.asarray(X, float))
 
 
-class Shape:
+class Primitive:
     """Signed distance field of a solid (negative inside)."""
 
     kind = "shape"
@@ -57,17 +58,17 @@ class Shape:
             P -= self.sdf(P)[:, None] * self.grad(P)
         return P
 
-    def offset(self, d: float) -> Shape:
+    def offset(self, d: float) -> Primitive:
         """The shape grown outward by ``d`` (shrunk for d < 0)."""
-        return Offset(self, d)
+        return OffsetPrimitive(self, d)
 
     def describe(self) -> dict[str, Any]:
         return {"kind": self.kind}
 
 
 @dataclass
-class Offset(Shape):
-    base: Shape
+class OffsetPrimitive(Primitive):
+    base: Primitive
     d: float
     kind = "offset"
 
@@ -82,7 +83,7 @@ class Offset(Shape):
 
 
 @dataclass
-class Sphere(Shape):
+class SpherePrimitive(Primitive):
     center: Sequence[float]
     radius: float
     kind = "sphere"
@@ -95,15 +96,15 @@ class Sphere(Shape):
         n = np.linalg.norm(d, axis=1, keepdims=True)
         return d / np.where(n > 0, n, 1.0)
 
-    def offset(self, d: float) -> Shape:
-        return Sphere(self.center, self.radius + d)
+    def offset(self, d: float) -> Primitive:
+        return SpherePrimitive(self.center, self.radius + d)
 
     def describe(self) -> dict[str, Any]:
         return {"kind": "sphere", "center": list(map(float, self.center)), "radius": float(self.radius)}
 
 
 @dataclass
-class Cylinder(Shape):
+class CylinderPrimitive(Primitive):
     """Circular cylinder of ``radius`` around the axis through ``center`` with direction ``axis``.
 
     ``length`` None = infinite (a through-bore); else capped, from center − length/2 to center + length/2 along the
@@ -156,8 +157,9 @@ class Cylinder(Shape):
             g[both] = v / np.linalg.norm(v, axis=1, keepdims=True)
         return g
 
-    def offset(self, d: float) -> Shape:
-        return Cylinder(self.center, self.axis, self.radius + d, None if self.length is None else self.length + 2 * d)
+    def offset(self, d: float) -> Primitive:
+        length = None if self.length is None else self.length + 2 * d
+        return CylinderPrimitive(self.center, self.axis, self.radius + d, length)
 
     def describe(self) -> dict[str, Any]:
         return {"kind": "cylinder", "center": list(map(float, self.center)), "axis": list(map(float, self.axis)),
@@ -165,10 +167,10 @@ class Cylinder(Shape):
 
 
 @dataclass
-class Plane(Shape):
+class PlanePrimitive(Primitive):
     """Half-space ``n·(x − point) ≤ 0`` (material on the side opposite to the unit outward normal ``n``)."""
 
-    point: Sequence[float]
+    point: Sequence[float] | np.ndarray
     normal: Sequence[float]
     kind = "plane"
 
@@ -182,19 +184,19 @@ class Plane(Shape):
     def grad(self, X: np.ndarray) -> np.ndarray:
         return np.broadcast_to(self._n(), _x(X).shape).copy()
 
-    def offset(self, d: float) -> Shape:
-        return Plane(np.asarray(self.point, float) + d * self._n(), self.normal)
+    def offset(self, d: float) -> Primitive:
+        return PlanePrimitive(np.asarray(self.point, float) + d * self._n(), self.normal)
 
     def describe(self) -> dict[str, Any]:
         return {"kind": "plane", "point": list(map(float, self.point)), "normal": list(map(float, self._n()))}
 
 
 @dataclass
-class Box(Shape):
+class BoxPrimitive(Primitive):
     """Axis-aligned box [lo, hi] (exact SDF)."""
 
-    lo: Sequence[float]
-    hi: Sequence[float]
+    lo: Sequence[float] | np.ndarray
+    hi: Sequence[float] | np.ndarray
     kind = "box"
 
     def sdf(self, X: np.ndarray) -> np.ndarray:
@@ -221,17 +223,17 @@ class Box(Shape):
             n[inside] = 1.0
         return out / n[:, None]
 
-    def offset(self, d: float) -> Shape:
+    def offset(self, d: float) -> Primitive:
         if d <= 0:
-            return Box(np.asarray(self.lo, float) - d, np.asarray(self.hi, float) + d)
-        return Offset(self, d)                                   # rounded box: exact as an offset field
+            return BoxPrimitive(np.asarray(self.lo, float) - d, np.asarray(self.hi, float) + d)
+        return OffsetPrimitive(self, d)                                   # rounded box: exact as an offset field
 
     def describe(self) -> dict[str, Any]:
         return {"kind": "box", "lo": list(map(float, self.lo)), "hi": list(map(float, self.hi))}
 
 
 @dataclass
-class Implicit(Shape):
+class ImplicitPrimitive(Primitive):
     """User signed distance ``fn(X) -> (n,)`` (should be a distance near its zero level)."""
 
     fn: Callable[[np.ndarray], np.ndarray]
@@ -245,8 +247,8 @@ class Implicit(Shape):
         return {"kind": "implicit", "name": self.name}
 
 
-class GridShape(Shape):
-    """Shape given by a sampled signed distance on a regular grid (from a keep/void mask or an envelope).
+class GridPrimitive(Primitive):
+    """Primitive given by a sampled signed distance on a regular grid (from a keep/void mask or an envelope).
 
     ``phi`` holds values at the sample points ``origin + h·(i, j, k)``; evaluation is trilinear (outside the grid the
     nearest sample is used). Build it from a boolean mask with :func:`toporlogy.post.sdf.mask_shape`.
@@ -254,7 +256,7 @@ class GridShape(Shape):
 
     kind = "grid"
 
-    def __init__(self, phi: np.ndarray, origin: Sequence[float], h: float, name: str = "grid") -> None:
+    def __init__(self, phi: np.ndarray, origin: Sequence[float] | np.ndarray, h: float, name: str = "grid") -> None:
         self.phi = np.asarray(phi, float)
         self.origin = np.asarray(origin, float)
         self.h = float(h)
@@ -272,7 +274,7 @@ class GridShape(Shape):
 # --------------------------------------------------------------------------------------------- roles
 @dataclass
 class Role:
-    shape: Shape
+    shape: Primitive
     functional: bool = False
     stock: float = 0.0
     name: str = ""
@@ -317,10 +319,11 @@ class Bound(Role):
     sign = 1.0
 
 
-def element_fraction(domain: Any, shape: Shape | Callable[[np.ndarray], np.ndarray], samples: int = 6) -> np.ndarray:
+def element_fraction(domain: Any, shape: Primitive | Callable[[np.ndarray], np.ndarray],
+                     samples: int = 6) -> np.ndarray:
     """Solid fraction of every element of a regular-grid domain for the solid ``sdf < 0`` (``samples``³ points per
     element). Useful to build ``Domain.frac`` from an envelope primitive or a density of an analytic solid."""
-    f = shape.sdf if isinstance(shape, Shape) else shape
+    f = shape.sdf if isinstance(shape, Primitive) else shape
     n, h = tuple(domain.shape), float(domain.h)
     off = (np.arange(samples) + 0.5) / samples
     idx = np.indices(n).reshape(len(n), -1).T.astype(float)

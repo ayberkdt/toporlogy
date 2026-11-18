@@ -1,6 +1,6 @@
 """Numerical kernels of the geometric multigrid solver (:mod:`toporlogy.solvers.gmg`): torch only, any device.
 
-Data layout (the numbering of :class:`toporlogy.domain.Domain`): a nodal field of a grid with ``shape = (nx, ny,
+Data layout (the numbering of :class:`toporlogy.core.domain.Domain`): a nodal field of a grid with ``shape = (nx, ny,
 nz)`` elements is a tensor ``(nx+1, ny+1, nz+1, 3)`` whose C-order flattening is the DOF order ``3n + d``; an element
 field is ``(nx, ny, nz)`` flattened to ``e = (ix·ny + iy)·nz + iz``. Element DOFs follow :data:`CORNERS` (the H8 corner
 order of :mod:`toporlogy.fem.elements`).
@@ -14,7 +14,7 @@ order of :mod:`toporlogy.fem.elements`).
 """
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, cast
 
 import numpy as np
 import torch
@@ -125,7 +125,7 @@ class Level:
 
     def __init__(self, shape: tuple[int, int, int], free: torch.Tensor, s: torch.Tensor | None = None,
                  KE: torch.Tensor | None = None, Ke: torch.Tensor | None = None) -> None:
-        self.shape = tuple(int(v) for v in shape)
+        self.shape = cast("tuple[int, int, int]", tuple(int(v) for v in shape))
         self.free = free
         self.fixed = 1.0 - free
         self.s, self.KE, self.Ke = s, KE, Ke
@@ -140,6 +140,7 @@ class Level:
     def raw(self, u: torch.Tensor) -> torch.Tensor:
         ue = gather(u, self.shape)
         if self.Ke is None:
+            assert self.s is not None and self.KE is not None
             fe = (ue @ self.KE) * self.s[:, None]
         else:
             fe = torch.bmm(self.Ke, ue.unsqueeze(2)).squeeze(2)
@@ -153,6 +154,7 @@ class Level:
     def raw_diag(self) -> torch.Tensor:
         nx, ny, nz = self.shape
         if self.Ke is None:
+            assert self.s is not None and self.KE is not None
             de = self.s[:, None] * torch.diagonal(self.KE)[None, :]
         else:
             de = torch.diagonal(self.Ke, dim1=1, dim2=2)
@@ -172,6 +174,7 @@ class Level:
         """(ne, 24, 24) masked element matrices (fine level: formed explicitly — small grids only)."""
         if self.Ke is not None:
             return self.Ke
+        assert self.s is not None and self.KE is not None
         fe = gather(self.free, self.shape)
         return self.s[:, None, None] * self.KE[None] * fe[:, :, None] * fe[:, None, :]
 

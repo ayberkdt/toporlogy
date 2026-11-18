@@ -95,15 +95,15 @@ def test_domain_selections_and_vectors():
 
 
 def test_domain_rejects_bad_input():
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='shape\\ must\\ be'):
         Domain((3,))
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='shape\\ must\\ be'):
         Domain((3, 0, 2))
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='h\\ >\\ 0'):
         Domain((2, 2), h=0.0)
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='frac\\ must\\ lie'):
         Domain((2, 2), frac=np.full((2, 2), 1.5))
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='no\\ element\\ with\\ frac'):
         Domain((2, 2), frac=np.zeros((2, 2)))
 
 
@@ -184,11 +184,11 @@ def test_patch_uniform_tension_2d_plane_stress():
 
 def test_elasticity_rejects_bad_fixed():
     d = Domain((2, 2))
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='out\\ of\\ range'):
         Elasticity(d, [d.ndof])
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='no\\ free\\ DOF'):
         Elasticity(d, np.arange(d.ndof))
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='2\\-D\\ element'):
         Elasticity(d, [0], element="H8")
 
 
@@ -220,9 +220,9 @@ def test_pardiso_equals_superlu():
     K = A + A.T - sp.diags(A.diagonal())                       # full matrix from the upper triangle
     r = K @ U1[phys.free] - F[phys.free]
     assert np.max(np.abs(r)) <= 1e-9 * np.max(np.abs(F))
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="method: auto"):
         DirectSolver("cholmod")
-    with pytest.raises(RuntimeError):
+    with pytest.raises(RuntimeError, match="factor"):
         DirectSolver("splu").solve(np.ones(3))
 
 
@@ -260,11 +260,11 @@ def test_study_rejects_bad_inputs():
     with pytest.raises(ValueError, match="state solve"):
         Study(d, phys, F, chain, SIMP(d), Compliance(), [Constraint(_UResponse(), 1.0)], OC())
     st_u = Study(d, phys, F, chain, SIMP(d), Compliance(), [Constraint(_UResponse(), 1.0)], MMA())
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='needs\\ U'):
         st_u.constraint_values(np.full(d.n_design, 0.4))
     with pytest.raises(ValueError, match="constraint_fn"):                 # OC itself still refuses to step blind
         OC().step(np.full(4, 0.5), 1.0, -np.ones(4), np.array([-0.1]), np.ones((1, 4)))
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='move'):
         OC(move=0.0)
 
 

@@ -1,4 +1,4 @@
-# Two spans that fall apart without a connectivity measure (geometry of toporlogy.connectivity.split_benchmark,
+# Two spans that fall apart without a connectivity measure (geometry of toporlogy.optimization.connectivity.split_benchmark,
 # n = 24): two support pads on the bottom face near the ends, two load pads at mid-height above them, loaded down
 # with a weak self-equilibrated pull along x. Plain compliance minimisation gives two bodies (each load on its own
 # support). The connectivity block keeps ONE body: interfaces = the two supports and the two loads (default),

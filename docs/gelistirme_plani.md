@@ -9,18 +9,22 @@ mimari inceleme (7 belge; bulgularından kodla doğrulananlar §3'te).
 Bu belge `mimari_plan.md`'nin yerine geçmez: o belge yöntem kararlarını ve aşamaları (A0–D) tutar, bu belge kodun
 bugünkü durumunu, bulunan açıkları ve sonraki işlerin sırasını tutar.
 
-### Durum (17 Kasım 2026, `g0-safety-net` dalı)
+### Durum (18 Kasım 2026, `feat/close-gaps` dalı)
 
 | Aşama | Durum | Not |
 |---|---|---|
 | A-01–A-05 (§3.1) | tamam | `3e3a1cc` … `8bcaeeb` |
 | G0 güvenlik ağı | tamam | baseline (7 örnek, bit düzeyinde), API yüzeyi + `list`, katman kuralı + import sırası testleri |
 | G1 doğruluk düzeltmeleri | tamam | B-02 ve B-06 plandaki gibi G7'ye kaldı |
-| G2 `registry.py`'yi böl | tamam | `configuration/` paketi; `registry.py` uyumluluk modülü (aşağıda) |
-| G3 `config.py`'yi böl | tamam | `configuration/{schema,resolve,build}.py`, `execution/{runner,runs}.py`; `config.py` uyumluluk modülü |
-| G4 `bc.py`'yi böl | tamam | `boundary/{part,selectors,supports,constrained,loads,checks,cases}.py`; `bc.py` uyumluluk modülü |
-| G5 katman paketleri | kısmen | `core/`, `design/`, `optimization/` tamam; `execution/` (`record`, `cli`) yapılmadı |
-| G6–G9 | başlamadı | K1 kararı verildi: sınırlı (K1-a) |
+| G2 `registry.py`'yi böl | tamam | `configuration/` paketi |
+| G3 `config.py`'yi böl | tamam | `configuration/{schema,resolve,build}.py`, `execution/{runner,runs}.py` |
+| G4 `bc.py`'yi böl | tamam | `boundary/{part,selectors,supports,constrained,loads,report,cases}.py` |
+| G5 katman paketleri | tamam | `core/`, `design/`, `optimization/`, `execution/` (`record`, `cli`: `a9a0058`); K1-a |
+| Adlandırma temizliği | tamam | eski yollar ve takma adlar kaldırıldı, karışan adlar düzeltildi (aşağıda) |
+| G7 sonuç sözleşmesi | kısmen | `termination`, `feasible`, `max_violation`, `kkt_residual`, özet `flags` (`a7a5631`); `DesignVariant`, `SOLVER_FAILURE` yok |
+| V1 bağımsız FEM doğrulaması | tamam | üretilmiş çözümler, Q4/H8/H8IM'de O(h²) (`fd4f4de`) |
+| mypy | tamam | 219 hata → 0; CI adımı artık hata kabul etmiyor |
+| G6, G8, G9 | başlamadı | G9'un ilk parçası (CI) eklendi |
 | K5 lisans | kapandı | tescilli, tüm hakları saklı (`LICENSE`) |
 
 G1 bulgularının kapandığı commit'ler: B-01 `aeb3ac3`; B-03 `6dca762`; B-04 `a6b0bc6`; B-05 `cf83e40`; B-07 `54ff90f`,
@@ -64,7 +68,17 @@ Yeni açık bulgu (B-20, 18 Kasım 2026): yavaş test `test_connectivity.py::tes
 ("coupling" senaryosu) başarısız: tasarım tek gövde yerine iki gövde (209 + 7 hücre, "1 floating body without
 interface"). Aynı sonuç `main`'de (`ff1db52`, bu planın bütün değişikliklerinden önce) ve G5'ten önceki `e57444c`'de
 aynı sayılarla ölçüldü; değişikliklerden kaynaklanmıyor. Test normal pakette koşmadığı için daha önce görülmedi.
-Nedeni araştırılmadı.
+Teşhis (18 Kasım 2026, kapandı): kod hatası değil, testin iterasyon bütçesi. β sürekliliği her 25 iterasyonda bir
+adım atıyor ve her adım `coupling` ölçüsünü sınırın çok üstüne fırlatıyor (β 2, 4, 8 adımlarından sonra 18, 122, 75);
+son adım (β=16) tam 100. iterasyonda olduğu için dönen tasarım kısıtı 4,4 kat ihlal ediyordu (11,0 > 2,5) ve 7
+hücrelik ada bu geçici durumdan kalıyordu. 300 iterasyonla 219'da yakınsıyor, iki kısıt da aktif, tek gövde. Test
+artık "tek gövde" iddiasından önce uygunluğu sınıyor; bu, 2-D durumda da aynı sorunu gösterdi (120 iterasyonda
+`coupling` 2,93 > 2,5, eski test geçiyordu). Her iki boyutta bütçe 300.
+
+B-22 (18 Kasım 2026, açık): `Elasticity.solve_numpy` tekil (mekanizma) bir sistemde hata vermiyor; mesnede bağlı
+olmayan yüzen bir parçada çözüm 1e15 mertebesinde anlamsız sayılar döndürüyor (değişmez testlerinde rastgele bir
+boşluk deseniyle görüldü). Yapılandırma yolunda `validate`'in rijit-gövde kontrolü bunu yakalıyor; doğrudan Python
+API'sinde koruma yok.
 
 B-21 (18 Kasım 2026, dış incelemeden, düzeltildi): A-02'nin kapısı, onarılmış tasarımın değerlendirilemeyen kısıtlarını
 (`feasible=None`) geçer sayıyordu. `lbracket_bore3d`'de onarılmış bir yoğunlukta amaç ve üç kısıtın hiçbiri
@@ -73,6 +87,34 @@ artırsın kapı geçiyordu. Artık geçmek için bütün kısıtların değerle
 özette adıyla yazılıyor, düz hacim oranı (önce/sonra) bilgi olarak raporlanıyor. Aynı incelemenin öteki maddeleri: B-02
 (sonlandırma ölçütü, G7), `fem.modal → optimization.dynamics` istisnası (izleniyor) ve CI (G9'un ilk parçası eklendi:
 `.github/workflows/tests.yml`).
+
+Adlandırma temizliği (18 Kasım 2026, kullanıcı kararı): §5.1'in 2. ilkesi ("eski yollar çalışmaya devam eder") geri
+alındı. Çalışma başlangıç aşamasında; eski yolları taşıyan ince modüller ve ikinci adlar her yeni modülde iki ad
+demek, bu da yanlış yolun kalıcılaşması demek. G2–G5'te bırakılan 16 uyumluluk modülü silindi (`registry`, `config`,
+`bc`, `domain`, `chain`, `interp`, `manufacturing`, `responses`, `study`, `robust`, `lengthscale`, `connectivity`,
+`dynamics`, `checks`, `record`, `cli`); kaynak, testler ve belgeler gerçek yollara çevrildi. Aynı adla iki ayrı şey
+taşıyan ya da belirsiz kalan adlar takma adsız değiştirildi:
+
+| Eski | Yeni | Neden |
+|---|---|---|
+| `toporlogy.optim` | `toporlogy.optimizers` | `optimization` paketinin yanında `optim` hangisinin ne olduğunu söylemiyordu |
+| `optimization/checks.py` | `optimization/diagnostics.py` | üç ayrı `checks` modülü vardı |
+| `boundary/checks.py` | `boundary/report.py` | içerik `CheckReport` ve tablo yardımcıları |
+| `boundary.Symmetry` (mesnet), `design.manufacturing.Symmetry` / `Extrusion` / `Pattern` (bağlama) | `boundary.SymmetrySupport`; `SymmetryTying`, `ExtrusionTying`, `PatternTying` | iki ayrı simetri kavramı aynı addı (A-10); bağlama ailesi `Tying` taban sınıfıyla aynı soneki aldı |
+| `optimization.lengthscale.local_thickness` | `voxel_local_thickness` | iki ayrı algoritma, birim ve dönüş türü aynı adla (A-17) |
+| `post.checks.local_thickness` | `sdf_local_thickness` | aynı neden |
+| `post.primitives.Shape`, `Implicit`, `GridShape`, `Sphere`, `Cylinder`, `Plane`, `Box`, `Offset` | `Primitive`, `ImplicitPrimitive`, `GridPrimitive`, `SpherePrimitive`, `CylinderPrimitive`, `PlanePrimitive`, `BoxPrimitive`, `OffsetPrimitive` | `geometry.Shape`, `geometry.Cylinder`, `geometry.Box` ve `post.pipeline.Implicit` ile çakışıyordu (`ImplicitShape` takma adı kalktı); bütün aile aynı soneki aldı |
+| `geometry.Sphere`, `geometry.Circle` (`Ball` takma adları) | `geometry.Ball` | bir sınıfa üç ad |
+| YAML `shape`: `sphere`, `circle` | `ball` | bir kurucuya üç ad; `toporlogy list` anlık görüntüsü bilerek yeniden yazıldı |
+| `geometry.read_stl` / `write_stl` ve `post.export.read_stl` / `write_stl` | yalnız `geometry.read_stl` / `write_stl` | aynı iş iki kez yazılmıştı (G6'nın 3. maddesi); geometri okuyucusu ASCII de okuyor, `post` STL'yi kendi başlığıyla `geometry.write_stl` üzerinden yazıyor |
+| `post.mesh.volume`, `post.sdf.volume` | `enclosed_volume`, `solid_volume` | aynı adla iki ayrı nicelik |
+| `optimization.connectivity.label_bodies`, `post.topology.label_bodies` | yalnız `core.bodies.label_bodies` (+ `neighbourhood`) | iki uygulama, iki dönüş türü; iki katmanın da içe aktarabileceği `core`'a taşındı |
+
+`tests/toporlogy/test_architecture.py` bunu kalıcı kılıyor: `sys.modules` takma adı ya da yalnız içe aktarma yapan
+bir modül, modül düzeyinde `Ad = BaşkaAd`, `import A as B` ile açık bir sınıfa ikinci ad, aynı kurucunun iki YAML
+adıyla kaydı ve iki modülde aynı adla tanımlanmış açık bir sınıf ya da fonksiyon testi düşürür (her biri bilerek eklenip testin düştüğü görüldü). API yüzeyi anlık görüntüsü artık eski
+adları korumuyor; bir yeniden adlandırma anlık görüntü yeniden yazılana kadar testi düşürür, yani her ad değişikliği
+bir karardır. Bu kırıcı bir değişiklik: eski yolları kullanan betikler yeni yollara çevrilmeli.
 
 ---
 
@@ -345,15 +387,15 @@ güncellenmeli.
 
 1. **Taşıma ile davranış ayrı commit'te.** Taşıma commit'i sayısal sonucu değiştirmez; değiştiren her commit nedenini
    ve baseline farkını mesajında yazar.
-2. **Eski yollar çalışmaya devam eder.** `toporlogy.bc`, `toporlogy.registry`, `toporlogy.config` gibi her eski modül,
-   yeni yerden yeniden dışa aktaran ince bir modül olarak kalır. `DeprecationWarning` ancak G8'de ve CHANGELOG'da
-   ilan edilerek eklenir.
+2. **Eski yol ve takma ad tutulmaz** (18 Kasım 2026'da değişti; önceki ilke eski modülleri ince yeniden dışa aktarım
+   olarak tutuyordu). Taşınan ya da yeniden adlandırılan bir şeyin bütün kullanımları aynı commit'te yeni ada
+   çevrilir.
 3. **Her commit aynı kabul kapısından geçer:**
    - baseline karşılaştırması (G0, `-m baseline`, ~3 dakika) bit düzeyinde geçer;
    - `pytest tests/toporlogy -m "not slow"` 0 hata ile biter;
-   - ruff temiz kalır, mypy hata sayısı artmaz (bugün 230);
+   - ruff ve mypy hatasız kalır (mypy 18 Kasım 2026'dan beri 0 hata; CI'da bütçe yerine zorunlu adım);
    - `python -m toporlogy list` çıktısı değişmez;
-   - API yüzeyi anlık görüntüsündeki her ad eski yolundan içe aktarılabilir;
+   - API yüzeyi anlık görüntüsü yalnız bilerek değişir (yeniden adlandırma anlık görüntüyü yeniden yazmayı gerektirir);
    - içe aktarma kuralı testi yeni yasak kenar bulmaz.
 4. **İçe aktarma sırası korunur:** `__init__.py` PARDISO'yu torch'tan önce yükler; taşınan hiçbir modül paket
    içe aktarılırken torch'u bundan önce yüklememeli. Bu, G0'daki duman testine bağlanır.
@@ -433,11 +475,13 @@ türler `optimization/types.py`'ye çekilerek kaldırılır; bu da saf taşımad
 
 #### G6 — Geometri ve IO'yu birleştir (davranış değişebilir)
 
-1. Ortak `ImplicitSolid` sözleşmesi: `sdf(points)`, `dim`, `bounds()`. `geometry.Shape` ve `post.primitives.Shape` bunu
+1. Ortak `ImplicitSolid` sözleşmesi: `sdf(points)`, `dim`, `bounds()`. `geometry.Shape` ve `post.primitives.Primitive` bunu
    uygular.
-2. Tek kanonik `Cylinder`; öteki adaptör olarak kalır, dönüşüm testleri (eksen, yarıçap, uç, SDF değerleri).
-3. Tek STL okuyucu/yazıcı (`geometry/io/stl.py`): ikili + ASCII, açık birleştirme toleransı, B-12 düzeltilmiş.
-4. İki `local_thickness` açık adlar alır (`voxel_local_thickness`, `surface_ray_thickness`); eski adlar takma ad.
+2. Ad çakışması giderildi: CSG katısı `geometry.Cylinder`, işlevsel yüz `post.primitives.CylinderPrimitive`
+   (adlandırma temizliği). İkisinin tek bir `ImplicitSolid` sözleşmesinde birleşmesi (1. madde) açık.
+3. Tek STL okuyucu/yazıcı: yapıldı, `geometry.read_stl` / `write_stl` (ikili + ASCII, birleştirme toleransı);
+   `post.export`'taki kopya silindi.
+4. İki `local_thickness` açık adlar aldı: `voxel_local_thickness`, `sdf_local_thickness` (adlandırma temizliği, takma ad yok).
 
 Kabul: son işlem testleri ve baseline değişmez ya da fark açıklanır.
 
@@ -447,14 +491,14 @@ Kabul: son işlem testleri ve baseline değişmez ya da fark açıklanır.
   isteğe bağlı MMA KKT kalıntısı (B-02, B-06).
 - `RunStatus` sınıflandırması: `status_of`'un metin çıktısı korunur, yanına makinece okunur alan eklenir.
 - `DesignVariant`: A-02'deki onarılmış tasarım durumunun kalıcı türü (`source`, `xphys`, `changes`, `evaluation`).
-- `OptimizationResult` = `Result` takma adı; `Result` ad olarak kalır.
 - Seçenek: robust modda bağlantılılık kapısının katı PASS istemesi (A-14).
 
 #### G8 — Adlandırma ve şema sürümü
 
-- Takma adlar: `SymmetrySupport` / `SymmetryTying`, `VolumeFraction`, `EvaluationContext`; eski adlar kalır.
+- `SymmetrySupport` yapıldı; tasarım bağlantısı `Symmetry` adını korudu (`Extrusion`, `Pattern` ile aynı aile).
+  `VolumeFraction`, `EvaluationContext` yapılmadı; yapılırsa takma adsız yeniden adlandırma olarak.
 - YAML `schema_version: 2`: açık birimli alan adları (`youngs_modulus`, `element_size`, `design_change_tolerance` …).
-  Takma adları yalnız normalize aşaması çözer; aynı alan eski ve yeni adla birlikte verilirse hata.
+  Eski alan adlarının takma ad olarak okunması §5.1'in 2. ilkesiyle çelişir; K4 bununla yeniden karara bağlanmalı.
 - `toporlogy migrate-config` komutu; sürüm 1 dosyaları okunmaya devam eder.
 - Kabul: yedi örneğin sürüm 1 ve sürüm 2 hâlleri aynı normalize çıktıyı ve aynı baseline'ı verir.
 - Bu aşamanın gerekliliği K4 kararına bağlı.
@@ -527,9 +571,8 @@ Göçten bağımsız, ama G0'ın güvenlik ağından ve G7'nin sonuç türlerind
 |---|---|---|
 | Taşıma sırasında torch'un PARDISO'dan önce yüklenmesi (Windows'ta süreç çöker) | `__init__.py:9-16` ölçülmüş çökme | G0'daki duman testi; taşınan modül paket yüklenirken torch'u erken içe aktarmamalı |
 | Kayıt sırasının değişmesi, CLI `list` çıktısının ve hata önerilerinin kayması | kayıt sırası çağrı sırasına bağlı | `list` anlık görüntüsü |
-| İnce yeniden dışa aktarım modüllerinin döngüsel içe aktarma yaratması | `registry`/`config` her şeyi tembel içe aktarıyor | içe aktarma kuralı testi + temiz alt süreçte içe aktarma |
 | Saf taşıma sanılan bir değişikliğin sayıyı değiştirmesi | — | baseline karşılaştırması; davranış commit'i ayrı |
-| Kullanıcı betiklerinin ve `studies/` altındaki çalışmaların kırılması | eski yollar | eski yollar en az bir sürüm boyunca korunur |
+| Kullanıcı betiklerinin ve `studies/` altındaki çalışmaların kırılması | eski yollar kaldırıldı (18 Kasım 2026) | yeni yollar Durum bölümündeki adlandırma tablosunda; API anlık görüntüsü farkı commit'te |
 | Bit düzeyi karşılaştırmanın başka bir makinede ya da PARDISO ile yanlış alarm vermesi | CPU + SuperLU'da ölçüldü (7/7 aynı); PARDISO ve CUDA ölçülmedi | baseline SuperLU'ya zorlanır; başka makinede ilk koşuda baseline yeniden üretilir |
 
 ## 8. Açık kararlar
@@ -538,7 +581,7 @@ Göçten bağımsız, ama G0'ın güvenlik ağından ve G7'nin sonuç türlerind
 |---|---|---|---|
 | K1 | Katman paketlerinin derinliği (G5) | sınırlı / tam | sınırlı |
 | K2 | `p0-result-consistency`'nin `main`'e alınma zamanı | şimdi / G0 sonrası / göç sonunda | G0 sonrası |
-| K3 | Eski yolların kullanımdan kaldırılma süresi | bir sürüm / 1.0'a kadar | 1.0'a kadar |
-| K4 | YAML `schema_version: 2` (G8) gerekli mi | evet / takma adlarla yetin | önce kullanım ihtiyacına bakılmalı |
+| K3 | Eski yolların kullanımdan kaldırılma süresi | — | kapandı (18 Kasım 2026): eski yollar hemen kaldırıldı, takma ad yok |
+| K4 | YAML `schema_version: 2` (G8) gerekli mi | evet / hayır (takma ad seçeneği K3 ile kalktı) | önce kullanım ihtiyacına bakılmalı |
 | K5 | Lisans | — | depo sahibinin kararı |
 | K6 | `pytest testpaths` `tests/toporlogy` ile sınırlansın mı | evet / yerel düzen korunsun | CI komutunda açık yol; `testpaths` yerel kullanıma bırakılır |

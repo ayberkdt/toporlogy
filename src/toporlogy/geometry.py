@@ -8,7 +8,7 @@ and 1-Lipschitz (|sdf(a) − sdf(b)| ≤ |a − b|). The primitives return the e
 sign. 1-Lipschitz plus zero on the surface gives ``|sdf(x)| ≤ dist(x, surface)``, so a voxel whose centre has
 ``|sdf| > h·√dim / 2`` cannot be cut by the surface: :func:`coverage` sub-samples only the voxels near the surface.
 
-* any dimension: :class:`Box`, :class:`Ball` (``Sphere`` / ``Circle``), :class:`Capsule` (2-D: rounded slot),
+* any dimension: :class:`Box`, :class:`Ball` (circle in 2-D, sphere in 3-D), :class:`Capsule` (2-D: rounded slot),
   :class:`HalfSpace`;
 * 2-D: :class:`Polygon`;
 * 3-D: :class:`Cylinder` (capped, arbitrary axis), :class:`Prism` (polygon extruded along x, y or z),
@@ -33,7 +33,7 @@ Bores
 -----
 :func:`find_bores` finds axis-aligned round holes in a voxel domain (slice by slice, as the
 repository's earlier hole detector) and estimates the radius and centre from the partial volumes
-(sub-voxel), returning :class:`Bore` objects that the selectors and loads of :mod:`toporlogy.bc` accept.
+(sub-voxel), returning :class:`Bore` objects that the selectors and loads of :mod:`toporlogy.boundary` accept.
 """
 from __future__ import annotations
 
@@ -42,7 +42,7 @@ import struct
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import numpy as np
 from scipy import ndimage
@@ -50,7 +50,7 @@ from scipy import ndimage
 from toporlogy.references import cite
 from toporlogy.core.domain import Domain
 
-__all__ = ["Shape", "Box", "Ball", "Sphere", "Circle", "Capsule", "HalfSpace", "Polygon", "Cylinder", "Prism",
+__all__ = ["Shape", "Box", "Ball", "Capsule", "HalfSpace", "Polygon", "Cylinder", "Prism",
            "Slot", "Union", "Intersection", "Difference", "csg", "grid_for", "coverage", "voxelize",
            "read_stl", "write_stl", "mesh_volume", "winding_number", "coverage_mesh", "voxelize_mesh",
            "Bore", "find_bores", "largest_component", "shape_from_function"]
@@ -129,7 +129,7 @@ class Box(Shape):
 class Ball(Shape):
     """Sphere (3-D) or circle (2-D) of ``radius`` about ``center``."""
 
-    def __init__(self, center: Sequence[float], radius: float) -> None:
+    def __init__(self, center: Sequence[float] | np.ndarray, radius: float) -> None:
         self.center = np.asarray(center, float)
         self.radius = float(radius)
         if self.center.size not in (2, 3) or not self.radius > 0:
@@ -145,9 +145,6 @@ class Ball(Shape):
     def __repr__(self) -> str:
         return f"Ball({self.center.tolist()}, r={self.radius:g})"
 
-
-Sphere = Ball
-Circle = Ball
 
 
 class Capsule(Shape):
@@ -228,7 +225,7 @@ class Cylinder(Shape):
 
     dim = 3
 
-    def __init__(self, p0: Sequence[float], p1: Sequence[float], radius: float) -> None:
+    def __init__(self, p0: Sequence[float] | np.ndarray, p1: Sequence[float] | np.ndarray, radius: float) -> None:
         self.p0, self.p1 = np.asarray(p0, float), np.asarray(p1, float)
         self.radius = float(radius)
         d = self.p1 - self.p0
@@ -380,14 +377,14 @@ def csg(operations: Sequence[tuple[str, Shape]]) -> Shape:
 
 
 # --------------------------------------------------------------------------------------- voxelisation
-def grid_for(lo: Sequence[float], hi: Sequence[float], h: float,
+def grid_for(lo: Sequence[float] | np.ndarray, hi: Sequence[float] | np.ndarray, h: float,
              padding: int = 0) -> tuple[tuple[int, ...], np.ndarray]:
     """(shape, origin) of the regular grid of edge ``h`` that covers [lo, hi] plus ``padding`` empty layers."""
-    lo, hi = np.asarray(lo, float), np.asarray(hi, float)
-    if not np.all(np.isfinite(lo)) or not np.all(np.isfinite(hi)):
+    lo_a, hi_a = np.asarray(lo, float), np.asarray(hi, float)
+    if not np.all(np.isfinite(lo_a)) or not np.all(np.isfinite(hi_a)):
         raise ValueError("unbounded geometry: pass bounds=(lo, hi)")
-    n = np.maximum(np.ceil((hi - lo) / h - 1e-9).astype(int), 1) + 2 * int(padding)
-    return tuple(int(v) for v in n), lo - padding * h
+    n = np.maximum(np.ceil((hi_a - lo_a) / h - 1e-9).astype(int), 1) + 2 * int(padding)
+    return tuple(int(v) for v in n), lo_a - padding * h
 
 
 def _element_centres(shape: tuple[int, ...], h: float, origin: np.ndarray) -> np.ndarray:
@@ -395,7 +392,7 @@ def _element_centres(shape: tuple[int, ...], h: float, origin: np.ndarray) -> np
     return origin + h * (idx + 0.5)
 
 
-def coverage(shape: Shape, grid: Domain | tuple[tuple[int, ...], float, Sequence[float]], sub: int = 4,
+def coverage(shape: Shape, grid: Domain | tuple[tuple[int, ...], float, Sequence[float] | np.ndarray], sub: int = 4,
              chunk: int = 20_000) -> np.ndarray:
     """Solid fraction of every element of ``grid`` (a Domain or (shape, h, origin)) inside ``shape``.
 
@@ -500,8 +497,8 @@ def read_stl(path: str | Path, merge_tol: float = 1e-9) -> tuple[np.ndarray, np.
     return V, F
 
 
-def write_stl(path: str | Path, V: np.ndarray, F: np.ndarray) -> Path:
-    """Write a binary STL (normals from the vertex order)."""
+def write_stl(path: str | Path, V: np.ndarray, F: np.ndarray, header: str = "binary STL written by toporlogy") -> Path:
+    """Write a binary STL (normals from the vertex order; ``header``: the 80-byte header text). Creates the folder."""
     V, F = np.asarray(V, float), np.asarray(F, np.int64)
     T = V[F]
     nrm = np.cross(T[:, 1] - T[:, 0], T[:, 2] - T[:, 0])
@@ -509,8 +506,9 @@ def write_stl(path: str | Path, V: np.ndarray, F: np.ndarray) -> Path:
     rec = np.zeros(len(F), dtype=np.dtype([("n", "<f4", 3), ("v", "<f4", (3, 3)), ("a", "<u2")]))
     rec["n"], rec["v"] = nrm, T
     p = Path(path)
+    p.parent.mkdir(parents=True, exist_ok=True)
     with p.open("wb") as fh:
-        fh.write(b"binary STL written by toporlogy.geometry".ljust(80, b" "))
+        fh.write(header.encode("ascii", "replace")[:80].ljust(80, b" "))
         fh.write(struct.pack("<I", len(F)))
         fh.write(rec.tobytes())
     return p
@@ -592,8 +590,8 @@ def _ray_hits(T: np.ndarray, ax: int, a0: float, b0: float, hf: float, na: int, 
     return np.concatenate(rays), np.concatenate(zs)
 
 
-def coverage_mesh(V: np.ndarray, F: np.ndarray, gshape: Sequence[int], h: float, origin: Sequence[float],
-                  sub: int = 3) -> tuple[np.ndarray, dict[str, Any]]:
+def coverage_mesh(V: np.ndarray, F: np.ndarray, gshape: Sequence[int], h: float,
+                  origin: Sequence[float] | np.ndarray, sub: int = 3) -> tuple[np.ndarray, dict[str, Any]]:
     """Solid fraction of every voxel inside a closed triangle surface (exact along rays, see module notes).
 
     Returns (frac, info) with info = rays used / dropped per axis.
@@ -601,7 +599,7 @@ def coverage_mesh(V: np.ndarray, F: np.ndarray, gshape: Sequence[int], h: float,
     V, F = np.asarray(V, float), np.asarray(F, np.int64)
     T = V[F]
     n = np.asarray(gshape, int)
-    origin = np.asarray(origin, float)
+    org = np.asarray(origin, float)
     hf = h / sub
     covered = np.zeros(tuple(n))
     weight = np.zeros(tuple(n))
@@ -609,7 +607,7 @@ def coverage_mesh(V: np.ndarray, F: np.ndarray, gshape: Sequence[int], h: float,
     for ax in range(3):
         i, j = _PLANE[ax]
         na, nb = sub * n[i], sub * n[j]
-        ray, z = _ray_hits(T, ax, origin[i], origin[j], hf, na, nb)
+        ray, z = _ray_hits(T, ax, org[i], org[j], hf, na, nb)
         order = np.lexsort((z, ray))
         ray, z = ray[order], z[order]
         # coincident crossings on one ray (ray through a shared edge) are merged when the count is odd
@@ -630,7 +628,7 @@ def coverage_mesh(V: np.ndarray, F: np.ndarray, gshape: Sequence[int], h: float,
         bad[bad_rays] = True
         keep = ~bad[ray]
         ray, z = ray[keep], z[keep]
-        u = (z - origin[ax]) / h                                   # axial coordinate in voxel units
+        u = (z - org[ax]) / h                                      # axial coordinate in voxel units
         enter, leave, rid = u[0::2], u[1::2], ray[0::2]
         if len(ray) % 2:
             raise RuntimeError("internal: odd number of crossings after filtering")
@@ -711,7 +709,7 @@ class Bore:
         return p0, p1
 
     def shape(self, extra_radius: float = 0.0, extend: float = 0.0) -> Shape:
-        """The hole (optionally enlarged) as a Cylinder / Circle shape."""
+        """The hole (optionally enlarged) as a :class:`Cylinder` (3-D) or a :class:`Ball` (2-D: a circle)."""
         if self.axis is None:
             return Ball(self.center, self.radius + extra_radius)
         p0, p1 = self.endpoints()
@@ -769,8 +767,8 @@ def find_bores(domain: Domain, min_diameter: float | None = None, max_roundness:
     solid = frac > 0.5
     if domain.dim == 2:
         out = []
-        for m in _sections(solid, min_area):
-            c, r, spread = _section_props(m, frac)
+        for sec in _sections(solid, min_area):
+            c, r, spread = _section_props(sec, frac)
             if spread <= max_roundness:
                 out.append(Bore(domain.origin + h * (c + 0.5), r * h, None, [], spread))
         for k, b in enumerate(out, 1):
@@ -813,10 +811,11 @@ def find_bores(domain: Domain, min_diameter: float | None = None, max_roundness:
         bores.append(Bore(center, float(np.median(t["r"])) * h, np.eye(3)[ax], [(lo, hi)],
                           float(np.median(t["spread"]))))
     merged: list[Bore] = []                    # collinear tubes (clevis arms) → one bore with several segments
-    for b in sorted(bores, key=lambda q: (int(np.argmax(q.axis)), q.segments[0][0])):
-        ax = int(np.argmax(b.axis))
+    # every 3-D bore built above has a coordinate axis (np.eye(3)[ax]), so .axis is never None here
+    for b in sorted(bores, key=lambda q: (int(np.argmax(cast(np.ndarray, q.axis))), q.segments[0][0])):
+        ax = int(np.argmax(cast(np.ndarray, b.axis)))
         for m in merged:
-            if int(np.argmax(m.axis)) != ax:
+            if int(np.argmax(cast(np.ndarray, m.axis))) != ax:
                 continue
             off = np.delete(m.center - b.center, ax)
             if np.linalg.norm(off) < 0.5 * max(m.radius, b.radius) and abs(m.radius - b.radius) < 0.25 * m.radius:
@@ -826,7 +825,7 @@ def find_bores(domain: Domain, min_diameter: float | None = None, max_roundness:
                 break
         else:
             merged.append(b)
-    merged.sort(key=lambda q: (int(np.argmax(q.axis)), *np.round(q.center, 9)))
+    merged.sort(key=lambda q: (int(np.argmax(cast(np.ndarray, q.axis))), *np.round(q.center, 9)))
     for k, b in enumerate(merged, 1):
         b.id = f"B{k}"
     return merged

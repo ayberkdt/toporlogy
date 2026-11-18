@@ -1,6 +1,6 @@
 """Eigenfrequency layer: consistent mass, eigen solve, eigenvalue sensitivities, dynamic interpolations, responses.
 
-Pre-registered thresholds: gradients ≤ 1e-6 relative error (:func:`toporlogy.checks.gradcheck`, float64,
+Pre-registered thresholds: gradients ≤ 1e-6 relative error (:func:`toporlogy.optimization.diagnostics.gradcheck`, float64,
 modes well separated); mass matrices equal to the repository's element library (aerokit.fem.elements) to 1e-12;
 eigenpairs equal to a dense ``scipy.linalg.eigh`` to 1e-9 relative. Euler–Bernoulli ratios are reported and
 bounded loosely (the FE model includes shear and rotary inertia and a fully clamped root, EB does not).
@@ -22,10 +22,10 @@ import scipy.linalg as sla
 import torch
 
 from toporlogy import SIMP, Constraint, Domain, Study, Volume, gradcheck, standard_chain, study_gradcheck
-from toporlogy.dynamics import (EigenvalueGap, Eigenvalue, Frequency, LinearMass, MinEigenvalueKS, Negated,
+from toporlogy.optimization.dynamics import (EigenvalueGap, Eigenvalue, Frequency, LinearMass, MinEigenvalueKS, Negated,
                                    TwoRangeMass, TwoRangeSIMP, min_frequency_constraint)
 from toporlogy.fem.modal import Modal, RepeatedEigenvalueWarning, element_mass, find_clusters
-from toporlogy.optim import Optimizer
+from toporlogy.optimizers import Optimizer
 
 TOL = 1e-6
 H_FD = 1e-4        # FD step for eigenvalue checks (docstring)
@@ -154,7 +154,7 @@ def test_frequency_units_hz():
     m = Modal(d, _clamped_x0(d), n_modes=2)
     E = SIMP(d, E0=70e9, penal=3.0)
     m.mass = LinearMass(d, rho0=2700.0)
-    from toporlogy.responses import EvalContext
+    from toporlogy.optimization.responses import EvalContext
     x = torch.ones(d.shape, dtype=torch.float64)
     ctx = EvalContext(d, x, E(x), physics=m)
     f = float(Frequency(1)(ctx))
@@ -338,7 +338,7 @@ def test_spurious_modes_plain_simp_vs_two_range():
 
 def test_maximise_fundamental_eigenvalue_clamped_beam():
     """Du & Olhoff-style: clamped–clamped beam with a non-structural mass at the centre, maximise λ1 (KS)."""
-    from toporlogy.optim.mma import MMA
+    from toporlogy.optimizers.mma import MMA
     d, fixed, centre = _cc_beam(56, 8)
     vf = 0.5
     m = Modal(d, fixed, n_modes=4)

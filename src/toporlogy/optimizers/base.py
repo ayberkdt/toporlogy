@@ -30,6 +30,15 @@ class Optimizer:
     def reset(self) -> None:
         """Forget history (asymptotes, previous iterates)."""
 
+    def kkt_multipliers(self) -> np.ndarray | None:
+        """Lagrange multipliers of the last step for ``objective_scale(f0) * f0 + mu^T g`` (g as passed to ``step``),
+        or None when the optimizer does not provide them. Used for ``Result.kkt_residual``."""
+        return None
+
+    def objective_scale(self, f0: float) -> float:
+        """Factor the optimizer applies to the objective in the problem its multipliers refer to."""
+        return 1.0
+
     def restart(self) -> None:
         """Start of a new run (Study.run): forget everything a previous run left. Default: ``reset()``."""
         self.reset()

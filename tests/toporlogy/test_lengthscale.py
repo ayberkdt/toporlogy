@@ -1,4 +1,4 @@
-"""Length-scale measurement, grey level and local-volume (maximum size) response — toporlogy.lengthscale.
+"""Length-scale measurement, grey level and local-volume (maximum size) response — toporlogy.optimization.lengthscale.
 
 1. Analytic shapes: plate, bar, round hole, round solid disc, 3-D plate; residues of opening / closing.
 2. Calibration of the local-volume bound: a member of thickness t_max passes, one element thicker fails.
@@ -15,9 +15,9 @@ import pytest
 import torch
 
 import toporlogy as T
-from toporlogy.lengthscale import (GreyLevel, LocalVolume, ball_kernel, grey_measure, local_volume_field,
+from toporlogy.optimization.lengthscale import (GreyLevel, LocalVolume, ball_kernel, grey_measure, local_volume_field,
                                       max_thickness_settings, measure_lengthscale, slab_fraction)
-from toporlogy.optim.mma import MMA
+from toporlogy.optimizers.mma import MMA
 
 TOL = 1e-6
 

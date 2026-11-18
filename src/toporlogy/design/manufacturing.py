@@ -3,7 +3,7 @@
 
 Valid order in a chain (:func:`manufacturing_chain` builds it, :func:`validate_chain` checks it)::
 
-    [Tying: Symmetry | Extrusion | Pattern]  z → design vector      (first link only; Study optimises z)
+    [Tying: SymmetryTying | ExtrusionTying | PatternTying]  z → design vector      (first link only; Study optimises z)
     Embed                                    design vector → grid
     DensityFilter
     [GroupAverage]                           re-ties the filtered field (only with a tying link)
@@ -44,7 +44,7 @@ from toporlogy.design.chain import Chain, DensityFilter, Embed, HeavisideProject
 from toporlogy.core.domain import Domain
 
 __all__ = ["parse_direction", "AMFilter", "overhang_map", "overhang_violations",
-           "Tying", "Symmetry", "Extrusion", "Pattern", "GroupAverage", "combine_tying",
+           "Tying", "SymmetryTying", "ExtrusionTying", "PatternTying", "GroupAverage", "combine_tying",
            "Casting", "undercut_map", "undercuts",
            "manufacturing_chain", "validate_chain"]
 
@@ -272,13 +272,13 @@ class _AMFunction(torch.autograd.Function):
     """Numpy forward of :class:`AMFilter` with the hand-written adjoint (Langelaar 2017, Eq. 10–14 form)."""
 
     @staticmethod
-    def forward(ctx: Any, x: torch.Tensor, f: AMFilter) -> torch.Tensor:  # type: ignore[override]
+    def forward(ctx: Any, x: torch.Tensor, f: AMFilter) -> torch.Tensor:
         xi, cache, _ = f._np_forward(x.detach().double().numpy())
         ctx.f, ctx.xi, ctx.cache, ctx.dtype = f, xi, cache, x.dtype
         return torch.from_numpy(np.ascontiguousarray(_from_layers(xi, f.axis, f.sign))).to(x.dtype)
 
     @staticmethod
-    def backward(ctx: Any, g: torch.Tensor) -> tuple[Any, None]:  # type: ignore[override]
+    def backward(ctx: Any, g: torch.Tensor) -> tuple[Any, None]:
         dx = ctx.f._np_backward(ctx.xi, ctx.cache, g.detach().double().numpy())
         return torch.from_numpy(dx).to(ctx.dtype), None
 
@@ -439,7 +439,7 @@ def combine_tying(*links: Tying) -> Tying:
     return Tying(d, maps, cats, kind="+".join(lk.kind for lk in links))
 
 
-class Symmetry(Tying):
+class SymmetryTying(Tying):
     """Mirror symmetry about one or more planes ``axis = coordinate``.
 
     ``planes``: mapping {axis: coordinate} (axis "x"/"y"/"z" or 0/1/2) or a sequence of (axis, coordinate). The
@@ -462,7 +462,7 @@ class Symmetry(Tying):
         super().__init__(domain, maps, kind="symmetry")
 
 
-class Extrusion(Tying):
+class ExtrusionTying(Tying):
     """Constant cross-section along ``axis``: all design elements of a grid line parallel to ``axis`` share one
     variable.
 
@@ -494,19 +494,23 @@ class Extrusion(Tying):
         super().__init__(domain, [mp], cats, kind="extrusion")
 
 
-class Pattern(Tying):
-    """Pattern repetition by nearest-cell mapping, closed by the same equivalence closure as :class:`Symmetry`.
+class PatternTying(Tying):
+    """Pattern repetition by nearest-cell mapping, closed by the same equivalence closure as :class:`SymmetryTying`.
 
     Use the constructors :meth:`translational` (offset vector in coordinates; every cell is related to the cell at
     ± offset, so all copies inside the box share variables) and :meth:`cyclic` (``n`` sectors around an axis:
     every cell is related to the cells of its centre rotated by ± 2π/n).
     """
 
+    offset: np.ndarray                  # set by translational()
+    n_sectors: int                      # set by cyclic()
+    center: np.ndarray                  # set by cyclic()
+
     def __init__(self, domain: Domain, maps: Sequence[np.ndarray], kind: str) -> None:
         super().__init__(domain, maps, kind=kind)
 
     @classmethod
-    def translational(cls, domain: Domain, offset: Sequence[float]) -> Pattern:
+    def translational(cls, domain: Domain, offset: Sequence[float]) -> PatternTying:
         t = np.asarray(offset, float).reshape(domain.dim)
         if not np.any(t):
             raise ValueError("offset must be non-zero")
@@ -516,7 +520,7 @@ class Pattern(Tying):
         return p
 
     @classmethod
-    def cyclic(cls, domain: Domain, n: int, center: Sequence[float], axis: Any = 2) -> Pattern:
+    def cyclic(cls, domain: Domain, n: int, center: Sequence[float] | np.ndarray, axis: Any = 2) -> PatternTying:
         """``n`` ≥ 2 sectors about the line through ``center`` parallel to ``axis`` (3-D) or the point ``center``
         (2-D; ``axis`` ignored)."""
         if int(n) < 2:
@@ -663,6 +667,7 @@ def undercut_map(xphys: np.ndarray, direction: Any = "+z", domain: Domain | None
     act = np.ones(x.shape, bool) if domain is None else domain.active
     solid = ((x > threshold) | keep) & ~off
     n = x.shape[axis]
+    upper: np.ndarray
     if parting is None:
         upper = np.ones(n, bool) if sign > 0 else np.zeros(n, bool)
     else:

@@ -26,7 +26,7 @@ from __future__ import annotations
 import time
 import warnings
 from collections.abc import Sequence
-from typing import Any
+from typing import Any, cast
 
 import numpy as np
 import torch
@@ -79,10 +79,10 @@ class ElasticityGMG:
         self.KE = element_matrix(3, self.element, nu)
         self.geom = domain.h
         self.elements = domain.active_elements
-        fixed = np.unique(np.asarray(fixed, np.int64))
-        if fixed.size and (fixed.min() < 0 or fixed.max() >= domain.ndof):
+        fixed_arr = np.unique(np.asarray(fixed, np.int64))
+        if fixed_arr.size and (fixed_arr.min() < 0 or fixed_arr.max() >= domain.ndof):
             raise ValueError("fixed DOF out of range")
-        self.fixed = fixed
+        self.fixed = fixed_arr
         self.tol, self.maxit = float(tol), int(maxit)
         self.direct_below, self.fallback_max_elements = int(direct_below), int(fallback_max_elements)
         self.warm_start = bool(warm_start)
@@ -91,14 +91,14 @@ class ElasticityGMG:
         if ng is None:
             ng = gmg["n_geometric"] = self.default_levels(domain.shape, gmg.get("max_coarse_dof", 4000))
         m = 2 ** (int(ng) - 1)
-        self.shape_pad = tuple(int(-(-s // m) * m) for s in domain.shape)
+        self.shape_pad = cast("tuple[int, int, int]", tuple(int(-(-s // m) * m) for s in domain.shape))  # dim 3
         self.gmg = GMGSolver(self.shape_pad, self.KE, self.geom, device=device, tol=tol, maxit=maxit, **gmg)
         self.solver = self.gmg
         self.gmg.name = f"gmg-{self.gmg.device.type}"     # type: ignore[attr-defined]
         nx, ny, nz = domain.shape
         self._node_slice = (slice(0, nx + 1), slice(0, ny + 1), slice(0, nz + 1))
         fm = np.zeros(self.gmg.node_shape, bool)
-        fm[self._node_slice] = np.isin(np.arange(domain.ndof), fixed).reshape(nx + 1, ny + 1, nz + 1, 3)
+        fm[self._node_slice] = np.isin(np.arange(domain.ndof), fixed_arr).reshape(nx + 1, ny + 1, nz + 1, 3)
         self._fixed_mask = fm
         el = np.zeros(self.shape_pad, bool)
         el[:nx, :ny, :nz] = domain.active
@@ -273,7 +273,7 @@ class ElasticityGMG:
 
 class _GMGLinearSolve(torch.autograd.Function):
     @staticmethod
-    def forward(ctx: Any, E_active: torch.Tensor, model: ElasticityGMG, F: np.ndarray) -> torch.Tensor:  # type: ignore[override]
+    def forward(ctx: Any, E_active: torch.Tensor, model: ElasticityGMG, F: np.ndarray) -> torch.Tensor:
         E_np = E_active.detach().cpu().double().numpy()
         U = model.solve_numpy(E_np, F)
         ctx.model, ctx.F, ctx.U, ctx.E = model, F, U, E_np
@@ -281,7 +281,7 @@ class _GMGLinearSolve(torch.autograd.Function):
         return torch.from_numpy(U).to(device=E_active.device, dtype=torch.float64)
 
     @staticmethod
-    def backward(ctx: Any, gU: torch.Tensor) -> tuple[Any, None, None]:  # type: ignore[override]
+    def backward(ctx: Any, gU: torch.Tensor) -> tuple[Any, None, None]:
         model: ElasticityGMG = ctx.model
         G = gU.detach().cpu().double().numpy()
         U, F = ctx.U, ctx.F
@@ -293,7 +293,7 @@ class _GMGLinearSolve(torch.autograd.Function):
             ff = float(f @ f)
             if ff > 0:
                 a = float(g @ f) / ff
-                if np.linalg.norm(g - a * f) <= 1e-12 * max(np.linalg.norm(g), 1e-300):
+                if np.linalg.norm(g - a * f) <= 1e-12 * max(float(np.linalg.norm(g)), 1e-300):
                     lam[:, c] = a * U[:, c]                     # self-adjoint: K λ = a F  →  λ = a U
                     continue
             if np.any(g):

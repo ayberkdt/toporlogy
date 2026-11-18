@@ -34,7 +34,7 @@ REPO = HERE.parents[1]
 EXAMPLES = REPO / "examples"
 FILE = HERE / "baseline" / "examples.json"
 MAX_ITER = 10
-RUNNER = "import sys, torch; from toporlogy.cli import main; raise SystemExit(main(sys.argv[1:]))"
+RUNNER = "import sys, torch; from toporlogy.execution.cli import main; raise SystemExit(main(sys.argv[1:]))"
 GEOMETRY_FILES = (".stl", ".ply", ".obj")
 
 
@@ -90,8 +90,8 @@ def write() -> None:
 
 
 def _stored() -> dict[str, Any]:
-    if not FILE.is_file():
-        pytest.skip(f"no baseline: run python {Path(__file__).name} --write")
+    # the baseline is tracked in git: a missing file is a deleted safety net, not a reason to skip
+    assert FILE.is_file(), f"baseline {FILE} is missing: restore it from git or run python {Path(__file__).name} --write"
     return json.loads(FILE.read_text(encoding="utf-8"))
 
 

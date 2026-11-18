@@ -1,4 +1,4 @@
-"""Component constructors: physics (moved from toporlogy.registry).
+"""Component constructors: physics.
 """
 from __future__ import annotations
 
@@ -9,7 +9,7 @@ from toporlogy.configuration.registry import BuildContext, register
 
 
 def register_physics() -> None:
-    """Register the physics components (moved from registry._register_features)."""
+    """Register the physics components."""
 
     # ---------------------------------------------------------------- interpolation, physics (dynamics)
     def two_range_simp(ctx: BuildContext, penal: float = 3.0, threshold: float = 0.1, q: float = 1.0,
@@ -39,6 +39,7 @@ def register_physics() -> None:
             raise ValueError("modal physics supports zero displacements along x / y / z only (no oblique rollers, "
                              "pinned bores or springs)")
         rho0 = float(ctx.material.get("rho", 1.0))
+        m: LinearMass | TwoRangeMass
         if mass == "linear":
             m = LinearMass(d, rho0=rho0, rhomin_ratio=rhomin_ratio)
         elif mass == "two_range":

@@ -12,7 +12,7 @@ from __future__ import annotations
 
 import math
 from collections.abc import Iterable
-from typing import Any
+from typing import Any, cast
 
 import numpy as np
 import scipy.sparse as sp
@@ -89,7 +89,7 @@ class DensityFilter(torch.nn.Module):
             act = self._active
             shape = np.array(self.shape)
             ijk = np.argwhere(act)
-            e = np.ravel_multi_index(ijk.T, self.shape)
+            e = np.ravel_multi_index(tuple(ijk.T), self.shape)
             rows, cols, vals = [], [], []
             for off, wt in self._offsets:
                 k = ijk + np.asarray(off)
@@ -118,14 +118,14 @@ class _SparseApply(torch.autograd.Function):
     """y = H x (x flattened, float64 CPU); backward Hᵀ g."""
 
     @staticmethod
-    def forward(ctx: Any, x: torch.Tensor, H: sp.csr_matrix, Ht: sp.csr_matrix) -> torch.Tensor:  # type: ignore[override]
+    def forward(ctx: Any, x: torch.Tensor, H: sp.csr_matrix, Ht: sp.csr_matrix) -> torch.Tensor:
         ctx.Ht = Ht
         ctx.dtype, ctx.shape = x.dtype, x.shape
         y = H @ x.detach().reshape(-1).double().numpy()
         return torch.from_numpy(y).to(x.dtype)
 
     @staticmethod
-    def backward(ctx: Any, g: torch.Tensor) -> tuple[Any, None, None]:  # type: ignore[override]
+    def backward(ctx: Any, g: torch.Tensor) -> tuple[Any, None, None]:
         gx = ctx.Ht @ g.detach().reshape(-1).double().numpy()
         return torch.from_numpy(gx).to(ctx.dtype).reshape(ctx.shape), None, None
 
@@ -175,7 +175,7 @@ class Chain(torch.nn.Module):
     def find(self, kind: type) -> torch.nn.Module | None:
         for link in self.links:
             if isinstance(link, kind):
-                return link
+                return cast(torch.nn.Module, link)
         return None
 
 

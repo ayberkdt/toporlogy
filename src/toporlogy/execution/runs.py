@@ -1,4 +1,4 @@
-"""Run folders: resolved config, run status, sweep CSV, reading a finished run (moved from toporlogy.config).
+"""Run folders: resolved config, run status, sweep CSV, reading a finished run.
 """
 from __future__ import annotations
 
@@ -20,7 +20,7 @@ def write_resolved(resolved: dict[str, Any], folder: str | Path, source: str | N
                    overrides: Sequence[str] = ()) -> Path:
     """Write ``config.resolved.yaml`` with a provenance block; returns its path."""
     import toporlogy as _t
-    from toporlogy.record import git_revision
+    from toporlogy.execution.record import git_revision
 
     out = {k: v for k, v in resolved.items() if k != "provenance"}
     out["provenance"] = {"git": git_revision(Path(_t.__file__).parent), "created": time.strftime("%Y-%m-%dT%H:%M:%S"),
@@ -43,6 +43,35 @@ def status_of(summary: dict[str, Any]) -> str:
         if isinstance(out, dict) and out.get("passed") is False:
             flags.append(f"{name} failed")
     return ", ".join(flags) or STATUS_OK
+
+
+def flags_of(summary: dict[str, Any]) -> list[str]:
+    """Machine-readable findings of a run summary, one code each (empty list: nothing to report). The status line
+    says the same in words; the flags also name what was NOT verified (docs/gelistirme_plani.md G7):
+
+    ``not_converged``, ``schedule_step_at_max_iter``, ``constraint_violated``, ``<post step>_failed``,
+    ``repair_unverified`` (a connectivity repair whose constraints could not all be evaluated),
+    ``bc_mapping_approximate`` / ``bc_mapping_unsupported`` (a re-analysis that did not solve the optimisation's
+    exact supports and loads)."""
+    flags: list[str] = []
+    if not summary.get("converged", False):
+        flags.append("not_converged")
+    if summary.get("termination") == "schedule_step_at_max_iter":
+        flags.append("schedule_step_at_max_iter")
+    if any(not c.get("satisfied", True) for c in summary.get("constraints", [])):
+        flags.append("constraint_violated")
+    for name, out in (summary.get("post") or {}).items():
+        if not isinstance(out, dict):
+            continue
+        if out.get("passed") is False:
+            flags.append(f"{name}_failed")
+        rd = out.get("repaired_design")
+        if isinstance(rd, dict) and rd.get("feasible") is None:
+            flags.append("repair_unverified")
+        fid = out.get("bc_fidelity")
+        if fid in ("approximate", "unsupported"):
+            flags.append(f"bc_mapping_{fid}")
+    return list(dict.fromkeys(flags))
 
 
 def write_sweep_csv(path: str | Path, rows: Sequence[dict[str, Any]], keys: Sequence[str]) -> Path:
@@ -69,8 +98,8 @@ def write_sweep_csv(path: str | Path, rows: Sequence[dict[str, Any]], keys: Sequ
 # ============================================================================================== reading run folders
 def read_run(folder: str | Path) -> dict[str, Any]:
     """Summary of a finished run: ``summary.json`` (CLI runs) or rebuilt from ``result.json`` + ``history.jsonl``
-    (runs recorded from Python with :class:`~toporlogy.record.Recorder`). Adds ``history`` (list of rows)."""
-    from toporlogy.optimization.checks import grey_fraction
+    (runs recorded from Python with :class:`~toporlogy.execution.record.Recorder`). Adds ``history`` (list of rows)."""
+    from toporlogy.optimization.diagnostics import grey_fraction
 
     f = Path(folder)
     if not f.is_dir():

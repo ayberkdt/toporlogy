@@ -1,7 +1,8 @@
-"""Component constructors: geometry (moved from toporlogy.registry).
+"""Component constructors: geometry.
 """
 from __future__ import annotations
 
+from collections.abc import Sequence
 from typing import Any
 
 import numpy as np
@@ -11,7 +12,7 @@ from toporlogy.configuration.registry import BuildContext, register
 
 
 def register_geometry() -> None:
-    """Register the geometry components (moved from registry._register_features)."""
+    """Register the geometry components."""
     from toporlogy import geometry as G
     from toporlogy.core.domain import Domain
 
@@ -49,7 +50,7 @@ def register_geometry() -> None:
         """2-D simple polygon (vertices in order)."""
         return _op(G.Polygon(vertices), op)
 
-    def prism(polygon: list, axis: Any = "z", range: list = (0.0, 1.0), op: str = "add") -> Any:  # noqa: A002
+    def prism(polygon: list, axis: Any = "z", range: Sequence[float] = (0.0, 1.0), op: str = "add") -> Any:  # noqa: A002
         """Polygon extruded along axis over range [lo, hi]; polygon (x, y) for z, (x, z) for y, (y, z) for x."""
         return _op(G.Prism(polygon, axis, (float(range[0]), float(range[1]))), op)
 
@@ -68,7 +69,7 @@ def register_geometry() -> None:
         s.through, s.bore = bool(through), b
         return s
 
-    for name, fn in (("box", box_shape), ("ball", ball), ("sphere", ball), ("circle", ball),
+    for name, fn in (("box", box_shape), ("ball", ball),
                      ("cylinder", cylinder), ("capsule", capsule), ("halfspace", halfspace),
                      ("polygon", polygon), ("prism", prism), ("slot", slot)):
         register("shape", name, fn, types={"axis": None},

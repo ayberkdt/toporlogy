@@ -20,7 +20,7 @@ mesh = ["gmsh>=4.11"]
 dev = ["pytest>=8", "pytest-timeout", "hypothesis>=6", "mypy>=1.10", "ruff>=0.5"]
 
 [project.scripts]
-toporlogy = "toporlogy.cli:main"
+toporlogy = "toporlogy.execution.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

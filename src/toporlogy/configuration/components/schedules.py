@@ -1,4 +1,4 @@
-"""Component constructors: schedules (moved from toporlogy.registry).
+"""Component constructors: schedules.
 """
 from __future__ import annotations
 
@@ -8,7 +8,7 @@ from toporlogy.configuration.registry import BuildContext, register
 
 
 def register_schedules() -> None:
-    """Register the schedules components (moved from registry._register_features)."""
+    """Register the schedules components."""
 
     # ---------------------------------------------------------------- schedule
     def robust_continuation(ctx: BuildContext, beta0: float = 1.0, beta_max: float = 32.0, every: int = 50,

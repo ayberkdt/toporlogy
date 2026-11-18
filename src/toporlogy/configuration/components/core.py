@@ -1,5 +1,5 @@
 """Core components: domain box, selectors plane/box/point, fixed support, force, chain links, interpolations,
-solver, physics, compliance/volume, OC/MMA, beta continuation (moved from toporlogy.registry).
+solver, physics, compliance/volume, OC/MMA, beta continuation.
 """
 from __future__ import annotations
 
@@ -19,8 +19,8 @@ def register_core() -> None:
     from toporlogy.design.chain import DensityFilter, Embed, HeavisideProjection, Passive
     from toporlogy.core.domain import Domain
     from toporlogy.design.interp import RAMP, SIMP
-    from toporlogy.optim.oc import OC
-    from toporlogy.optim.schedule import BetaContinuation
+    from toporlogy.optimizers.oc import OC
+    from toporlogy.optimizers.schedule import BetaContinuation
     from toporlogy.optimization.responses import Compliance, Volume
     from toporlogy.solvers.direct import DirectSolver
 
@@ -155,7 +155,7 @@ def register_core() -> None:
                   dv_scale=float(ctx.domain.n_active) if dv_scale is None else dv_scale)
 
     register("optimizer", "oc", oc)
-    register("optimizer", "mma", "toporlogy.optim.mma:MMA")
+    register("optimizer", "mma", "toporlogy.optimizers.mma:MMA")
 
     # ---------------------------------------------------------------- schedules
     def beta_continuation(ctx: BuildContext, beta0: float = 1.0, beta_max: float = 16.0, every: int = 25,

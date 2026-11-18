@@ -37,7 +37,7 @@ import numpy as np
 from toporlogy.post import mesh as M
 from toporlogy.post import sdf as S
 
-__all__ = ["CheckThresholds", "CheckResult", "manufacturing_checks", "local_thickness", "ray_thickness", "overhang",
+__all__ = ["CheckThresholds", "CheckResult", "manufacturing_checks", "sdf_local_thickness", "ray_thickness", "overhang",
            "concave_radius_test"]
 
 
@@ -143,7 +143,7 @@ def _paint(R: np.ndarray, solid: np.ndarray) -> np.ndarray:  # pragma: no cover 
     return LT
 
 
-def local_thickness(phi: np.ndarray, h: float) -> dict[str, Any]:
+def sdf_local_thickness(phi: np.ndarray, h: float) -> dict[str, Any]:
     """Local thickness (length) on the grid of a signed distance φ (φ < 0 inside): field + statistics."""
     solid = phi < 0
     D = np.where(solid, -phi / h, 0.0)
@@ -195,7 +195,7 @@ def ray_thickness(V: np.ndarray, F: np.ndarray, phi: np.ndarray, grid: Any, max_
     cw = np.cumsum(a[order]) / a.sum()
 
     def pct(q: float) -> float:
-        return float(out[order][min(np.searchsorted(cw, q / 100.0), len(out) - 1)])
+        return float(out[order][min(int(np.searchsorted(cw, q / 100.0)), len(out) - 1)])
 
     return {"min": float(out.min()), "p1": pct(1), "p5": pct(5), "median": pct(50), "max_length": L,
             "faces": int(len(F))}
@@ -239,7 +239,7 @@ def concave_radius_test(res: Any, r: float) -> dict[str, float]:
             allowed &= s > h
     added = np.where(allowed & (cl < 0), phi - cl, 0.0)
     depth = float(np.clip(added, 0, None).max())
-    v0 = S.volume(phi, h)
+    v0 = S.solid_volume(phi, h)
     gain = float(S.partial_volume(cl, h)[allowed].sum() - S.partial_volume(phi, h)[allowed].sum()) * h ** 3
     return {"radius": r, "max_added_depth": depth, "added_volume_fraction": gain / v0, "tolerance": 0.5 * h}
 
@@ -266,7 +266,7 @@ def manufacturing_checks(res: Any, thresholds: CheckThresholds | None = None, **
         None if th.max_voids is None else tp["cavities"] <= th.max_voids)
     h = res.grid.h
     phi_sd = S.redistance(res.phi, h)
-    lt = local_thickness(phi_sd, h)
+    lt = sdf_local_thickness(phi_sd, h)
     lt.pop("field")
     rt = ray_thickness(V, F, phi_sd, res.grid)
     meas["wall_sphere"] = lt
@@ -288,7 +288,7 @@ def manufacturing_checks(res: Any, thresholds: CheckThresholds | None = None, **
         meas["concave_radius"] = cr
         add("concave_radius", cr["max_added_depth"], f"depth <= {cr['tolerance']:.3g} at r = {cr['radius']:g}",
             bool(cr["max_added_depth"] <= cr["tolerance"]), "closing test")
-    meas["volume"] = M.volume(V, F)
+    meas["volume"] = M.enclosed_volume(V, F)
     meas["surface_area"] = M.area(V, F)
     add("volume", meas["volume"], None, None)
     add("surface_area", meas["surface_area"], None, None)

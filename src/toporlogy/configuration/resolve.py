@@ -1,5 +1,4 @@
-"""Reading, resolving and validating configs; overrides (``--set``) and sweeps (``--sweep``) (moved from
-toporlogy.config).
+"""Reading, resolving and validating configs; overrides (``--set``) and sweeps (``--sweep``).
 """
 from __future__ import annotations
 
@@ -8,7 +7,7 @@ import itertools
 import json
 from collections.abc import Iterable, Sequence
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import yaml
 
@@ -268,16 +267,17 @@ def resolve(raw: dict[str, Any]) -> dict[str, Any]:
     chain_raw = _resolve_robust(raw, r, chain_raw, errors)
     links = [R("link", s, join("chain", i), errors) for i, s in enumerate(chain_raw)]
     if all(lk is not None for lk in links):
-        if not any(lk["type"] == "embed" for lk in links):
+        ok = cast(list[dict[str, Any]], links)          # the same list, every entry checked just above
+        if not any(lk["type"] == "embed" for lk in ok):
             lead = 0
-            while lead < len(links) and links[lead]["type"] in _TYING:
+            while lead < len(ok) and ok[lead]["type"] in _TYING:
                 lead += 1
             links.insert(lead, R("link", "embed", "chain", errors))
-        if r["robust"] is not None and not any(lk["type"] == "heaviside_projection" for lk in links):
-            at = next((i for i, lk in enumerate(links) if lk["type"] == "passive"), len(links))
+        if r["robust"] is not None and not any(lk["type"] == "heaviside_projection" for lk in ok):
+            at = next((i for i, lk in enumerate(ok) if lk["type"] == "passive"), len(ok))
             links.insert(at, R("link", {"type": "heaviside_projection", "beta": 1.0,
                                         "eta": r["robust"].get("eta_i") or 0.5}, "chain", errors))
-        if not any(lk["type"] == "passive" for lk in links):
+        if not any(lk["type"] == "passive" for lk in ok):
             links.append(R("link", "passive", "chain", errors))
     r["chain"] = links
     r["interpolation"] = R("interpolation", raw.get("interpolation", _DEFAULTS["interpolation"]), "interpolation",
@@ -409,7 +409,7 @@ def _split_values(text: str) -> list[str]:
 
 def parse_sweep(items: Sequence[str]) -> list[tuple[str, list[Any]]]:
     """``["a.b=1,2", "c=x,y"]`` → ``[("a.b", [1, 2]), ("c", ["x", "y"])]``."""
-    out = []
+    out: list[tuple[str, list[Any]]] = []
     for it in items:
         k, v = _split_assignment(it, "--sweep")
         vals = [_parse_value(s) for s in _split_values(v)]

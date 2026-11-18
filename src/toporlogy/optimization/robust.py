@@ -1,7 +1,7 @@
 """Robust (eroded / intermediate / dilated) formulation: minimum solid AND void size in 2-D and 3-D.
 
-Realisations. From the filtered field x̃ (output of the chain's :class:`~toporlogy.chain.DensityFilter`, taken from
-:meth:`EvalContext.field_after`) three projected fields are built with the tanh projection
+Realisations. From the filtered field x̃ (output of the chain's :class:`~toporlogy.design.chain.DensityFilter`, taken
+from :meth:`EvalContext.field_after`) three projected fields are built with the tanh projection
 (Ferrari & Sigmund 2020 Eq. 1; Qian & Sigmund 2013 Eq. 25)::
 
     x̂_k = (tanh(βη_k) + tanh(β(x̃ − η_k))) / (tanh(βη_k) + tanh(β(1 − η_k))),   k ∈ {eroded, intermediate, dilated}
@@ -38,8 +38,8 @@ discrete cone kernel of :class:`DensityFilter` (``kernel="discrete"``); ``kernel
 
 Corners: the blueprint is (approximately) the eroded design dilated by a ball of radius b/2, so its convex corners are
 rounded with radius ≥ b/2, and its re-entrant corners (convex corners of the void) with radius ≥ b_v/2. This is what
-:func:`toporlogy.lengthscale.measure_lengthscale` measures: ``solid_min`` ≥ b and ``void_min`` ≥ b_v cover members,
-gaps and corners together.
+:func:`toporlogy.optimization.lengthscale.measure_lengthscale` measures: ``solid_min`` ≥ b and ``void_min`` ≥ b_v cover
+members, gaps and corners together.
 
 Caveats (well known, also seen in the tests): the guarantee needs the eroded member to exist, i.e. it holds for members
 that carry load; at box faces the filter normalisation acts like a symmetry plane, so members along a free face may be
@@ -60,7 +60,7 @@ import torch
 
 from toporlogy.references import cite
 from toporlogy.design.chain import Chain, DensityFilter, HeavisideProjection, Passive
-from toporlogy.optim.schedule import Schedule
+from toporlogy.optimizers.schedule import Schedule
 from toporlogy.optimization.responses import Compliance, EvalContext, Response, Volume
 from toporlogy.optimization.study import Constraint
 
@@ -73,7 +73,7 @@ REALISATIONS = ("eroded", "intermediate", "dilated")
 
 @cite("ferrari_sigmund_2020", "qian_sigmund_2013", note="Eq. (1) / Eq. (25)")
 def project(xt: torch.Tensor, beta: float, eta: float) -> torch.Tensor:
-    """Tanh projection of the filtered field (same formula as :class:`~toporlogy.chain.HeavisideProjection`)."""
+    """Tanh projection of the filtered field (same formula as :class:`~toporlogy.design.chain.HeavisideProjection`)."""
     a, d = math.tanh(beta * eta), math.tanh(beta * (1.0 - eta))
     return (a + torch.tanh(beta * (xt - eta))) / (a + d)
 
@@ -228,7 +228,7 @@ class RobustSet:
         :class:`HeavisideProjection` (so the intermediate realisation is the study's x̄), else ½.
     beta : float or None
         None (default) = use β of the chain's :class:`HeavisideProjection`, so one
-        :class:`~toporlogy.optim.BetaContinuation` (or :class:`RobustContinuation`) drives all realisations.
+        :class:`~toporlogy.optimizers.BetaContinuation` (or :class:`RobustContinuation`) drives all realisations.
     """
 
     def __init__(self, eta_e: float = 0.75, eta_d: float | None = None, eta_i: float | None = None,
@@ -275,7 +275,8 @@ class RobustSet:
         """``{"xphys", "E", "U"}`` of one realisation (U only when ``need_u``); cached in ``ctx.extra``."""
         if name not in REALISATIONS:
             raise ValueError(f"realisation: one of {REALISATIONS}")
-        cache = ctx.extra.setdefault(("robust", id(self)), {})
+        extra: dict[Any, Any] = ctx.extra                  # keyed by ("robust", id) tuples as well
+        cache = extra.setdefault(("robust", id(self)), {})
         st = cache.get(name)
         if st is None:
             beta, eta = self.beta_of(ctx), self.thresholds(ctx)[name]
@@ -376,7 +377,7 @@ class Robust(Response):
 
 
 class RobustCompliance(Robust):
-    """:class:`Robust` of :class:`~toporlogy.responses.Compliance` (one solve per realisation)."""
+    """:class:`Robust` of :class:`~toporlogy.optimization.responses.Compliance` (one solve per realisation)."""
 
     def __init__(self, robust: RobustSet, weights: Any = None, **kw: Any) -> None:
         kw.setdefault("name", "robust_compliance")
@@ -384,7 +385,7 @@ class RobustCompliance(Robust):
 
 
 class RealisationVolume(Volume):
-    """:class:`~toporlogy.responses.Volume` of one realisation (default the dilated one).
+    """:class:`~toporlogy.optimization.responses.Volume` of one realisation (default the dilated one).
 
     Records the volumes of this realisation and of the intermediate one at every gradient-enabled evaluation
     (``last``), which :class:`RobustContinuation` uses to update the bound. Being a :class:`Volume`, the study's
@@ -421,7 +422,7 @@ class RobustContinuation(Schedule):
     """β continuation of all realisations plus the periodic update of the dilated volume bound.
 
     β ← min(2β, β_max) every ``every`` iterations or when the change falls to ``tol`` (the rule of
-    :class:`~toporlogy.optim.BetaContinuation`), applied to the chain's :class:`HeavisideProjection` and to
+    :class:`~toporlogy.optimizers.BetaContinuation`), applied to the chain's :class:`HeavisideProjection` and to
     ``robust.beta`` when that is set. On a β step the automatic KS scales of ``rescale`` responses are reset.
 
     Volume: when ``volume`` (the :class:`Constraint` holding a :class:`RealisationVolume`) and ``target`` (V* of the
@@ -500,7 +501,7 @@ class RobustContinuation(Schedule):
 class BoundSplit(torch.nn.Module):
     """First chain link for the bound formulation: variables (x_design, z) → x_design; z is the last entry.
 
-    Declares ``n_in`` and ``reduce`` (the hooks :class:`~toporlogy.study.Study` reads from the first link).
+    Declares ``n_in`` and ``reduce`` (the hooks :class:`~toporlogy.optimization.study.Study` reads from the first link).
     """
 
     def __init__(self, n_design: int, z0: float = 1.0) -> None:
@@ -559,7 +560,7 @@ def bound_formulation(chain: Chain, robust: RobustSet, n_design: int, response: 
     Returns ``(chain', objective, constraints)``: ``chain'`` = [:class:`BoundSplit`] + the links of ``chain`` (the
     design vector gets one extra entry z, start value ``z0``), ``objective`` = :class:`BoundObjective`, and one
     :class:`Constraint` per realisation. Add the volume constraint yourself and use an optimizer with several
-    constraints (:class:`toporlogy.optim.mma.MMA`). ``response`` default :class:`Compliance`.
+    constraints (:class:`toporlogy.optimizers.mma.MMA`). ``response`` default :class:`Compliance`.
     """
     resp = response or Compliance()
     ref = _Ref(reference, factor)

@@ -1,4 +1,4 @@
-"""Component constructors: boundary (moved from toporlogy.registry).
+"""Component constructors: boundary.
 """
 from __future__ import annotations
 
@@ -15,7 +15,7 @@ from toporlogy.configuration.registry import BuildContext, register
 
 
 def register_boundary() -> None:
-    """Register the boundary components (moved from registry._register_features)."""
+    """Register the boundary components."""
     from toporlogy import boundary as B
 
     length = "length"
@@ -150,7 +150,7 @@ def register_boundary() -> None:
                  tol: float | None = None, name: str | None = None) -> Any:
         """Symmetry plane (axis + at, or point + normal): zero normal displacement of the surface nodes on it."""
         p, n = _plane(ctx, axis, at, point, normal)
-        s = B.Symmetry(p, n, tol=tol, name=name)
+        s = B.SymmetrySupport(p, n, tol=tol, name=name)
         checked_selector(ctx, s.where, "at" if axis is not None else "point")
         return s
 

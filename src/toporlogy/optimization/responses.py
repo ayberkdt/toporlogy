@@ -48,6 +48,11 @@ class Response:
 
     name = "response"
     needs: frozenset[str] = frozenset()
+    # Set by the config layer on some built responses and read there with getattr(..., None): annotations only, so
+    # an instance has them only when they were set.
+    config_upper: float                 # default constraint bound
+    config_scale: float                 # default constraint scale
+    settings: dict[str, Any]            # resolved settings of the response
 
     def __call__(self, ctx: EvalContext) -> torch.Tensor:  # pragma: no cover - interface
         raise NotImplementedError

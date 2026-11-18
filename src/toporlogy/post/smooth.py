@@ -18,7 +18,7 @@ from __future__ import annotations
 
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, cast
 
 import numpy as np
 import scipy.sparse as sp
@@ -66,7 +66,7 @@ class Features:
 
     @property
     def locked(self) -> np.ndarray:
-        return self.assign.any(axis=1) if self.assign.size else np.zeros(len(self.assign), bool)
+        return cast(np.ndarray, self.assign.any(axis=1)) if self.assign.size else np.zeros(len(self.assign), bool)
 
     def project(self, V: np.ndarray, rounds: int = 6) -> np.ndarray:
         """Assigned vertices onto their surface(s) (alternating projections where several meet)."""

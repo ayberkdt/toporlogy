@@ -14,18 +14,24 @@ from __future__ import annotations
 import time
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, Protocol, cast
 
 import numpy as np
 import torch
 
 from toporlogy.design.chain import Chain
 from toporlogy.core.domain import Domain
-from toporlogy.optim.base import Optimizer
-from toporlogy.optim.schedule import Schedule
+from toporlogy.optimizers.base import Optimizer
+from toporlogy.optimizers.schedule import Schedule
 from toporlogy.optimization.responses import EvalContext, Response, Volume
 
 __all__ = ["Constraint", "Study", "Result", "Evaluation", "DensityEvaluation"]
+
+
+class _HasMove(Protocol):
+    """An optimizer with a move limit (MMA, OC); ``Study`` scales it with β when ``move_beta_ref`` is set."""
+
+    move: float
 
 
 @dataclass
@@ -85,6 +91,17 @@ class Result:
     U: np.ndarray | None               # displacements of the FINAL design (re-evaluated), None if not needed
     settings: dict[str, Any] = field(default_factory=dict)
     final: Evaluation | None = None    # objective / constraints / U re-evaluated at ``x`` (the returned design)
+    # Why the loop stopped (docs/gelistirme_plani.md G7): "design_change" (change <= tol with the schedule finished:
+    # ``converged``), "max_iter", or "schedule_step_at_max_iter" (the schedule changed the problem, e.g. a beta step,
+    # in the last iteration: the returned design was never optimised at the final schedule state).
+    termination: str = ""
+    # Constraint feasibility of the returned design, same rule as the run summary: value <= upper + tol * |upper|.
+    feasible: bool | None = None
+    max_violation: float | None = None  # max over constraints of max(0, (value - upper) / |upper|)
+    # Estimate of the KKT residual at the returned design (optimizers with ``kkt_multipliers``: MMA, OC): max of the
+    # relative projected stationarity |s grad f0 + mu^T grad g| (box 0..1) and the complementarity |mu_j g_j|, with
+    # the multipliers of the last step (an estimate: they belong to the previous iterate). None without multipliers.
+    kkt_residual: float | None = None
 
     @property
     def objective(self) -> float:
@@ -247,7 +264,7 @@ class Study:
         return x
 
     # ------------------------------------------------------------------ loop
-    def run(self, x0: np.ndarray | None = None, max_iter: int = 100, tol: float = 0.01,
+    def run(self, x0: np.ndarray | None = None, max_iter: int = 100, tol: float = 0.01, feasibility_tol: float = 1e-3,
             callback: Callable[[int, Evaluation, float], None] | None = None) -> Result:
         t0 = time.perf_counter()
         # a run starts from the initial continuation state and a fresh optimizer, whatever a previous run left
@@ -269,6 +286,7 @@ class Study:
         if self.recorder is not None:
             self.recorder.start(self)
         it, change, ev = 0, 1.0, None
+        termination, stepped_last = "max_iter", False
         move0 = getattr(self.optimizer, "move", None)
         try:
             while it < max_iter:
@@ -288,25 +306,49 @@ class Study:
                     callback(it, ev, change)
                 if self.recorder is not None:
                     self.recorder.log(it, ev, change, self.schedule.state())
-                if self.schedule.update(it, change):
+                stepped_last = self.schedule.update(it, change)
+                if stepped_last:
                     self.optimizer.reset()
                     beta = self.schedule.state().get("beta")
                     if self.move_beta_ref is not None and move0 is not None and beta:
-                        self.optimizer.move = float(move0) * min(1.0, self.move_beta_ref / float(beta))
+                        cast(_HasMove, self.optimizer).move = float(move0) * min(1.0, self.move_beta_ref / float(beta))
                     continue
                 if change <= tol and self.schedule.finished:
+                    termination = "design_change"
                     break
             # The loop analysed x_k and then stepped to x_{k+1}: re-evaluate the RETURNED design so that its objective,
             # constraints, U and x̄ belong to the same design (history[-1] belongs to the previous one).
-            final = self.evaluate(x, gradients=False)
-            res = Result(x, final.xphys, hist, it, change <= tol and self.schedule.finished, time.perf_counter() - t0,
-                         final.U, self.settings(), final)
+            if termination != "design_change" and stepped_last and it == max_iter:
+                termination = "schedule_step_at_max_iter"
+            mult = self.optimizer.kkt_multipliers() if hasattr(self.optimizer, "kkt_multipliers") else None
+            lam = np.zeros(0) if mult is None else np.asarray(mult, float).reshape(-1)
+            with_kkt = len(self.constraints) > 0 and lam.size == len(self.constraints)
+            final = self.evaluate(x, gradients=with_kkt)
+            feasible, worst = True, 0.0
+            for c in self.constraints:
+                v, scale = final.values[c.key], max(abs(c.upper), 1e-12)
+                worst = max(worst, (v - c.upper) / scale)
+                feasible = feasible and bool(v <= c.upper + feasibility_tol * scale)
+            kkt = self._kkt_residual(x, final, lam) if with_kkt else None
+            res = Result(x, final.xphys, hist, it, termination == "design_change", time.perf_counter() - t0,
+                         final.U, self.settings(), final, termination=termination, feasible=feasible,
+                         max_violation=max(worst, 0.0), kkt_residual=kkt)
         finally:
             if move0 is not None:
-                self.optimizer.move = move0             # leave the optimizer as it was given, also on an error
+                cast(_HasMove, self.optimizer).move = move0     # leave the optimizer as it was given, also on an error
         if self.recorder is not None:
             self.recorder.finish(res)
         return res
+
+    def _kkt_residual(self, x: np.ndarray, ev: Evaluation, lam: np.ndarray) -> float:
+        """See ``Result.kkt_residual``: objective scale and multipliers as the optimizer reports them, constraint
+        gradients those of ``Constraint.g`` (already scaled), as passed to ``Optimizer.step``."""
+        s0 = float(self.optimizer.objective_scale(ev.f0)) if hasattr(self.optimizer, "objective_scale") else 1.0
+        gl = s0 * ev.df0 + lam @ ev.dg
+        r = np.where(x <= 1e-9, np.minimum(gl, 0.0), np.where(x >= 1.0 - 1e-9, np.maximum(gl, 0.0), gl))
+        stat = float(np.max(np.abs(r))) / max(float(np.max(np.abs(s0 * ev.df0))), 1e-300) if r.size else 0.0
+        comp = float(np.max(np.abs(lam * ev.g))) if lam.size else 0.0
+        return max(stat, comp)
 
     def settings(self) -> dict[str, Any]:
         s: dict[str, Any] = {"domain": repr(self.domain), "optimizer": self.optimizer.name,

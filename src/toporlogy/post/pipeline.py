@@ -44,7 +44,8 @@ from scipy import ndimage
 from toporlogy.post import mesh as M
 from toporlogy.post import sdf as S
 from toporlogy.post import smooth as SM
-from toporlogy.post.primitives import Bound, Box, Cut, Cylinder, GridShape, Keep, Plane, Role, Sphere, assemble
+from toporlogy.post.primitives import (Bound, BoxPrimitive, Cut, CylinderPrimitive, GridPrimitive, Keep, PlanePrimitive,
+                                          Role, SpherePrimitive, assemble)
 from toporlogy.post.regularize import adaptive_closing, adaptive_opening, fill_voids, remove_islands
 from toporlogy.post.topology import grid_topology
 
@@ -127,8 +128,8 @@ class PostResult:
 def _envelope_role(domain: Any, grid: S.Grid) -> Role:
     if np.all(np.asarray(domain.frac) >= 1.0):
         lo = np.asarray(domain.origin, float)
-        return Bound(Box(lo, lo + domain.h * np.asarray(domain.shape)), functional=True, name="envelope")
-    return Bound(GridShape(S.envelope_field(domain, grid), grid.origin, grid.h, name="envelope"), functional=False,
+        return Bound(BoxPrimitive(lo, lo + domain.h * np.asarray(domain.shape)), functional=True, name="envelope")
+    return Bound(GridPrimitive(S.envelope_field(domain, grid), grid.origin, grid.h, name="envelope"), functional=False,
                  name="envelope")
 
 
@@ -185,7 +186,7 @@ def finalize(domain: Any, xphys: np.ndarray, preserve: Sequence[Role] = (), para
         t_level = p.level
         g = np.gradient(rf, hf)
         phi_t = (t_level - rf) / np.maximum(np.sqrt(sum(x * x for x in g)), 1e-3 / hf)
-        v_t = S.volume(combine(phi_t), hf)
+        v_t = S.solid_volume(combine(phi_t), hf)
     else:
         raise ValueError("volume_match: threshold | final | none")
     stages["thresholded"] = v_t
@@ -195,12 +196,12 @@ def finalize(domain: Any, xphys: np.ndarray, preserve: Sequence[Role] = (), para
     # ---- islands, opening, closing
     tic = time.perf_counter()
     phi0, isl = remove_islands(phi0, combine, keep_masks, hf, p.keep_bodies)
-    stages["islands_removed"] = S.volume(combine(phi0), hf)
+    stages["islands_removed"] = S.solid_volume(combine(phi0), hf)
     if r_open > 0:
         phi_o, op = adaptive_opening(phi0, combine, hf, r_open, p.max_open_loss, p.radius_factor, p.radius_trials)
     else:
         phi_o, op = phi0, {"r_used": 0.0, "volume_change": 0.0, "trials": []}
-    stages["opened"] = S.volume(combine(phi_o), hf)
+    stages["opened"] = S.solid_volume(combine(phi_o), hf)
     say(f"post: opening r={op['r_used']:g} ({100 * op['volume_change']:+.2f} %)")
     # closing acts on the free field united with the Keep bodies (junction fillets); Bounds and Cuts are re-imposed
     # afterwards, so their sharp edges never enter the morphology (the free field runs through them)
@@ -209,7 +210,7 @@ def finalize(domain: Any, xphys: np.ndarray, preserve: Sequence[Role] = (), para
         phi_c, cl = adaptive_closing(phi1, combine, hf, r_close, p.max_close_gain, p.radius_factor, p.radius_trials)
     else:
         phi_c, cl = phi1, {"r_used": 0.0, "volume_change": 0.0, "trials": []}
-    stages["closed"] = S.volume(combine(phi_c), hf)
+    stages["closed"] = S.solid_volume(combine(phi_c), hf)
     say(f"post: closing r={cl['r_used']:g} ({100 * cl['volume_change']:+.2f} %)")
     times["morphology"] = time.perf_counter() - tic
     # ---- optional final volume match (free surface only), clean-up
@@ -219,7 +220,7 @@ def finalize(domain: Any, xphys: np.ndarray, preserve: Sequence[Role] = (), para
         a, b = -2 * hf, 2 * hf                        # φ + δ: δ > 0 shrinks
         for _ in range(40):
             delta = 0.5 * (a + b)
-            v = S.volume(combine(phi_c + delta), hf)
+            v = S.solid_volume(combine(phi_c + delta), hf)
             if abs(v - target) <= 1e-6 * target:
                 break
             if v > target:
@@ -234,7 +235,7 @@ def finalize(domain: Any, xphys: np.ndarray, preserve: Sequence[Role] = (), para
         cav = (phi_filled < 0) & ~(phi < 0)
         phi_c = np.where(cav, np.minimum(phi_c, -0.5 * hf), phi_c)
         phi = combine(phi_c)
-    stages["final_grid"] = S.volume(phi, hf)
+    stages["final_grid"] = S.solid_volume(phi, hf)
     topo_grid = grid_topology(phi < 0)
     times["cleanup"] = time.perf_counter() - tic
     # ---- surface
@@ -267,7 +268,7 @@ def finalize(domain: Any, xphys: np.ndarray, preserve: Sequence[Role] = (), para
             feats.update(V, F)
             V = SM.relax(V, F, max(p.relax_iter, 5), features=feats, phi=proj, phi_step=step, max_move=hf)
     V, F = M.clean(V, F)
-    if M.volume(V, F) < 0:
+    if M.enclosed_volume(V, F) < 0:
         F = F[:, ::-1].copy()
     times["surface"] = time.perf_counter() - tic
     # ---- report
@@ -276,8 +277,8 @@ def finalize(domain: Any, xphys: np.ndarray, preserve: Sequence[Role] = (), para
         "params": asdict(p), "grid": {"shape": list(grid.shape), "h_fine": hf, "origin": grid.origin.tolist()},
         "radii": {"r_open_start": r_open, "r_close_start": r_close, "sigma": sigma},
         "threshold_level": float(t_level), "final_level_shift": float(delta),
-        "volumes": stages, "volume_mesh": M.volume(V, F), "volume_raw_mesh": M.volume(Vr, Fr),
-        "volume_vs_target": M.volume(V, F) / target - 1.0,
+        "volumes": stages, "volume_mesh": M.enclosed_volume(V, F), "volume_raw_mesh": M.enclosed_volume(Vr, Fr),
+        "volume_vs_target": M.enclosed_volume(V, F) / target - 1.0,
         "islands": {"after_threshold": isl, "final": isl2}, "voids": voids,
         "opening": _strip(op), "closing": _strip(cl),
         "fillet_radius_ok": bool(cl["r_used"] >= p.r_fillet_min - 1e-12),
@@ -349,7 +350,7 @@ def remesh(res: PostResult, edge: float | None = None, target_faces: int | None 
         info["tries"].append({"edge": e, "faces": int(len(F)), "bodies": t["bodies"], "euler": t["euler"], "ok": ok})
         if ok:
             info.update({"edge": e, "faces": int(len(F)), "quality": M.quality(V, F),
-                         "volume": M.volume(V, F), "volume_finished": M.volume(res.V, res.F)})
+                         "volume": M.enclosed_volume(V, F), "volume_finished": M.enclosed_volume(res.V, res.F)})
             return V, F, info
         e *= 0.5
     info["reason"] = "topology not reproduced at any spacing; finished mesh returned"
@@ -377,16 +378,16 @@ def measure_interfaces(V: np.ndarray, F: np.ndarray, roles: Sequence[Role], h: f
         if on.any():
             P = V[on]
             sh = r.shape
-            if isinstance(sh, Cylinder):
+            if isinstance(sh, CylinderPrimitive):
                 rad = sh.radial(P)
                 row.update({"nominal_radius": sh.radius, "radius_mean": float(rad.mean()),
                             "radius_min": float(rad.min()), "radius_max": float(rad.max()),
                             "radius_rel_error_max": float(np.max(np.abs(rad - sh.radius)) / sh.radius)})
-            elif isinstance(sh, Sphere):
+            elif isinstance(sh, SpherePrimitive):
                 rad = np.linalg.norm(P - np.asarray(sh.center, float), axis=1)
                 row.update({"nominal_radius": sh.radius, "radius_mean": float(rad.mean()),
                             "radius_min": float(rad.min()), "radius_max": float(rad.max())})
-            elif isinstance(sh, Plane):
+            elif isinstance(sh, PlanePrimitive):
                 d = sh.sdf(P)
                 row.update({"offset_mean": float(d.mean()), "flatness": float(d.max() - d.min())})
             gg = r.oriented(P)
@@ -399,7 +400,7 @@ def measure_interfaces(V: np.ndarray, F: np.ndarray, roles: Sequence[Role], h: f
 def print_variant(res: PostResult, log: Callable[[str], None] | None = None) -> dict[str, Any]:
     """Print geometry with machining stock on every role with ``stock > 0``.
 
-    Cut (bore) → printed smaller: shape offset by −stock. Keep → printed larger: offset by +stock. Bound Plane
+    Cut (bore) → printed smaller: shape offset by −stock. Keep → printed larger: offset by +stock. Bound plane
     (mounting face) → the face is moved out by stock and the part's footprint on the face is extruded into the new
     slab. Other Bound shapes with stock are not supported (raise). Returns ``{"V", "F", "report"}``.
     """
@@ -415,11 +416,11 @@ def print_variant(res: PostResult, log: Callable[[str], None] | None = None) -> 
             new_roles.append(Cut(r.shape.offset(-r.stock), r.functional, 0.0, r.name + "_print"))
         elif isinstance(r, Keep):
             new_roles.append(Keep(r.shape.offset(r.stock), r.functional, 0.0, r.name + "_print"))
-        elif isinstance(r, Bound) and isinstance(r.shape, Plane):
+        elif isinstance(r, Bound) and isinstance(r.shape, PlanePrimitive):
             new_roles.append(Bound(r.shape.offset(r.stock), r.functional, 0.0, r.name + "_print"))
             slabs.append(r)
         else:
-            raise ValueError(f"stock on {r.role} {r.shape.kind} is not supported (use a Plane bound)")
+            raise ValueError(f"stock on {r.role} {r.shape.kind} is not supported (use a PlanePrimitive bound)")
     phi_free = res.phi_free.copy()
     phi = assemble(phi_free, new_roles, X)
     for r in slabs:
@@ -437,7 +438,8 @@ def print_variant(res: PostResult, log: Callable[[str], None] | None = None) -> 
     feats.update(V, F)
     V = SM.taubin(V, F, res.params.smooth_iter, res.params.lam, res.params.mu, features=feats)
     V, F = M.clean(V, F)
-    rep = {"volume": M.volume(V, F), "volume_nominal": M.volume(res.V, res.F), "edges": M.edge_report(F, len(V)),
+    rep = {"volume": M.enclosed_volume(V, F), "volume_nominal": M.enclosed_volume(res.V, res.F),
+           "edges": M.edge_report(F, len(V)),
            "interfaces": measure_interfaces(V, F, new_roles, grid.h),
            "stock": {r.name or r.shape.kind: r.stock for r in roles if r.stock > 0}}
     if log:

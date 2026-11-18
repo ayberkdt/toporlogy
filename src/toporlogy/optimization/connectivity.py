@@ -11,8 +11,8 @@ Detection
     cross-section ("neck") between every pair of interfaces by an exact max-flow / min-cut on the element graph,
     and robustness checks at other thresholds and after an erosion by one element. Verdict PASS / FRAGILE / FAIL.
 
-Prevention (differentiable responses for :class:`toporlogy.study.Study`, use with MMA — they are constraints in
-addition to the volume bound)
+Prevention (differentiable responses for :class:`toporlogy.optimization.study.Study`, use with MMA — they are
+constraints in addition to the volume bound)
     :class:`ConductionConnectivity` — virtual heat conduction: solid conducts, void insulates; one interface is the
     heat sink (T = 0), every other interface receives unit heat in its own load case. Its thermal resistance
     ``R_i = q_iᵀ T_i`` stays O(path length / section) when a solid path to the sink exists and grows like 1/k_min
@@ -46,7 +46,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, cast
 
 import numpy as np
 import scipy.sparse as sp
@@ -55,27 +55,18 @@ from scipy import ndimage
 from scipy.sparse import csgraph
 
 from toporlogy.design.chain import DensityFilter, HeavisideProjection, Passive
+from toporlogy.core.bodies import label_bodies, neighbourhood
 from toporlogy.core.domain import Domain
 from toporlogy.fem.elastic import Elasticity
 from toporlogy.fem.heat import ConductivityInterp, HeatConduction, element_nodes
 from toporlogy.optimization.responses import EvalContext, Response
 
 __all__ = ["analyse_connectivity", "ConnectivityReport", "Neck", "ThresholdCheck", "min_cut_cells",
-           "elements_touching_nodes", "label_bodies", "ConductionConnectivity", "CouplingCompliance",
+           "elements_touching_nodes", "ConductionConnectivity", "CouplingCompliance",
            "tie_regions", "with_keep", "bridge", "BridgeResult", "split_benchmark", "SplitBenchmark"]
 
 
 # ====================================================================================================== grid helpers
-def _structure(dim: int, connectivity: str | int) -> np.ndarray:
-    """Neighbourhood: "face" (6 / 4 neighbours), "edge" (18; in 2-D = face), "vertex" (26 / 8); or the count."""
-    ranks = {3: {"face": 1, "edge": 2, "vertex": 3, 6: 1, 18: 2, 26: 3},
-             2: {"face": 1, "edge": 1, "vertex": 2, 4: 1, 8: 2}}[dim]
-    key = connectivity.lower() if isinstance(connectivity, str) else int(connectivity)
-    if key not in ranks:
-        raise ValueError(f"connectivity for {dim}-D: one of {sorted(map(str, ranks))}")
-    return ndimage.generate_binary_structure(dim, ranks[key])
-
-
 def _offsets(structure: np.ndarray) -> list[tuple[int, ...]]:
     """Lexicographically positive neighbour offsets of a 3^dim structure (each undirected pair once)."""
     c = np.array(structure.shape) // 2
@@ -100,20 +91,8 @@ def _neighbour_pairs(mask: np.ndarray, structure: np.ndarray) -> tuple[np.ndarra
     return np.concatenate(P), np.concatenate(Q)
 
 
-def label_bodies(solid: np.ndarray, connectivity: str | int = "face") -> tuple[np.ndarray, np.ndarray]:
-    """Connected components of ``solid``: labels (0 = void, 1… = bodies by decreasing cell count) and cell counts."""
-    solid = np.asarray(solid, bool)
-    lab, n = ndimage.label(solid, structure=_structure(solid.ndim, connectivity))
-    if n == 0:
-        return lab, np.zeros(0, np.int64)
-    sizes = np.bincount(lab.ravel(), minlength=n + 1)[1:]
-    order = np.argsort(-sizes, kind="stable")
-    remap = np.zeros(n + 1, np.int64)
-    remap[order + 1] = np.arange(1, n + 1)
-    return remap[lab], sizes[order]
-
-
-def elements_touching_nodes(domain: Domain, nodes: Sequence[int], active_only: bool = True) -> np.ndarray:
+def elements_touching_nodes(domain: Domain, nodes: Sequence[int] | np.ndarray, active_only: bool = True
+                            ) -> np.ndarray:
     """Bool element mask of the elements having at least one of ``nodes`` as a corner (e.g. support regions)."""
     hit = np.zeros(domain.nn, bool)
     hit[np.asarray(nodes, np.int64)] = True
@@ -163,7 +142,7 @@ def min_cut_cells(solid: np.ndarray, a: np.ndarray, b: np.ndarray, connectivity:
     a, b = np.asarray(a, bool) & solid, np.asarray(b, bool) & solid
     if not a.any() or not b.any():
         return 0, np.zeros(0, np.int64)
-    st = _structure(solid.ndim, connectivity)
+    st = neighbourhood(solid.ndim, connectivity)
     lab, _ = ndimage.label(solid, structure=st)
     common = np.intersect1d(np.unique(lab[a]), np.unique(lab[b]))
     if common.size == 0:
@@ -260,7 +239,7 @@ class ConnectivityReport:
     @property
     def min_neck(self) -> Neck | None:
         cut = [n for n in self.necks if n.cells is not None]
-        return min(cut, key=lambda n: n.cells) if cut else None
+        return min(cut, key=lambda n: cast(int, n.cells)) if cut else None
 
     def summary(self) -> str:
         """Readable verdict: first line = verdict, last line = result + one next step."""
@@ -310,7 +289,7 @@ def _attachment(lab: np.ndarray, masks: dict[str, np.ndarray]) -> tuple[dict[str
 
 def _enclosed_voids(solid: np.ndarray) -> list[int]:
     """Cell counts of void components (face-connected, whole box) that touch no box face."""
-    lab, n = ndimage.label(~solid, structure=_structure(solid.ndim, "face"))
+    lab, n = ndimage.label(~solid, structure=neighbourhood(solid.ndim, "face"))
     if n == 0:
         return []
     border = set()
@@ -389,7 +368,7 @@ def analyse_connectivity(domain: Domain, xphys: np.ndarray, interfaces: Mapping[
         _, un, _, con = _attachment(lb, masks)
         checks.append(ThresholdCheck(f"t={t:g}", len(sz), con, un))
     if erosion:
-        st = _structure(domain.dim, "face")
+        st = neighbourhood(domain.dim, "face")
         s = ndimage.binary_erosion(solid, structure=st, border_value=0) | (solid & frozen)
         lb, sz = label_bodies(s, connectivity)
         _, un, _, con = _attachment(lb, masks)
@@ -647,7 +626,7 @@ class CouplingCompliance(_RatioResponse):
 # ====================================================================================================== paths, ties
 def _path_graph(allowed: np.ndarray, cost: np.ndarray) -> sp.csr_matrix:
     """Directed face-neighbour graph on all box cells; edge p→q weighs cost[q] (> 0) and exists if both allowed."""
-    p, q = _neighbour_pairs(allowed, _structure(allowed.ndim, "face"))
+    p, q = _neighbour_pairs(allowed, neighbourhood(allowed.ndim, "face"))
     c = cost.ravel()
     n = allowed.size
     return sp.csr_matrix((np.concatenate([c[q], c[p]]), (np.concatenate([p, q]), np.concatenate([q, p]))),
@@ -712,9 +691,9 @@ def tie_regions(domain: Domain, groups: Mapping[str, Any], section: int = 1, avo
     allowed = domain.active & ~domain.void
     if avoid is not None:
         allowed &= ~np.asarray(avoid, bool)
-    for k, m in masks.items():
+    for name, m in masks.items():
         if not (m & allowed).any():
-            raise ValueError(f"group {k!r} lies entirely in excluded cells")
+            raise ValueError(f"group {name!r} lies entirely in excluded cells")
     cost = np.where(domain.keep, float(keep_cost), 1.0 + _edge_cells(allowed, section))
     G = _path_graph(allowed, cost)
     names = list(masks)
@@ -726,7 +705,7 @@ def tie_regions(domain: Domain, groups: Mapping[str, Any], section: int = 1, avo
         if found is None:
             raise RuntimeError(f"groups {remaining} cannot be reached from {names[0]!r} through the design domain")
         k, cells = found
-        pm = np.zeros(domain.ne, bool)
+        pm: np.ndarray = np.zeros(domain.ne, bool)
         pm[cells] = True
         pm = pm.reshape(domain.shape)
         paths |= pm
@@ -938,7 +917,7 @@ class OneBodyPlan:
                 if c.label == "eroded":
                     solid = (x >= self.threshold) & self.domain.active
                     frozen = self.domain.keep | np.logical_or.reduce(list(self.interfaces.values()))
-                    er = ndimage.binary_erosion(solid, structure=_structure(self.domain.dim, "face"),
+                    er = ndimage.binary_erosion(solid, structure=neighbourhood(self.domain.dim, "face"),
                                                 border_value=0) | (solid & frozen)
                     b2 = bridge(self.domain, er.astype(float), self.interfaces, section=3, drop_islands=False)
                 else:
@@ -995,8 +974,8 @@ def one_body(domain: Domain, interfaces: Mapping[str, Any], *, ties: int | None 
         cons.append(Constraint(resp, 20.0 if bound is None else float(bound), name="connectivity"))
     elif constraint == "coupling":
         response_kw.setdefault("reference", "first")
-        resp = CouplingCompliance(dom, masks, held=sink, eta=eta, **response_kw)
-        cons.append(Constraint(resp, 2.5 if bound is None else float(bound), name="connectivity"))
+        coupling = CouplingCompliance(dom, masks, held=sink, eta=eta, **response_kw)
+        cons.append(Constraint(coupling, 2.5 if bound is None else float(bound), name="connectivity"))
     elif constraint is not None:
         raise ValueError("constraint: conduction | coupling | None")
     return OneBodyPlan(dom, masks, tie_mask, cons, threshold, repair_section)

@@ -1,8 +1,9 @@
-"""Declarative studies: a YAML/JSON config → :class:`~toporlogy.study.Study`, run folders, overrides, sweeps.
+"""Declarative studies: a YAML/JSON config → :class:`~toporlogy.optimization.study.Study`, run folders, overrides,
+sweeps.
 
 Schema (every key optional unless marked *required*; defaults in brackets). Components are a registered name or a
-mapping ``{type: <name>, <param>: <value>}`` (:mod:`toporlogy.registry`; ``python -m toporlogy list`` shows
-every component with its parameters and defaults).
+mapping ``{type: <name>, <param>: <value>}`` (:mod:`toporlogy.configuration.registry`; ``python -m toporlogy list``
+shows every component with its parameters and defaults).
 
 Units: any consistent set. Lengths (``h``, ``origin``, selector coordinates, ``t_max``, ``min_solid``) share one
 unit, e.g. m; ``E0`` is force/length² (Pa with N and m); forces are force units (N); ``rho`` is mass/length³;
@@ -41,13 +42,13 @@ limit to move0 · min(1, move_beta_ref / β) after every β step of the schedule
 filled, auto links explicit) is written as ``config.resolved.yaml`` with a ``provenance`` block (git revision,
 time, source, overrides); loading it again builds the identical study.
 
-Boundary conditions. Supports and loads build a :class:`toporlogy.bc.BoundaryConditions` (selectors, supports,
+Boundary conditions. Supports and loads build a :class:`toporlogy.boundary.BoundaryConditions` (selectors, supports,
 loads, per-case supports, combinations); its ``check()`` runs in :func:`build` — an error (e.g. an unrestrained
 rigid-body mode) is a :class:`ConfigError`; warnings are kept in :attr:`Setup.bc_report`. The physics comes from it
 (``ConstrainedElasticity`` for oblique supports and springs, ``PerCaseSupports`` for per-case supports).
 
 ``robust``: ``min_solid`` / ``min_void`` (length) set the density filter radius and the thresholds
-(:func:`toporlogy.robust.robust_chain_settings`; the ``rmin`` written into the resolved chain), or give
+(:func:`toporlogy.optimization.robust.robust_chain_settings`; the ``rmin`` written into the resolved chain), or give
 ``eta_e`` / ``eta_d`` directly. A ``heaviside_projection`` link is added when the chain has none. The thresholds are
 shared by ``robust_compliance``, ``dilated_volume``, ``local_volume(source: dilated)`` and ``robust_continuation``.
 
