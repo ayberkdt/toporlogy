@@ -1175,7 +1175,7 @@
    "class": "Support"
   },
   "annotations": "<_Feature>",
-  "checked_residual": "checked_residual(A,x,b)",
+  "checked_residual": "checked_residual(A,x,b,norm1)",
   "reaction_forces": "reaction_forces(physics,E_active,U,F)"
  },
  "toporlogy.boundary.loads": {
@@ -3177,7 +3177,14 @@
    ],
    "class": "Elasticity"
   },
-  "element_matrix": "element_matrix(dim,element,nu)"
+  "RESIDUAL_TOL": "<float>",
+  "ResidualReport": {
+   "attrs": [],
+   "class": "ResidualReport"
+  },
+  "checked_residual": "checked_residual(A,x,b,norm1)",
+  "element_matrix": "element_matrix(dim,element,nu)",
+  "matrix_norm1": "matrix_norm1(A)"
  },
  "toporlogy.fem.elastic_gmg": {
   "ElasticityGMG": {

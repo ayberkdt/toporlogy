@@ -14,6 +14,7 @@ Element matrices: :mod:`toporlogy.fem.elements` (H8, H8IM statically condensed, 
 from __future__ import annotations
 
 from collections.abc import Sequence
+from dataclasses import dataclass
 from typing import Any
 
 import numpy as np
@@ -24,7 +25,7 @@ from toporlogy.core.domain import Domain
 from toporlogy.fem.mechanisms import SolveResidualError, check_supports, fixed_dof_rows
 from toporlogy.solvers.direct import DirectSolver
 
-__all__ = ["Elasticity", "element_matrix"]
+__all__ = ["Elasticity", "element_matrix", "RESIDUAL_TOL", "ResidualReport", "checked_residual", "matrix_norm1"]
 
 
 from toporlogy.fem.elements import element_matrix  # noqa: E402  (re-exported)
@@ -80,7 +81,9 @@ class Elasticity:
         self.n_adjoint_solves = 0
         self._kinematics_checked = False
         self._A: sp.csr_matrix | None = None                     # reduced matrix of the last factorisation
-        self.last_residual: float | None = None                    # ‖K x − b‖ / ‖b‖ of the last solve
+        self._A_norm1: float | None = None                         # its ‖K‖₁ (for the backward error)
+        self.last_residual: float | None = None                    # worst load case ‖K x − b‖ / ‖b‖, last solve
+        self.last_residual_report: ResidualReport | None = None   # every load case of the last solve
 
     # ------------------------------------------------------------------ assembly and solve (NumPy)
     @property
@@ -111,6 +114,7 @@ class Elasticity:
             self.check_kinematics()
         E_active = np.asarray(E_active, float)
         self._A = self.matrix(E_active)
+        self._A_norm1 = matrix_norm1(self._A)
         self.solver.factor(self._A)
         self._factored_E = E_active.copy()
         self._token += 1
@@ -119,7 +123,7 @@ class Elasticity:
         X = np.zeros_like(B_full)
         b = B_full[self.free]
         x = np.asarray(self.solver.solve(b)).reshape(b.shape)
-        self.last_residual = checked_residual(self._A, x, b)
+        self._record_residual(checked_residual(self._A, x, b, self._A_norm1))
         X[self.free] = x
         return X
 
@@ -130,6 +134,10 @@ class Elasticity:
         self.factor(E_active)
         self.n_solves += 1
         return self._solve_free(F2)
+
+    def _record_residual(self, rep: ResidualReport | None) -> None:
+        self.last_residual_report = rep
+        self.last_residual = None if rep is None else rep.max_relative
 
     def element_energy(self, U: np.ndarray, V: np.ndarray | None = None) -> np.ndarray:
         """(na, n_cases) ``v_eᵀ KE u_e`` per active element and case (unit modulus, without ``geom``)."""
@@ -149,21 +157,74 @@ class Elasticity:
 RESIDUAL_TOL = 1e-6        # a backward-stable direct solve gives ~1e-15; above this the solution is not usable
 
 
-def checked_residual(A: sp.csr_matrix | None, x: np.ndarray, b: np.ndarray) -> float | None:
-    """‖K x − b‖ / ‖b‖ with K = A + Aᵀ − diag(A) (A: upper triangle); raises SolveResidualError above
-    :data:`RESIDUAL_TOL`. None when there is no matrix (a custom solver path) or b = 0."""
+@dataclass(frozen=True)
+class ResidualReport:
+    """Residuals of one linear solve K X = B, one entry per load case (right-hand-side column j).
+
+    ``relative_per_rhs``: ‖K x_j − b_j‖ / ‖b_j‖, NaN for a zero load column (the ratio is undefined there).
+    ``absolute_per_rhs``: ‖K x_j − b_j‖.
+    ``backward_error_per_rhs``: η_j = ‖K x_j − b_j‖ / (‖K‖₁ ‖x_j‖ + ‖b_j‖), 0 when x_j = b_j = 0. ‖K‖₁ (largest
+    absolute column sum) is an upper bound of ‖K‖₂ for symmetric K, so η_j is not overestimated. A small η_j says the
+    solver solved a nearby system; it does not bound the forward error of an ill-conditioned K.
+    ``worst_rhs``: column with the largest relative residual (0 when every load column is zero).
+    ``max_relative``: that largest relative residual (0.0 when every load column is zero).
+    """
+
+    relative_per_rhs: np.ndarray
+    absolute_per_rhs: np.ndarray
+    backward_error_per_rhs: np.ndarray
+    worst_rhs: int
+    max_relative: float
+
+
+def matrix_norm1(A: sp.csr_matrix) -> float:
+    """‖K‖₁ (largest absolute column sum) of K = A + Aᵀ − diag(A), A its upper triangle; an upper bound of ‖K‖₂."""
+    absA = abs(A)
+    return float((np.asarray(absA.sum(axis=0)).ravel() + np.asarray(absA.sum(axis=1)).ravel()
+                  - abs(A.diagonal())).max(initial=0.0))
+
+
+def checked_residual(A: sp.csr_matrix | None, x: np.ndarray, b: np.ndarray,
+                     norm1: float | None = None) -> ResidualReport | None:
+    """Check every load case of K X = B (K = A + Aᵀ − diag(A), A: upper triangle) and return the residuals.
+
+    Raises :class:`~toporlogy.fem.mechanisms.SolveResidualError`, naming the load case, when a solution column is not
+    finite, when a nonzero load column has ‖K x_j − b_j‖ / ‖b_j‖ > :data:`RESIDUAL_TOL`, or when a zero load column has
+    a nonzero solution (K is nonsingular after the support check, so x_j = 0 is the only answer; noise up to
+    RESIDUAL_TOL × the largest solution norm of the loaded columns is accepted). None when there is no matrix (a
+    custom solver path that bypasses factor()). ``norm1``: :func:`matrix_norm1` of A when the caller has it (it
+    changes only with the factorisation; computing it costs about three products with A).
+    """
     if A is None:
         return None
-    nb = float(np.linalg.norm(b))
-    if nb == 0.0:
-        return 0.0
-    x2 = x.reshape(len(x), -1)
-    Kx = A @ x2 + A.T @ x2 - A.diagonal()[:, None] * x2
-    rel = float(np.linalg.norm(Kx - b.reshape(x2.shape))) / nb
-    if not np.isfinite(rel) or rel > RESIDUAL_TOL:
-        raise SolveResidualError(f"linear solve residual ‖Kx − b‖/‖b‖ = {rel:.2e} > {RESIDUAL_TOL:g}: the system "
-                                 "is singular or numerically not solvable at these moduli")
-    return rel
+    X = x.reshape(len(x), -1)
+    Bm = b.reshape(X.shape)
+    finite = np.isfinite(X).all(axis=0)
+    if not finite.all():
+        j = int(np.flatnonzero(~finite)[0])
+        raise SolveResidualError(f"load case {j}: the solution is not finite (NaN or Inf)")
+    R = A @ X + A.T @ X - A.diagonal()[:, None] * X - Bm
+    absr = np.linalg.norm(R, axis=0)
+    nb = np.linalg.norm(Bm, axis=0)
+    nx = np.linalg.norm(X, axis=0)
+    k1 = matrix_norm1(A) if norm1 is None else float(norm1)
+    den = k1 * nx + nb
+    eta = np.divide(absr, den, out=np.zeros_like(absr), where=den > 0)
+    loaded = nb > 0
+    rel = np.full(len(nb), np.nan)
+    rel[loaded] = absr[loaded] / nb[loaded]
+    for j in np.flatnonzero(loaded).tolist():
+        if not rel[j] <= RESIDUAL_TOL:
+            raise SolveResidualError(f"load case {j}: linear solve residual ‖Kx − b‖/‖b‖ = {rel[j]:.2e} > "
+                                     f"{RESIDUAL_TOL:g} (backward error {eta[j]:.2e}): the system is singular or "
+                                     "numerically not solvable at these moduli")
+    x_scale = float(nx[loaded].max(initial=0.0))
+    for j in np.flatnonzero(~loaded).tolist():
+        if nx[j] > RESIDUAL_TOL * x_scale:
+            raise SolveResidualError(f"load case {j}: zero load but the solution is not zero (‖x‖ = {nx[j]:.2e}, "
+                                     f"‖Kx‖ = {absr[j]:.2e}, backward error {eta[j]:.2e})")
+    worst = int(np.nanargmax(rel)) if loaded.any() else 0
+    return ResidualReport(rel, absr, eta, worst, float(rel[worst]) if loaded.any() else 0.0)
 
 
 class _LinearSolve(torch.autograd.Function):
