@@ -9,6 +9,11 @@ constraints and STL in two separate processes (17 Nov 2026), so a move-only comm
 
 The runner imports torch before toporlogy: PARDISO is then never loaded (solvers/pardiso.py) and the direct
 solver is SuperLU on every machine. PARDISO and CUDA results are not part of the baseline (not measured).
+
+Bitwise equality is promised only in the reference environment recorded in the file's ``meta`` (Python, NumPy,
+SciPy and torch versions, operating system, architecture). Elsewhere the comparison is numerical: status, iteration
+count, return code and post steps exactly, objective and constraint values to ``REL_TOL``; the array and geometry
+file hashes are then NOT VERIFIED, and the run's "verification status" section says so.
 """
 from __future__ import annotations
 
@@ -33,6 +38,8 @@ HERE = Path(__file__).resolve().parent
 REPO = HERE.parents[1]
 EXAMPLES = REPO / "examples"
 FILE = HERE / "baseline" / "examples.json"
+REL_TOL = 1e-6                     # objective and constraints outside the reference environment (not yet measured)
+EXACT_KEYS = ("returncode", "status", "iterations", "post_steps", "post_errors")
 MAX_ITER = 10
 RUNNER = "import sys, torch; from toporlogy.execution.cli import main; raise SystemExit(main(sys.argv[1:]))"
 GEOMETRY_FILES = (".stl", ".ply", ".obj")
@@ -83,7 +90,7 @@ def write() -> None:
     meta = {"created": time.strftime("%Y-%m-%dT%H:%M:%S"), "git": git.stdout.strip(), "max_iter": MAX_ITER,
             "solver": "SuperLU (torch imported first)", "python": platform.python_version(),
             "numpy": np.__version__, "torch": torch.__version__, "scipy": importlib.import_module("scipy").__version__,
-            "machine": platform.platform()}
+            "machine": platform.platform(), "system": platform.system(), "arch": platform.machine()}
     FILE.parent.mkdir(exist_ok=True)
     FILE.write_text(json.dumps({"meta": meta, "examples": rows}, indent=1) + "\n", encoding="utf-8")
     print(f"wrote {FILE}")
@@ -95,16 +102,55 @@ def _stored() -> dict[str, Any]:
     return json.loads(FILE.read_text(encoding="utf-8"))
 
 
+def environment_mismatch(meta: dict[str, Any]) -> dict[str, tuple[Any, Any]]:
+    """Differences between the reference environment of the baseline and this one ({} = bitwise comparison)."""
+    import scipy
+    import torch
+    ref = {"python": meta.get("python"), "numpy": meta.get("numpy"), "scipy": meta.get("scipy"),
+           "torch": meta.get("torch"), "system": meta.get("system") or str(meta.get("machine", "")).split("-")[0],
+           "arch": meta.get("arch")}
+    now = {"python": platform.python_version(), "numpy": np.__version__, "scipy": scipy.__version__,
+           "torch": torch.__version__, "system": platform.system(), "arch": platform.machine()}
+    return {k: (ref[k], now[k]) for k in ref if ref[k] is not None and ref[k] != now[k]}
+
+
+def compare(want: dict[str, Any], got: dict[str, Any], bitwise: bool) -> dict[str, Any]:
+    """Differences (stored, now). Bitwise: every key. Numerical: EXACT_KEYS exactly, objective and constraint values
+    to REL_TOL, hashes not compared."""
+    if bitwise:
+        return {k: (want.get(k), got.get(k)) for k in sorted(set(want) | set(got)) if want.get(k) != got.get(k)}
+    diff: dict[str, Any] = {k: (want.get(k), got.get(k)) for k in EXACT_KEYS if want.get(k) != got.get(k)}
+
+    def close(a: Any, b: Any) -> bool:
+        return a is not None and b is not None and abs(a - b) <= REL_TOL * max(abs(a), abs(b), 1e-300)
+    if not close(want.get("objective"), got.get("objective")):
+        diff["objective"] = (want.get("objective"), got.get("objective"))
+    wc, gc = want.get("constraints", {}), got.get("constraints", {})
+    for name in sorted(set(wc) | set(gc)):
+        if not close(wc.get(name), gc.get(name)):
+            diff[f"constraints.{name}"] = (wc.get(name), gc.get(name))
+    return diff
+
+
 @pytest.mark.parametrize("path", examples(), ids=lambda p: p.stem)
 def test_example_matches_baseline(path: Path, tmp_path: Path) -> None:
-    stored = _stored()["examples"]
+    import _verification as V
+    data = _stored()
+    stored = data["examples"]
     assert path.stem in stored, f"{path.stem} has no baseline entry: rewrite the baseline"
     if needs_post(path) and importlib.util.find_spec("pyvista") is None:
         pytest.skip("post steps need the post extra (pyvista)")
+    mismatch = environment_mismatch(data["meta"])
+    bitwise = not mismatch
+    V.BASELINE.update(mode="bitwise" if bitwise else "numerical", rel_tol=None if bitwise else REL_TOL,
+                      environment_mismatch={k: list(v) for k, v in mismatch.items()},
+                      note="reference environment: x, xphys and geometry files compared bit for bit" if bitwise else
+                      f"environment differs ({', '.join(f'{k} {a} vs {b}' for k, (a, b) in mismatch.items())}): "
+                      f"scalars to {REL_TOL:g}; array and file hashes NOT VERIFIED")
     got = run_example(path, tmp_path / path.stem)
-    want = stored[path.stem]
-    diff = {k: (want.get(k), got.get(k)) for k in sorted(set(want) | set(got)) if want.get(k) != got.get(k)}
-    assert not diff, f"{path.stem} differs from the baseline (stored, now): {json.dumps(diff, indent=1)}"
+    diff = compare(stored[path.stem], got, bitwise)
+    assert not diff, (f"{path.stem} differs from the baseline ({'bitwise' if bitwise else 'numerical'}; stored, now): "
+                      f"{json.dumps(diff, indent=1)}")
 
 
 def test_every_baseline_entry_has_an_example() -> None:

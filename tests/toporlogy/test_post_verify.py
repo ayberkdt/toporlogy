@@ -72,6 +72,7 @@ def test_t10_stiffness_matches_old_tetfem() -> None:
 
 
 @pytest.mark.slow
+@pytest.mark.gmsh
 def test_gmsh_tet_mesh_of_sphere() -> None:
     pytest.importorskip("pyvista")
     import pyvista as pv

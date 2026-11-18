@@ -487,6 +487,7 @@ def test_finalize_checks_export_and_lengthscale(tmp_path):
     assert post["measure_lengthscale"]["solid_max"] > 0
 
 
+@pytest.mark.gmsh
 def test_post_order_and_reverify_build():
     raw = box2d(post=["export"])
     errs = dict(pytest.raises(ConfigError, resolve, raw).value.errors)

@@ -19,6 +19,7 @@ from toporlogy.post import BoxPrimitive, Keep, finalize, manufacturing_checks, r
 
 
 @pytest.mark.slow
+@pytest.mark.gmsh
 def test_cantilever_full_chain(tmp_path) -> None:
     nx, ny, nz = 30, 10, 10
     keep = np.zeros((nx, ny, nz), bool)
