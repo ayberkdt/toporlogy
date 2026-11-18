@@ -32,6 +32,7 @@ import numpy as np
 import torch
 
 from toporlogy.core.domain import Domain
+from toporlogy.fem.elastic import ResidualReport
 from toporlogy.fem.elements import element_matrix
 from toporlogy.fem.mechanisms import check_supports, fixed_dof_rows
 from toporlogy.solvers import gmg_kernels as gk
@@ -81,6 +82,9 @@ class ElasticityGMG:
         self.geom = domain.h
         self.elements = domain.active_elements
         self._kinematics_checked = False
+        self.last_residual: float | None = None                    # worst load case true relative residual
+        self.last_residual_report: ResidualReport | None = None   # per load case (PCG's recomputed residual)
+        self._fallback_residual: ResidualReport | None = None
         fixed_arr = np.unique(np.asarray(fixed, np.int64))
         if fixed_arr.size and (fixed_arr.min() < 0 or fixed_arr.max() >= domain.ndof):
             raise ValueError("fixed DOF out of range")
@@ -184,6 +188,7 @@ class ElasticityGMG:
         t0 = time.perf_counter()
         d = self._direct_model()
         X = d.solve_numpy(E_np, B)
+        self._fallback_residual = d.last_residual_report
         self.n_fallbacks += 1
         self.fallback_log.append({"reason": reason, "kind": kind, "seconds": time.perf_counter() - t0,
                                   "solve": self.n_solves})
@@ -197,12 +202,15 @@ class ElasticityGMG:
             self._kinematics_checked = True
         E_cpu = E_active.detach().cpu().double()
         if self.n_elements < self.direct_below:
-            return self._fallback(f"small problem: {self.n_elements} < direct_below={self.direct_below} elements",
-                                  kind, E_cpu.numpy(), B)
+            Xd = self._fallback(f"small problem: {self.n_elements} < direct_below={self.direct_below} elements",
+                                kind, E_cpu.numpy(), B)
+            self._set_residual_report(self._fallback_residual)
+            return Xd
         self._set_operator(E_cpu)
         Bp = self._to_pad(B)
         X = torch.zeros_like(Bp)
         bad = []
+        rel = np.full(B.shape[1], np.nan)
         for c in range(B.shape[1]):
             xi = None if x0 is None else x0[..., c]
             X[..., c] = self.gmg.solve(None, Bp[..., c], x0=xi, tol=self.tol, maxit=self.maxit)
@@ -211,6 +219,7 @@ class ElasticityGMG:
             self.solve_log.append({k: info[k] for k in ("kind", "case", "iters", "requested_tol",
                                                         "achieved_true_rel_residual", "solve_s", "converged")})
             self.last_iters = info["iters"]
+            rel[c] = info["achieved_true_rel_residual"]
             if not info["converged"]:
                 bad.append((c, info))
         Xb = self._from_pad(X).cpu().numpy()
@@ -219,6 +228,8 @@ class ElasticityGMG:
                       f"relative residual {info['achieved_true_rel_residual']:.3e} > requested tol {self.tol:.3e}")
             if self.n_elements <= self.fallback_max_elements:
                 Xb[:, c] = self._fallback(reason, kind, E_cpu.numpy(), B[:, [c]])[:, 0]
+                if self._fallback_residual is not None:
+                    rel[c] = self._fallback_residual.max_relative
             elif self.allow_inexact:
                 self.n_inexact += 1
                 warnings.warn(f"ElasticityGMG: {reason}; allow_inexact=True, the unconverged result is returned",
@@ -231,7 +242,16 @@ class ElasticityGMG:
                     f"ElasticityGMG: {reason}; {self.n_elements} active elements > fallback_max_elements="
                     f"{self.fallback_max_elements}, so no direct fallback. Raise maxit, loosen tol, or pass "
                     "allow_inexact=True to accept the inexact result explicitly.")
+        rel[np.linalg.norm(B, axis=0) == 0] = np.nan                 # zero load: the ratio is undefined (x = 0 there)
+        nan = np.full_like(rel, np.nan)                              # PCG does not return ‖Kx − b‖ or η per column
+        loaded = ~np.isnan(rel)
+        worst = int(np.nanargmax(rel)) if loaded.any() else 0
+        self._set_residual_report(ResidualReport(rel, nan, nan, worst, float(rel[worst]) if loaded.any() else 0.0))
         return Xb
+
+    def _set_residual_report(self, rep: ResidualReport | None) -> None:
+        self.last_residual_report = rep
+        self.last_residual = None if rep is None else rep.max_relative
 
     # ------------------------------------------------------------------ public
     def solve_numpy(self, E_active: np.ndarray, F: np.ndarray) -> np.ndarray:

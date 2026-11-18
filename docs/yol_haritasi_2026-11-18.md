@@ -70,6 +70,14 @@ baseline farkını gerekçesiyle yazar; baseline sessizce yenilenmez.
 | **PR-11** | Bağ yerleşimi (2.3): bağlar simetri grubunun bütün görüntüleriyle ya da simetrik problem algılanınca simetrik yerleştirilir; deney: aynı braket (a) bağsız, (b) simetrik bağlı, (c) `SymmetryTying` ile; uyum, KKT, uygunluk, tek gövde, en ince kesit karşılaştırılır | x = 500'de e_sym(keep) = 0,224 | simetrik problemde e_sym(keep) = 0; asimetrinin bağdan mı dışbükey olmayan problemden mi geldiği ölçümle ayrıldı | PR-10 |
 | **PR-12** | Araştırma prototipi: R-01 (mekaniği koruyan geometri sonlandırma); önceden kayıtlı problem kümesi, temel yöntemler (eşik + marching cubes, bugünkü `finalize`, yalnız hacim düzeltmeli), üç ağ seviyesiyle bağımsız son-geometri FEM, başarısızlıklar raporda | temel yönteme üstünlüğün sınanması | hipotez, ablasyon, başarısız örnekler yazılı | PR-05, PR-07 |
 
+**Durum:** PR-01 yapıldı (dal `fix/per-rhs-residual`): yük sütunu başına bağıl ve mutlak residual ile geri hata
+(‖K‖₁ üst sınırıyla), sıfır yük sütununda sıfır çözüm şartı, NaN/Inf'te hata, hata iletisinde yük durumu numarası;
+`Elasticity`, `ConstrainedElasticity` (indirgenmiş yerel sistemde) ve `ElasticityGMG` (PCG'nin yeniden hesaplanan
+residual'ı, aynı adlarla) aynı raporu veriyor. Eski kodda kırmızı olan iki test: 1e8 / 1 büyüklüğündeki iki yükte
+%1 yanlış ikinci sütun ve sıfır yükte sıfır olmayan çözüm. Ek maliyet (48 × 24 × 24 H8, 90 000 serbest DOF, 3 yük,
+PARDISO): denetim 74 ms + çarpanlara ayırma başına ‖K‖₁ yaklaşık 46 ms, bir çözümün yaklaşık %2,5'i; uçtan uca
+ölçülen fark +%5,2 (PARDISO süresinin yayılımı dahil). GMG CUDA yolu bu makinede denenmedi.
+
 Görselleştirme betiği (panel b) PR değil, çalışma klasöründe düzeltilir: ham iso-yüzey, CAD'le kırpılmış, ek
 yumuşatma yok, figür notu buna göre.
 

@@ -192,7 +192,7 @@ class ConstrainedElasticity(Elasticity):
         b2 = b[:, None] if b.ndim == 1 else b
         bl = (self.T.T @ b2)[self.keep]
         y = np.asarray(self.solver.solve(bl)).reshape(bl.shape)
-        self.last_residual = checked_residual(self._A, y, bl)
+        self._record_residual(checked_residual(self._A, y, bl, self._A_norm1))   # the reduced local system
         z = np.zeros_like(b2)
         z[self.keep] = y
         x = self.T @ z
