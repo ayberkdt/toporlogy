@@ -106,11 +106,12 @@ class Elasticity:
         """Support rows per node acting on its displacement (fixed DOFs: unit rows); see :mod:`.mechanisms`."""
         return fixed_dof_rows(self.fixed, self.domain.dim)
 
-    def check_kinematics(self) -> None:
+    def check_kinematics(self, max_unknowns: int | None = None) -> None:
         """Raise :class:`~toporlogy.fem.mechanisms.MechanismError` if the supports leave a zero-energy motion (a
         floating piece, a hinge, a free rotation): the stiffness would be singular and a direct solve would return
         finite nonsense. Runs once, before the first factorisation."""
-        check_supports(self.domain, self.elements, self._kinematic_rows())
+        lim = {} if max_unknowns is None else {"max_unknowns": int(max_unknowns)}   # call before the first solve
+        check_supports(self.domain, self.elements, self._kinematic_rows(), **lim)
         self._kinematics_checked = True
 
     def factor(self, E_active: np.ndarray) -> None:

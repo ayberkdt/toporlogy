@@ -90,6 +90,13 @@ ve SuperLU, 2-D ve 3-D, kontrast 1–1e-9 arası en çok 1,1e-16). Artık bir y�
 geri hata > 1e-14 ise reddediliyor; kontrast 1e-9'da %1 yanlış çözüm (η 1,5e-13) hâlâ reddediliyor, eşik 1e-12'ye
 gevşetilince test düşüyor.
 
+PR-03 yapıldı (dal `fix/mechanism-scaling`): mesnet denetimi küme temas grafiğinin bileşenlerine ayrıldı (denklemler
+yalnız ortak düğümde bağlandığından blok köşegen; kesin, yaklaşık değil); her bileşen kendi merkezine ve boyutuna
+ölçeklenip tekil değerlerle (normal matris yok) çözülüyor. Ölçüm (aynı makine): 1000 ayrı mesnetli ada 28,9 s / 574 MB →
+0,51 s / 10 MB; tek bileşende 300 küme 0,97 s → 0,79 s. Tek bileşen 3000 bilinmeyeni (500 küme, 3,0 s) aşınca
+`MechanismCheckIndeterminate` (kod `mechanism_indeterminate`); sınır `check_kinematics(max_unknowns=...)` ile bilerek
+büyütülebilir. 160 rastgele ve 40 eğik mesnetli karşılaştırma yeni yöntemle de birebir.
+
 Görselleştirme betiği (panel b) PR değil, çalışma klasöründe düzeltilir: ham iso-yüzey, CAD'le kırpılmış, ek
 yumuşatma yok, figür notu buna göre.
 

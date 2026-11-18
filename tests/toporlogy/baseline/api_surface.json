@@ -3299,6 +3299,16 @@
    ],
    "class": "InvalidModuliError"
   },
+  "MAX_COMPONENT_UNKNOWNS": "<int>",
+  "MechanismCheckIndeterminate": {
+   "attrs": [
+    "add_note",
+    "args",
+    "code",
+    "with_traceback"
+   ],
+   "class": "MechanismCheckIndeterminate"
+  },
   "MechanismError": {
    "attrs": [
     "add_note",
@@ -3318,9 +3328,9 @@
    "class": "SolveResidualError"
   },
   "check_moduli": "check_moduli(values,n,what,allow_zero)",
-  "check_supports": "check_supports(domain,elements,rows)",
+  "check_supports": "check_supports(domain,elements,rows,max_unknowns)",
   "fixed_dof_rows": "fixed_dof_rows(fixed,dim)",
-  "zero_energy_modes": "zero_energy_modes(domain,elements,rows,tol)"
+  "zero_energy_modes": "zero_energy_modes(domain,elements,rows,tol,max_unknowns)"
  },
  "toporlogy.fem.modal": {
   "Modal": {
