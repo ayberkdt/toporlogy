@@ -136,3 +136,27 @@ if __name__ == "__main__":
     SURFACE.write_text(json.dumps(surface(), indent=1, sort_keys=True) + "\n", encoding="utf-8")
     LISTING.write_text(listing(), encoding="utf-8", newline="\n")
     print(f"wrote {SURFACE} and {LISTING}")
+
+
+# Submodules that were attributes of the package right after `import toporlogy` before the G5 moves (the imports of
+# toporlogy/__init__.py at ff1db52): `import toporlogy; toporlogy.study.Study` must keep working.
+PACKAGE_MODULE_ATTRS = ("solvers", "chain", "checks", "domain", "fem", "interp", "optim", "record", "responses",
+                        "study", "bc", "connectivity", "dynamics", "geometry", "lengthscale", "manufacturing", "robust")
+
+
+def test_old_submodules_are_attributes_after_import_toporlogy() -> None:
+    """In a fresh process (other tests' imports would set the attributes): each name above is an attribute of the
+    package and is the module that ``import toporlogy.<name>`` gives (for G5 aliases: the moved module)."""
+    code = "\n".join([
+        "import importlib",
+        "import toporlogy as T",
+        f"names = {PACKAGE_MODULE_ATTRS!r}",
+        "missing = [n for n in names if not hasattr(T, n)]",
+        "wrong = [n for n in names if hasattr(T, n) and getattr(T, n) is not importlib.import_module(f'toporlogy.{n}')]",
+        "print(missing, wrong)",
+    ])
+    env = dict(os.environ)
+    env["PYTHONPATH"] = os.pathsep.join(p for p in (str(REPO / "src"), env.get("PYTHONPATH", "")) if p)
+    p = subprocess.run([sys.executable, "-c", code], env=env, capture_output=True, text=True, timeout=300)
+    assert p.returncode == 0, p.stderr
+    assert p.stdout.strip() == "[] []", f"(missing, not the same module): {p.stdout.strip()}"

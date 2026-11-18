@@ -31,6 +31,10 @@ from toporlogy.optimization.study import Constraint, Evaluation, Result, Study
 # extrusion, casting), dynamics (eigenfrequency responses), fem.heat, fem.modal, config / registry / cli.
 from toporlogy import bc, boundary, connectivity, dynamics, geometry, lengthscale, manufacturing, robust  # noqa: F401
 
+# Old module names that were package attributes before the G5 moves (docs/gelistirme_plani.md): importing their aliases
+# keeps `import toporlogy; toporlogy.study.Study` working (tests/toporlogy/test_api_surface.py).
+from toporlogy import chain, checks, domain, interp, responses, study  # noqa: E402, F401
+
 __all__ = ["Domain", "Chain", "Embed", "DensityFilter", "HeavisideProjection", "Passive", "standard_chain",
            "SIMP", "RAMP", "Elasticity", "Response", "EvalContext", "Compliance", "Volume", "Optimizer", "OC", "MMA",
            "Schedule", "BetaContinuation", "Constraint", "Study", "Result", "Evaluation", "Recorder",
