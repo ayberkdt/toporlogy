@@ -64,7 +64,17 @@ Yeni açık bulgu (B-20, 18 Kasım 2026): yavaş test `test_connectivity.py::tes
 ("coupling" senaryosu) başarısız: tasarım tek gövde yerine iki gövde (209 + 7 hücre, "1 floating body without
 interface"). Aynı sonuç `main`'de (`ff1db52`, bu planın bütün değişikliklerinden önce) ve G5'ten önceki `e57444c`'de
 aynı sayılarla ölçüldü; değişikliklerden kaynaklanmıyor. Test normal pakette koşmadığı için daha önce görülmedi.
-Nedeni araştırılmadı.
+Teşhis (18 Kasım 2026, kapandı): kod hatası değil, testin iterasyon bütçesi. β sürekliliği her 25 iterasyonda bir
+adım atıyor ve her adım `coupling` ölçüsünü sınırın çok üstüne fırlatıyor (β 2, 4, 8 adımlarından sonra 18, 122, 75);
+son adım (β=16) tam 100. iterasyonda olduğu için dönen tasarım kısıtı 4,4 kat ihlal ediyordu (11,0 > 2,5) ve 7
+hücrelik ada bu geçici durumdan kalıyordu. 300 iterasyonla 219'da yakınsıyor, iki kısıt da aktif, tek gövde. Test
+artık "tek gövde" iddiasından önce uygunluğu sınıyor; bu, 2-D durumda da aynı sorunu gösterdi (120 iterasyonda
+`coupling` 2,93 > 2,5, eski test geçiyordu). Her iki boyutta bütçe 300.
+
+B-22 (18 Kasım 2026, açık): `Elasticity.solve_numpy` tekil (mekanizma) bir sistemde hata vermiyor; mesnede bağlı
+olmayan yüzen bir parçada çözüm 1e15 mertebesinde anlamsız sayılar döndürüyor (değişmez testlerinde rastgele bir
+boşluk deseniyle görüldü). Yapılandırma yolunda `validate`'in rijit-gövde kontrolü bunu yakalıyor; doğrudan Python
+API'sinde koruma yok.
 
 B-21 (18 Kasım 2026, dış incelemeden, düzeltildi): A-02'nin kapısı, onarılmış tasarımın değerlendirilemeyen kısıtlarını
 (`feasible=None`) geçer sayıyordu. `lbracket_bore3d`'de onarılmış bir yoğunlukta amaç ve üç kısıtın hiçbiri

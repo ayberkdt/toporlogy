@@ -399,14 +399,25 @@ def test_split_scenario_plain_ties_bridge_2d():
 @pytest.mark.slow
 @pytest.mark.parametrize("dim", [2, 3])
 def test_split_scenario_all_measures(dim):
-    """Full comparison (plain, ties, conduction, coupling, all at the same volume) — reported numbers."""
+    """Full comparison (plain, ties, conduction, coupling, all at the same volume) — reported numbers.
+
+    B-20 (diagnosed 18 Nov 2026): with 100 iterations in 3-D the last beta step (to 16) lands on iteration 100; each
+    beta step drives the coupling measure far above its bound (18, 122, 75 after the steps to 2, 4, 8) and at
+    iteration 100 it was 11.0 against 2.5, so the returned design was infeasible and carried a 7-cell island. With
+    the budget below MMA converges at iteration 219 with both constraints active and one body. The claim "keeps the
+    part in one body" is only meaningful for a feasible design, so feasibility is asserted first. That assertion
+    then showed the same in 2-D, where the old test passed: with 120 iterations coupling ended at 2.93 > 2.5
+    (max_iter). With 300 all four 2-D variants converge feasible (plain 84, ties 114, conduction 205, coupling 288)."""
     if dim == 2:
-        b, iters, rmin, bc, bk = split_benchmark(2, 24), 120, 2.0, 20.0, 2.5
+        b, iters, rmin, bc, bk = split_benchmark(2, 24), 300, 2.0, 20.0, 2.5
     else:
-        b, iters, rmin, bc, bk = split_benchmark(3, 12), 100, 1.5, 20.0, 2.5
+        b, iters, rmin, bc, bk = split_benchmark(3, 12), 300, 1.5, 20.0, 2.5
     out = {}
     for v, bound in (("plain", None), ("ties", None), ("conduction", bc), ("coupling", bk)):
         out[v] = _run(b, v, iters, rmin=rmin, bound=bound)
+    for v in ("plain", "ties", "conduction", "coupling"):
+        res = out[v][0]
+        assert res.feasible, f"{v}: returned design infeasible {res.constraint_values} ({res.termination})"
     assert out["plain"][1].n_bodies >= 2 and not out["plain"][1].connected
     for v in ("ties", "conduction", "coupling"):
         assert out[v][1].connected and out[v][1].n_bodies == 1, v
