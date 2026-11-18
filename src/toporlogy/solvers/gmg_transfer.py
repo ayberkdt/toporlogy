@@ -23,6 +23,7 @@ transpose, applied in reverse order.
 from __future__ import annotations
 
 import itertools
+from typing import cast
 
 import torch
 
@@ -37,20 +38,20 @@ _FACE_P = [(0, 1, 1), (1, 0, 1), (1, 1, 0)]                              # norma
 _CELL_P = (1, 1, 1)
 
 
-def _edge_offs(a: int) -> list[tuple[int, int, int]]:
+def _edge_offs(a: int) -> list[tuple[int, ...]]:
     m, p = [0, 0, 0], [0, 0, 0]
     m[a], p[a] = -1, 1
-    return [tuple(m), tuple(p)]  # type: ignore[list-item]
+    return [tuple(m), tuple(p)]
 
 
-def _face_offs(a: int) -> list[tuple[int, int, int]]:
+def _face_offs(a: int) -> list[tuple[int, ...]]:
     return [o for o in _OFFS if o[a] == 0 and o != (0, 0, 0)]
 
 
 _CELL_OFFS = [o for o in _OFFS if o != (0, 0, 0)]
 
 
-def _class_offs(p: tuple[int, int, int]) -> list[tuple[int, int, int]]:
+def _class_offs(p: tuple[int, int, int]) -> list[tuple[int, ...]]:
     k = sum(p)
     if k == 1:
         return _edge_offs(p.index(1))
@@ -85,7 +86,9 @@ class BlackBoxTransfer:
         self.cshape = (nx // 2, ny // 2, nz // 2)
         dev, dt = fine.free.device, torch.float64
         # zero-padded element data: element e at padded index e + 1
+        self._src: tuple[str, torch.Tensor, torch.Tensor | None]
         if fine.Ke is None:
+            assert fine.s is not None
             sp = torch.zeros((nx + 2, ny + 2, nz + 2), dtype=dt, device=dev)
             sp[1:-1, 1:-1, 1:-1] = fine.s.view(nx, ny, nz)
             self._src = ("s", sp, fine.KE)
@@ -115,6 +118,7 @@ class BlackBoxTransfer:
             for j, cj in enumerate(gk.CORNERS):
                 o = tuple(cj[a] - ci[a] for a in range(3))
                 if kind == "s":
+                    assert KE is not None
                     S[..., _OI[o], :, :] += blk[..., None, None] * KE[3 * i:3 * i + 3, 3 * j:3 * j + 3]
                 else:
                     S[..., _OI[o], :, :] += blk[..., 3 * i:3 * i + 3, 3 * j:3 * j + 3]
@@ -134,10 +138,11 @@ class BlackBoxTransfer:
         elif k == 2:
             a = p.index(0)
             offs = _face_offs(a)
-            C = sum(S[..., _OI[tuple(v if b != a else s for b, v in enumerate((0, 0, 0)))], :, :]
-                    for s in (-1, 0, 1))
-            N = torch.stack([sum(S[..., _OI[tuple(o[b] if b != a else s for b in range(3))], :, :]
-                                 for s in (-1, 0, 1)) for o in offs], -3)
+            # builtin sum (0 + a + b + c) kept as is; cast because its stub result is ``Tensor | Literal[0]``
+            C = cast(torch.Tensor, sum(S[..., _OI[tuple(v if b != a else s for b, v in enumerate((0, 0, 0)))], :, :]
+                                       for s in (-1, 0, 1)))
+            N = torch.stack([cast(torch.Tensor, sum(S[..., _OI[tuple(o[b] if b != a else s for b in range(3))], :, :]
+                                                    for s in (-1, 0, 1))) for o in offs], -3)
             tri_w = torch.tensor([0.25 if sum(abs(v) for v in o) == 1 else 0.0 for o in offs],
                                  dtype=S.dtype, device=S.device)
         else:
@@ -241,6 +246,7 @@ class BlackBoxTransfer:
             child_rows.append([qi(tuple(off[a] + c[a] for a in range(3))) for c in gk.CORNERS])
         child_rows_t = torch.tensor(child_rows, device=self.free.device)          # (8, 8)
         if fine.Ke is None:
+            assert fine.s is not None
             s_ch = gk.children(fine.s, self.fshape)                               # (nc, 8)
             f_ch = gk.children(gk.gather(fine.free, self.fshape), self.fshape)    # (nc, 8, 24)
         else:

@@ -16,7 +16,7 @@ from hypothesis import strategies as st
 
 import toporlogy as T
 from toporlogy.design.chain import DensityFilter, HeavisideProjection
-from toporlogy.optimization.connectivity import label_bodies
+from toporlogy.core.bodies import label_bodies
 from toporlogy.optimization.responses import EvalContext, Volume
 
 PROFILE = settings(derandomize=True, max_examples=25, deadline=None,
@@ -247,8 +247,8 @@ def test_label_bodies_matches_an_independent_flood_fill(dim, seed, density):
 @PROFILE
 @given(seed=st.integers(0, 2**31 - 1), n_tri=st.integers(1, 40))
 def test_stl_round_trip_keeps_every_triangle(tmp_path_factory, seed, n_tri):
-    """write_stl / read_stl of geometry and post.export: same triangles (as float32) for random non-degenerate
-    meshes, shared vertices merged once."""
+    """write_stl / read_stl: same triangles (as float32) for random non-degenerate meshes, shared vertices merged
+    once; the post export (its own header) reads back the same."""
     from toporlogy import geometry as G
     from toporlogy.post import export as E
     rng = np.random.default_rng(seed)
@@ -257,7 +257,7 @@ def test_stl_round_trip_keeps_every_triangle(tmp_path_factory, seed, n_tri):
     F = np.vstack([F, F[:1, ::-1]]) if n_tri > 1 else F                 # one reversed duplicate: shared vertices
     want = np.sort(np.round(V[F].astype(np.float32).astype(float), 6).reshape(len(F), -1), axis=0)
     tmp = tmp_path_factory.mktemp("stl")
-    for name, write, read in (("g", G.write_stl, G.read_stl), ("e", E.write_stl, E.read_stl)):
+    for name, write, read in (("g", G.write_stl, G.read_stl), ("e", E._stl, G.read_stl)):
         p = tmp / f"{name}.stl"
         write(p, V, F)
         V2, F2 = read(p)

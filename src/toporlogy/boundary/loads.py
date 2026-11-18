@@ -86,7 +86,7 @@ def rigid_distribution(X: np.ndarray, w: np.ndarray, point: np.ndarray, force: n
     theta = np.linalg.lstsq(M, target, rcond=1e-12)[0]
     f = w[:, None] * np.einsum("iak,k->ia", Phi, theta)
     got = np.einsum("iak,ia->k", Phi, f)
-    scale = max(np.linalg.norm(target), 1e-300)
+    scale = max(float(np.linalg.norm(target)), 1e-300)
     if np.linalg.norm(got - target) > max(rtol, 1e-9) * scale:
         raise ValueError(f"the {n} node(s) cannot carry the requested resultant (residual "
                          f"{np.linalg.norm(got - target) / scale:.2e}); collinear or too few nodes - enlarge the "
@@ -128,7 +128,7 @@ class RemoteForce(Load):
 
     kind = "remote"
 
-    def __init__(self, where: Selector, force: Sequence[float], point: Sequence[float],
+    def __init__(self, where: Selector, force: Sequence[float], point: Sequence[float] | np.ndarray,
                  moment: Any = None, weights: str = "area", name: str | None = None) -> None:
         self.where, self.F, self.point, self.M, self.wmode = where, force, point, moment, weights
         self.name = name or f"RemoteForce {where!r}"
@@ -155,8 +155,8 @@ class RemoteMoment(RemoteForce):
 
     kind = "moment"
 
-    def __init__(self, where: Selector, moment: Any, point: Sequence[float] | None = None, weights: str = "area",
-                 name: str | None = None) -> None:
+    def __init__(self, where: Selector, moment: Any, point: Sequence[float] | np.ndarray | None = None,
+                 weights: str = "area", name: str | None = None) -> None:
         super().__init__(where, [0.0], point if point is not None else [0.0], moment, weights,
                          name or f"RemoteMoment {where!r}")
         self._auto = point is None
@@ -179,7 +179,7 @@ class PointLoad(Load):
 
     kind = "point"
 
-    def __init__(self, point: Sequence[float], force: Sequence[float], radius: float | None = None,
+    def __init__(self, point: Sequence[float] | np.ndarray, force: Sequence[float], radius: float | None = None,
                  name: str | None = None) -> None:
         self.point, self.F, self.radius = np.asarray(point, float), force, radius
         self.name = name or f"PointLoad at {self.point.tolist()}"
@@ -449,7 +449,7 @@ class BodyForce(Load):
 # =============================================================================================== design-dependent load
 class _LoadSolve(torch.autograd.Function):
     @staticmethod
-    def forward(ctx: Any, E_active: torch.Tensor, F: torch.Tensor, model: Elasticity) -> torch.Tensor:  # type: ignore[override]
+    def forward(ctx: Any, E_active: torch.Tensor, F: torch.Tensor, model: Elasticity) -> torch.Tensor:
         E_np = E_active.detach().cpu().double().numpy()
         F_np = F.detach().cpu().double().numpy()
         U = model.solve_numpy(E_np, F_np)
@@ -457,7 +457,7 @@ class _LoadSolve(torch.autograd.Function):
         return torch.from_numpy(U).to(dtype=torch.float64)
 
     @staticmethod
-    def backward(ctx: Any, gU: torch.Tensor) -> tuple[Any, Any, None]:  # type: ignore[override]
+    def backward(ctx: Any, gU: torch.Tensor) -> tuple[Any, Any, None]:
         model = ctx.model
         if model._token != ctx.token:
             model.factor(ctx.E)
@@ -502,7 +502,9 @@ class BodyForceCompliance(Response):
         self.factors = np.ones(nc) if factors is None else np.asarray(factors, float).reshape(nc)
         self.weights = np.ones(nc) if weights is None else np.asarray(weights, float).reshape(nc)
         Gc = sp.coo_matrix(G)
-        self._G = torch.sparse_coo_tensor(np.vstack([Gc.row, Gc.col]), Gc.data, Gc.shape, dtype=torch.float64)
+        # torch accepts array_like indices at run time; its stub declares only Tensor
+        self._G = torch.sparse_coo_tensor(np.vstack([Gc.row, Gc.col]),  # type: ignore[arg-type]
+                                          Gc.data, Gc.shape, dtype=torch.float64)
 
     def loads(self, ctx: EvalContext) -> torch.Tensor:
         act = torch.as_tensor(ctx.domain.active_elements, dtype=torch.long)

@@ -23,6 +23,7 @@ bugünkü durumunu, bulunan açıkları ve sonraki işlerin sırasını tutar.
 | Adlandırma temizliği | tamam | eski yollar ve takma adlar kaldırıldı, karışan adlar düzeltildi (aşağıda) |
 | G7 sonuç sözleşmesi | kısmen | `termination`, `feasible`, `max_violation`, `kkt_residual`, özet `flags` (`a7a5631`); `DesignVariant`, `SOLVER_FAILURE` yok |
 | V1 bağımsız FEM doğrulaması | tamam | üretilmiş çözümler, Q4/H8/H8IM'de O(h²) (`fd4f4de`) |
+| mypy | tamam | 219 hata → 0; CI adımı artık hata kabul etmiyor |
 | G6, G8, G9 | başlamadı | G9'un ilk parçası (CI) eklendi |
 | K5 lisans | kapandı | tescilli, tüm hakları saklı (`LICENSE`) |
 
@@ -99,16 +100,19 @@ taşıyan ya da belirsiz kalan adlar takma adsız değiştirildi:
 | `toporlogy.optim` | `toporlogy.optimizers` | `optimization` paketinin yanında `optim` hangisinin ne olduğunu söylemiyordu |
 | `optimization/checks.py` | `optimization/diagnostics.py` | üç ayrı `checks` modülü vardı |
 | `boundary/checks.py` | `boundary/report.py` | içerik `CheckReport` ve tablo yardımcıları |
-| `boundary.Symmetry` (mesnet) | `boundary.SymmetrySupport` | `design.manufacturing.Symmetry` (bağlama) ile aynı addı (A-10) |
+| `boundary.Symmetry` (mesnet), `design.manufacturing.Symmetry` / `Extrusion` / `Pattern` (bağlama) | `boundary.SymmetrySupport`; `SymmetryTying`, `ExtrusionTying`, `PatternTying` | iki ayrı simetri kavramı aynı addı (A-10); bağlama ailesi `Tying` taban sınıfıyla aynı soneki aldı |
 | `optimization.lengthscale.local_thickness` | `voxel_local_thickness` | iki ayrı algoritma, birim ve dönüş türü aynı adla (A-17) |
 | `post.checks.local_thickness` | `sdf_local_thickness` | aynı neden |
-| `post.primitives.Shape`, `Implicit`, `GridShape` | `Primitive`, `ImplicitPrimitive`, `GridPrimitive` | `geometry.Shape` ile ve `post.pipeline.Implicit` ile çakışıyordu (`ImplicitShape` takma adı kalktı) |
+| `post.primitives.Shape`, `Implicit`, `GridShape`, `Sphere`, `Cylinder`, `Plane`, `Box`, `Offset` | `Primitive`, `ImplicitPrimitive`, `GridPrimitive`, `SpherePrimitive`, `CylinderPrimitive`, `PlanePrimitive`, `BoxPrimitive`, `OffsetPrimitive` | `geometry.Shape`, `geometry.Cylinder`, `geometry.Box` ve `post.pipeline.Implicit` ile çakışıyordu (`ImplicitShape` takma adı kalktı); bütün aile aynı soneki aldı |
 | `geometry.Sphere`, `geometry.Circle` (`Ball` takma adları) | `geometry.Ball` | bir sınıfa üç ad |
 | YAML `shape`: `sphere`, `circle` | `ball` | bir kurucuya üç ad; `toporlogy list` anlık görüntüsü bilerek yeniden yazıldı |
+| `geometry.read_stl` / `write_stl` ve `post.export.read_stl` / `write_stl` | yalnız `geometry.read_stl` / `write_stl` | aynı iş iki kez yazılmıştı (G6'nın 3. maddesi); geometri okuyucusu ASCII de okuyor, `post` STL'yi kendi başlığıyla `geometry.write_stl` üzerinden yazıyor |
+| `post.mesh.volume`, `post.sdf.volume` | `enclosed_volume`, `solid_volume` | aynı adla iki ayrı nicelik |
+| `optimization.connectivity.label_bodies`, `post.topology.label_bodies` | yalnız `core.bodies.label_bodies` (+ `neighbourhood`) | iki uygulama, iki dönüş türü; iki katmanın da içe aktarabileceği `core`'a taşındı |
 
 `tests/toporlogy/test_architecture.py` bunu kalıcı kılıyor: `sys.modules` takma adı ya da yalnız içe aktarma yapan
-bir modül, modül düzeyinde `Ad = BaşkaAd`, `import A as B` ile açık bir sınıfa ikinci ad ve aynı kurucunun iki YAML
-adıyla kaydı testi düşürür (her biri bilerek eklenip testin düştüğü görüldü). API yüzeyi anlık görüntüsü artık eski
+bir modül, modül düzeyinde `Ad = BaşkaAd`, `import A as B` ile açık bir sınıfa ikinci ad, aynı kurucunun iki YAML
+adıyla kaydı ve iki modülde aynı adla tanımlanmış açık bir sınıf ya da fonksiyon testi düşürür (her biri bilerek eklenip testin düştüğü görüldü). API yüzeyi anlık görüntüsü artık eski
 adları korumuyor; bir yeniden adlandırma anlık görüntü yeniden yazılana kadar testi düşürür, yani her ad değişikliği
 bir karardır. Bu kırıcı bir değişiklik: eski yolları kullanan betikler yeni yollara çevrilmeli.
 
@@ -389,7 +393,7 @@ güncellenmeli.
 3. **Her commit aynı kabul kapısından geçer:**
    - baseline karşılaştırması (G0, `-m baseline`, ~3 dakika) bit düzeyinde geçer;
    - `pytest tests/toporlogy -m "not slow"` 0 hata ile biter;
-   - ruff temiz kalır, mypy hata sayısı artmaz (bugün 230);
+   - ruff ve mypy hatasız kalır (mypy 18 Kasım 2026'dan beri 0 hata; CI'da bütçe yerine zorunlu adım);
    - `python -m toporlogy list` çıktısı değişmez;
    - API yüzeyi anlık görüntüsü yalnız bilerek değişir (yeniden adlandırma anlık görüntüyü yeniden yazmayı gerektirir);
    - içe aktarma kuralı testi yeni yasak kenar bulmaz.
@@ -473,8 +477,10 @@ türler `optimization/types.py`'ye çekilerek kaldırılır; bu da saf taşımad
 
 1. Ortak `ImplicitSolid` sözleşmesi: `sdf(points)`, `dim`, `bounds()`. `geometry.Shape` ve `post.primitives.Primitive` bunu
    uygular.
-2. Tek kanonik `Cylinder`; öteki adaptör olarak kalır, dönüşüm testleri (eksen, yarıçap, uç, SDF değerleri).
-3. Tek STL okuyucu/yazıcı (`geometry/io/stl.py`): ikili + ASCII, açık birleştirme toleransı, B-12 düzeltilmiş.
+2. Ad çakışması giderildi: CSG katısı `geometry.Cylinder`, işlevsel yüz `post.primitives.CylinderPrimitive`
+   (adlandırma temizliği). İkisinin tek bir `ImplicitSolid` sözleşmesinde birleşmesi (1. madde) açık.
+3. Tek STL okuyucu/yazıcı: yapıldı, `geometry.read_stl` / `write_stl` (ikili + ASCII, birleştirme toleransı);
+   `post.export`'taki kopya silindi.
 4. İki `local_thickness` açık adlar aldı: `voxel_local_thickness`, `sdf_local_thickness` (adlandırma temizliği, takma ad yok).
 
 Kabul: son işlem testleri ve baseline değişmez ya da fark açıklanır.

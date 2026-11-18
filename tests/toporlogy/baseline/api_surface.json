@@ -2207,6 +2207,10 @@
   "annotations": "<_Feature>"
  },
  "toporlogy.core": {},
+ "toporlogy.core.bodies": {
+  "label_bodies": "label_bodies(solid,connectivity)",
+  "neighbourhood": "neighbourhood(dim,connectivity)"
+ },
  "toporlogy.core.domain": {
   "Domain": {
    "attrs": [
@@ -2766,7 +2770,7 @@
    ],
    "class": "Casting"
   },
-  "Extrusion": {
+  "ExtrusionTying": {
    "attrs": [
     "T_destination",
     "add_module",
@@ -2826,7 +2830,7 @@
     "xpu",
     "zero_grad"
    ],
-   "class": "Extrusion"
+   "class": "ExtrusionTying"
   },
   "GroupAverage": {
    "attrs": [
@@ -2886,7 +2890,7 @@
    ],
    "class": "GroupAverage"
   },
-  "Pattern": {
+  "PatternTying": {
    "attrs": [
     "T_destination",
     "add_module",
@@ -2948,9 +2952,9 @@
     "xpu",
     "zero_grad"
    ],
-   "class": "Pattern"
+   "class": "PatternTying"
   },
-  "Symmetry": {
+  "SymmetryTying": {
    "attrs": [
     "T_destination",
     "add_module",
@@ -3010,7 +3014,7 @@
     "xpu",
     "zero_grad"
    ],
-   "class": "Symmetry"
+   "class": "SymmetryTying"
   },
   "Tying": {
    "attrs": [
@@ -3431,7 +3435,7 @@
   "voxelize": "voxelize(shape,h,padding,bounds,sub,min_frac,connectivity,keep,void,thickness)",
   "voxelize_mesh": "voxelize_mesh(V,F,h,padding,sub,min_frac,connectivity,keep,void,bounds)",
   "winding_number": "winding_number(points,V,F,chunk)",
-  "write_stl": "write_stl(path,V,F)"
+  "write_stl": "write_stl(path,V,F,header)"
  },
  "toporlogy.optimization": {},
  "toporlogy.optimization.connectivity": {
@@ -3498,7 +3502,6 @@
   "analyse_connectivity": "analyse_connectivity(domain,xphys,interfaces,threshold,connectivity,robust_thresholds,erosion,necks,voids)",
   "bridge": "bridge(domain,xphys,interfaces,threshold,section,connectivity,void_cost,solid_cost,drop_islands,binary)",
   "elements_touching_nodes": "elements_touching_nodes(domain,nodes,active_only)",
-  "label_bodies": "label_bodies(solid,connectivity)",
   "min_cut_cells": "min_cut_cells(solid,a,b,connectivity,frozen)",
   "one_body": "one_body(domain,interfaces,ties,constraint,eta,bound,sink,threshold,repair_section,response_kw)",
   "split_benchmark": "split_benchmark(dim,n,coupling,h)",
@@ -4132,7 +4135,7 @@
    ],
    "class": "Bound"
   },
-  "Box": {
+  "BoxPrimitive": {
    "attrs": [
     "describe",
     "grad",
@@ -4141,7 +4144,7 @@
     "project",
     "sdf"
    ],
-   "class": "Box"
+   "class": "BoxPrimitive"
   },
   "CheckResult": {
    "attrs": [
@@ -4178,7 +4181,7 @@
    ],
    "class": "Cut"
   },
-  "Cylinder": {
+  "CylinderPrimitive": {
    "attrs": [
     "axial",
     "describe",
@@ -4190,7 +4193,7 @@
     "radial",
     "sdf"
    ],
-   "class": "Cylinder"
+   "class": "CylinderPrimitive"
   },
   "GridPrimitive": {
    "attrs": [
@@ -4234,7 +4237,7 @@
    ],
    "class": "Keep"
   },
-  "Plane": {
+  "PlanePrimitive": {
    "attrs": [
     "describe",
     "grad",
@@ -4243,7 +4246,7 @@
     "project",
     "sdf"
    ],
-   "class": "Plane"
+   "class": "PlanePrimitive"
   },
   "PostParams": {
    "attrs": [
@@ -4306,7 +4309,7 @@
    ],
    "class": "Role"
   },
-  "Sphere": {
+  "SpherePrimitive": {
    "attrs": [
     "describe",
     "grad",
@@ -4315,7 +4318,7 @@
     "project",
     "sdf"
    ],
-   "class": "Sphere"
+   "class": "SpherePrimitive"
   },
   "TetMesh": {
    "attrs": [
@@ -4334,7 +4337,6 @@
   "optimised_volume": "optimised_volume(domain,xphys)",
   "overhang": "overhang(V,F,build_direction,angle_deg,plate_level,plate_tol)",
   "print_variant": "print_variant(res,log)",
-  "read_stl": "read_stl(path)",
   "reverify": "reverify(res,supports,load_cases,E,nu,size,exclusions,domain,xphys,timeout,penal,surface_edge)",
   "sdf_local_thickness": "sdf_local_thickness(phi,h)",
   "solve_t10": "solve_t10(m,supports,load_cases,E,nu,exclusions)",
@@ -4342,8 +4344,7 @@
   "voxel_reference": "voxel_reference(domain,xphys,supports,load_cases,E,nu,penal,emin_ratio)",
   "write_json": "write_json(path,data)",
   "write_obj": "write_obj(path,V,F)",
-  "write_ply": "write_ply(path,V,F)",
-  "write_stl": "write_stl(path,V,F,name)"
+  "write_ply": "write_ply(path,V,F)"
  },
  "toporlogy.post.checks": {
   "CheckResult": {
@@ -4376,11 +4377,9 @@
  },
  "toporlogy.post.export": {
   "export_result": "export_result(res,folder,name,formats,checks,print_stock,extra)",
-  "read_stl": "read_stl(path)",
   "write_json": "write_json(path,data)",
   "write_obj": "write_obj(path,V,F)",
-  "write_ply": "write_ply(path,V,F)",
-  "write_stl": "write_stl(path,V,F,name)"
+  "write_ply": "write_ply(path,V,F)"
  },
  "toporlogy.post.mesh": {
   "area": "area(V,F,per_face)",
@@ -4389,6 +4388,7 @@
   "components": "components(F,n_vertices)",
   "decimate": "decimate(V,F,target_faces)",
   "edge_report": "edge_report(F,n_vertices)",
+  "enclosed_volume": "enclosed_volume(V,F)",
   "extract": "extract(phi,grid,level)",
   "face_normals": "face_normals(V,F,unit)",
   "flip_edges": "flip_edges(V,F,passes,max_dihedral_deg)",
@@ -4397,8 +4397,7 @@
   "mesh_topology": "mesh_topology(V,F)",
   "quality": "quality(V,F)",
   "to_polydata": "to_polydata(V,F)",
-  "vertex_normals": "vertex_normals(V,F)",
-  "volume": "volume(V,F)"
+  "vertex_normals": "vertex_normals(V,F)"
  },
  "toporlogy.post.pipeline": {
   "Implicit": {
@@ -4464,7 +4463,7 @@
    ],
    "class": "Bound"
   },
-  "Box": {
+  "BoxPrimitive": {
    "attrs": [
     "describe",
     "grad",
@@ -4473,7 +4472,7 @@
     "project",
     "sdf"
    ],
-   "class": "Box"
+   "class": "BoxPrimitive"
   },
   "Cut": {
    "attrs": [
@@ -4488,7 +4487,7 @@
    ],
    "class": "Cut"
   },
-  "Cylinder": {
+  "CylinderPrimitive": {
    "attrs": [
     "axial",
     "describe",
@@ -4500,7 +4499,7 @@
     "radial",
     "sdf"
    ],
-   "class": "Cylinder"
+   "class": "CylinderPrimitive"
   },
   "GridPrimitive": {
    "attrs": [
@@ -4538,7 +4537,7 @@
    ],
    "class": "Keep"
   },
-  "Offset": {
+  "OffsetPrimitive": {
    "attrs": [
     "describe",
     "grad",
@@ -4547,9 +4546,9 @@
     "project",
     "sdf"
    ],
-   "class": "Offset"
+   "class": "OffsetPrimitive"
   },
-  "Plane": {
+  "PlanePrimitive": {
    "attrs": [
     "describe",
     "grad",
@@ -4558,7 +4557,7 @@
     "project",
     "sdf"
    ],
-   "class": "Plane"
+   "class": "PlanePrimitive"
   },
   "Primitive": {
    "attrs": [
@@ -4584,7 +4583,7 @@
    ],
    "class": "Role"
   },
-  "Sphere": {
+  "SpherePrimitive": {
    "attrs": [
     "describe",
     "grad",
@@ -4593,7 +4592,7 @@
     "project",
     "sdf"
    ],
-   "class": "Sphere"
+   "class": "SpherePrimitive"
   },
   "assemble": "assemble(phi_free,roles,X,cache)",
   "element_fraction": "element_fraction(domain,shape,samples)",
@@ -4629,8 +4628,8 @@
   "opening": "opening(phi,r,h)",
   "partial_volume": "partial_volume(phi,h)",
   "redistance": "redistance(f,h,band)",
+  "solid_volume": "solid_volume(phi,h)",
   "upsample": "upsample(domain,rho,grid,order)",
-  "volume": "volume(phi,h)",
   "volume_threshold": "volume_threshold(rf,grid,target,combine,lo,hi,iterations,redistanced)"
  },
  "toporlogy.post.smooth": {
@@ -4654,7 +4653,6 @@
   "enclosed_voids": "enclosed_voids(solid)",
   "euler_cubical": "euler_cubical(solid)",
   "grid_topology": "grid_topology(solid,h)",
-  "label_bodies": "label_bodies(solid)",
   "same_topology": "same_topology(a,b)"
  },
  "toporlogy.post.verify": {

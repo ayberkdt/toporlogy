@@ -52,8 +52,8 @@ def conduction_matrix(dim: int) -> np.ndarray:
     n = len(corners)
     KE = np.zeros((n, n))
     w = 0.5 ** dim
-    for xi in itertools.product(_GAUSS2, repeat=dim):
-        xi = np.asarray(xi)
+    for xi_t in itertools.product(_GAUSS2, repeat=dim):
+        xi = np.asarray(xi_t)
         # N_a = Π_d l(c_ad, ξ_d) with l(1, ξ) = ξ, l(0, ξ) = 1 − ξ
         lin = np.where(corners == 1, xi, 1.0 - xi)                    # (n, dim)
         dlin = np.where(corners == 1, 1.0, -1.0)                       # (n, dim)
@@ -106,17 +106,17 @@ class HeatConduction:
     The "DOFs" of this model are node numbers; loads ``Q`` are nodal heat flows of shape (nn,) or (nn, n_cases).
     """
 
-    def __init__(self, domain: Domain, fixed: Sequence[int], solver: Any = None) -> None:
+    def __init__(self, domain: Domain, fixed: Sequence[int] | np.ndarray, solver: Any = None) -> None:
         self.domain = domain
         self.KE = conduction_matrix(domain.dim)
         self.geom = domain.h if domain.dim == 3 else domain.thickness
         self.elements = domain.active_elements
         self.edof = element_nodes(domain, self.elements)              # (na, 2^dim) node numbers
-        fixed = np.unique(np.asarray(fixed, np.int64))
-        if fixed.size and (fixed.min() < 0 or fixed.max() >= domain.nn):
+        fixed_arr = np.unique(np.asarray(fixed, np.int64))
+        if fixed_arr.size and (fixed_arr.min() < 0 or fixed_arr.max() >= domain.nn):
             raise ValueError("fixed node out of range")
         active_nodes = np.unique(self.edof)
-        self.fixed = np.intersect1d(fixed, active_nodes)
+        self.fixed = np.intersect1d(fixed_arr, active_nodes)
         if self.fixed.size == 0:
             raise ValueError("no fixed node on the active region: the conduction matrix is singular")
         self._check_sinks(active_nodes)

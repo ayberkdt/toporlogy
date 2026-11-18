@@ -14,7 +14,7 @@ from scipy.sparse import csgraph
 
 from toporlogy.references import cite
 
-__all__ = ["extract", "to_polydata", "from_polydata", "edge_report", "components", "mesh_topology", "volume",
+__all__ = ["extract", "to_polydata", "from_polydata", "edge_report", "components", "mesh_topology", "enclosed_volume",
            "area", "face_normals", "vertex_normals", "quality", "clean", "decimate", "flip_edges", "compare",
            "is_watertight"]
 
@@ -32,13 +32,13 @@ def from_polydata(pd: Any) -> tuple[np.ndarray, np.ndarray]:
     return np.asarray(pd.points, float).copy(), F
 
 
-def volume(V: np.ndarray, F: np.ndarray) -> float:
+def enclosed_volume(V: np.ndarray, F: np.ndarray) -> float:
     """Signed enclosed volume (divergence theorem); positive for outward triangles."""
     a, b, c = V[F[:, 0]], V[F[:, 1]], V[F[:, 2]]
     return float(np.einsum("ij,ij->i", a, np.cross(b, c)).sum() / 6.0)
 
 
-volume = cite("mirtich_1996", note="volume by the divergence theorem over the triangles")(volume)
+enclosed_volume = cite("mirtich_1996", note="volume by the divergence theorem over the triangles")(enclosed_volume)
 
 
 def face_normals(V: np.ndarray, F: np.ndarray, unit: bool = True) -> np.ndarray:
@@ -87,7 +87,7 @@ def extract(phi: np.ndarray, grid: Any, level: float = 0.0) -> tuple[np.ndarray,
         return np.zeros((0, 3)), np.zeros((0, 3), np.int64)
     V, F = from_polydata(srf.clean())
     V, F = clean(V, F)
-    if volume(V, F) < 0:
+    if enclosed_volume(V, F) < 0:
         F = F[:, ::-1].copy()
     return V, F
 
@@ -163,7 +163,7 @@ def mesh_topology(V: np.ndarray, F: np.ndarray) -> dict[str, Any]:
         vs = np.unique(Fc)
         e = np.unique(np.sort(np.concatenate([Fc[:, [0, 1]], Fc[:, [1, 2]], Fc[:, [2, 0]]]), 1), axis=0)
         chi = len(vs) - len(e) + len(Fc)
-        vol = volume(V, Fc)
+        vol = enclosed_volume(V, Fc)
         shells.append({"faces": int(len(Fc)), "euler": int(chi), "genus": (2 - chi) / 2, "volume": vol})
     outer = [s for s in shells if s["volume"] > 0]
     inner = [s for s in shells if s["volume"] <= 0]
@@ -228,7 +228,7 @@ def decimate(V: np.ndarray, F: np.ndarray, target_faces: int) -> tuple[np.ndarra
         V2, F2 = clean(*from_polydata(fn()))
         if not len(F2):
             continue
-        if volume(V2, F2) < 0:
+        if enclosed_volume(V2, F2) < 0:
             F2 = F2[:, ::-1].copy()
         t1 = mesh_topology(V2, F2)
         if is_watertight(F2, len(V2)) and t0["bodies"] == t1["bodies"] and t0["euler"] == t1["euler"]:
@@ -246,13 +246,13 @@ def flip_edges(V: np.ndarray, F: np.ndarray, passes: int = 5, max_dihedral_deg: 
     """Flip interior edges whose two opposite angles sum to more than 180° (Delaunay criterion), only where the two
     triangles are nearly coplanar (dihedral < ``max_dihedral_deg``), the new edge does not exist yet and both end
     points keep valence ≥ 4. Keeps orientation and the closed manifold. Returns (F, number of flips)."""
-    F = [list(map(int, f)) for f in np.asarray(F, np.int64)]
+    faces = [list(map(int, f)) for f in np.asarray(F, np.int64)]
     emap: dict[tuple[int, int], list[int]] = {}
-    for i, f in enumerate(F):
+    for i, f in enumerate(faces):
         for k in range(3):
             a, b = f[k], f[(k + 1) % 3]
             emap.setdefault((min(a, b), max(a, b)), []).append(i)
-    val = np.bincount(np.asarray(F).ravel(), minlength=len(V)).astype(np.int64)   # faces per vertex = valence
+    val = np.bincount(np.asarray(faces).ravel(), minlength=len(V)).astype(np.int64)   # faces per vertex = valence
     cmax = np.cos(np.radians(max_dihedral_deg))
     nflip = 0
 
@@ -271,7 +271,7 @@ def flip_edges(V: np.ndarray, F: np.ndarray, passes: int = 5, max_dihedral_deg: 
             if fs is None or len(fs) != 2:
                 continue
             a, b = key
-            f1, f2 = F[fs[0]], F[fs[1]]
+            f1, f2 = faces[fs[0]], faces[fs[1]]
             # orient so that f1 contains the directed edge a→b
             if any(f1[k] == b and f1[(k + 1) % 3] == a for k in range(3)):
                 fs = [fs[1], fs[0]]
@@ -289,7 +289,7 @@ def flip_edges(V: np.ndarray, F: np.ndarray, passes: int = 5, max_dihedral_deg: 
             if float(normal(g1) @ n0) <= 0 or float(normal(g2) @ n0) <= 0:
                 continue
             i1, i2 = fs
-            F[i1], F[i2] = g1, g2
+            faces[i1], faces[i2] = g1, g2
             del emap[key]
             emap[(min(c, d), max(c, d))] = [i1, i2]
             for e, old, new in (((a, d), i2, i1), ((b, c), i1, i2)):
@@ -303,7 +303,7 @@ def flip_edges(V: np.ndarray, F: np.ndarray, passes: int = 5, max_dihedral_deg: 
         nflip += changed
         if not changed:
             break
-    return np.asarray(F, np.int64), nflip
+    return np.asarray(faces, np.int64), nflip
 
 
 def compare(V: np.ndarray, F: np.ndarray, V0: np.ndarray, F0: np.ndarray) -> dict[str, float]:
@@ -323,7 +323,7 @@ def compare(V: np.ndarray, F: np.ndarray, V0: np.ndarray, F0: np.ndarray) -> dic
     n_f = face_normals(V, F)
     n_r = face_normals(V0, F0)[cid[len(V):]]
     ang = np.degrees(np.arccos(np.clip(np.einsum("ij,ij->i", n_f, n_r), -1, 1)))
-    v0, v1 = volume(V0, F0), volume(V, F)
+    v0, v1 = enclosed_volume(V0, F0), enclosed_volume(V, F)
     return {"volume_ref": v0, "volume": v1, "volume_change_rel": (v1 - v0) / v0 if v0 else float("nan"),
             "hausdorff_final_to_ref": float(d_fr.max()), "hausdorff_ref_to_final": float(d_rf.max()),
             "mean_distance_final_to_ref": float(d_fr.mean()),

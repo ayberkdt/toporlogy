@@ -12,37 +12,15 @@ from typing import Any
 
 import numpy as np
 
+from toporlogy.geometry import write_stl
 from toporlogy.references import cite
-from toporlogy.post.mesh import face_normals
 
-__all__ = ["write_stl", "read_stl", "write_ply", "write_obj", "write_json", "export_result"]
-
-
-@cite("3dsystems_1989", note="binary STL: 80-byte header, uint32 count, 50 bytes per facet")
-def write_stl(path: str | Path, V: np.ndarray, F: np.ndarray, name: str = "toporlogy.post") -> str:
-    """Binary STL (little-endian), units of V."""
-    tri = np.asarray(V, float)[np.asarray(F, np.int64)]
-    rec = np.zeros(len(F), dtype=np.dtype([("n", "<f4", 3), ("v", "<f4", (3, 3)), ("a", "<u2")]))
-    rec["n"] = face_normals(V, F)
-    rec["v"] = tri
-    path = Path(path)
-    path.parent.mkdir(parents=True, exist_ok=True)
-    with open(path, "wb") as fh:
-        fh.write(name.encode("ascii", "replace")[:80].ljust(80, b" "))
-        fh.write(np.uint32(len(F)).tobytes())
-        fh.write(rec.tobytes())
-    return str(path)
+__all__ = ["write_ply", "write_obj", "write_json", "export_result"]
 
 
-def read_stl(path: str | Path) -> tuple[np.ndarray, np.ndarray]:
-    """Binary STL → merged (V, F) (exact duplicate vertices merged)."""
-    with open(path, "rb") as fh:
-        fh.seek(80)
-        n = int(np.frombuffer(fh.read(4), "<u4")[0])
-        rec = np.frombuffer(fh.read(50 * n), dtype=np.dtype([("n", "<f4", 3), ("v", "<f4", (3, 3)), ("a", "<u2")]))
-    P = rec["v"].reshape(-1, 3).astype(float)
-    V, inv = np.unique(P, axis=0, return_inverse=True)
-    return V, inv.reshape(-1, 3).astype(np.int64)
+def _stl(path: str | Path, V: np.ndarray, F: np.ndarray) -> str:
+    """Binary STL of a finished part (:func:`toporlogy.geometry.write_stl`, header "toporlogy.post")."""
+    return str(write_stl(path, V, F, header="toporlogy.post"))
 
 
 @cite("turk_1994", note="binary little-endian PLY header")
@@ -103,13 +81,13 @@ def export_result(res: Any, folder: str | Path, name: str = "part", formats: tup
     from toporlogy.post.pipeline import print_variant
     folder = Path(folder)
     out: dict[str, str] = {}
-    writers = {"stl": write_stl, "ply": write_ply, "obj": write_obj}
+    writers = {"stl": _stl, "ply": write_ply, "obj": write_obj}
     for f in formats:
         out[f] = writers[f](folder / f"{name}.{f}", res.V, res.F)
     rep: dict[str, Any] = {"pipeline": res.report}
     if print_stock and any(r.stock > 0 for r in res.roles):
         pv = print_variant(res)
-        out["stl_print"] = write_stl(folder / f"{name}_print_stock.stl", pv["V"], pv["F"])
+        out["stl_print"] = _stl(folder / f"{name}_print_stock.stl", pv["V"], pv["F"])
         rep["print_variant"] = pv["report"]
     if checks is not None:
         rep["checks"] = checks.as_dict() if hasattr(checks, "as_dict") else checks

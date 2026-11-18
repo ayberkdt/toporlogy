@@ -39,6 +39,7 @@ def register_physics() -> None:
             raise ValueError("modal physics supports zero displacements along x / y / z only (no oblique rollers, "
                              "pinned bores or springs)")
         rho0 = float(ctx.material.get("rho", 1.0))
+        m: LinearMass | TwoRangeMass
         if mass == "linear":
             m = LinearMass(d, rho0=rho0, rhomin_ratio=rhomin_ratio)
         elif mass == "two_range":

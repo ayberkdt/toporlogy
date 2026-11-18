@@ -135,7 +135,7 @@ class BoundaryConditions:
             return np.column_stack(comb)
         if which != "all":
             raise ValueError("which: 'all' | 'cases' | 'combinations'")
-        return np.column_stack(cols + comb)
+        return np.column_stack([*cols, *comb])
 
     def _column_sets(self, which: str = "all") -> list[int]:
         idx = {c.name: i for i, c in enumerate(self.cases)}
@@ -265,7 +265,7 @@ class BoundaryConditions:
             fvec = self.case_vector(c.name)
             for a in self.applied[c.name]:
                 Fi = a.intended_force
-                scale = np.linalg.norm(Fi) + (np.linalg.norm(a.intended_moment) / info.L
+                scale: float | np.floating[Any] = np.linalg.norm(Fi) + (np.linalg.norm(a.intended_moment) / info.L
                                               if a.intended_moment is not None else 0.0)
                 scale = max(scale, 1e-300)
                 eF = np.linalg.norm(a.force - Fi) / scale

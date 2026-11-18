@@ -2,6 +2,7 @@
 """
 from __future__ import annotations
 
+from collections.abc import Sequence
 from typing import Any
 
 import numpy as np
@@ -49,7 +50,7 @@ def register_geometry() -> None:
         """2-D simple polygon (vertices in order)."""
         return _op(G.Polygon(vertices), op)
 
-    def prism(polygon: list, axis: Any = "z", range: list = (0.0, 1.0), op: str = "add") -> Any:  # noqa: A002
+    def prism(polygon: list, axis: Any = "z", range: Sequence[float] = (0.0, 1.0), op: str = "add") -> Any:  # noqa: A002
         """Polygon extruded along axis over range [lo, hi]; polygon (x, y) for z, (x, z) for y, (y, z) for x."""
         return _op(G.Prism(polygon, axis, (float(range[0]), float(range[1]))), op)
 

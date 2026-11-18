@@ -57,7 +57,7 @@ from __future__ import annotations
 import math
 from collections.abc import Sequence
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, cast
 
 import numpy as np
 import torch
@@ -419,7 +419,7 @@ def ball_kernel(radius: float, dim: int) -> np.ndarray:
     r = int(math.floor(radius))
     ax = np.arange(-r, r + 1)
     grids = np.meshgrid(*([ax] * dim), indexing="ij")
-    return (sum(g.astype(float) ** 2 for g in grids) <= radius ** 2 + 1e-12).astype(float)
+    return cast(np.ndarray, sum(g.astype(float) ** 2 for g in grids) <= radius ** 2 + 1e-12).astype(float)
 
 
 def local_volume_field(x: torch.Tensor | np.ndarray, radius: float, outside: Any = "void",

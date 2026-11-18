@@ -2,6 +2,7 @@
 """
 from __future__ import annotations
 
+from collections.abc import Sequence
 from typing import Any
 
 from toporlogy.configuration.helpers import _case_weights, _field_source, _interfaces, _robust_set
@@ -18,7 +19,7 @@ def register_responses() -> None:
         if not isinstance(ctx.physics, Modal):
             raise ValueError(f"{what} needs physics modal")
 
-    def robust_compliance(ctx: BuildContext, realisations: list = ("eroded", "intermediate", "dilated"),
+    def robust_compliance(ctx: BuildContext, realisations: Sequence[str] = ("eroded", "intermediate", "dilated"),
                           aggregate: str = "ks", rho: float = 50.0, p: float = 16.0, scale: float | None = None,
                           weights: list | None = None) -> Any:
         """Worst-case compliance over the eroded / intermediate / dilated realisations (one solve each); thresholds
@@ -111,7 +112,8 @@ def register_responses() -> None:
         from toporlogy.optimization.dynamics import FrequencyMargin
         _need_modal(ctx, "min_frequency")
         r = FrequencyMargin(f_min, n_modes, rho, E_unit, rho_unit, length_unit)
-        r.config_upper, r.config_scale = 0.0, 1.0
+        r.config_upper = 0.0
+        r.config_scale = 1.0
         return r
 
     register("response", "robust_compliance", robust_compliance, types={"realisations": list})

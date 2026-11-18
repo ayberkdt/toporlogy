@@ -45,7 +45,7 @@ class Elasticity:
         Default :class:`DirectSolver` ("auto").
     """
 
-    def __init__(self, domain: Domain, fixed: Sequence[int], nu: float = 0.3, element: str | None = None,
+    def __init__(self, domain: Domain, fixed: Sequence[int] | np.ndarray, nu: float = 0.3, element: str | None = None,
                  solver: Any = None) -> None:
         self.domain = domain
         self.nu = float(nu)
@@ -54,11 +54,11 @@ class Elasticity:
         self.geom = domain.h if domain.dim == 3 else domain.thickness
         self.elements = domain.active_elements
         self.edof = domain.edof[self.elements]                      # (na, nloc)
-        fixed = np.unique(np.asarray(fixed, np.int64))
-        if fixed.size and (fixed.min() < 0 or fixed.max() >= domain.ndof):
+        fixed_arr = np.unique(np.asarray(fixed, np.int64))
+        if fixed_arr.size and (fixed_arr.min() < 0 or fixed_arr.max() >= domain.ndof):
             raise ValueError("fixed DOF out of range")
-        self.fixed = fixed
-        self.free = np.setdiff1d(domain.active_dofs, fixed)
+        self.fixed = fixed_arr
+        self.free = np.setdiff1d(domain.active_dofs, fixed_arr)
         if self.free.size == 0:
             raise ValueError("no free DOF")
         nd, nf, nl = domain.ndof, len(self.free), self.KE.shape[0]
@@ -127,7 +127,7 @@ class Elasticity:
 
 class _LinearSolve(torch.autograd.Function):
     @staticmethod
-    def forward(ctx: Any, E_active: torch.Tensor, model: Elasticity, F: np.ndarray) -> torch.Tensor:  # type: ignore[override]
+    def forward(ctx: Any, E_active: torch.Tensor, model: Elasticity, F: np.ndarray) -> torch.Tensor:
         E_np = E_active.detach().cpu().double().numpy()
         U = model.solve_numpy(E_np, F)
         ctx.model, ctx.F, ctx.U, ctx.E, ctx.token = model, F, U, E_np, model._token
@@ -135,7 +135,7 @@ class _LinearSolve(torch.autograd.Function):
         return torch.from_numpy(U).to(device=E_active.device, dtype=torch.float64)
 
     @staticmethod
-    def backward(ctx: Any, gU: torch.Tensor) -> tuple[Any, None, None]:  # type: ignore[override]
+    def backward(ctx: Any, gU: torch.Tensor) -> tuple[Any, None, None]:
         model: Elasticity = ctx.model
         G = gU.detach().cpu().double().numpy()
         U, F = ctx.U, ctx.F
@@ -147,7 +147,7 @@ class _LinearSolve(torch.autograd.Function):
             ff = float(f @ f)
             if ff > 0:
                 a = float(g @ f) / ff
-                if np.linalg.norm(g - a * f) <= 1e-12 * max(np.linalg.norm(g), 1e-300):
+                if np.linalg.norm(g - a * f) <= 1e-12 * max(float(np.linalg.norm(g)), 1e-300):
                     lam[:, c] = a * U[:, c]                     # self-adjoint: K λ = a F  →  λ = a U
                     continue
             if np.any(g):

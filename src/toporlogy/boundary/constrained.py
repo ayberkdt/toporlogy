@@ -100,21 +100,21 @@ def _resolve(supports: Sequence[Support], info: PartInfo) -> ConstraintSet:
             redundant += len(sel) - len(dof)
             fixed.append(dof)
         for k in np.flatnonzero(~all_axis):
-            n = int(N[starts[k]])
+            node = int(N[starts[k]])
             Dn = D[starts[k]:ends[k]]
             _, s, Vt = np.linalg.svd(Dn)
             rank = int((s > 1e-9 * s[0]).sum())
             redundant += len(Dn) - rank
             if rank == dim:
-                fixed.append(dim * n + np.arange(dim))
+                fixed.append(dim * node + np.arange(dim))
                 continue
             B = Vt[:rank]
             P = B.T @ B                                           # projector onto the constrained span
             on_axes = np.flatnonzero(np.isclose(np.diag(P), 1.0, atol=1e-10))
             if len(on_axes) == rank:
-                fixed.append(dim * n + on_axes)
+                fixed.append(dim * node + on_axes)
             else:
-                frames[n] = (Vt.T.copy(), rank)                   # columns: constrained first, then free
+                frames[node] = (Vt.T.copy(), rank)                # columns: constrained first, then free
     fixed_arr = np.unique(np.concatenate(fixed)) if fixed else np.zeros(0, np.int64)
     spring_nodes = np.concatenate(sn) if sn else np.zeros(0, np.int64)
     spring_K = np.concatenate(sk) if sk else np.zeros((0, dim, dim))
@@ -195,7 +195,7 @@ class PerCaseSupports:
     ``groups``: list of (physics, column indices). ``solve`` returns (ndof, n_cases) in the original column order.
     """
 
-    def __init__(self, groups: Sequence[tuple[Any, Sequence[int]]]) -> None:
+    def __init__(self, groups: Sequence[tuple[Any, Sequence[int] | np.ndarray]]) -> None:
         self.groups = [(p, np.asarray(c, np.int64)) for p, c in groups]
         cols = np.concatenate([c for _, c in self.groups])
         if sorted(cols.tolist()) != list(range(len(cols))):

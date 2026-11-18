@@ -6,6 +6,7 @@ from collections.abc import Sequence
 from typing import Any
 
 import numpy as np
+import numpy.typing as npt
 
 from toporlogy.boundary import Applied, Load
 from toporlogy.configuration.registry import BuildContext, ConfigError, join
@@ -148,8 +149,9 @@ class SpreadForce(Load):
     """Total force spread equally over the selected nodes (the ``force`` load; not area-weighted)."""
 
     kind = "spread"
+    _no_interface: bool                     # set on build's placeholder load of a modal study (read with getattr)
 
-    def __init__(self, where: Any, force: Sequence[float], name: str | None = None) -> None:
+    def __init__(self, where: Any, force: npt.ArrayLike, name: str | None = None) -> None:
         self.where, self.F = where, np.asarray(force, float)
         self.name = name or f"Force {where!r}"
 

@@ -266,7 +266,8 @@ def _run_sweep(a: argparse.Namespace, raw: dict[str, Any]) -> int:
         return EXIT_CONFIG
     n = len(combos)
     out(kv("SWEEP", f"{n} runs over {' x '.join(f'{k} ({len(v)})' for k, v in sweep)} -> {root}"))
-    rows, worst = [], EXIT_OK
+    rows: list[dict[str, Any]] = []
+    worst = EXIT_OK
     width = len(str(n))
     for i, combo in enumerate(combos, 1):
         label = combination_label(combo)

@@ -19,13 +19,13 @@ import numpy as np
 
 def _collect(gmsh) -> tuple[np.ndarray, np.ndarray, np.ndarray]:  # noqa: ANN001
     tags, coord, _ = gmsh.model.mesh.getNodes()
-    X = np.asarray(coord, float).reshape(-1, 3)
+    X: np.ndarray = np.asarray(coord, float).reshape(-1, 3)
     lut = np.zeros(int(tags.max()) + 1, dtype=np.int64)
     lut[tags.astype(np.int64)] = np.arange(len(tags))
     ty, _, en = gmsh.model.mesh.getElements(3)
-    T = lut[np.asarray(en[list(ty).index(11)], np.int64)].reshape(-1, 10)
+    T: np.ndarray = lut[np.asarray(en[list(ty).index(11)], np.int64)].reshape(-1, 10)
     ty2, _, en2 = gmsh.model.mesh.getElements(2)
-    Fb = lut[np.asarray(en2[list(ty2).index(9)], np.int64)].reshape(-1, 6)
+    Fb: np.ndarray = lut[np.asarray(en2[list(ty2).index(9)], np.int64)].reshape(-1, 6)
     used = np.unique(T)
     if len(used) != len(X):
         new = -np.ones(len(X), np.int64)

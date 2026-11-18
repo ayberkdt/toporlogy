@@ -14,7 +14,7 @@ from __future__ import annotations
 import time
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, Protocol, cast
 
 import numpy as np
 import torch
@@ -26,6 +26,12 @@ from toporlogy.optimizers.schedule import Schedule
 from toporlogy.optimization.responses import EvalContext, Response, Volume
 
 __all__ = ["Constraint", "Study", "Result", "Evaluation", "DensityEvaluation"]
+
+
+class _HasMove(Protocol):
+    """An optimizer with a move limit (MMA, OC); ``Study`` scales it with β when ``move_beta_ref`` is set."""
+
+    move: float
 
 
 @dataclass
@@ -305,7 +311,7 @@ class Study:
                     self.optimizer.reset()
                     beta = self.schedule.state().get("beta")
                     if self.move_beta_ref is not None and move0 is not None and beta:
-                        self.optimizer.move = float(move0) * min(1.0, self.move_beta_ref / float(beta))
+                        cast(_HasMove, self.optimizer).move = float(move0) * min(1.0, self.move_beta_ref / float(beta))
                     continue
                 if change <= tol and self.schedule.finished:
                     termination = "design_change"
@@ -329,7 +335,7 @@ class Study:
                          max_violation=max(worst, 0.0), kkt_residual=kkt)
         finally:
             if move0 is not None:
-                self.optimizer.move = move0             # leave the optimizer as it was given, also on an error
+                cast(_HasMove, self.optimizer).move = move0     # leave the optimizer as it was given, also on an error
         if self.recorder is not None:
             self.recorder.finish(res)
         return res

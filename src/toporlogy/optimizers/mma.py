@@ -125,7 +125,7 @@ class MMA(Optimizer):
         self.low: np.ndarray | None = None
         self.upp: np.ndarray | None = None
         self.f0_scale: float | None = None
-        self.last_lambda = np.zeros(0)
+        self.last_lambda: np.ndarray = np.zeros(0)
         self.n_resets += 1
 
     def _scale(self, f0: float) -> float:

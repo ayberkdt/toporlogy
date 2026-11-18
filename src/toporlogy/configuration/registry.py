@@ -251,7 +251,9 @@ class Entry:
     def resolve_target(self) -> Callable[..., Any]:
         if isinstance(self.target, str):
             mod, _, attr = self.target.partition(":")
-            self.target = getattr(importlib.import_module(mod), attr)
+            fn: Callable[..., Any] = getattr(importlib.import_module(mod), attr)
+            self.target = fn
+            return fn
         return self.target
 
     @property
@@ -307,7 +309,7 @@ class BuildContext:
     case_weights: list[float] = field(default_factory=list)
     run: dict[str, Any] = field(default_factory=dict)
     path: str = ""                                              # config path of the component being built
-    extra: dict[str, Any] = field(default_factory=dict)
+    extra: dict[str | tuple[Any, ...], Any] = field(default_factory=dict)   # str keys and tuple cache keys
     bc: Any = None                                              # toporlogy.boundary.BoundaryConditions (after loads)
     robust: Any = None                                          # shared optimization.robust.RobustSet or None
     interfaces: Any = None                                      # name -> bool element mask (connectivity)

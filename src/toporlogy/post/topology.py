@@ -16,9 +16,10 @@ from typing import Any
 import numpy as np
 from scipy import ndimage
 
-__all__ = ["euler_cubical", "grid_topology", "same_topology", "label_bodies", "enclosed_voids"]
+from toporlogy.core.bodies import label_bodies
 
-_S26 = np.ones((3, 3, 3), bool)
+__all__ = ["euler_cubical", "grid_topology", "same_topology", "enclosed_voids"]
+
 _S6 = ndimage.generate_binary_structure(3, 1)
 
 
@@ -44,6 +45,7 @@ def euler_cubical(solid: np.ndarray) -> int:
                 sl[v] = slice(dv, a.shape[v] - 1 + dv)
                 part = a[tuple(sl)]
                 acc = part if acc is None else (acc | part)
+        assert acc is not None
         E += int(acc.sum())
     acc = None
     for dx in (0, 1):
@@ -51,13 +53,9 @@ def euler_cubical(solid: np.ndarray) -> int:
             for dz in (0, 1):
                 part = a[dx:a.shape[0] - 1 + dx, dy:a.shape[1] - 1 + dy, dz:a.shape[2] - 1 + dz]
                 acc = part if acc is None else (acc | part)
+    assert acc is not None
     V = int(acc.sum())
     return V - E + F - C
-
-
-def label_bodies(solid: np.ndarray) -> tuple[np.ndarray, int]:
-    """26-connected components of the solid."""
-    return ndimage.label(np.asarray(solid, bool), structure=_S26)
 
 
 def enclosed_voids(solid: np.ndarray) -> np.ndarray:
@@ -72,11 +70,11 @@ def enclosed_voids(solid: np.ndarray) -> np.ndarray:
 def grid_topology(solid: np.ndarray, h: float | None = None) -> dict[str, Any]:
     """Bodies, cavities, χ and tunnels (Σ genus) of a boolean solid; volumes in h³ if ``h`` is given."""
     solid = np.asarray(solid, bool)
-    _, nb = label_bodies(solid)
+    nb = len(label_bodies(solid, "vertex")[1])                # 26-connected solid
     cav = enclosed_voids(solid)
     _, nc = ndimage.label(cav, structure=_S6)
     chi = euler_cubical(solid)
-    out = {"bodies": int(nb), "cavities": int(nc), "euler": int(chi), "tunnels": int(nb + nc - chi)}
+    out: dict[str, Any] = {"bodies": int(nb), "cavities": int(nc), "euler": int(chi), "tunnels": int(nb + nc - chi)}
     if h is not None:
         out["volume_voxels"] = float(solid.sum()) * h ** 3
     return out

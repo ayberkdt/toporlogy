@@ -7,7 +7,7 @@ from collections.abc import Callable, Sequence
 from scipy.spatial import cKDTree
 from toporlogy.core.domain import Domain
 from toporlogy.geometry import Bore, Shape
-from typing import Any
+from typing import Any, cast
 
 import numpy as np
 
@@ -100,7 +100,7 @@ class InBox(Selector):
 class HalfSpaceNodes(Selector):
     """Nodes with (x − point)·n ≤ tol."""
 
-    def __init__(self, point: Sequence[float], normal: Sequence[float], surface: bool = False,
+    def __init__(self, point: Sequence[float] | np.ndarray, normal: Sequence[float] | np.ndarray, surface: bool = False,
                  tol: float | None = None) -> None:
         self.point = np.asarray(point, float)
         n = np.asarray(normal, float)
@@ -138,12 +138,14 @@ class OnPlane(Selector):
     does not coincide with a node layer (partial volumes) pass ``tol=h``.
     """
 
-    def __init__(self, point: Sequence[float], normal: Sequence[float] | int, tol: float | None = None,
-                 facing: str | None = "any", max_angle: float = 60.0, surface: bool = True) -> None:
+    def __init__(self, point: Sequence[float] | np.ndarray, normal: Sequence[float] | np.ndarray | int,
+                 tol: float | None = None, facing: str | None = "any", max_angle: float = 60.0,
+                 surface: bool = True) -> None:
         self.point = np.asarray(point, float)
+        n: np.ndarray
         if np.isscalar(normal):
             n = np.zeros(self.point.size)
-            n[int(normal)] = 1.0
+            n[int(cast(int, normal))] = 1.0
         else:
             n = np.asarray(normal, float)
         self.normal = n / np.linalg.norm(n)
@@ -191,7 +193,7 @@ class OnCylinder(Selector):
 
     surface = True
 
-    def __init__(self, p0: Sequence[float], p1: Sequence[float] | None, radius: float,
+    def __init__(self, p0: Sequence[float] | np.ndarray, p1: Sequence[float] | np.ndarray | None, radius: float,
                  band: float | tuple[float, float] | None = None, facing: str | None = "inward",
                  max_angle: float = 60.0, extend: float = 0.0) -> None:
         self.p0 = np.asarray(p0, float)
@@ -220,8 +222,10 @@ class OnCylinder(Selector):
         if self.band is None:
             return (1.5 * h, 0.75 * h) if self.facing != "outward" else (0.75 * h, 1.5 * h)
         if np.isscalar(self.band):
-            return float(self.band), float(self.band)
-        return float(self.band[0]), float(self.band[1])
+            b = cast(float, self.band)
+            return float(b), float(b)
+        lo_hi = cast(tuple[float, float], self.band)
+        return float(lo_hi[0]), float(lo_hi[1])
 
     def coords(self, X: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         return _cyl_coords(X, self.p0, self.axis)
@@ -263,7 +267,7 @@ def BoreFace(bore: Bore | Sequence[float], p1: Sequence[float] | None = None, ra
 class InSphere(Selector):
     """Nodes within ``radius`` of ``center``."""
 
-    def __init__(self, center: Sequence[float], radius: float, surface: bool = False) -> None:
+    def __init__(self, center: Sequence[float] | np.ndarray, radius: float, surface: bool = False) -> None:
         self.center, self.radius, self.surface = np.asarray(center, float), float(radius), surface
 
     def mask(self, info: PartInfo) -> np.ndarray:
@@ -290,7 +294,7 @@ class InShape(Selector):
 class AtPoints(Selector):
     """Nodes at the given coordinates (within ``tol``, default 1e-6·h); every point must hit a node of the part."""
 
-    def __init__(self, points: Sequence[Sequence[float]], tol: float | None = None) -> None:
+    def __init__(self, points: Sequence[Sequence[float] | np.ndarray] | np.ndarray, tol: float | None = None) -> None:
         self.points, self.tol = np.atleast_2d(np.asarray(points, float)), tol
 
     def mask(self, info: PartInfo) -> np.ndarray:
@@ -313,7 +317,8 @@ class AtPoints(Selector):
 class Nearest(Selector):
     """The ``k`` nearest nodes (surface nodes by default) to each point."""
 
-    def __init__(self, points: Sequence[Sequence[float]], k: int = 1, surface: bool = True) -> None:
+    def __init__(self, points: Sequence[Sequence[float] | np.ndarray] | np.ndarray, k: int = 1,
+                 surface: bool = True) -> None:
         self.points, self.k, self.surface = np.atleast_2d(np.asarray(points, float)), int(k), surface
 
     def mask(self, info: PartInfo) -> np.ndarray:
@@ -331,7 +336,7 @@ class Nearest(Selector):
 class NodeIds(Selector):
     """Explicit node numbers (advanced; inactive nodes are reported by the checks)."""
 
-    def __init__(self, ids: Sequence[int]) -> None:
+    def __init__(self, ids: Sequence[int] | np.ndarray) -> None:
         self.ids = np.unique(np.asarray(ids, np.int64))
 
     def mask(self, info: PartInfo) -> np.ndarray:

@@ -189,3 +189,19 @@ def test_no_component_has_two_registry_names() -> None:
             names[(kind, e.target if isinstance(e.target, str) else id(e.target))].append(name)
     shared = [(kind, v) for (kind, _), v in names.items() if len(v) > 1]
     assert not shared, shared
+
+
+def test_no_public_name_is_defined_in_two_modules() -> None:
+    """One concept, one name: two public classes or functions with the same name in different modules (two
+    ``Cylinder``, two ``read_stl``, two ``volume``) are either one implementation written twice or two concepts that
+    need different names. Private modules (``_mma_core``, ``_gmsh_worker``, ``references._*``) do not count."""
+    homes: dict[str, list[str]] = {}
+    for p in _files():
+        mod = _module(p)
+        if any(part.startswith("_") for part in mod.split(".")):
+            continue
+        for n in ast.parse(p.read_text(encoding="utf-8")).body:
+            if isinstance(n, (ast.ClassDef, ast.FunctionDef)) and not n.name.startswith("_"):
+                homes.setdefault(n.name, []).append(mod)
+    twice = {name: mods for name, mods in homes.items() if len(mods) > 1}
+    assert not twice, twice

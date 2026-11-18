@@ -195,7 +195,7 @@ def ray_thickness(V: np.ndarray, F: np.ndarray, phi: np.ndarray, grid: Any, max_
     cw = np.cumsum(a[order]) / a.sum()
 
     def pct(q: float) -> float:
-        return float(out[order][min(np.searchsorted(cw, q / 100.0), len(out) - 1)])
+        return float(out[order][min(int(np.searchsorted(cw, q / 100.0)), len(out) - 1)])
 
     return {"min": float(out.min()), "p1": pct(1), "p5": pct(5), "median": pct(50), "max_length": L,
             "faces": int(len(F))}
@@ -239,7 +239,7 @@ def concave_radius_test(res: Any, r: float) -> dict[str, float]:
             allowed &= s > h
     added = np.where(allowed & (cl < 0), phi - cl, 0.0)
     depth = float(np.clip(added, 0, None).max())
-    v0 = S.volume(phi, h)
+    v0 = S.solid_volume(phi, h)
     gain = float(S.partial_volume(cl, h)[allowed].sum() - S.partial_volume(phi, h)[allowed].sum()) * h ** 3
     return {"radius": r, "max_added_depth": depth, "added_volume_fraction": gain / v0, "tolerance": 0.5 * h}
 
@@ -288,7 +288,7 @@ def manufacturing_checks(res: Any, thresholds: CheckThresholds | None = None, **
         meas["concave_radius"] = cr
         add("concave_radius", cr["max_added_depth"], f"depth <= {cr['tolerance']:.3g} at r = {cr['radius']:g}",
             bool(cr["max_added_depth"] <= cr["tolerance"]), "closing test")
-    meas["volume"] = M.volume(V, F)
+    meas["volume"] = M.enclosed_volume(V, F)
     meas["surface_area"] = M.area(V, F)
     add("volume", meas["volume"], None, None)
     add("surface_area", meas["surface_area"], None, None)

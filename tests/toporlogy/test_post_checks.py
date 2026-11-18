@@ -4,26 +4,27 @@ from __future__ import annotations
 import numpy as np
 
 from toporlogy import Domain
-from toporlogy.post import Bound, Cut, Cylinder, Plane, finalize, print_variant
+from toporlogy.post import Bound, Cut, CylinderPrimitive, PlanePrimitive, finalize, print_variant
 from toporlogy.post import mesh as M
 from toporlogy.post import sdf as S
 from toporlogy.post.checks import overhang, ray_thickness
-from toporlogy.post.export import read_stl, write_obj, write_ply, write_stl
-from toporlogy.post.primitives import Box, element_fraction
+from toporlogy.geometry import read_stl, write_stl
+from toporlogy.post.export import write_obj, write_ply
+from toporlogy.post.primitives import BoxPrimitive, element_fraction
 
 
 def _cube(lo: float = 0.0, hi: float = 1.0) -> tuple[np.ndarray, np.ndarray]:
     import pyvista as pv
     c = pv.Cube(center=(0.5 * (lo + hi),) * 3, x_length=hi - lo, y_length=hi - lo, z_length=hi - lo)
     V, F = M.from_polydata(c.triangulate().clean())
-    if M.volume(V, F) < 0:
+    if M.enclosed_volume(V, F) < 0:
         F = F[:, ::-1].copy()
     return V, F
 
 
 def test_edge_report_detects_defects() -> None:
     V, F = _cube()
-    assert M.is_watertight(F, len(V)) and abs(M.volume(V, F) - 1) < 1e-12
+    assert M.is_watertight(F, len(V)) and abs(M.enclosed_volume(V, F) - 1) < 1e-12
     r = M.edge_report(F[1:], len(V))
     assert r["open"] == 3
     flipped = F.copy()
@@ -46,7 +47,7 @@ def test_overhang_area() -> None:
 
 def test_ray_thickness_slab() -> None:
     g = S.Grid(np.array([-6.0, -6.0, -3.0]) + 0.125, 0.25, (48, 48, 24))
-    phi = Box((-5, -5, -1), (5, 5, 1)).sdf(g.points()).reshape(g.shape)
+    phi = BoxPrimitive((-5, -5, -1), (5, 5, 1)).sdf(g.points()).reshape(g.shape)
     V, F = M.extract(phi, g)
     t = ray_thickness(V, F, phi, g)
     assert abs(t["p5"] - 2.0) < 0.02 and abs(t["median"] - 2.0) < 0.02
@@ -57,7 +58,7 @@ def test_writers_round_trip(tmp_path) -> None:
     V, F = _cube()
     p = write_stl(tmp_path / "c.stl", V, F)
     V2, F2 = read_stl(p)
-    assert len(F2) == len(F) and abs(M.volume(V2, F2) - 1) < 1e-6
+    assert len(F2) == len(F) and abs(M.enclosed_volume(V2, F2) - 1) < 1e-6
     for w, ext in ((write_ply, "ply"), (write_obj, "obj")):
         m = pv.read(w(tmp_path / f"c.{ext}", V, F))
         assert m.n_cells == len(F) and abs(abs(m.volume) - 1) < 1e-9
@@ -66,11 +67,11 @@ def test_writers_round_trip(tmp_path) -> None:
 def test_print_variant_stock() -> None:
     d = Domain((14, 14, 6), h=1.0)
     c, R = np.array([7.0, 7.0, 3.0]), 3.0
-    bore = Cylinder(c, (0, 0, 1), R)
+    bore = CylinderPrimitive(c, (0, 0, 1), R)
     plate = lambda X: np.maximum(np.maximum(1 - X[:, 2], X[:, 2] - 5), -bore.sdf(X))  # noqa: E731
     x = element_fraction(d, plate)
     stock = 0.5
-    face = Bound(Plane((0, 0, 1), (0, 0, -1)), stock=stock, name="mounting face")
+    face = Bound(PlanePrimitive((0, 0, 1), (0, 0, -1)), stock=stock, name="mounting face")
     res = finalize(d, x, preserve=[Cut(bore, stock=stock, name="bore"), face])
     nom = {i["name"]: i for i in res.report["interfaces"]}
     assert nom["mounting face"]["flatness"] < 1e-6 and abs(nom["mounting face"]["offset_mean"]) < 1e-6

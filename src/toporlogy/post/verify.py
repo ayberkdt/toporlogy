@@ -102,7 +102,7 @@ class TetMesh:
 def tet_mesh(V: np.ndarray, F: np.ndarray, size: float, angle_deg: float = 40.0, timeout: float = 600.0,
              modes: str = "reparametrize,discrete") -> TetMesh:
     """10-node tet mesh of the closed surface (V, F) with gmsh in a subprocess (target edge ``size``)."""
-    from toporlogy.post.export import write_stl
+    from toporlogy.geometry import write_stl
     t0 = time.perf_counter()
     with tempfile.TemporaryDirectory() as td:
         stl, out = Path(td) / "surface.stl", Path(td) / "mesh.npz"
@@ -178,7 +178,7 @@ def _face_weights(m: TetMesh, selected: np.ndarray | None = None) -> np.ndarray:
 
 
 def _supports(items: Sequence[Any]) -> list[tuple[Select, tuple[int, ...]]]:
-    out = []
+    out: list[tuple[Select, tuple[int, ...]]] = []
     for it in items:
         if callable(it):
             out.append((it, (0, 1, 2)))

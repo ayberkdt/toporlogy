@@ -25,7 +25,7 @@ import torch
 
 from toporlogy import (MMA, OC, SIMP, BetaContinuation, Compliance, Constraint, Domain, Elasticity, Study, Volume,
                           standard_chain)
-from toporlogy.post import (Bound, Box, Cut, Cylinder, Keep, Plane, PostParams, finalize, manufacturing_checks,
+from toporlogy.post import (Bound, BoxPrimitive, Cut, CylinderPrimitive, Keep, PlanePrimitive, PostParams, finalize, manufacturing_checks,
                                reverify)
 from toporlogy.post.primitives import element_fraction
 from toporlogy.post.topology import grid_topology
@@ -66,7 +66,7 @@ def p01_sphere() -> Input:
 def p02_tube() -> Input:
     d = Domain((14, 14, 10))
     c = np.array([7.0, 7.0, 5.0])
-    outer, inner = Cylinder(c, (0, 0, 1), 5.5), Cylinder(c, (0, 0, 1), 2.5)
+    outer, inner = CylinderPrimitive(c, (0, 0, 1), 5.5), CylinderPrimitive(c, (0, 0, 1), 2.5)
     x = element_fraction(d, lambda X: np.maximum(np.maximum(outer.sdf(X), -inner.sdf(X)), np.abs(X[:, 2] - 5) - 3))
     return Input("p02_tube", d, x, [Cut(inner, name="bore")], exact=np.pi * (5.5 ** 2 - 2.5 ** 2) * 6.0)
 
@@ -74,17 +74,17 @@ def p02_tube() -> Input:
 def p03_plate_bore() -> Input:
     d = Domain((16, 16, 6))
     R = 3.5
-    bore = Cylinder((8.0, 8.0, 3.0), (0, 0, 1), R)
+    bore = CylinderPrimitive((8.0, 8.0, 3.0), (0, 0, 1), R)
     x = element_fraction(d, lambda X: np.maximum(np.maximum(1 - X[:, 2], X[:, 2] - 5), -bore.sdf(X)))
-    face = Bound(Plane((0, 0, 1), (0, 0, -1)), name="mounting face")
+    face = Bound(PlanePrimitive((0, 0, 1), (0, 0, -1)), name="mounting face")
     return Input("p03_plate_bore", d, x, [Cut(bore, name="bore"), face], exact=16 * 16 * 4 - np.pi * R * R * 4)
 
 
 def p04_l_bracket() -> Input:
     d = Domain((20, 8, 20))
-    a, b = Box((2, 1, 2), (6, 7, 18)), Box((2, 1, 2), (18, 7, 6))
+    a, b = BoxPrimitive((2, 1, 2), (6, 7, 18)), BoxPrimitive((2, 1, 2), (18, 7, 6))
     x = element_fraction(d, lambda X: np.minimum(a.sdf(X), b.sdf(X)))
-    pad = Keep(Box((2, 1, 16), (6, 7, 18)), name="top pad")
+    pad = Keep(BoxPrimitive((2, 1, 16), (6, 7, 18)), name="top pad")
     return Input("p04_l_bracket", d, x, [pad], params=PostParams(r_fillet_min=1.5), exact=4 * 6 * 16 + 12 * 6 * 4,
                  checks={"min_concave_radius": 1.5})
 
@@ -92,7 +92,7 @@ def p04_l_bracket() -> Input:
 def p05_thin_plate() -> Input:
     d = Domain((20, 20, 6))
     t = 1.25
-    plate = Box((2, 2, 3 - t / 2), (18, 18, 3 + t / 2))
+    plate = BoxPrimitive((2, 2, 3 - t / 2), (18, 18, 3 + t / 2))
     return Input("p05_thin_plate", d, element_fraction(d, plate), [], exact=16 * 16 * t,
                  checks={"min_wall": 1.0, "nominal_wall": t})
 
@@ -108,7 +108,7 @@ def _lattice_sdf(X: np.ndarray) -> np.ndarray:
                 c[ax], c[u], c[v] = 9.5, a, b
                 e = np.zeros(3)
                 e[ax] = 1.0
-                out = np.minimum(out, Cylinder(c, e, r, 12.0 + 2 * r).sdf(X))
+                out = np.minimum(out, CylinderPrimitive(c, e, r, 12.0 + 2 * r).sdf(X))
     return out
 
 
@@ -119,7 +119,7 @@ def p06_lattice() -> Input:
 
 def p07_cavity() -> Input:
     d = Domain((14, 14, 14))
-    cube, R = Box((2, 2, 2), (12, 12, 12)), 2.5
+    cube, R = BoxPrimitive((2, 2, 2), (12, 12, 12)), 2.5
     x = element_fraction(d, lambda X: np.maximum(cube.sdf(X), R - np.linalg.norm(X - 7.0, axis=1)))
     return Input("p07_cavity", d, x, [], params=PostParams(fill_voids=False), exact=1000 - 4 / 3 * np.pi * R ** 3)
 
@@ -147,7 +147,7 @@ def r1_cantilever() -> Input:
                OC(dv_scale=d.n_active), BetaContinuation(chain, 1.0, 8.0, 15, 0.01))
     t0 = time.perf_counter()
     res = st.run(max_iter=40, tol=0.01)
-    pads = [Keep(Box((0, 0, 0), (1, ny, nz)), name="clamp plate"), Keep(Box((L - 1, 0, 0), (L, ny, 1)), name="load pad")]
+    pads = [Keep(BoxPrimitive((0, 0, 0), (1, ny, nz)), name="clamp plate"), Keep(BoxPrimitive((L - 1, 0, 0), (L, ny, 1)), name="load pad")]
     t10 = {"supports": [lambda X: X[:, 0] < 1e-6],
            "loads": {"tip": [(lambda X: (X[:, 0] > L - 0.5) & (X[:, 2] < 0.5), (0.0, 0.0, -1.0))]},
            "exclusions": [lambda X: X[:, 0] < 1.0, lambda X: X[:, 0] > L - 1.0]}
@@ -172,9 +172,9 @@ def r2_mbb() -> Input:
                BetaContinuation(chain, 1.0, 16.0, 20, 0.01), move_beta_ref=2.0)
     t0 = time.perf_counter()
     res = st.run(max_iter=120, tol=0.01)
-    pads = [Keep(Box((0, 0, 0), (2, ny, 1)), name="support left"), Keep(Box((nx - 2, 0, 0), (nx, ny, 1)),
+    pads = [Keep(BoxPrimitive((0, 0, 0), (2, ny, 1)), name="support left"), Keep(BoxPrimitive((nx - 2, 0, 0), (nx, ny, 1)),
                                                                         name="support right"),
-            Keep(Box((22, 0, nz - 1), (26, ny, nz)), name="load pad")]
+            Keep(BoxPrimitive((22, 0, nz - 1), (26, ny, nz)), name="load pad")]
     t10 = {"supports": [lambda X: (X[:, 0] < 2 + 1e-6) & (X[:, 2] < 1e-6),
                         (lambda X: (X[:, 0] > nx - 2 - 1e-6) & (X[:, 2] < 1e-6), (2,))],
            "loads": {"mid": [(lambda X: (X[:, 0] > 22 - 1e-6) & (X[:, 0] < 26 + 1e-6) & (X[:, 2] > nz - 1e-6),
@@ -188,7 +188,7 @@ def r3_bores() -> Input:
     nx, ny, nz = 32, 6, 20
     R, Rb = 2.5, 4.5
     ca, cb = np.array([5.0, 3.0, 15.0]), np.array([27.0, 3.0, 5.0])
-    bores = [Cylinder(ca, (0, 1, 0), R), Cylinder(cb, (0, 1, 0), R)]
+    bores = [CylinderPrimitive(ca, (0, 1, 0), R), CylinderPrimitive(cb, (0, 1, 0), R)]
     d0 = Domain((nx, ny, nz))
     frac = element_fraction(d0, lambda X: -np.minimum(bores[0].sdf(X), bores[1].sdf(X)))
     C = d0.element_centers()
@@ -211,8 +211,8 @@ def r3_bores() -> Input:
     t0 = time.perf_counter()
     res = st.run(max_iter=120, tol=0.01)
     pres = [Cut(bores[0], name="bore_a"), Cut(bores[1], name="bore_b"),
-            Keep(Cylinder(ca, (0, 1, 0), Rb, float(ny)), name="boss_a"),
-            Keep(Cylinder(cb, (0, 1, 0), Rb, float(ny)), name="boss_b")]
+            Keep(CylinderPrimitive(ca, (0, 1, 0), Rb, float(ny)), name="boss_a"),
+            Keep(CylinderPrimitive(cb, (0, 1, 0), Rb, float(ny)), name="boss_b")]
     return Input("r3_bores", d, res.xphys, pres, checks={"min_wall": 1.0},
                  opt={"iterations": res.iterations, "seconds": time.perf_counter() - t0, "compliance": res.objective})
 
@@ -239,7 +239,7 @@ def r4_robust() -> Input:
     st = Study(d, Elasticity(d, fixed), F, chain, SIMP(d), obj, [con], OC(move=0.1, dv_scale=d.n_active), sch)
     t0 = time.perf_counter()
     res = st.run(max_iter=100, tol=0.01)
-    pads = [Keep(Box((nx - 2, 0, 0), (nx, ny, 2)), name="tip pad")]
+    pads = [Keep(BoxPrimitive((nx - 2, 0, 0), (nx, ny, 2)), name="tip pad")]
     return Input("r4_robust_minsize", d, res.xphys, pads, checks={"min_wall": s["solid_size"]},
                  opt={"iterations": res.iterations, "seconds": time.perf_counter() - t0, "compliance": res.objective,
                       "min_size_nominal": s["solid_size"]})
@@ -262,7 +262,7 @@ def r5_onebody() -> Input:
     pads = []
     for k, m in b.interfaces.items():
         idx = np.argwhere(m)
-        pads.append(Keep(Box(tuple(idx.min(0).astype(float)), tuple(idx.max(0).astype(float) + 1.0)), name=k))
+        pads.append(Keep(BoxPrimitive(tuple(idx.min(0).astype(float)), tuple(idx.max(0).astype(float) + 1.0)), name=k))
     return Input("r5_onebody_c12", d, res.xphys, pads, checks={"min_wall": 1.0},
                  opt={"iterations": res.iterations, "seconds": time.perf_counter() - t0, "compliance": res.objective,
                       "connectivity_verdict": rep.verdict})

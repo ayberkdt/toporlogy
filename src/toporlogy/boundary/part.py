@@ -33,7 +33,7 @@ class PartInfo:
         self.face_area = d.h * d.h if d.dim == 3 else d.h * d.thickness
         self.elem_volume = d.h ** 3 if d.dim == 3 else d.h * d.h * d.thickness
         self._normals: np.ndarray | None = None
-        self._faces: tuple[np.ndarray, np.ndarray, np.ndarray] | None = None
+        self._faces: tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray] | None = None
 
     # ------------------------------------------------------------------ smooth outward normals
     @property

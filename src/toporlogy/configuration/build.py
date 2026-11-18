@@ -355,7 +355,7 @@ def build(resolved: dict[str, Any]) -> Setup:
                  {k: int(m.sum()) for k, m in (ctx.interfaces or {}).items()}, info)
 
 
-def build_setup(raw: dict[str, Any], overrides: Sequence[str] = ()) -> Setup:
+def build_setup(raw: dict[str, Any], overrides: Sequence[str] | Sequence[tuple[str, Any]] = ()) -> Setup:
     """:func:`apply_overrides` → :func:`resolve` → :func:`build`."""
     return build(resolve(apply_overrides(raw, overrides)))
 

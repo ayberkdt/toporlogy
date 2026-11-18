@@ -78,9 +78,9 @@ def test_gmsh_tet_mesh_of_sphere() -> None:
     s = pv.Sphere(radius=5.0, theta_resolution=48, phi_resolution=48).triangulate().clean()
     V = np.asarray(s.points, float)
     F = np.asarray(s.faces).reshape(-1, 4)[:, 1:]
-    from toporlogy.post.mesh import volume
-    if volume(V, F) < 0:
+    from toporlogy.post.mesh import enclosed_volume
+    if enclosed_volume(V, F) < 0:
         F = F[:, ::-1]
     m = tet_mesh(V, F, size=1.2, timeout=120)
     assert m.T.shape[1] == 10 and len(m.T) > 200
-    assert abs(m.volume / volume(V, F) - 1) < 0.02
+    assert abs(m.volume / enclosed_volume(V, F) - 1) < 0.02

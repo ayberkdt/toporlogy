@@ -25,8 +25,9 @@ from typing import Any
 
 import numpy as np
 
-__all__ = ["Primitive", "Sphere", "Cylinder", "Plane", "Box", "ImplicitPrimitive", "GridPrimitive", "Offset", "Role",
-           "Keep", "Cut", "Bound", "assemble", "oriented", "element_fraction"]
+__all__ = ["Primitive", "SpherePrimitive", "CylinderPrimitive", "PlanePrimitive", "BoxPrimitive", "ImplicitPrimitive",
+           "GridPrimitive", "OffsetPrimitive", "Role", "Keep", "Cut", "Bound", "assemble", "oriented",
+           "element_fraction"]
 
 
 def _x(X: Any) -> np.ndarray:
@@ -59,14 +60,14 @@ class Primitive:
 
     def offset(self, d: float) -> Primitive:
         """The shape grown outward by ``d`` (shrunk for d < 0)."""
-        return Offset(self, d)
+        return OffsetPrimitive(self, d)
 
     def describe(self) -> dict[str, Any]:
         return {"kind": self.kind}
 
 
 @dataclass
-class Offset(Primitive):
+class OffsetPrimitive(Primitive):
     base: Primitive
     d: float
     kind = "offset"
@@ -82,7 +83,7 @@ class Offset(Primitive):
 
 
 @dataclass
-class Sphere(Primitive):
+class SpherePrimitive(Primitive):
     center: Sequence[float]
     radius: float
     kind = "sphere"
@@ -96,14 +97,14 @@ class Sphere(Primitive):
         return d / np.where(n > 0, n, 1.0)
 
     def offset(self, d: float) -> Primitive:
-        return Sphere(self.center, self.radius + d)
+        return SpherePrimitive(self.center, self.radius + d)
 
     def describe(self) -> dict[str, Any]:
         return {"kind": "sphere", "center": list(map(float, self.center)), "radius": float(self.radius)}
 
 
 @dataclass
-class Cylinder(Primitive):
+class CylinderPrimitive(Primitive):
     """Circular cylinder of ``radius`` around the axis through ``center`` with direction ``axis``.
 
     ``length`` None = infinite (a through-bore); else capped, from center − length/2 to center + length/2 along the
@@ -157,7 +158,8 @@ class Cylinder(Primitive):
         return g
 
     def offset(self, d: float) -> Primitive:
-        return Cylinder(self.center, self.axis, self.radius + d, None if self.length is None else self.length + 2 * d)
+        length = None if self.length is None else self.length + 2 * d
+        return CylinderPrimitive(self.center, self.axis, self.radius + d, length)
 
     def describe(self) -> dict[str, Any]:
         return {"kind": "cylinder", "center": list(map(float, self.center)), "axis": list(map(float, self.axis)),
@@ -165,10 +167,10 @@ class Cylinder(Primitive):
 
 
 @dataclass
-class Plane(Primitive):
+class PlanePrimitive(Primitive):
     """Half-space ``n·(x − point) ≤ 0`` (material on the side opposite to the unit outward normal ``n``)."""
 
-    point: Sequence[float]
+    point: Sequence[float] | np.ndarray
     normal: Sequence[float]
     kind = "plane"
 
@@ -183,18 +185,18 @@ class Plane(Primitive):
         return np.broadcast_to(self._n(), _x(X).shape).copy()
 
     def offset(self, d: float) -> Primitive:
-        return Plane(np.asarray(self.point, float) + d * self._n(), self.normal)
+        return PlanePrimitive(np.asarray(self.point, float) + d * self._n(), self.normal)
 
     def describe(self) -> dict[str, Any]:
         return {"kind": "plane", "point": list(map(float, self.point)), "normal": list(map(float, self._n()))}
 
 
 @dataclass
-class Box(Primitive):
+class BoxPrimitive(Primitive):
     """Axis-aligned box [lo, hi] (exact SDF)."""
 
-    lo: Sequence[float]
-    hi: Sequence[float]
+    lo: Sequence[float] | np.ndarray
+    hi: Sequence[float] | np.ndarray
     kind = "box"
 
     def sdf(self, X: np.ndarray) -> np.ndarray:
@@ -223,8 +225,8 @@ class Box(Primitive):
 
     def offset(self, d: float) -> Primitive:
         if d <= 0:
-            return Box(np.asarray(self.lo, float) - d, np.asarray(self.hi, float) + d)
-        return Offset(self, d)                                   # rounded box: exact as an offset field
+            return BoxPrimitive(np.asarray(self.lo, float) - d, np.asarray(self.hi, float) + d)
+        return OffsetPrimitive(self, d)                                   # rounded box: exact as an offset field
 
     def describe(self) -> dict[str, Any]:
         return {"kind": "box", "lo": list(map(float, self.lo)), "hi": list(map(float, self.hi))}
@@ -254,7 +256,7 @@ class GridPrimitive(Primitive):
 
     kind = "grid"
 
-    def __init__(self, phi: np.ndarray, origin: Sequence[float], h: float, name: str = "grid") -> None:
+    def __init__(self, phi: np.ndarray, origin: Sequence[float] | np.ndarray, h: float, name: str = "grid") -> None:
         self.phi = np.asarray(phi, float)
         self.origin = np.asarray(origin, float)
         self.h = float(h)

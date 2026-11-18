@@ -241,9 +241,9 @@ def test_manufacturing_links(chain):
     built = [type(lk).__name__ for lk in s.study.chain.links]
     first = chain[0]["type"]
     want = {"density_filter": ["Embed", "DensityFilter", "AMFilter" if chain[1]["type"] == "am_filter" else "Casting"],
-            "symmetry": ["Symmetry", "Embed", "DensityFilter", "GroupAverage"],
-            "extrusion": ["Extrusion", "Embed", "DensityFilter", "GroupAverage"],
-            "pattern": ["Pattern", "Embed", "DensityFilter"] + (["GroupAverage"] if len(chain) == 3 else [])}[first]
+            "symmetry": ["SymmetryTying", "Embed", "DensityFilter", "GroupAverage"],
+            "extrusion": ["ExtrusionTying", "Embed", "DensityFilter", "GroupAverage"],
+            "pattern": ["PatternTying", "Embed", "DensityFilter"] + (["GroupAverage"] if len(chain) == 3 else [])}[first]
     assert built == want + ["Passive"]
     links = {type(lk).__name__: lk for lk in s.study.chain.links}
     assert links["DensityFilter"].rmin == 1.5

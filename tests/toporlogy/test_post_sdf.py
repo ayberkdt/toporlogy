@@ -5,7 +5,7 @@ import numpy as np
 import pytest
 
 from toporlogy.post import sdf as S
-from toporlogy.post.primitives import Box, Cylinder, Plane, Sphere
+from toporlogy.post.primitives import BoxPrimitive, CylinderPrimitive, PlanePrimitive, SpherePrimitive
 from toporlogy.post.topology import grid_topology
 
 
@@ -32,13 +32,13 @@ def test_opening_closing_radii() -> None:
     h = 0.5
     g = _grid(48, h)
     X = g.points()
-    L_shape = np.minimum(Box((-8, -8, -8), (0, 8, 8)).sdf(X), Box((-8, -8, -8), (8, 0, 8)).sdf(X)).reshape(g.shape)
+    L_shape = np.minimum(BoxPrimitive((-8, -8, -8), (0, 8, 8)).sdf(X), BoxPrimitive((-8, -8, -8), (8, 0, 8)).sdf(X)).reshape(g.shape)
     r = 3.0
     cl = S.closing(L_shape, r, h)
     corner = g.sample(cl, np.array([[r * (1 - 1 / np.sqrt(2)) + 0.0, r * (1 - 1 / np.sqrt(2)), 0.0]]))
     # exact closed shape: the fillet circle centre (r, r), radius r → the point (r(1−1/√2), …) is on the surface
     assert abs(float(corner[0])) < 0.15 * h
-    op = S.opening(Box((-6, -6, -6), (6, 6, 6)).sdf(X).reshape(g.shape), r, h)
+    op = S.opening(BoxPrimitive((-6, -6, -6), (6, 6, 6)).sdf(X).reshape(g.shape), r, h)
     face = g.sample(op, np.array([[6.0, 0.0, 0.0]]))
     edge = g.sample(op, np.array([[6 - r + r / np.sqrt(2), 6 - r + r / np.sqrt(2), 0.0]]))
     assert abs(float(face[0])) < 0.1 * h and abs(float(edge[0])) < 0.15 * h
@@ -58,14 +58,14 @@ def test_euler_characteristic() -> None:
 def test_primitive_sdfs_exact() -> None:
     rng = np.random.default_rng(1)
     P = rng.uniform(-5, 5, (500, 3))
-    s = Sphere((1, 0, 0), 2.0)
+    s = SpherePrimitive((1, 0, 0), 2.0)
     assert np.allclose(s.sdf(P), np.linalg.norm(P - [1, 0, 0], axis=1) - 2)
-    c = Cylinder((0, 0, 0), (0, 0, 2), 1.5)
+    c = CylinderPrimitive((0, 0, 0), (0, 0, 2), 1.5)
     assert np.allclose(c.sdf(P), np.hypot(P[:, 0], P[:, 1]) - 1.5)
-    pl = Plane((0, 0, 1), (0, 0, 2))
+    pl = PlanePrimitive((0, 0, 1), (0, 0, 2))
     assert np.allclose(pl.sdf(P), P[:, 2] - 1)
     # projection lands on the surface; gradients are unit
-    for sh in (s, c, pl, Box((-1, -2, -3), (2, 1, 1)), Cylinder((0, 0, 0), (1, 1, 0), 1.0, length=3.0)):
+    for sh in (s, c, pl, BoxPrimitive((-1, -2, -3), (2, 1, 1)), CylinderPrimitive((0, 0, 0), (1, 1, 0), 1.0, length=3.0)):
         Q = sh.project(P)
         assert np.abs(sh.sdf(Q)).max() < 1e-9
         assert np.allclose(np.linalg.norm(sh.grad(P), axis=1), 1.0)
@@ -78,4 +78,4 @@ def test_volume_threshold_matches_target() -> None:
     target = 4 / 3 * np.pi * 4.5 ** 3
     t, phi, v = S.volume_threshold(rf, g, target, redistanced=True)
     assert abs(v / target - 1) < 1e-4
-    assert abs(S.volume(phi, g.h) / target - 1) < 1e-4
+    assert abs(S.solid_volume(phi, g.h) / target - 1) < 1e-4

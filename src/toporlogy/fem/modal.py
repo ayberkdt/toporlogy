@@ -308,7 +308,7 @@ class Modal:
 
 class _Eigen(torch.autograd.Function):
     @staticmethod
-    def forward(ctx: Any, E_active: torch.Tensor, rho_active: torch.Tensor, model: Modal,  # type: ignore[override]
+    def forward(ctx: Any, E_active: torch.Tensor, rho_active: torch.Tensor, model: Modal,
                 k: int) -> torch.Tensor:
         E_np = E_active.detach().cpu().double().numpy()
         r_np = rho_active.detach().cpu().double().numpy()
@@ -322,7 +322,7 @@ class _Eigen(torch.autograd.Function):
         return torch.from_numpy(lam[:k].copy()).to(device=E_active.device, dtype=torch.float64)
 
     @staticmethod
-    def backward(ctx: Any, glam: torch.Tensor) -> tuple[Any, Any, None, None]:  # type: ignore[override]
+    def backward(ctx: Any, glam: torch.Tensor) -> tuple[Any, Any, None, None]:
         model: Modal = ctx.model
         g = np.zeros(ctx.lam.size)
         g[:ctx.k] = glam.detach().cpu().double().numpy()

@@ -275,7 +275,8 @@ class RobustSet:
         """``{"xphys", "E", "U"}`` of one realisation (U only when ``need_u``); cached in ``ctx.extra``."""
         if name not in REALISATIONS:
             raise ValueError(f"realisation: one of {REALISATIONS}")
-        cache = ctx.extra.setdefault(("robust", id(self)), {})
+        extra: dict[Any, Any] = ctx.extra                  # keyed by ("robust", id) tuples as well
+        cache = extra.setdefault(("robust", id(self)), {})
         st = cache.get(name)
         if st is None:
             beta, eta = self.beta_of(ctx), self.thresholds(ctx)[name]

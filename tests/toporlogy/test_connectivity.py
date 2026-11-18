@@ -14,8 +14,9 @@ import torch
 
 from toporlogy import (SIMP, BetaContinuation, Compliance, Constraint, Domain, Elasticity, Study, Volume,
                           standard_chain, study_gradcheck)
+from toporlogy.core.bodies import label_bodies
 from toporlogy.optimization.connectivity import (ConductionConnectivity, CouplingCompliance, analyse_connectivity, bridge,
-                                       elements_touching_nodes, label_bodies, min_cut_cells, split_benchmark,
+                                       elements_touching_nodes, min_cut_cells, split_benchmark,
                                        tie_regions, with_keep)
 from toporlogy.optimization.connectivity import _nodes_of
 from toporlogy.fem.heat import ConductivityInterp, HeatConduction

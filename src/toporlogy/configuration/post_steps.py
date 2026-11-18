@@ -37,14 +37,15 @@ def _post_shape(s: Any) -> Any:
     if s.dim != 3:
         raise ValueError("post-processing primitives are 3-D")
     if isinstance(s, G.Box):
-        return P.Box(s.lo.tolist(), s.hi.tolist())
+        return P.BoxPrimitive(s.lo.tolist(), s.hi.tolist())
     if isinstance(s, G.Ball):
-        return P.Sphere(s.center.tolist(), s.radius)
+        return P.SpherePrimitive(s.center.tolist(), s.radius)
     if isinstance(s, G.Cylinder):
         c = 0.5 * (s.p0 + s.p1)
-        return P.Cylinder(c.tolist(), s.axis.tolist(), s.radius, None if getattr(s, "through", False) else s.length)
+        length = None if getattr(s, "through", False) else s.length
+        return P.CylinderPrimitive(c.tolist(), s.axis.tolist(), s.radius, length)
     if isinstance(s, G.HalfSpace):
-        return P.Plane(s.point.tolist(), s.normal.tolist())
+        return P.PlanePrimitive(s.point.tolist(), s.normal.tolist())
     return P.ImplicitPrimitive(s.sdf, name=type(s).__name__.lower())
 
 
@@ -66,6 +67,7 @@ def _roles(ctx: BuildContext, preserve: Sequence[Any] | None) -> list[Any]:
         spec = REGISTRY.resolve("shape", item["shape"], join(path, "shape"), errors)
         if errors:
             raise ConfigError(errors)
+        assert spec is not None                         # resolve returns None only after appending to errors
         shp = _post_shape(REGISTRY.build("shape", spec, ctx, join(path, "shape")))
         kw: dict[str, Any] = {"stock": float(item.get("stock") or 0.0), "name": str(item.get("name") or
                                                                                    f"{item['role']}{i + 1}")}
@@ -158,7 +160,8 @@ def _need_result(state: dict[str, Any], who: str) -> Any:
     return pr
 
 
-def export_step(ctx: BuildContext, formats: list = ("stl",), name: str = "part", print_stock: bool = True) -> Any:
+def export_step(ctx: BuildContext, formats: Sequence[str] = ("stl",), name: str = "part",
+                print_stock: bool = True) -> Any:
     """Write the finalized surface (stl / ply / obj), the print variant (roles with stock) and <name>_report.json
     (pipeline report, checks) into the run folder. Needs a finalize step before it."""
     bad = [f for f in formats if f not in ("stl", "ply", "obj")]
@@ -229,8 +232,8 @@ def register_post_steps() -> None:
 
     # ---------------------------------------------------------------- post steps
     def connectivity_gate(ctx: BuildContext, threshold: float = 0.5, connectivity: Any = "face",
-                          robust_thresholds: list | None = (0.3, 0.7), erosion: bool = True, voids: str = "fail",
-                          repair: str = "none", section: int = 2) -> Any:
+                          robust_thresholds: Sequence[float] | None = (0.3, 0.7), erosion: bool = True,
+                          voids: str = "fail", repair: str = "none", section: int = 2) -> Any:
         """One-body gate (analyse_connectivity) over the interfaces; verdict PASS / FRAGILE / FAIL into
         summary.json (FAIL: exit 1). repair bridge: on FAIL join the bodies into a repaired variant
         (result_repaired.npz; later geometry steps use it, the optimisation result is not modified), gate it again
@@ -283,7 +286,7 @@ def register_post_steps() -> None:
 
     def lengthscale_step(ctx: BuildContext, threshold: float = 0.5, outside: Any = "void",
                          upsample: int | None = None, smooth: float = 0.0, margin: float = 0.0,
-                         percentiles: list = (1.0, 5.0, 50.0), radii: list = ()) -> Any:
+                         percentiles: Sequence[float] = (1.0, 5.0, 50.0), radii: Sequence[float] = ()) -> Any:
         """Measure member thickness and void size of the final design (lengths in the unit of h)."""
         from toporlogy.optimization.lengthscale import measure_lengthscale
         state = _post_state(ctx)

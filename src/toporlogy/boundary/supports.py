@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from toporlogy.geometry import Bore
-from typing import Any
+from typing import Any, cast
 
 import numpy as np
 
@@ -37,7 +37,7 @@ class Fixed(Support):
 
     kind = "fixed"
 
-    def __init__(self, where: Selector, directions: Sequence[int] | Sequence[Sequence[float]] | None = None,
+    def __init__(self, where: Selector, directions: Sequence[int | Sequence[float] | np.ndarray] | None = None,
                  name: str | None = None) -> None:
         self.where, self.dirs = where, directions
         self.name = name or f"Fixed {where!r}"
@@ -48,7 +48,7 @@ class Fixed(Support):
         rows = []
         for d in self.dirs:
             if np.isscalar(d):
-                rows.append(np.eye(dim)[int(d)])
+                rows.append(np.eye(dim)[int(cast(int, d))])
             else:
                 v = _vec(d, dim, "direction")
                 rows.append(v / np.linalg.norm(v))
@@ -65,12 +65,12 @@ class Roller(Fixed):
 
     kind = "roller"
 
-    def __init__(self, where: Selector, normal: Sequence[float] | int, name: str | None = None) -> None:
+    def __init__(self, where: Selector, normal: Sequence[float] | np.ndarray | int, name: str | None = None) -> None:
         super().__init__(where, [normal], name or f"Roller {where!r}")
 
 
-def SymmetrySupport(point: Sequence[float], normal: Sequence[float] | int, tol: float | None = None,
-             name: str | None = None) -> Roller:
+def SymmetrySupport(point: Sequence[float] | np.ndarray, normal: Sequence[float] | np.ndarray | int,
+                    tol: float | None = None, name: str | None = None) -> Roller:
     """Symmetry plane: zero normal displacement of the part's surface nodes on the plane."""
     sel = OnPlane(point, normal, tol=tol, facing=None)
     return Roller(sel, sel.normal, name or f"Symmetry {sel!r}")
@@ -96,7 +96,7 @@ class PinnedBore(Support):
         _, _, er = self.sel.coords(info.X[n])
         rows = [er]
         if info.dim == 3:
-            a = np.broadcast_to(self.sel.axis, er.shape)
+            a = np.broadcast_to(cast(np.ndarray, self.sel.axis), er.shape)   # 3-D OnCylinder: axis is set
             if self.axial:
                 rows.append(a.copy())
             if self.tangential:
