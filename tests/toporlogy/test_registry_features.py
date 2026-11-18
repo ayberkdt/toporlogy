@@ -513,3 +513,24 @@ def test_elasticity_gmg_physics_and_rejections(capsys, tmp_path):
         code = main(["validate", str(p)])
         err = capsys.readouterr().err
         assert code == 2 and "physics" in err and msg in err, (name, err)
+
+
+def test_repair_whose_constraints_cannot_be_evaluated_does_not_pass(tmp_path):
+    """A repaired design whose constraints cannot all be evaluated (responses that need the design chain: robust
+    realisations, eroded-field connectivity) used to pass the gate as long as none of the evaluated ones failed;
+    on lbracket_bore3d no constraint at all could be evaluated. It is now reported as not verified and fails,
+    with the plain volume fraction before and after the repair as information."""
+    raw = split(ties=None, constraint="none", repair="bridge")         # splits into the four pads: FAIL, repaired
+    raw["constraints"][0]["upper"] = 0.9                    # the volume bound holds; only the chain response is unknown
+    raw["constraints"].append({"response": "conduction_connectivity", "upper": 1e6})   # needs the chain (eroded field)
+    s = C.build_setup(raw)
+    res = s.study.run(x0=np.full(s.study.n_var, 0.15), max_iter=1, tol=0.0)   # low start: the pads stay apart
+    name, step = next((n, st) for n, st in s.post if n == "connectivity_gate")
+    out = step(res, s.study, tmp_path)
+    assert out["verdict_before_repair"] == "FAIL" and out["verdict"] != "FAIL"
+    rd = out["repaired_design"]
+    skipped = [c["name"] for c in rd["constraints"] if c["satisfied"] is None]
+    assert rd["feasible"] is None and len(skipped) == 1 and "connectivity" in skipped[0]
+    assert out["passed"] is False and "not verified" in out["summary"] and "connectivity" in out["summary"]
+    vf = rd["volume_fraction_plain"]
+    assert vf["repaired"] > vf["optimized"]

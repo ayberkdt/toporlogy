@@ -167,8 +167,9 @@ after erosion, with an optional bridge repair.
 
 PASS: one body holding every interface at thresholds 0.3/0.5/0.7 and after a one-element erosion. Four scenarios
 carry a large compliance penalty (26–53×) that has not been analysed. The bridge repair adds material without
-re-optimising: repaired designs measured 1.07–2.61 × the volume bound, and the gate now reports such a repair as
-failed instead of passed.
+re-optimising: repaired designs measured 1.07–2.61 × the volume bound. The gate fails a repair that breaks a constraint,
+and one whose constraints cannot all be evaluated: robust and eroded-field responses need the design chain, which a
+repaired density does not have (on `lbracket_bore3d` none of the constraints can be evaluated).
 
 ## Evidence
 
