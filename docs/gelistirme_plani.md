@@ -26,6 +26,8 @@ bugünkü durumunu, bulunan açıkları ve sonraki işlerin sırasını tutar.
 | mypy | tamam | 219 hata → 0; CI'ın en güncel sürümleriyle de 0 (43 hata sürüm farkındandı); CI adımı hata kabul etmiyor |
 | B-22, B-23 | kapandı | tekil sistem denetimi (`fem/mechanisms.py`), `read_run` nihai kısıtları |
 | G6, G8, G9 | başlamadı | G9'un ilk parçası (CI) eklendi |
+
+Sıradaki işler, sırası ve kabul kapıları: `yol_haritasi_2026-11-18.md` (dış yol haritasının kaynağa karşı incelenmesi, PR-01 – PR-12).
 | K5 lisans | kapandı | tescilli, tüm hakları saklı (`LICENSE`) |
 
 G1 bulgularının kapandığı commit'ler: B-01 `aeb3ac3`; B-03 `6dca762`; B-04 `a6b0bc6`; B-05 `cf83e40`; B-07 `54ff90f`,
