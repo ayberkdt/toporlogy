@@ -171,3 +171,68 @@ def test_count_does_not_depend_on_the_scale_of_a_support():
         if k == 1.0:
             counts.append(_reference(phys))
     assert counts == [0, 0, 0]
+
+
+# ---------------------------------------------------------------------------------------------- PR-03: scaling
+def _islands(k: int, supported: bool):
+    """k separate 2x2x2 cubes on a grid (gap 1), optionally clamped at their base; expected motions 0 or 6 k."""
+    import math
+    n = math.ceil(k ** (1 / 3))
+    frac = np.zeros((3 * n, 3 * n, 3 * n))
+    bases = [(3 * i, 3 * j, 3 * m) for i in range(n) for j in range(n) for m in range(n)][:k]
+    for x, y, z in bases:
+        frac[x:x + 2, y:y + 2, z:z + 2] = 1.0
+    d = Domain(frac.shape, frac=frac)
+    X = d.node_coords()
+    sel = np.zeros(len(X), bool)
+    if supported:
+        for x, y, z in bases:
+            sel |= ((np.abs(X[:, 2] - z) < 1e-9) & (X[:, 0] > x - 1e-9) & (X[:, 0] < x + 2 + 1e-9)
+                    & (X[:, 1] > y - 1e-9) & (X[:, 1] < y + 2 + 1e-9))
+    return d, d.dofs(np.flatnonzero(sel))
+
+
+def _chain(k: int):
+    """k unit cubes, each touching the next at one node (ball joint), the first clamped: 3 (k - 1) motions, all in
+    one contact component."""
+    frac = np.zeros((k, 2, 2))
+    for i in range(k):
+        frac[i, i % 2, i % 2] = 1.0
+    d = Domain(frac.shape, frac=frac)
+    X = d.node_coords()
+    return d, d.dofs(np.flatnonzero((X[:, 0] < 1e-9) & (X[:, 1] < 1 + 1e-9) & (X[:, 2] < 1 + 1e-9)))
+
+
+def test_disjoint_islands_cost_grows_linearly_not_cubically():
+    """1000 separately supported islands: one tiny rank problem per contact component. Before PR-03 the whole
+    6000 x 6000 normal matrix was decomposed: measured 28.9 s and 574 MB peak; the bound here is 3 s."""
+    import time
+
+    from toporlogy.fem.mechanisms import fixed_dof_rows
+    d, fixed = _islands(1000, True)
+    t = time.perf_counter()
+    n, _ = zero_energy_modes(d, d.active_elements, fixed_dof_rows(fixed, 3))
+    assert n == 0 and time.perf_counter() - t < 3.0
+    d, fixed = _islands(300, False)
+    assert zero_energy_modes(d, d.active_elements, {})[0] == 1800
+
+
+def test_one_large_contact_component_is_indeterminate_not_silent():
+    """A single contact component above the size limit is not decided by a long dense computation or by guessing:
+    MechanismCheckIndeterminate (code mechanism_indeterminate) says so; with a larger limit it is decided exactly."""
+    from toporlogy.fem.mechanisms import MechanismCheckIndeterminate, fixed_dof_rows
+    d, fixed = _chain(60)
+    rows = fixed_dof_rows(fixed, 3)
+    with pytest.raises(MechanismCheckIndeterminate, match="60 clusters.*360 unknowns.*limit 300"):
+        zero_energy_modes(d, d.active_elements, rows, max_unknowns=300)
+    assert MechanismCheckIndeterminate.code == "mechanism_indeterminate"
+    assert zero_energy_modes(d, d.active_elements, rows, max_unknowns=360)[0] == 3 * 59
+
+
+def test_counts_are_exact_for_islands_and_joint_chains():
+    from toporlogy.fem.mechanisms import fixed_dof_rows
+    for k in (1, 7, 40):
+        d, fixed = _chain(k)
+        assert zero_energy_modes(d, d.active_elements, fixed_dof_rows(fixed, 3))[0] == 3 * (k - 1)
+        d, fixed = _islands(k, True)
+        assert zero_energy_modes(d, d.active_elements, fixed_dof_rows(fixed, 3))[0] == 0
