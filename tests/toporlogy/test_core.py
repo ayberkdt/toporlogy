@@ -193,6 +193,7 @@ def test_elasticity_rejects_bad_fixed():
 
 
 # ---------------------------------------------------------------------------------------------- direct solvers
+@pytest.mark.pardiso
 def test_pardiso_equals_superlu():
     shape = (8, 5, 4)
     mask = np.ones(shape, bool)

@@ -97,6 +97,14 @@ yalnız ortak düğümde bağlandığından blok köşegen; kesin, yaklaşık de
 `MechanismCheckIndeterminate` (kod `mechanism_indeterminate`); sınır `check_kinematics(max_unknowns=...)` ile bilerek
 büyütülebilir. 160 rastgele ve 40 eğik mesnetli karşılaştırma yeni yöntemle de birebir.
 
+PR-04 yapıldı (dal `ci/environment-and-backends`): her test koşusu başlıkta ve sonda ortamı (git SHA, Python, NumPy,
+SciPy, torch, BLAS, işletim sistemi, opsiyonel paketler) ve "verification status" bölümünü yazıyor; `TOPORLOGY_ENV_REPORT`
+ile JSON. PARDISO, gmsh/T10 ve CUDA testleri işaretli; atlanan arka uç NOT VERIFIED (nedeniyle), asla geçti sayılmıyor.
+Baseline yalnız dosyadaki referans ortamda (sürümler, OS, mimari) bit düzeyinde; başka ortamda skalerler 1e-6 bağıl
+toleransla, dizi ve dosya özetleri NOT VERIFIED. Yeni `backends.yml`: PARDISO, gmsh/T10 ve Linux'ta sayısal baseline
+(haftalık, elle ve ilgili dosyalar değişince). 1e-6 toleransın Linux'ta tutup tutmadığı bu iş akışının ilk koşusunda
+görülecek (henüz ölçülmedi). CUDA için GPU koşucusu yok: NOT VERIFIED.
+
 Görselleştirme betiği (panel b) PR değil, çalışma klasöründe düzeltilir: ham iso-yüzey, CAD'le kırpılmış, ek
 yumuşatma yok, figür notu buna göre.
 

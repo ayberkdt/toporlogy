@@ -166,6 +166,7 @@ def test_island_deflation_reduces_iterations(device):
     assert np.linalg.norm(out[1e-3][0] - out[None][0]) <= 1e-8 * np.linalg.norm(out[None][0])
 
 
+@pytest.mark.cuda
 @pytest.mark.skipif(not torch.cuda.is_available(), reason="CUDA graphs need a GPU")
 def test_graph_reused_across_updates():
     shape = (16, 8, 8)
