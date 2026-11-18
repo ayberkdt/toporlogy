@@ -22,10 +22,11 @@ import scipy.sparse as sp
 import torch
 
 from toporlogy.core.domain import Domain
-from toporlogy.fem.mechanisms import SolveResidualError, check_supports, fixed_dof_rows
+from toporlogy.fem.mechanisms import SolveResidualError, check_moduli, check_supports, fixed_dof_rows
 from toporlogy.solvers.direct import DirectSolver
 
-__all__ = ["Elasticity", "element_matrix", "RESIDUAL_TOL", "ResidualReport", "checked_residual", "matrix_norm1"]
+__all__ = ["Elasticity", "element_matrix", "RESIDUAL_TOL", "BACKWARD_TOL", "ResidualReport", "checked_residual",
+           "matrix_norm1"]
 
 
 from toporlogy.fem.elements import element_matrix  # noqa: E402  (re-exported)
@@ -61,6 +62,9 @@ class Elasticity:
             raise ValueError("fixed DOF out of range")
         self.fixed = fixed_arr
         self.free = np.setdiff1d(domain.active_dofs, fixed_arr)
+        # the support set of a physics object is frozen: the support check runs once and must not go stale
+        self.fixed.setflags(write=False)
+        self.free.setflags(write=False)
         if self.free.size == 0:
             raise ValueError("no free DOF")
         nd, nf, nl = domain.ndof, len(self.free), self.KE.shape[0]
@@ -110,9 +114,9 @@ class Elasticity:
         self._kinematics_checked = True
 
     def factor(self, E_active: np.ndarray) -> None:
+        E_active = check_moduli(E_active, self.n_elements)        # before the support check: it assumes E > 0
         if not self._kinematics_checked:
             self.check_kinematics()
-        E_active = np.asarray(E_active, float)
         self._A = self.matrix(E_active)
         self._A_norm1 = matrix_norm1(self._A)
         self.solver.factor(self._A)
@@ -154,7 +158,8 @@ class Elasticity:
         return _LinearSolve.apply(E_active, self, F2)
 
 
-RESIDUAL_TOL = 1e-6        # a backward-stable direct solve gives ~1e-15; above this the solution is not usable
+RESIDUAL_TOL = 1e-6        # relative residual ‖Kx − b‖ / ‖b‖ accepted outright
+BACKWARD_TOL = 1e-14       # backward error accepted outright (~45 eps); see checked_residual
 
 
 @dataclass(frozen=True)
@@ -189,7 +194,8 @@ def checked_residual(A: sp.csr_matrix | None, x: np.ndarray, b: np.ndarray,
     """Check every load case of K X = B (K = A + Aᵀ − diag(A), A: upper triangle) and return the residuals.
 
     Raises :class:`~toporlogy.fem.mechanisms.SolveResidualError`, naming the load case, when a solution column is not
-    finite, when a nonzero load column has ‖K x_j − b_j‖ / ‖b_j‖ > :data:`RESIDUAL_TOL`, or when a zero load column has
+    finite, when a nonzero load column has BOTH ‖K x_j − b_j‖ / ‖b_j‖ > :data:`RESIDUAL_TOL` and backward error
+    η_j > :data:`BACKWARD_TOL`, or when a zero load column has
     a nonzero solution (K is nonsingular after the support check, so x_j = 0 is the only answer; noise up to
     RESIDUAL_TOL × the largest solution norm of the loaded columns is accepted). None when there is no matrix (a
     custom solver path that bypasses factor()). ``norm1``: :func:`matrix_norm1` of A when the caller has it (it
@@ -213,11 +219,15 @@ def checked_residual(A: sp.csr_matrix | None, x: np.ndarray, b: np.ndarray,
     loaded = nb > 0
     rel = np.full(len(nb), np.nan)
     rel[loaded] = absr[loaded] / nb[loaded]
+    # Why both: with high stiffness contrast (SIMP voids) ‖K‖‖x‖ ≫ ‖b‖, so a correct, backward-stable solve has a
+    # large relative residual (measured 18 Nov 2026: up to 4e-4 at contrast 1e-9 on a 120 x 60 grid) while its
+    # backward error stays at the rounding level (≤ 1.1e-16 over PARDISO and SuperLU, 2-D and 3-D, contrast 1 to
+    # 1e-9). A solution 1 % off has η = 4e-5 at unit moduli and 1.5e-13 at contrast 1e-9, so it is still refused.
     for j in np.flatnonzero(loaded).tolist():
-        if not rel[j] <= RESIDUAL_TOL:
+        if not (rel[j] <= RESIDUAL_TOL or eta[j] <= BACKWARD_TOL):
             raise SolveResidualError(f"load case {j}: linear solve residual ‖Kx − b‖/‖b‖ = {rel[j]:.2e} > "
-                                     f"{RESIDUAL_TOL:g} (backward error {eta[j]:.2e}): the system is singular or "
-                                     "numerically not solvable at these moduli")
+                                     f"{RESIDUAL_TOL:g} and backward error {eta[j]:.2e} > {BACKWARD_TOL:g}: the "
+                                     "system is singular or numerically not solvable at these moduli")
     x_scale = float(nx[loaded].max(initial=0.0))
     for j in np.flatnonzero(~loaded).tolist():
         if nx[j] > RESIDUAL_TOL * x_scale:

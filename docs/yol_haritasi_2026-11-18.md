@@ -78,6 +78,18 @@ residual'ı, aynı adlarla) aynı raporu veriyor. Eski kodda kırmızı olan iki
 PARDISO): denetim 74 ms + çarpanlara ayırma başına ‖K‖₁ yaklaşık 46 ms, bir çözümün yaklaşık %2,5'i; uçtan uca
 ölçülen fark +%5,2 (PARDISO süresinin yayılımı dahil). GMG CUDA yolu bu makinede denenmedi.
 
+PR-02 yapıldı (dal `fix/kinematic-contract`): modüller her çarpanlara ayırmadan önce denetleniyor (şekil, sonluluk,
+pozitiflik; yoğunluk için sıfıra izin var, çünkü iki aralıklı kütle interpolasyonu boşluk elemanlarını bilerek kütlesiz
+yapıyor; ilk denemede yoğunluğu da pozitif istemek modal testleri ve `eigenfrequency2d` baseline'ını kırdı); doğrudan,
+çok ızgaralı ve modal yolların hepsinde. Eski kodda negatif ya da sıfır modül sessizce çözülüyordu (negatif modülle K
+belirsiz, residual yine 1e-10'un altında). `fixed` ve `free` salt okunur; mesnet denetimi nesne başına bir kez.
+Hata türlerinin ayrı kodları var: `mechanism`, `invalid_moduli`, `solve_residual`.
+**PR-01'in yanlış alarmı düzeltildi:** yüksek rijitlik kontrastında (SIMP boşlukları) doğru çözülmüş sistemin bağıl
+residual'ı 1e-6'yı aşıyor (ölçülen: 120 × 60, kontrast 1e-9, 4e-4), geri hatası yuvarlama düzeyinde kalıyor (PARDISO
+ve SuperLU, 2-D ve 3-D, kontrast 1–1e-9 arası en çok 1,1e-16). Artık bir yük durumu yalnız bağıl residual > 1e-6 VE
+geri hata > 1e-14 ise reddediliyor; kontrast 1e-9'da %1 yanlış çözüm (η 1,5e-13) hâlâ reddediliyor, eşik 1e-12'ye
+gevşetilince test düşüyor.
+
 Görselleştirme betiği (panel b) PR değil, çalışma klasöründe düzeltilir: ham iso-yüzey, CAD'le kırpılmış, ek
 yumuşatma yok, figür notu buna göre.
 

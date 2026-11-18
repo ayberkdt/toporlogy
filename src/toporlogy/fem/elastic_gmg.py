@@ -34,7 +34,7 @@ import torch
 from toporlogy.core.domain import Domain
 from toporlogy.fem.elastic import ResidualReport
 from toporlogy.fem.elements import element_matrix
-from toporlogy.fem.mechanisms import check_supports, fixed_dof_rows
+from toporlogy.fem.mechanisms import check_moduli, check_supports, fixed_dof_rows
 from toporlogy.solvers import gmg_kernels as gk
 from toporlogy.solvers.gmg import GMGConvergenceError, GMGSolver
 
@@ -197,6 +197,7 @@ class ElasticityGMG:
     def _solve_box(self, E_active: torch.Tensor, B: np.ndarray, kind: str,
                    x0: torch.Tensor | None = None) -> np.ndarray:
         """Solve K(E) X = B (box DOFs, (ndof, k)) by GMG with fallback. Returns X (ndof, k) NumPy."""
+        check_moduli(E_active.detach().cpu().double().numpy(), self.n_elements)
         if not self._kinematics_checked:                           # a mechanism would only show as no convergence
             check_supports(self.domain, self.elements, fixed_dof_rows(self.fixed, self.domain.dim))
             self._kinematics_checked = True

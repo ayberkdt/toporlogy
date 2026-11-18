@@ -47,6 +47,7 @@ import torch
 
 from toporlogy.core.domain import Domain
 from toporlogy.fem.elastic import Elasticity
+from toporlogy.fem.mechanisms import check_moduli
 from toporlogy.solvers.direct import DirectSolver
 
 __all__ = ["Modal", "element_mass", "find_clusters", "RepeatedEigenvalueWarning", "SPLU_MAX_DOF"]
@@ -233,6 +234,9 @@ class Modal:
         nf = self.n_free
         if not 1 <= k < nf:
             raise ValueError(f"k must lie in [1, {nf - 1}]")
+        # no support check here (rigid modes are legitimate in free vibration), but valid inputs are required
+        E_active = check_moduli(E_active, self.elastic.n_elements)
+        rho_active = check_moduli(rho_active, self.elastic.n_elements, "density", allow_zero=True)
         K = self.stiffness(E_active)
         M = self.mass_matrix(rho_active)
         A = K - self.sigma * M if self.sigma != 0.0 else K
