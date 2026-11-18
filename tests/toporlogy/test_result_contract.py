@@ -124,7 +124,10 @@ def test_optimizer_without_multipliers_reports_none():
         def step(self, x, f0, df0, g, dg, constraint_fn=None):
             return np.clip(x - 0.01 * np.sign(df0), 0.0, 1.0)
     res = _mbb(Plain()).run(max_iter=2)
-    assert res.kkt_residual is None and res.feasible in (True, False) and res.termination == "max_iter"
+    v = res.final.values["volume"]
+    assert res.kkt_residual is None and res.termination == "max_iter"
+    assert res.feasible is bool(v <= 0.5 + 1e-3 * 0.5)                  # computed here, not taken from the run
+    assert res.max_violation == pytest.approx(max(0.0, (v - 0.5) / 0.5), abs=1e-15)
 
 
 # ---------------------------------------------------------------------------------------------- summary flags
@@ -163,7 +166,13 @@ def test_run_summary_carries_the_result_contract(tmp_path):
     sm = C.run_setup(s, tmp_path / "run")
     assert sm["termination"] == "max_iter" and sm["converged"] is False and "not_converged" in sm["flags"]
     assert sm["feasible"] == all(c["satisfied"] for c in sm["constraints"])
-    assert sm["max_violation"] >= 0.0 and sm["kkt_residual"] is not None and sm["kkt_residual"] > 0.0
+    want = max([0.0] + [(c["value"] - c["upper"]) / max(abs(c["upper"]), 1e-12) for c in sm["constraints"]])
+    assert sm["max_violation"] == pytest.approx(want, abs=1e-15)
+    # the KKT residual recomputed from the returned design and the optimizer's last multipliers
+    x = np.load(tmp_path / "run" / "result.npz")["x"]
+    ev = s.study.evaluate(x)
+    assert sm["kkt_residual"] == pytest.approx(s.study._kkt_residual(x, ev, s.study.optimizer.kkt_multipliers()),
+                                               rel=1e-9)
     import json
     rj = json.loads((tmp_path / "run" / "result.json").read_text(encoding="utf-8"))
     assert rj["termination"] == sm["termination"] and rj["feasible"] == sm["feasible"]

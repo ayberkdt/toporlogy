@@ -124,7 +124,7 @@ def test_parse_direction():
     assert parse_direction("-x", 2) == (0, -1)
     assert parse_direction("y", 3) == (1, 1)
     assert parse_direction((2, -1), 3) == (2, -1)
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='not\\ valid\\ in\\ 2\\-D'):
         parse_direction("+z", 2)
 
 
@@ -376,11 +376,11 @@ def test_manufacturing_chain_order():
     ch = manufacturing_chain(d, 1.5, tying=t, am={"build": "+z"}, casting=None)
     assert [type(m).__name__ for m in ch.links] == ["Symmetry", "Embed", "DensityFilter", "GroupAverage",
                                                     "AMFilter", "HeavisideProjection", "Passive"]
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='must\\ be\\ the\\ first\\ link'):
         validate_chain(Chain([Embed(d), t]))
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='out\\ of\\ order'):
         validate_chain(Chain([Embed(d), DensityFilter(d, 1.5), HeavisideProjection(), AMFilter(d), Passive(d)]))
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='need\\ a\\ DensityFilter'):
         validate_chain(Chain([Embed(d), AMFilter(d), Passive(d)]))
     rng = np.random.default_rng(13)
     ch2 = manufacturing_chain(d, 1.5, tying=[t, Extrusion(d, "x")], casting={"direction": "-z"})
@@ -428,6 +428,24 @@ def test_symmetric_optimisation_exact(cantilever):
     print(f"\n  24x12x8, 6 it: untied asym_y = {asym_free:.1e} (c = {free.objective:.4f}); y-sym {a1:.1e} "
           f"(c = {one.objective:.4f}, {one.seconds:.1f} s); y+z-sym {a2:.1e} (c = {two.objective:.4f})")
     assert a1 <= 1e-12 and a2 <= 1e-12
+    # a symmetric problem: the tie costs nothing (measured 18 Nov 2026: the same c to 4 digits)
+    assert one.objective == pytest.approx(free.objective, rel=1e-6)
+    # The symmetric load alone cannot tell a working tie from a no-op: the untied design is symmetric too, up to
+    # round-off (measured 6.8e-12). With an off-centre load the untied design is clearly asymmetric and the tie must
+    # force the mirror image against the physics.
+    X = d.node_coords()
+    side = d.nodes_where(lambda X: (abs(X[:, 0] - d.shape[0]) < 1e-6) & (abs(X[:, 1] - 2.0) < 1e-6)
+                         & (abs(X[:, 2] - d.shape[2] / 2) < 1e-6))
+    assert len(side) == 1 and X[side[0], 1] == 2.0
+    Fa = F.copy()
+    Fa[d.dofs(side, 2), 0] += -1.0
+    free_a = _run(d, Fa, fixed, manufacturing_chain(d, 1.5, projection=False), 6)
+    tied_a = _run(d, Fa, fixed, manufacturing_chain(d, 1.5, tying=Symmetry(d, {"y": 6.0}), projection=False), 6)
+    asym_a = np.abs(free_a.xphys - free_a.xphys[:, ::-1, :]).max()
+    tied_asym = np.abs(tied_a.xphys - tied_a.xphys[:, ::-1, :]).max()
+    print(f"  off-centre load: untied asym_y = {asym_a:.2e} (c = {free_a.objective:.4f}); tied {tied_asym:.1e} "
+          f"(c = {tied_a.objective:.4f})")
+    assert asym_a > 1e-2 and tied_asym <= 1e-12
 
 
 def test_extrusion_and_pattern_optimisation_exact():

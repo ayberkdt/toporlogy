@@ -60,5 +60,5 @@ def test_interfaces_as_node_sets_and_bad_constraint():
     nodes = {k: np.unique(b.domain.edof[np.flatnonzero(m.ravel())] // 2) for k, m in b.interfaces.items()}
     plan = one_body(b.domain, nodes, ties=1, constraint=None)
     assert set(plan.interfaces) == set(b.interfaces)
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='constraint:\\ conduction'):
         one_body(b.domain, b.interfaces, constraint="magic")

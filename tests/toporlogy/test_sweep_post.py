@@ -30,8 +30,8 @@ from toporlogy.post import (Bound, Box, Cut, Cylinder, Keep, Plane, PostParams, 
 from toporlogy.post.primitives import element_fraction
 from toporlogy.post.topology import grid_topology
 
-# Not yet re-run on an idle machine (sweep interrupted 15 Nov 2026): the whole module is opt-in via -m slow.
-pytestmark = pytest.mark.slow
+# The sweeps themselves carry @pytest.mark.slow (not yet re-run on an idle machine, interrupted 15 Nov 2026); the
+# fast subset and the builder checks run in every normal run (measured 18 Nov 2026: 27 s for both modules together).
 
 
 @pytest.fixture(autouse=True)

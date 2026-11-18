@@ -92,8 +92,8 @@ def listing() -> str:
 
 
 def _load(path: Path) -> str:
-    if not path.is_file():
-        pytest.skip(f"no {path.name}: run python {Path(__file__).name} --write")
+    # the snapshots are tracked in git: a missing file is a deleted safety net, not a reason to skip
+    assert path.is_file(), f"{path} is missing: restore it from git or run python {Path(__file__).name} --write"
     return path.read_text(encoding="utf-8")
 
 

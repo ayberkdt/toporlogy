@@ -112,11 +112,11 @@ def test_move_limit_reset_and_validation():
     np.testing.assert_array_equal(opt.step(x, 3.0, df0, g, dg), MMA(move=0.05).step(x, 3.0, df0, g, dg))
     # the objective scale makes the step invariant to a positive factor on f0 (normalise="first")
     np.testing.assert_allclose(MMA().step(x, 30.0, 10 * df0, g, dg), MMA().step(x, 3.0, df0, g, dg), atol=1e-10)
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='move'):
         MMA(move=0.0)
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='normalise'):
         MMA(normalise="max")
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='dg\\ has\\ shape'):
         MMA().step(x, 1.0, df0, np.array([0.0, 0.0]), dg)
 
 

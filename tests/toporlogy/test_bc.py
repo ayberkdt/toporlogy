@@ -315,6 +315,15 @@ def test_body_force_matrix_and_design_dependent_compliance():
     x = np.random.default_rng(1).uniform(0.3, 0.8, d.n_design)
     res = study_gradcheck(study, x)
     assert res["max_rel_error"] < 1e-6
+    # the value, rebuilt independently: F = F0 + s G x̄ (x̄ on the active elements), U from solve_numpy, c = Fᵀ U
+    ev = study.evaluate(x, gradients=False)
+    act = d.active_elements
+    xbar = ev.xphys.reshape(-1)[act]
+    E = SIMP(d, penal=3.0)(torch.as_tensor(ev.xphys)).numpy().reshape(-1)[act]
+    Fd = F0.reshape(-1) + 0.05 * (G @ xbar)
+    U = B.physics().solve_numpy(E, Fd[:, None])[:, 0]
+    assert ev.f0 == pytest.approx(float(Fd @ U), rel=1e-10)
+    assert abs(float(Fd @ U) - float(F0.reshape(-1) @ U)) > 1e-3 * ev.f0      # the body force term is not negligible
     # with zero body force it equals the plain compliance
     study0 = Study(d, B.physics(), F0, standard_chain(d, 1.5), SIMP(d, penal=3.0), Compliance(), [], OC())
     resp0 = bc.BodyForceCompliance(F0, G, factors=[0.0])

@@ -143,11 +143,38 @@ def test_all_and_surface_selectors():
     {"type": "fixed", "where": {"type": "point", "at": [16, 0]}, "dofs": [[1, 1]]},
 ], ids=lambda s: s["type"])
 def test_supports(sup):
+    """The appended support is built with its kind, on its nodes, and it holds in the solved displacement; adding
+    a support or a spring can only stiffen the part, so under the same load and design the compliance falls."""
     raw = plate()
     raw["supports"].append(sup)
     s = C.build_setup(raw)
-    kinds = {p[1] for p in s.bc.constraints(0).per_support}
-    assert len(kinds) >= 1 and s.bc_report.ok
+    assert s.bc_report.ok
+    per = s.bc.constraints(0).per_support
+    assert [p[1] for p in per[:1]] == ["fixed"] and len(per) == 2          # the base clamp, then the new one
+    name, kind, nodes, rows = per[1]
+    X = s.study.domain.node_coords()
+    x0 = np.full(s.study.n_var, 0.5)
+    ev = s.study.evaluate(x0, gradients=False)
+    U = ev.U[:, 0].reshape(-1, 2)
+    tol = 1e-12 * np.abs(U).max()
+    if sup["type"] in ("roller", "symmetry"):                             # normal y on the edge y = 0
+        assert kind == "roller" and set(nodes) == set(np.flatnonzero(np.abs(X[:, 1]) < 1e-9)) and rows == len(nodes)
+        assert np.abs(U[nodes, 1]).max() <= tol
+    elif sup["type"] == "pinned_bore":                                    # bore r 2 at (10, 4): radial u = 0
+        r = np.linalg.norm(X[nodes] - [10.0, 4.0], axis=1)                # corners of cut voxels: within h sqrt 2
+        assert kind == "pinned" and rows == len(nodes) and np.all(np.abs(r - 2.0) <= 0.5 * np.sqrt(2) + 1e-9)
+        er = (X[nodes] - [10.0, 4.0]) / r[:, None]
+        assert np.abs((U[nodes] * er).sum(axis=1)).max() <= tol
+        assert np.abs((U[nodes] * er[:, ::-1] * [-1, 1]).sum(axis=1)).max() > 1e3 * tol   # tangential stays free
+    elif sup["type"] == "elastic":                                        # a spring: no constraint rows
+        assert kind == "spring" and rows == 0 and set(nodes) == set(np.flatnonzero(np.abs(X[:, 1] - 8.0) < 1e-9))
+        assert np.abs(U[nodes]).max() > 1e3 * tol
+    else:                                       # "dofs": [[1, 1]] is a direction: u . (1, 1) = 0 at (16, 0)
+        assert kind == "fixed" and len(nodes) == 1 and rows == 1 and np.allclose(X[nodes[0]], [16.0, 0.0])
+        u = U[nodes[0]]
+        assert abs(u @ [1.0, 1.0]) <= tol and abs(u @ [1.0, -1.0]) > 1e3 * tol
+    base = C.build_setup(plate()).study.evaluate(x0, gradients=False).f0
+    assert ev.f0 < base * (1 - 1e-6), (ev.f0, base)
     evaluate(s)
 
 
@@ -202,12 +229,37 @@ def test_per_case_supports_and_combinations():
     [{"type": "pattern", "kind": "cyclic", "n": 2, "center": ["mid", "mid"]}, {"type": "density_filter", "rmin": 1.5}],
 ], ids=lambda c: c[0]["type"] if c[0]["type"] != "density_filter" else c[1]["type"])
 def test_manufacturing_links(chain):
+    """The built chain (not only the resolved config) has the links in order with their parameters, and a random
+    design comes out obeying the tying exactly; the untied chain breaks every one of these by ~0.4 (measured
+    18 Nov 2026), so each check tells a working tie from a missing one."""
     raw = box2d(chain=chain)
     s = C.build_setup(raw)
     names = [lk["type"] for lk in s.config["chain"]]
     assert names[-1] == "passive" and "embed" in names
-    if chain[0]["type"] in ("symmetry", "extrusion", "pattern"):
-        assert names.index("embed") == 1 and s.study.n_var < s.study.domain.n_design
+    built = [type(lk).__name__ for lk in s.study.chain.links]
+    first = chain[0]["type"]
+    want = {"density_filter": ["Embed", "DensityFilter", "AMFilter" if chain[1]["type"] == "am_filter" else "Casting"],
+            "symmetry": ["Symmetry", "Embed", "DensityFilter", "GroupAverage"],
+            "extrusion": ["Extrusion", "Embed", "DensityFilter", "GroupAverage"],
+            "pattern": ["Pattern", "Embed", "DensityFilter"] + (["GroupAverage"] if len(chain) == 3 else [])}[first]
+    assert built == want + ["Passive"]
+    links = {type(lk).__name__: lk for lk in s.study.chain.links}
+    assert links["DensityFilter"].rmin == 1.5
+    for k in ("AMFilter", "Casting"):
+        if k in links:
+            assert (links[k].axis, links[k].sign) == (1, 1)                   # "+y"
+    n_var = {"density_filter": 72, "symmetry": 36, "extrusion": 12, "pattern": 36}[first]    # 12 x 6 grid
+    assert s.study.n_var == n_var and s.study.domain.n_design == 72
+    x = np.random.default_rng(0).uniform(0.0, 1.0, s.study.n_var)
+    xp = s.study.evaluate(x, gradients=False).xphys.reshape(12, 6)
+    if first == "symmetry":
+        assert np.abs(xp - xp[:, ::-1]).max() <= 1e-15
+    elif first == "extrusion":
+        assert np.abs(xp - xp[:, :1]).max() <= 1e-15
+    elif first == "pattern" and len(chain) == 3:                              # translation by 6 cells in x
+        assert np.abs(xp[:6] - xp[6:]).max() <= 1e-15
+    elif first == "pattern":                                                  # two sectors about the centre
+        assert np.abs(xp - xp[::-1, ::-1]).max() <= 1e-15
     evaluate(s)
 
 
