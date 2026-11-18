@@ -48,7 +48,7 @@ class Fixed(Support):
         rows = []
         for d in self.dirs:
             if np.isscalar(d):
-                rows.append(np.eye(dim)[int(cast(int, d))])
+                rows.append(np.eye(dim)[int(np.asarray(d).item())])
             else:
                 v = _vec(d, dim, "direction")
                 rows.append(v / np.linalg.norm(v))

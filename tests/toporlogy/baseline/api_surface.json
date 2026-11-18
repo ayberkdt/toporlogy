@@ -172,6 +172,7 @@
   },
   "Elasticity": {
    "attrs": [
+    "check_kinematics",
     "element_energy",
     "factor",
     "matrix",
@@ -669,6 +670,7 @@
   },
   "ConstrainedElasticity": {
    "attrs": [
+    "check_kinematics",
     "element_energy",
     "factor",
     "matrix",
@@ -980,6 +982,7 @@
   },
   "ConstrainedElasticity": {
    "attrs": [
+    "check_kinematics",
     "element_energy",
     "factor",
     "matrix",
@@ -1023,6 +1026,7 @@
   },
   "Elasticity": {
    "attrs": [
+    "check_kinematics",
     "element_energy",
     "factor",
     "matrix",
@@ -1091,6 +1095,7 @@
  "toporlogy.boundary.constrained": {
   "ConstrainedElasticity": {
    "attrs": [
+    "check_kinematics",
     "element_energy",
     "factor",
     "matrix",
@@ -1134,6 +1139,7 @@
   },
   "Elasticity": {
    "attrs": [
+    "check_kinematics",
     "element_energy",
     "factor",
     "matrix",
@@ -1169,6 +1175,7 @@
    "class": "Support"
   },
   "annotations": "<_Feature>",
+  "checked_residual": "checked_residual(A,x,b)",
   "reaction_forces": "reaction_forces(physics,E_active,U,F)"
  },
  "toporlogy.boundary.loads": {
@@ -1243,6 +1250,7 @@
   },
   "Elasticity": {
    "attrs": [
+    "check_kinematics",
     "element_energy",
     "factor",
     "matrix",
@@ -3130,6 +3138,7 @@
  "toporlogy.fem": {
   "Elasticity": {
    "attrs": [
+    "check_kinematics",
     "element_energy",
     "factor",
     "matrix",
@@ -3158,6 +3167,7 @@
  "toporlogy.fem.elastic": {
   "Elasticity": {
    "attrs": [
+    "check_kinematics",
     "element_energy",
     "factor",
     "matrix",
@@ -3270,6 +3280,27 @@
   "assemble_conduction": "assemble_conduction(domain,k_active)",
   "conduction_matrix": "conduction_matrix(dim)",
   "element_nodes": "element_nodes(domain,elements)"
+ },
+ "toporlogy.fem.mechanisms": {
+  "MechanismError": {
+   "attrs": [
+    "add_note",
+    "args",
+    "with_traceback"
+   ],
+   "class": "MechanismError"
+  },
+  "SolveResidualError": {
+   "attrs": [
+    "add_note",
+    "args",
+    "with_traceback"
+   ],
+   "class": "SolveResidualError"
+  },
+  "check_supports": "check_supports(domain,elements,rows)",
+  "fixed_dof_rows": "fixed_dof_rows(fixed,dim)",
+  "zero_energy_modes": "zero_energy_modes(domain,elements,rows,tol)"
  },
  "toporlogy.fem.modal": {
   "Modal": {
@@ -4137,8 +4168,11 @@
   },
   "BoxPrimitive": {
    "attrs": [
+    "bbox",
     "describe",
+    "dim",
     "grad",
+    "inside",
     "kind",
     "offset",
     "project",
@@ -4184,8 +4218,11 @@
   "CylinderPrimitive": {
    "attrs": [
     "axial",
+    "bbox",
     "describe",
+    "dim",
     "grad",
+    "inside",
     "kind",
     "length",
     "offset",
@@ -4197,8 +4234,11 @@
   },
   "GridPrimitive": {
    "attrs": [
+    "bbox",
     "describe",
+    "dim",
     "grad",
+    "inside",
     "kind",
     "offset",
     "project",
@@ -4214,8 +4254,11 @@
   },
   "ImplicitPrimitive": {
    "attrs": [
+    "bbox",
     "describe",
+    "dim",
     "grad",
+    "inside",
     "kind",
     "name",
     "offset",
@@ -4239,8 +4282,11 @@
   },
   "PlanePrimitive": {
    "attrs": [
+    "bbox",
     "describe",
+    "dim",
     "grad",
+    "inside",
     "kind",
     "offset",
     "project",
@@ -4287,8 +4333,11 @@
   },
   "Primitive": {
    "attrs": [
+    "bbox",
     "describe",
+    "dim",
     "grad",
+    "inside",
     "kind",
     "offset",
     "project",
@@ -4311,8 +4360,11 @@
   },
   "SpherePrimitive": {
    "attrs": [
+    "bbox",
     "describe",
+    "dim",
     "grad",
+    "inside",
     "kind",
     "offset",
     "project",
@@ -4465,8 +4517,11 @@
   },
   "BoxPrimitive": {
    "attrs": [
+    "bbox",
     "describe",
+    "dim",
     "grad",
+    "inside",
     "kind",
     "offset",
     "project",
@@ -4490,8 +4545,11 @@
   "CylinderPrimitive": {
    "attrs": [
     "axial",
+    "bbox",
     "describe",
+    "dim",
     "grad",
+    "inside",
     "kind",
     "length",
     "offset",
@@ -4503,8 +4561,11 @@
   },
   "GridPrimitive": {
    "attrs": [
+    "bbox",
     "describe",
+    "dim",
     "grad",
+    "inside",
     "kind",
     "offset",
     "project",
@@ -4514,8 +4575,11 @@
   },
   "ImplicitPrimitive": {
    "attrs": [
+    "bbox",
     "describe",
+    "dim",
     "grad",
+    "inside",
     "kind",
     "name",
     "offset",
@@ -4539,8 +4603,11 @@
   },
   "OffsetPrimitive": {
    "attrs": [
+    "bbox",
     "describe",
+    "dim",
     "grad",
+    "inside",
     "kind",
     "offset",
     "project",
@@ -4550,8 +4617,11 @@
   },
   "PlanePrimitive": {
    "attrs": [
+    "bbox",
     "describe",
+    "dim",
     "grad",
+    "inside",
     "kind",
     "offset",
     "project",
@@ -4561,8 +4631,11 @@
   },
   "Primitive": {
    "attrs": [
+    "bbox",
     "describe",
+    "dim",
     "grad",
+    "inside",
     "kind",
     "offset",
     "project",
@@ -4585,8 +4658,11 @@
   },
   "SpherePrimitive": {
    "attrs": [
+    "bbox",
     "describe",
+    "dim",
     "grad",
+    "inside",
     "kind",
     "offset",
     "project",

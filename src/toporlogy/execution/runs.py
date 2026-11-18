@@ -112,9 +112,14 @@ def read_run(folder: str | Path) -> dict[str, Any]:
     elif (f / "result.json").is_file():
         res = json.loads((f / "result.json").read_text(encoding="utf-8"))
         settings = res.get("settings", {})
-        last = history[-1] if history else {}
-        cons = [{"name": n, "value": last.get(n, float("nan")), "upper": u,
-                 "satisfied": bool(last.get(n, float("inf")) <= u + 1e-3 * max(abs(u), 1e-12))}
+        # The returned design's constraint values are in result.json. The last history row belongs to the design
+        # BEFORE the final update, so it is only a fallback for result files written before "constraints" existed.
+        if isinstance(res.get("constraints"), dict):
+            final, source = res["constraints"], "result.json"
+        else:
+            final, source = (history[-1] if history else {}), "history.jsonl (last iterate, not the returned design)"
+        cons = [{"name": n, "value": final.get(n, float("nan")), "upper": u,
+                 "satisfied": bool(final.get(n, float("inf")) <= u + 1e-3 * max(abs(u), 1e-12))}
                 for n, u in settings.get("constraints", [])]
         grey = None
         if (f / "result.npz").is_file():
@@ -123,7 +128,9 @@ def read_run(folder: str | Path) -> dict[str, Any]:
         s = {"name": f.name, "objective_name": settings.get("objective", "objective"),
              "objective": res.get("objective"), "constraints": cons, "iterations": res.get("iterations"),
              "max_iter": None, "converged": res.get("converged"), "seconds": res.get("seconds"),
-             "grey_fraction": grey}
+             "grey_fraction": grey, "constraint_source": source, "termination": res.get("termination"),
+             "feasible": res.get("feasible"), "max_violation": res.get("max_violation"),
+             "kkt_residual": res.get("kkt_residual")}
         s["status"] = status_of(s)
     else:
         raise FileNotFoundError(f"{f} has neither summary.json nor result.json (is the run finished?)")

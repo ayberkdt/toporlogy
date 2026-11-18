@@ -205,3 +205,26 @@ def test_no_public_name_is_defined_in_two_modules() -> None:
                 homes.setdefault(n.name, []).append(mod)
     twice = {name: mods for name, mods in homes.items() if len(mods) > 1}
     assert not twice, twice
+
+
+def test_every_signed_distance_solid_is_a_geometry_shape() -> None:
+    """One hierarchy for one concept: every class in the package with an ``sdf`` method derives from
+    ``toporlogy.geometry.Shape`` (post primitives used to have a second, unrelated base class)."""
+    import importlib
+    import inspect
+    import pkgutil
+
+    import toporlogy
+    from toporlogy.geometry import Shape
+    bad = []
+    for m in pkgutil.walk_packages(toporlogy.__path__, "toporlogy."):
+        if any(part.startswith("_") for part in m.name.split(".")[1:]):
+            continue                                         # __main__ runs the CLI; private modules
+        try:
+            mod = importlib.import_module(m.name)
+        except ImportError:                                  # optional extra missing
+            continue
+        for _, cls in inspect.getmembers(mod, inspect.isclass):
+            if cls.__module__ == mod.__name__ and "sdf" in vars(cls) and not issubclass(cls, Shape):
+                bad.append(f"{cls.__module__}.{cls.__qualname__}")
+    assert not bad, bad

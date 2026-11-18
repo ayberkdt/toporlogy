@@ -33,6 +33,7 @@ import torch
 
 from toporlogy.core.domain import Domain
 from toporlogy.fem.elements import element_matrix
+from toporlogy.fem.mechanisms import check_supports, fixed_dof_rows
 from toporlogy.solvers import gmg_kernels as gk
 from toporlogy.solvers.gmg import GMGConvergenceError, GMGSolver
 
@@ -79,6 +80,7 @@ class ElasticityGMG:
         self.KE = element_matrix(3, self.element, nu)
         self.geom = domain.h
         self.elements = domain.active_elements
+        self._kinematics_checked = False
         fixed_arr = np.unique(np.asarray(fixed, np.int64))
         if fixed_arr.size and (fixed_arr.min() < 0 or fixed_arr.max() >= domain.ndof):
             raise ValueError("fixed DOF out of range")
@@ -190,6 +192,9 @@ class ElasticityGMG:
     def _solve_box(self, E_active: torch.Tensor, B: np.ndarray, kind: str,
                    x0: torch.Tensor | None = None) -> np.ndarray:
         """Solve K(E) X = B (box DOFs, (ndof, k)) by GMG with fallback. Returns X (ndof, k) NumPy."""
+        if not self._kinematics_checked:                           # a mechanism would only show as no convergence
+            check_supports(self.domain, self.elements, fixed_dof_rows(self.fixed, self.domain.dim))
+            self._kinematics_checked = True
         E_cpu = E_active.detach().cpu().double()
         if self.n_elements < self.direct_below:
             return self._fallback(f"small problem: {self.n_elements} < direct_below={self.direct_below} elements",

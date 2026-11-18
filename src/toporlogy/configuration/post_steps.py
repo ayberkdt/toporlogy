@@ -85,7 +85,12 @@ def _signature_with(fn: Callable[..., Any], dc: type, skip: Sequence[str] = ()) 
     for f in dataclasses.fields(dc):
         if f.name in skip:
             continue
-        dv = f.default if f.default is not dataclasses.MISSING else f.default_factory()  # type: ignore[misc]
+        if f.default is not dataclasses.MISSING:
+            dv = f.default
+        elif f.default_factory is not dataclasses.MISSING:
+            dv = f.default_factory()
+        else:
+            raise TypeError(f"{dc.__name__}.{f.name} has no default")
         if isinstance(dv, tuple):
             dv = list(dv)
         extra.append(inspect.Parameter(f.name, inspect.Parameter.KEYWORD_ONLY, default=dv, annotation=f.type))

@@ -178,6 +178,12 @@ class AMFilter(torch.nn.Module):
     against each other and against finite differences.
     """
 
+    keep: torch.Tensor
+    off: torch.Tensor
+    free: torch.Tensor
+    keepf: torch.Tensor
+    invq: torch.Tensor
+
     def __init__(self, domain: Domain, build: Any = None, base_layer: int = 0, base_coordinate: float | None = None,
                  P: float = 40.0, eps: float = 1e-4, xi0: float = 0.5, masked: bool = True,
                  autograd: bool = False) -> None:
@@ -342,6 +348,8 @@ class Tying(torch.nn.Module):
     the tying only if the part mask, keep and void regions are themselves invariant; :attr:`unpaired` shows where
     they are not.
     """
+
+    group: torch.Tensor
 
     def __init__(self, domain: Domain, maps: Sequence[np.ndarray], unpaired: Mapping[str, np.ndarray] | None = None,
                  kind: str = "tying") -> None:
@@ -556,6 +564,10 @@ class GroupAverage(torch.nn.Module):
     elements are passed through.
     """
 
+    idx: torch.Tensor
+    group: torch.Tensor
+    counts: torch.Tensor
+
     def __init__(self, tying: Tying) -> None:
         super().__init__()
         d = tying.domain
@@ -600,6 +612,9 @@ class Casting(torch.nn.Module):
     Andreasen (2011) and Vatanabe et al. (2016); neither paper was read in this session (publisher pages refused
     the download), so this p-norm form is this module's own construction, not their equations.
     """
+
+    keep: torch.Tensor
+    zero: torch.Tensor
 
     def __init__(self, domain: Domain, direction: Any = "+z", parting: float | None = None, p: float = 40.0) -> None:
         super().__init__()

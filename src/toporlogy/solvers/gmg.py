@@ -411,7 +411,7 @@ class GMGSolver:
     # ------------------------------------------------------------------ V-cycle
     def _smooth(self, lev: int, x: torch.Tensor | None, b: torch.Tensor) -> torch.Tensor:
         L, c = self.levels[lev], self._coef[lev]
-        dinv = L.dinv
+        dinv = cast(torch.Tensor, L.dinv)                          # set by update() before any V-cycle
         r = b if x is None else b - L.apply(x)
         d = dinv * r * c[0]
         x = d if x is None else x + d

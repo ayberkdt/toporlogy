@@ -21,6 +21,7 @@ import scipy.sparse as sp
 import torch
 
 from toporlogy.core.domain import Domain
+from toporlogy.fem.mechanisms import SolveResidualError, check_supports, fixed_dof_rows
 from toporlogy.solvers.direct import DirectSolver
 
 __all__ = ["Elasticity", "element_matrix"]
@@ -77,6 +78,9 @@ class Elasticity:
         self._factored_E: np.ndarray | None = None
         self.n_solves = 0
         self.n_adjoint_solves = 0
+        self._kinematics_checked = False
+        self._A: sp.csr_matrix | None = None                     # reduced matrix of the last factorisation
+        self.last_residual: float | None = None                    # ‖K x − b‖ / ‖b‖ of the last solve
 
     # ------------------------------------------------------------------ assembly and solve (NumPy)
     @property
@@ -91,15 +95,32 @@ class Elasticity:
         A.data = np.bincount(self._inv, weights=w, minlength=self._P.nnz)
         return A
 
+    def _kinematic_rows(self) -> dict[int, np.ndarray]:
+        """Support rows per node acting on its displacement (fixed DOFs: unit rows); see :mod:`.mechanisms`."""
+        return fixed_dof_rows(self.fixed, self.domain.dim)
+
+    def check_kinematics(self) -> None:
+        """Raise :class:`~toporlogy.fem.mechanisms.MechanismError` if the supports leave a zero-energy motion (a
+        floating piece, a hinge, a free rotation): the stiffness would be singular and a direct solve would return
+        finite nonsense. Runs once, before the first factorisation."""
+        check_supports(self.domain, self.elements, self._kinematic_rows())
+        self._kinematics_checked = True
+
     def factor(self, E_active: np.ndarray) -> None:
+        if not self._kinematics_checked:
+            self.check_kinematics()
         E_active = np.asarray(E_active, float)
-        self.solver.factor(self.matrix(E_active))
+        self._A = self.matrix(E_active)
+        self.solver.factor(self._A)
         self._factored_E = E_active.copy()
         self._token += 1
 
     def _solve_free(self, B_full: np.ndarray) -> np.ndarray:
         X = np.zeros_like(B_full)
-        X[self.free] = self.solver.solve(B_full[self.free]).reshape(B_full[self.free].shape)
+        b = B_full[self.free]
+        x = np.asarray(self.solver.solve(b)).reshape(b.shape)
+        self.last_residual = checked_residual(self._A, x, b)
+        X[self.free] = x
         return X
 
     def solve_numpy(self, E_active: np.ndarray, F: np.ndarray) -> np.ndarray:
@@ -123,6 +144,26 @@ class Elasticity:
         F2 = np.asarray(F, float)
         F2 = F2[:, None] if F2.ndim == 1 else F2
         return _LinearSolve.apply(E_active, self, F2)
+
+
+RESIDUAL_TOL = 1e-6        # a backward-stable direct solve gives ~1e-15; above this the solution is not usable
+
+
+def checked_residual(A: sp.csr_matrix | None, x: np.ndarray, b: np.ndarray) -> float | None:
+    """‖K x − b‖ / ‖b‖ with K = A + Aᵀ − diag(A) (A: upper triangle); raises SolveResidualError above
+    :data:`RESIDUAL_TOL`. None when there is no matrix (a custom solver path) or b = 0."""
+    if A is None:
+        return None
+    nb = float(np.linalg.norm(b))
+    if nb == 0.0:
+        return 0.0
+    x2 = x.reshape(len(x), -1)
+    Kx = A @ x2 + A.T @ x2 - A.diagonal()[:, None] * x2
+    rel = float(np.linalg.norm(Kx - b.reshape(x2.shape))) / nb
+    if not np.isfinite(rel) or rel > RESIDUAL_TOL:
+        raise SolveResidualError(f"linear solve residual ‖Kx − b‖/‖b‖ = {rel:.2e} > {RESIDUAL_TOL:g}: the system "
+                                 "is singular or numerically not solvable at these moduli")
+    return rel
 
 
 class _LinearSolve(torch.autograd.Function):

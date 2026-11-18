@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from typing import Any, cast
+from typing import Any
 
 import numpy as np
 
@@ -41,8 +41,8 @@ def bc_mapping(bcs: Any) -> dict[str, Any]:
             continue
         if isinstance(s, B.Fixed):
             rows = np.eye(info.dim) if s.dirs is None else np.array(
-                [np.eye(info.dim)[int(cast(int, r))] if np.isscalar(r) else np.asarray(r, float) / np.linalg.norm(r)
-                 for r in s.dirs])
+                [np.eye(info.dim)[int(np.asarray(r).item())] if np.isscalar(r)
+                 else np.asarray(r, float) / np.linalg.norm(r) for r in s.dirs])
             ax = [int(np.argmax(np.abs(r))) for r in rows if np.isclose(np.abs(r).max(), 1.0)]
             if len(ax) != len(rows):
                 note(s.name, "approximate", "oblique direction(s) re-verified as fixed in all directions")

@@ -7,7 +7,7 @@ from collections.abc import Callable, Sequence
 from scipy.spatial import cKDTree
 from toporlogy.core.domain import Domain
 from toporlogy.geometry import Bore, Shape
-from typing import Any, cast
+from typing import Any
 
 import numpy as np
 
@@ -145,7 +145,7 @@ class OnPlane(Selector):
         n: np.ndarray
         if np.isscalar(normal):
             n = np.zeros(self.point.size)
-            n[int(cast(int, normal))] = 1.0
+            n[int(np.asarray(normal).item())] = 1.0
         else:
             n = np.asarray(normal, float)
         self.normal = n / np.linalg.norm(n)
@@ -222,9 +222,9 @@ class OnCylinder(Selector):
         if self.band is None:
             return (1.5 * h, 0.75 * h) if self.facing != "outward" else (0.75 * h, 1.5 * h)
         if np.isscalar(self.band):
-            b = cast(float, self.band)
-            return float(b), float(b)
-        lo_hi = cast(tuple[float, float], self.band)
+            b = float(np.asarray(self.band).item())
+            return b, b
+        lo_hi = np.asarray(self.band, float)
         return float(lo_hi[0]), float(lo_hi[1])
 
     def coords(self, X: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:

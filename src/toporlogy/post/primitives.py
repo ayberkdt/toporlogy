@@ -1,8 +1,12 @@
 """Exact implicit primitives and their roles in the finished part ("preserve" geometry).
 
-Every shape has a signed distance ``sdf(X)`` (negative inside, ``X`` (n, 3) physical coordinates) that is exact
-(Euclidean) at least near its surface, and a unit gradient ``grad(X)``. A *role* says how the shape enters the
-finished part after smoothing (CSG on distance fields, φ = min for union, max for intersection):
+Every primitive is a :class:`toporlogy.geometry.Shape` (the one base class of signed-distance solids in the library)
+in 3-D: a signed distance ``sdf(X)`` (negative inside, ``X`` (n, 3) physical coordinates) that is exact (Euclidean) at
+least near its surface. On top of a CSG shape it gives a unit gradient ``grad(X)``, the closest surface point
+``project(X)`` and an exact ``offset(d)``, which the re-imposition and the vertex projection need.
+
+A *role* says how the shape enters the finished part after smoothing (CSG on distance fields, φ = min for union, max
+for intersection):
 
 * :class:`Keep`  — material that must exist (boss, flange, pad): ``φ ← min(φ, s)``;
 * :class:`Cut`   — material that must not exist (bore, clearance): ``φ ← max(φ, −s)``;
@@ -25,6 +29,8 @@ from typing import Any
 
 import numpy as np
 
+from toporlogy.geometry import Shape
+
 __all__ = ["Primitive", "SpherePrimitive", "CylinderPrimitive", "PlanePrimitive", "BoxPrimitive", "ImplicitPrimitive",
            "GridPrimitive", "OffsetPrimitive", "Role", "Keep", "Cut", "Bound", "assemble", "oriented",
            "element_fraction"]
@@ -34,9 +40,10 @@ def _x(X: Any) -> np.ndarray:
     return np.atleast_2d(np.asarray(X, float))
 
 
-class Primitive:
-    """Signed distance field of a solid (negative inside)."""
+class Primitive(Shape):
+    """A 3-D :class:`~toporlogy.geometry.Shape` with an exact surface: gradient, closest point and offset."""
 
+    dim = 3
     kind = "shape"
 
     def sdf(self, X: np.ndarray) -> np.ndarray:  # pragma: no cover - interface
@@ -65,6 +72,9 @@ class Primitive:
     def describe(self) -> dict[str, Any]:
         return {"kind": self.kind}
 
+    def bbox(self) -> tuple[np.ndarray, np.ndarray]:
+        raise ValueError(f"{type(self).__name__} has no bounding box (unbounded or not known)")
+
 
 @dataclass
 class OffsetPrimitive(Primitive):
@@ -80,6 +90,11 @@ class OffsetPrimitive(Primitive):
 
     def describe(self) -> dict[str, Any]:
         return {"kind": "offset", "d": self.d, "base": self.base.describe()}
+
+    def bbox(self) -> tuple[np.ndarray, np.ndarray]:
+        lo, hi = self.base.bbox()                       # grown by d > 0; for d < 0 the base box still bounds it
+        g = max(float(self.d), 0.0)
+        return lo - g, hi + g
 
 
 @dataclass
@@ -101,6 +116,10 @@ class SpherePrimitive(Primitive):
 
     def describe(self) -> dict[str, Any]:
         return {"kind": "sphere", "center": list(map(float, self.center)), "radius": float(self.radius)}
+
+    def bbox(self) -> tuple[np.ndarray, np.ndarray]:
+        c = np.asarray(self.center, float)
+        return c - self.radius, c + self.radius
 
 
 @dataclass
@@ -131,6 +150,16 @@ class CylinderPrimitive(Primitive):
 
     def axial(self, X: np.ndarray) -> np.ndarray:
         return self._frame(X)[1]
+
+    def bbox(self) -> tuple[np.ndarray, np.ndarray]:
+        """Exact box of the capped cylinder: the axis segment, grown by radius · sqrt(1 − a_k²) per coordinate."""
+        if self.length is None:
+            raise ValueError("an infinite CylinderPrimitive (length None) has no bounding box")
+        a = np.asarray(self.axis, float)
+        a = a / np.linalg.norm(a)
+        c = np.asarray(self.center, float)
+        half = 0.5 * float(self.length) * np.abs(a) + float(self.radius) * np.sqrt(np.clip(1.0 - a * a, 0.0, None))
+        return c - half, c + half
 
     def sdf(self, X: np.ndarray) -> np.ndarray:
         _, t, rv = self._frame(X)
@@ -231,6 +260,9 @@ class BoxPrimitive(Primitive):
     def describe(self) -> dict[str, Any]:
         return {"kind": "box", "lo": list(map(float, self.lo)), "hi": list(map(float, self.hi))}
 
+    def bbox(self) -> tuple[np.ndarray, np.ndarray]:
+        return np.asarray(self.lo, float).copy(), np.asarray(self.hi, float).copy()
+
 
 @dataclass
 class ImplicitPrimitive(Primitive):
@@ -269,6 +301,17 @@ class GridPrimitive(Primitive):
 
     def describe(self) -> dict[str, Any]:
         return {"kind": "grid", "name": self.name, "shape": list(self.phi.shape), "h": self.h}
+
+    def bbox(self) -> tuple[np.ndarray, np.ndarray]:
+        """Samples with φ ≤ 0, grown by one spacing (the trilinear zero level lies within one cell of them). Outside
+        the grid the nearest sample is used, so a solid sample on the grid border makes the solid unbounded."""
+        inside = self.phi <= 0.0
+        if any(np.take(inside, [0, -1], axis=ax).any() for ax in range(inside.ndim)):
+            raise ValueError("GridPrimitive: solid samples on the grid border, the solid extends beyond the grid")
+        if not inside.any():
+            raise ValueError("GridPrimitive: no solid sample")
+        ijk = np.argwhere(inside)
+        return self.origin + self.h * (ijk.min(axis=0) - 1), self.origin + self.h * (ijk.max(axis=0) + 1)
 
 
 # --------------------------------------------------------------------------------------------- roles

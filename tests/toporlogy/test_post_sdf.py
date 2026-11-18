@@ -79,3 +79,59 @@ def test_volume_threshold_matches_target() -> None:
     t, phi, v = S.volume_threshold(rf, g, target, redistanced=True)
     assert abs(v / target - 1) < 1e-4
     assert abs(S.solid_volume(phi, g.h) / target - 1) < 1e-4
+
+
+# ---------------------------------------------------------------------------------------------- one SDF hierarchy
+def test_primitives_are_geometry_shapes_with_true_bounding_boxes():
+    """post primitives are geometry.Shape (one base class of signed-distance solids): their bounding boxes contain
+    every solid point, are tight where they are exact, and unbounded ones say so instead of guessing."""
+    from toporlogy import geometry as G
+    from toporlogy.post.primitives import (BoxPrimitive, CylinderPrimitive, ImplicitPrimitive, OffsetPrimitive,
+                                           PlanePrimitive, Primitive)
+    from toporlogy.post.sdf import Grid, mask_shape
+    assert issubclass(Primitive, G.Shape)
+    rng = np.random.default_rng(3)
+    tilted = CylinderPrimitive((1.0, -0.5, 2.0), (1.0, 2.0, -0.5), 0.7, length=3.0)
+    shapes = [SpherePrimitive((0.5, 1.0, -1.0), 1.3), tilted, BoxPrimitive((0, 0, 0), (2.0, 1.0, 0.5)),
+              OffsetPrimitive(BoxPrimitive((0, 0, 0), (1.0, 1.0, 1.0)), 0.25)]
+    for s in shapes:
+        lo, hi = s.bbox()
+        X = rng.uniform(lo - 1.0, hi + 1.0, (20000, 3))
+        solid = X[s.sdf(X) <= 0]
+        assert len(solid) > 100 and np.all(solid >= lo - 1e-9) and np.all(solid <= hi + 1e-9), type(s).__name__
+    # the tilted capped cylinder: the box is exact (surface samples reach every face of it)
+    a = np.array(tilted.axis) / np.linalg.norm(tilted.axis)
+    u = np.cross(a, [0.0, 0.0, 1.0])
+    u /= np.linalg.norm(u)
+    v = np.cross(a, u)
+    t, phi = np.meshgrid(np.array([-1.5, 1.5]), np.linspace(0, 2 * np.pi, 20001))
+    rim = np.array(tilted.center) + t.reshape(-1, 1) * a + 0.7 * (np.cos(phi).reshape(-1, 1) * u
+                                                                  + np.sin(phi).reshape(-1, 1) * v)
+    lo, hi = tilted.bbox()
+    assert np.allclose(rim.min(axis=0), lo, atol=1e-6) and np.allclose(rim.max(axis=0), hi, atol=1e-6)
+    for unbounded in (PlanePrimitive((0, 0, 0), (0, 0, 1)), CylinderPrimitive((0, 0, 0), (0, 0, 1), 1.0),
+                      ImplicitPrimitive(lambda X: np.linalg.norm(X, axis=1) - 1.0)):
+        with pytest.raises(ValueError, match="bounding box"):
+            unbounded.bbox()
+    g = Grid(np.zeros(3), 0.25, (16, 16, 16))
+    m = np.zeros(g.shape, bool)
+    m[4:9, 5:12, 3:7] = True
+    gp = mask_shape(m, g)
+    lo, hi = gp.bbox()
+    X = rng.uniform(-0.5, 4.5, (20000, 3))
+    solid = X[gp.sdf(X) <= 0]
+    assert np.all(solid >= lo - 1e-9) and np.all(solid <= hi + 1e-9)
+    m[0] = True
+    with pytest.raises(ValueError, match="grid border"):
+        mask_shape(m, g).bbox()
+
+
+def test_primitives_take_part_in_csg_like_any_shape():
+    """A primitive enters the CSG of geometry (union / difference, voxelize) and gives the same domain as the
+    geometry shapes with the same distances."""
+    from toporlogy import geometry as G
+    from toporlogy.post.primitives import BoxPrimitive
+    a = G.voxelize(G.Box([0, 0, 0], [3.0, 2.0, 1.0]) - G.Ball([1.5, 1.0, 0.5], 0.6), 0.25)
+    b = G.voxelize(BoxPrimitive((0, 0, 0), (3.0, 2.0, 1.0)) - SpherePrimitive((1.5, 1.0, 0.5), 0.6), 0.25)
+    assert a.shape == b.shape and np.array_equal(a.frac, b.frac)
+    assert SpherePrimitive((0, 0, 0), 1.0).inside([[0.5, 0, 0], [1.5, 0, 0]]).tolist() == [True, False]

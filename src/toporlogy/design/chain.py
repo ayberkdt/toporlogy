@@ -12,7 +12,7 @@ from __future__ import annotations
 
 import math
 from collections.abc import Iterable
-from typing import Any, cast
+from typing import Any
 
 import numpy as np
 import scipy.sparse as sp
@@ -31,6 +31,9 @@ def _t(a: np.ndarray, dtype: torch.dtype = torch.float64) -> torch.Tensor:
 
 class Embed(torch.nn.Module):
     """Design vector (n_design,) → element grid of ``domain.shape``: keep 1, void 0, outside 0."""
+
+    idx: torch.Tensor
+    base: torch.Tensor
 
     def __init__(self, domain: Domain) -> None:
         super().__init__()
@@ -52,6 +55,10 @@ class DensityFilter(torch.nn.Module):
     the legacy voxel driver's filter: implemented as a convolution of ``x·active`` divided by the
     convolution of ``active``. Elements outside the part get 0.
     """
+
+    kernel: torch.Tensor
+    mask: torch.Tensor
+    hs: torch.Tensor
 
     def __init__(self, domain: Domain, rmin: float, backend: str = "auto") -> None:
         super().__init__()
@@ -89,11 +96,11 @@ class DensityFilter(torch.nn.Module):
             act = self._active
             shape = np.array(self.shape)
             ijk = np.argwhere(act)
-            e = np.ravel_multi_index(tuple(ijk.T), self.shape)
+            e = np.asarray(np.ravel_multi_index(tuple(ijk.T), self.shape))
             rows, cols, vals = [], [], []
             for off, wt in self._offsets:
                 k = ijk + np.asarray(off)
-                ok = np.all((k >= 0) & (k < shape), axis=1)
+                ok = np.asarray(np.all((k >= 0) & (k < shape), axis=1))
                 ok[ok] = act[tuple(k[ok].T)]
                 rows.append(e[ok])
                 cols.append(np.ravel_multi_index(k[ok].T, self.shape))
@@ -147,6 +154,9 @@ class HeavisideProjection(torch.nn.Module):
 class Passive(torch.nn.Module):
     """Force keep = 1, void = 0, outside the part = 0 (gradient through those elements is zero)."""
 
+    keep: torch.Tensor
+    off: torch.Tensor
+
     def __init__(self, domain: Domain) -> None:
         super().__init__()
         self.register_buffer("keep", torch.as_tensor(domain.keep))
@@ -172,10 +182,10 @@ class Chain(torch.nn.Module):
     def __getitem__(self, i: int) -> torch.nn.Module:
         return self.links[i]
 
-    def find(self, kind: type) -> torch.nn.Module | None:
+    def find(self, kind: type[torch.nn.Module]) -> torch.nn.Module | None:
         for link in self.links:
             if isinstance(link, kind):
-                return cast(torch.nn.Module, link)
+                return link
         return None
 
 
