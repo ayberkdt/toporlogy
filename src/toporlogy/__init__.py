@@ -15,21 +15,21 @@ from toporlogy.solvers import pardiso as _pardiso
 
 _pardiso.load()
 
-from toporlogy.chain import Chain, DensityFilter, Embed, HeavisideProjection, Passive, standard_chain
-from toporlogy.checks import grey_fraction, gradcheck, study_gradcheck
-from toporlogy.domain import Domain
+from toporlogy.design.chain import Chain, DensityFilter, Embed, HeavisideProjection, Passive, standard_chain
+from toporlogy.optimization.checks import grey_fraction, gradcheck, study_gradcheck
+from toporlogy.core.domain import Domain
 from toporlogy.fem import Elasticity
-from toporlogy.interp import RAMP, SIMP
+from toporlogy.design.interp import RAMP, SIMP
 from toporlogy.optim import MMA, OC, BetaContinuation, Optimizer, Schedule
 from toporlogy.record import Recorder
-from toporlogy.responses import Compliance, EvalContext, Response, Volume
-from toporlogy.study import Constraint, Evaluation, Result, Study
+from toporlogy.optimization.responses import Compliance, EvalContext, Response, Volume
+from toporlogy.optimization.study import Constraint, Evaluation, Result, Study
 
 # Feature modules (import as toporlogy.<module>; their classes are not flattened into this namespace):
 # bc (supports, loads, checks), geometry (CSG / STL domains, bores), lengthscale (min/max thickness, measurement),
 # robust (eroded/blueprint/dilated), connectivity (one-body gate, prevention, repair), manufacturing (AM, symmetry,
 # extrusion, casting), dynamics (eigenfrequency responses), fem.heat, fem.modal, config / registry / cli.
-from toporlogy import bc, connectivity, dynamics, geometry, lengthscale, manufacturing, robust  # noqa: F401
+from toporlogy import bc, boundary, connectivity, dynamics, geometry, lengthscale, manufacturing, robust  # noqa: F401
 
 __all__ = ["Domain", "Chain", "Embed", "DensityFilter", "HeavisideProjection", "Passive", "standard_chain",
            "SIMP", "RAMP", "Elasticity", "Response", "EvalContext", "Compliance", "Volume", "Optimizer", "OC", "MMA",

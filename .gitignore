@@ -17,6 +17,7 @@
 
 /docs/*
 !/docs/mimari_plan.md
+!/docs/gelistirme_plani.md
 !/docs/registry.md
 !/docs/olcumler/
 !/docs/assets/

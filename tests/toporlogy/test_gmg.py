@@ -306,3 +306,33 @@ def test_fail_closed_without_fallback():
     assert loose.n_inexact == 1 and loose.fallback_log[-1]["inexact"]
     assert loose.fallback_log[-1]["achieved_true_rel_residual"] > 1e-12
     assert loose.stats()["n_inexact"] == 1
+
+
+def test_deflation_of_an_anchored_island_counted_as_floating_is_harmless():
+    """B-19 (measured 17 Nov 2026): IslandDeflation gives each node the largest label of its elements, so a stiff
+    block anchored only through nodes it shares with a higher-labelled block is counted as floating and deflated.
+    Deflation only changes the preconditioner: the solution and the iteration count must not get worse. Measured at
+    tol 1e-10 on this setup: 18 vs 19 iterations, solutions within 6e-11 (both stall near 7e-10, conditioning)."""
+    from scipy.ndimage import label
+
+    from toporlogy.solvers import gmg_kernels as gk
+    shape = (16, 8, 8)
+    E = np.full(shape, 1e-6)
+    E[2:6, 2:6, 2:6] = 1.0                        # block A (label 1)
+    E[6:10, 6:8, 2:6] = 1.0                       # block B (label 2), shares only an edge with A
+    fixed = np.zeros((17, 9, 9, 3), bool)
+    fixed[6, 6, 2:7] = True                       # pinned on the shared edge only
+    fixed[16] = True                              # a soft far face removes the rotation about that edge
+    lab, n = label(E >= 1e-3)
+    node_lab = gk.node_max(torch.as_tensor(lab.reshape(-1), dtype=torch.float64), shape).long().numpy()
+    assert n == 2 and set(node_lab[6, 6, 2:7].tolist()) == {2}          # A is not seen as anchored
+    F = np.zeros((17, 9, 9, 3))
+    F[2, 2:7, 2:7, 1] = 1.0 / 25
+    F[10, 6:9, 2:7, 2] = -1.0 / 15
+    out = {}
+    for tau in (None, 1e-3):
+        s = GMGSolver(shape, KE, 1.0, device="cpu", deflate_tau=tau, tol=1e-8, maxit=1000)
+        out[tau] = (s.solve(E, F, fixed), s.last)
+    assert out[None][1]["converged"] and out[1e-3][1]["converged"]
+    assert out[1e-3][1]["iters"] <= out[None][1]["iters"]
+    assert np.linalg.norm(out[1e-3][0] - out[None][0]) <= 1e-7 * np.linalg.norm(out[None][0])

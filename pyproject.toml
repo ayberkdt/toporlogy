@@ -9,10 +9,12 @@ description = "Modular density-based topology optimisation on regular 2-D/3-D gr
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = ["numpy>=1.26", "scipy>=1.11", "torch>=2.2", "pyyaml>=6"]
+# proprietary, all rights reserved (LICENSE); "Private :: Do Not Upload" makes PyPI reject an accidental upload
+classifiers = ["License :: Other/Proprietary License", "Private :: Do Not Upload"]
 
 [project.optional-dependencies]
 plot = ["matplotlib>=3.8"]
-post = ["pyvista>=0.43", "vtk>=9.2"]
+post = ["pyvista>=0.43", "vtk>=9.2", "numba>=0.59"]   # numba: post/sdf.py, post/checks.py (module-level import)
 fast = ["pypardiso>=0.4"]
 mesh = ["gmsh>=4.11"]
 dev = ["pytest>=8", "pytest-timeout", "hypothesis>=6", "mypy>=1.10", "ruff>=0.5"]
@@ -31,7 +33,8 @@ testpaths = ["tests"]
 pythonpath = ["src"]
 addopts = "--import-mode=importlib -ra"
 timeout = 900
-markers = ["slow: long-running benchmark (deselect with -m 'not slow')"]
+markers = ["slow: long-running benchmark (deselect with -m 'not slow')",
+           "baseline: bitwise comparison of the examples with tests/toporlogy/baseline (run with -m baseline)"]
 
 [tool.ruff]
 line-length = 120

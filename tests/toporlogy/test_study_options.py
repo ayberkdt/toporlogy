@@ -89,3 +89,77 @@ def test_final_state_belongs_to_the_returned_design(opt_name, iters):
     assert np.array_equal(res.xphys, ev.xphys)
     # the loop history is the design BEFORE the last update: generally different from the returned one
     assert res.history["f0"][-1] != pytest.approx(res.objective, rel=1e-9)
+
+
+@pytest.mark.parametrize("optimizer", ["oc", "mma"])
+def test_second_run_of_a_study_repeats_the_first(optimizer):
+    """B-03: run() restarts the continuation schedule (β back to β0, counter 0) and the optimizer (MMA asymptotes,
+    iterates, objective scale), so two runs of one Study give the same design and history. Before, the second run
+    started at the β the first one ended with (and with the first run's MMA state)."""
+    d, fixed, F = _cantilever_2d()
+    chain = T.standard_chain(d, 1.5, beta=1.0)
+    opt = T.OC(move=0.2, dv_scale=d.n_active) if optimizer == "oc" else T.MMA(move=0.2)
+    sch = T.BetaContinuation(chain, 1.0, 8.0, every=3)
+    st = T.Study(d, T.Elasticity(d, fixed), F, chain, T.SIMP(d), T.Compliance(), [T.Constraint(T.Volume(), 0.4,
+                 scale=1.0)], opt, sch)
+    r1 = st.run(max_iter=12, tol=0.0)
+    assert sch.beta > 1.0                                    # the first run did step β
+    n1 = getattr(opt, "n_resets", None)
+    r2 = st.run(max_iter=12, tol=0.0)
+    assert r2.history["beta"][0] == 1.0
+    assert np.array_equal(r1.x, r2.x) and r1.history["f0"] == r2.history["f0"]
+    assert getattr(opt, "n_resets", None) == n1             # MMA counts the resets of the current run only
+
+
+def test_robust_continuation_restarts_beta_and_volume_bound():
+    """B-03 for RobustContinuation: β and the updated dilated-volume bound go back to their initial values."""
+    d, fixed, F = _cantilever_2d(30, 10)
+    s = robust_chain_settings(2.0, 2.0, 1.0, 2)
+    rs = RobustSet.from_settings(s)
+    chain = T.standard_chain(d, s["rmin"], projection=True, beta=1.0)
+    obj = RobustCompliance(rs)
+    vol = T.Constraint(DilatedVolume(rs), 0.5)
+    sch = RobustContinuation(chain, rs, 1.0, 8.0, every=3, volume=vol, target=0.4, volume_every=2, rescale=[obj])
+    st = T.Study(d, T.Elasticity(d, fixed), F, chain, T.SIMP(d), obj, [vol], T.MMA(move=0.2), sch)
+    r1 = st.run(max_iter=8, tol=0.0)
+    assert sch.beta > 1.0 and vol.upper != 0.5
+    r2 = st.run(max_iter=8, tol=0.0)
+    assert np.array_equal(r1.x, r2.x) and r1.history["f0"] == r2.history["f0"]
+
+
+def test_move_is_restored_when_the_run_raises():
+    """B-14: with move_beta_ref the move limit shrinks at β steps; it was restored only on a normal return, so an
+    exception inside the loop (here from the callback, after a β step) left the optimizer with the shrunk move."""
+    d, fixed, F = _cantilever_2d()
+    chain = T.standard_chain(d, 1.5, beta=1.0)
+    opt = T.OC(move=0.2, dv_scale=d.n_active)
+    sch = T.BetaContinuation(chain, 1.0, 16.0, every=2)
+    st = T.Study(d, T.Elasticity(d, fixed), F, chain, T.SIMP(d), T.Compliance(), [T.Constraint(T.Volume(), 0.4,
+                 scale=1.0)], opt, sch, move_beta_ref=1.0)
+    seen = []
+
+    def stop(it, ev, ch):
+        seen.append(opt.move)
+        if sch.beta >= 4.0:
+            raise KeyboardInterrupt("stopped by the user")
+
+    with pytest.raises(KeyboardInterrupt):
+        st.run(max_iter=20, tol=0.0, callback=stop)
+    assert min(seen) < 0.2                                   # the move had been shrunk inside the run
+    assert opt.move == 0.2
+
+
+def test_beta_continuation_without_projection_records_no_beta(tmp_path):
+    """B-17: without a projection link BetaContinuation.beta is NaN and was put into every history row, so
+    history.jsonl held a non-standard NaN token. The schedule now reports no state then."""
+    import json
+    d, fixed, F = _cantilever_2d()
+    chain = T.standard_chain(d, 1.5, projection=False)
+    sch = T.BetaContinuation(chain, 1.0, 16.0, every=3)
+    rec = T.Recorder(tmp_path / "run")
+    st = T.Study(d, T.Elasticity(d, fixed), F, chain, T.SIMP(d), T.Compliance(), [T.Constraint(T.Volume(), 0.4,
+                 scale=1.0)], T.OC(move=0.2, dv_scale=d.n_active), sch, recorder=rec)
+    res = st.run(max_iter=3, tol=0.0)
+    assert "beta" not in res.history
+    rows = (tmp_path / "run" / "history.jsonl").read_text(encoding="utf-8").splitlines()
+    assert rows and all("NaN" not in r and "beta" not in json.loads(r) for r in rows)

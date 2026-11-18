@@ -158,6 +158,23 @@ def test_resolved_config_round_trip_and_run_folder(tmp_path):
     assert back["objective"] == sm["objective"] and len(back["history"]) == 3
 
 
+def test_summary_constraints_belong_to_the_returned_design(tmp_path):
+    """summary.json reports objective AND constraints of the design in result.npz, not of the last analysed
+    iterate (history[-1] is x_{k}; the returned design is x_{k+1})."""
+    s = C.build_setup(mbb(max_iter=3))
+    sm = C.run_setup(s, tmp_path / "run", source="test")
+    x = np.load(tmp_path / "run" / "result.npz")["x"]
+    ev = s.study.evaluate(x, gradients=False)
+    hist = [json.loads(ln) for ln in (tmp_path / "run" / "history.jsonl").read_text(encoding="utf-8").splitlines()
+            if ln.strip()]
+    assert sm["objective"] == pytest.approx(ev.f0, rel=1e-12)
+    for c in sm["constraints"]:
+        assert c["value"] == pytest.approx(ev.values[c["name"]], rel=1e-12), c["name"]
+    # the test is sensitive: the last analysed iterate has a different volume than the returned design
+    last = hist[-1]["volume"]
+    assert abs(last - ev.values["volume"]) > 1e-9
+
+
 # ---------------------------------------------------------------------------------------------- overrides / sweeps
 def test_overrides():
     raw = mbb()
@@ -227,3 +244,19 @@ def test_duplicate_response_names_rejected():
     raw["constraints"][1]["name"] = "volume_b"
     s = C.build_setup(raw)
     assert s.constraint_names == ["volume", "volume_b"]
+
+
+def test_oc_with_a_state_dependent_constraint_is_rejected_at_build():
+    """B-07: OC evaluates its constraint inside the bisection without a solve, so a constraint that needs U failed
+    at the first step ("OC needs constraint_fn"). It is now rejected when the study is built, from YAML and Python."""
+    raw = mbb()
+    raw["objective"] = "volume"
+    raw["constraints"] = [{"response": "compliance", "name": "stiffness", "upper": 500.0}]
+    errs = errors_of(raw)
+    assert "state solve" in errs["constraints"] and "stiffness" in errs["constraints"] and "MMA" in errs["constraints"]
+    raw["optimizer"] = "mma"
+    assert C.build_setup(raw).study.optimizer.name == "MMA"              # MMA takes it
+    d = Domain((6, 3))
+    with pytest.raises(ValueError, match="state solve"):
+        Study(d, Elasticity(d, d.dofs(d.nodes_where(lambda X: X[:, 0] < 1e-9))), d.load_vector(), standard_chain(d, 1.5),
+              SIMP(d), Volume(), [Constraint(Compliance(), 1.0)], OC())

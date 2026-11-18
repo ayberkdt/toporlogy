@@ -204,3 +204,47 @@ def test_cantilever_3d_mma_vs_oc_with_beta_continuation():
     assert rm.converged
     assert em.g[0] <= 1e-3 and eo.g[0] <= 1e-3
     assert em.f0 == pytest.approx(eo.f0, rel=0.03)   # measured +0.02 % (β_max 8: −2.2 %, OC oscillating)
+
+
+def test_subproblem_failure_is_reported(monkeypatch):
+    """B-04: the dual of the MMA subproblem is solved with L-BFGS-B, whose result was taken without a check. Now
+    every step keeps the outcome and the dual's projected-gradient residual in last_subproblem; a solve that stopped
+    early AND is far from the dual optimum warns (MMASubproblemWarning) and is counted."""
+    import scipy.optimize as so
+
+    from toporlogy.optim import _mma_core
+    from toporlogy.optim.mma import MMASubproblemWarning
+
+    x = np.full(4, 0.5)
+    df0, g, dg = -np.ones(4), np.array([-0.1]), np.ones((1, 4)) / 4
+    opt = MMA(move=0.2)
+    import warnings
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", MMASubproblemWarning)            # a converged dual must not warn
+        opt.step(x, 1.0, df0, g, dg)
+    assert opt.last_subproblem["success"] is True and opt.subproblem_failures == 0
+
+    real = so.minimize
+
+    def stopped(*a, early: bool = False, **kw):
+        res = real(*a, **kw)
+        res.success, res.message = False, "ABNORMAL (injected)"
+        if early:                                                         # stop at the start point: not converged
+            kw["options"] = {**kw.get("options", {}), "maxiter": 0}
+            res2 = real(*a, **kw)
+            res.x, res.jac = res2.x, res2.jac
+        return res
+
+    # flag "not success" but the dual at its optimum (line search stalled at machine precision): no warning
+    monkeypatch.setattr(_mma_core.so, "minimize", stopped)
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", MMASubproblemWarning)
+        opt.step(x, 1.0, df0, g, dg)
+    assert opt.subproblem_failures == 0 and opt.last_subproblem["residual"] < opt.dual_tol
+    # flag "not success" and multipliers far from the optimum: warned and counted
+    monkeypatch.setattr(_mma_core.so, "minimize", lambda *a, **kw: stopped(*a, early=True, **kw))
+    with pytest.warns(MMASubproblemWarning, match="did not converge"):
+        opt.step(x, 1.0, df0, g, dg)
+    assert opt.subproblem_failures == 1 and opt.last_subproblem["message"] == "ABNORMAL (injected)"
+    opt.restart()
+    assert opt.subproblem_failures == 0                                  # counted per run

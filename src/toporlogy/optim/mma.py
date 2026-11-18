@@ -36,6 +36,7 @@ asymptotes are reset at every change").
 """
 from __future__ import annotations
 
+import warnings
 from collections.abc import Callable
 
 import numpy as np
@@ -44,13 +45,18 @@ from toporlogy.optim._mma_core import mma_asymptote, mma_multi
 from toporlogy.references import cite
 from toporlogy.optim.base import Optimizer
 
-__all__ = ["MMA"]
+__all__ = ["MMA", "MMASubproblemWarning"]
 
 _NORMALISE = ("first", "current", None)
 
 
 @cite("svanberg_1987", note="asymptotes (topology.mma_asymptote) and m-constraint subproblem "
                             "(stress_topo.mma_multi, dual by L-BFGS-B); coefficients of Svanberg's 2007 code via mmapy")
+class MMASubproblemWarning(RuntimeWarning):
+    """The dual of an MMA subproblem did not converge (L-BFGS-B stopped early AND the dual's projected gradient is
+    above ``MMA.dual_tol`` · (1 + max|g|)); the step uses the last multipliers."""
+
+
 class MMA(Optimizer):
     """MMA with any number of constraints.
 
@@ -91,7 +97,18 @@ class MMA(Optimizer):
         self.albefa, self.raa0, self.c, self.d = float(albefa), float(raa0), float(c), float(d)
         self.normalise = normalise
         self.n_resets = -1                                  # counts reset() calls after construction
+        self.subproblem_failures = 0                        # dual solves that did not converge (this run)
+        # residual test of the dual (MMASubproblemWarning), in units of g: 25 × the worst successful solve measured
+        # (4.06e-8, _mma_core.mma_multi) and 1e-3 × the default run.feasibility_tol
+        self.dual_tol = 1e-6
+        self.last_subproblem: dict = {}
         self.reset()
+
+    def restart(self) -> None:
+        """New run: ``reset()`` and count the resets of this run only (n_resets = β steps of the run)."""
+        self.reset()
+        self.n_resets = 0
+        self.subproblem_failures = 0
 
     def reset(self) -> None:
         """Forget asymptotes, previous iterates, the step counter and the objective scale."""
@@ -132,8 +149,16 @@ class MMA(Optimizer):
         xmin, xmax = np.zeros(n), np.ones(n)
         self.low, self.upp = mma_asymptote(self.k, x, self.xold1, self.xold2, self.low, self.upp, xmin, xmax,
                                            self.asyinit, self.asydecr, self.asyincr, self.asymin, self.asymax)
+        info: dict = {}
         xnew, lam = mma_multi(x, xmin, xmax, self.low, self.upp, df0 * self._scale(f0), g, dg, move=self.move,
-                              albefa=self.albefa, raa0=self.raa0, c=self.c, d=self.d)
+                              albefa=self.albefa, raa0=self.raa0, c=self.c, d=self.d, info=info)
+        self.last_subproblem = info
+        tol = self.dual_tol * (1.0 + float(np.max(np.abs(g))))
+        if not info.get("success", True) and info.get("residual", np.inf) > tol:
+            self.subproblem_failures += 1
+            warnings.warn(f"MMA step {self.k}: the subproblem dual did not converge ({info.get('message')}, "
+                          f"{info.get('nit')} L-BFGS-B iterations, residual {info.get('residual'):.2e} > {tol:.1e}); "
+                          f"the step uses the last multipliers", MMASubproblemWarning, stacklevel=2)
         self.xold2, self.xold1 = self.xold1, x.copy()
         self.last_lambda = np.asarray(lam, float)
         return np.clip(xnew, 0.0, 1.0)

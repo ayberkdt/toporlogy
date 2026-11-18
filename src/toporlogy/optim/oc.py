@@ -28,6 +28,7 @@ class OC(Optimizer):
 
     name = "OC"
     max_constraints = 1
+    needs_constraint_fn = True
 
     def __init__(self, move: float = 0.2, l1: float = 0.0, l2: float = 1e9, bisection_tol: float = 1e-4,
                  max_bisect: int = 80, dv_scale: float = 1.0) -> None:

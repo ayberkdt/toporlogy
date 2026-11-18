@@ -1,7 +1,7 @@
 """Continuation schedules (β of the projection, later SIMP penalty, move limits)."""
 from __future__ import annotations
 
-from toporlogy.chain import Chain, HeavisideProjection
+from toporlogy.design.chain import Chain, HeavisideProjection
 
 __all__ = ["Schedule", "BetaContinuation"]
 
@@ -14,6 +14,9 @@ class Schedule:
 
     def update(self, iteration: int, change: float) -> bool:
         return False
+
+    def reset(self) -> None:
+        """Back to the initial continuation state; Study.run calls it before the loop."""
 
     def state(self) -> dict[str, float]:
         return {}
@@ -30,8 +33,12 @@ class BetaContinuation(Schedule):
         link = chain.find(HeavisideProjection)
         self.proj: HeavisideProjection | None = link if isinstance(link, HeavisideProjection) else None
         self.beta_max, self.every, self.tol = float(beta_max), int(every), float(tol)
+        self.beta0 = float(beta0)
+        self.reset()
+
+    def reset(self) -> None:
         if self.proj is not None:
-            self.proj.beta = float(beta0)
+            self.proj.beta = self.beta0
         self._count = 0
 
     @property
@@ -53,4 +60,5 @@ class BetaContinuation(Schedule):
         return False
 
     def state(self) -> dict[str, float]:
-        return {"beta": self.beta}
+        # no projection: no β to report (a NaN column would reach history.jsonl as a non-standard NaN token)
+        return {"beta": self.beta} if self.proj is not None else {}

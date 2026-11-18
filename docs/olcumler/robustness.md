@@ -5,6 +5,12 @@
 > new computation. Open: causes of the 3 post-processing failures, T10 mesh convergence, the high-penalty connectivity
 > cases. The sweep tests in `tests/toporlogy/test_sweep_*.py` are marked slow as a whole until
 > they have been re-run on an idle machine.
+>
+> **Correction (17 Nov 2026, from the stored records, no new computation).** §4.2 and §5 said the T10 re-checks are
+> not in the records; `robustness.json` (`post`, r1 and r2) holds both runs at both sizes, now reported in §4.2. With
+> every §2.2 gate applied (criterion 3 also against the exact solid, and the T10 criterion) 7/12 inputs pass; the
+> 9/12 of §4.1 counts criteria 1–6 against the target only. `tests/toporlogy/test_sweep_post.py` now gates on all of
+> them.
 
 Sections 1 and 2 were written **before any sweep run** (pre-registration, 2026-11-14 22:11). They are not edited
 after the runs; deviations are listed in section 5. Results: section 3 onward. Raw records: `robustness.json`.
@@ -265,7 +271,13 @@ exact re-imposition of keep pads; r2 also loses 1.7 % volume. To check before ch
   the topology. Closing 1.0 h (p04 1.5 h as requested; its concave-radius test passes).
 * Post-processing time: 18–67 s for analytic inputs (the 28-tunnel lattice 67 s), 23–171 s for real results (loaded machine).
 * p05 (plate 1.25 h thick): ray wall p5 not within 10 % of 1.25 h (recorded `wall_p5_within_10pct = false`).
-* T10 re-check at two mesh sizes (planned for r1, r2): not in the records; mesh convergence still open.
+* T10 re-check at two tet sizes (r1, r2; `robustness.json` → `post` → `t10`). Corrected 17 Nov 2026: this line first
+  said the records were missing.
+  * r1: T10 / voxel compliance ratio 0.972 at 1.0 h (18 919 T10) and 0.865 at 0.5 h (185 800 T10): change 12.4 %,
+    above the 5 % criterion. **Fail.**
+  * r2: 1.176 at 1.0 h (140 550 T10) and 1.165 at 0.5 h (143 062 T10): change 0.93 %, within the criterion, but the
+    finer size added 1.8 % elements, so the mesh was barely refined and the result does not show convergence.
+  * Mesh convergence of the finished parts therefore remains open.
 
 ## 5. Deviations from the pre-registration
 
@@ -274,6 +286,7 @@ exact re-imposition of keep pads; r2 also loses 1.7 % volume. To check before ch
   Against the exact solid: p01 +0.34 %, p02 +0.44 %, p03 −0.34 %, p04 +0.07 %, p07 +0.01 % (pass), **p05 +5.6 %**
   (fail: a 1.25-element plate is not represented to 1 % by the input voxels; the pipeline itself keeps ΔV vs target at
   −1.0 %).
-* The planned T10 re-checks (r1, r2 at two sizes) are missing.
+* The planned T10 re-checks (r1, r2 at two sizes) ran and are in the records (§4.2; corrected 17 Nov 2026, this
+  line first said they were missing). They were not gated in the write-up.
 * The connectivity scenarios with large compliance penalties (c03, c05, c10, c12; 26–53× the plain design) were not
   investigated.

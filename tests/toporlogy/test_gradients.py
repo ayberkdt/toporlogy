@@ -211,7 +211,8 @@ def test_compliance_multi_case_weighted_ramp():
 
 def test_volume_weighted_and_unweighted():
     d = _domain_3d()
-    st = _study(d, Compliance(), [Constraint(Volume(), 0.4), Constraint(Volume(weighted=True), 0.35, scale=3.0)])
+    st = _study(d, Compliance(), [Constraint(Volume(), 0.4),
+                                  Constraint(Volume(weighted=True), 0.35, scale=3.0, name="volume_weighted")])
     x = _interior(np.random.default_rng(10), d.n_design)
     for i, name in enumerate(["Volume", "Volume(weighted)"]):
         r = study_gradcheck(st, x, which=i, n_dirs=NDIR)

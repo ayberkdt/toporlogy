@@ -12,7 +12,7 @@ import torch
 from topo_oracles import topo3d
 from topo_oracles.voxfem import H8_CORNER, VoxelMesh
 from topo_oracles import topology
-from toporlogy import (OC, SIMP, Compliance, Constraint, DensityFilter, Domain, Elasticity, Recorder, Response,
+from toporlogy import (MMA, OC, SIMP, Compliance, Constraint, DensityFilter, Domain, Elasticity, Recorder, Response,
                           Study, Volume, standard_chain)
 from toporlogy.solvers import DirectSolver
 
@@ -203,7 +203,11 @@ def test_pardiso_equals_superlu():
     E = 1e-3 + rng.random(d.n_active)
     F = rng.standard_normal((d.ndof, 3))
     pard, slu = DirectSolver("auto"), DirectSolver("splu")
-    assert pard.method == "pardiso", "PARDISO not loaded (conftest imports toporlogy before torch)"
+    from toporlogy.solvers import pardiso
+    if pard.method != "pardiso" and str(pardiso.state()["reason"]).startswith("ModuleNotFoundError"):
+        pytest.skip(f"pypardiso not installed ({pardiso.state()['reason']}); set TOPORLOGY_PYLIB to test it")
+    # any other reason (torch imported before toporlogy: MKL refused) is the failure this test exists for
+    assert pard.method == "pardiso", f"PARDISO not loaded: {pardiso.state()['reason']}"
     assert slu.method == "splu"
     U1 = Elasticity(d, fixed, solver=pard).solve_numpy(E, F)
     U2 = Elasticity(d, fixed, solver=slu).solve_numpy(E, F)
@@ -251,12 +255,15 @@ def test_study_rejects_bad_inputs():
         st.run(x0=np.full(d.n_design + 1, 0.4), max_iter=1)
     with pytest.raises(ValueError, match="weights"):
         Study(d, phys, F, chain, SIMP(d), Compliance(weights=[1.0, 2.0]), [vol], OC()).evaluate(np.full(d.n_design, .4))
-    # OC needs a gradient-free constraint function; a U-dependent constraint cannot give one
-    st_u = Study(d, phys, F, chain, SIMP(d), Compliance(), [Constraint(_UResponse(), 1.0)], OC())
+    # OC needs a gradient-free constraint function; a U-dependent constraint cannot give one: rejected when the
+    # study is built (B-07; before, the run failed at its first step)
+    with pytest.raises(ValueError, match="state solve"):
+        Study(d, phys, F, chain, SIMP(d), Compliance(), [Constraint(_UResponse(), 1.0)], OC())
+    st_u = Study(d, phys, F, chain, SIMP(d), Compliance(), [Constraint(_UResponse(), 1.0)], MMA())
     with pytest.raises(ValueError):
         st_u.constraint_values(np.full(d.n_design, 0.4))
-    with pytest.raises(ValueError, match="constraint_fn"):
-        st_u.run(max_iter=1)
+    with pytest.raises(ValueError, match="constraint_fn"):                 # OC itself still refuses to step blind
+        OC().step(np.full(4, 0.5), 1.0, -np.ones(4), np.array([-0.1]), np.ones((1, 4)))
     with pytest.raises(ValueError):
         OC(move=0.0)
 
@@ -295,3 +302,20 @@ def test_recorder_run_folder(tmp_path):
     assert out["iterations"] == 5 and np.isclose(out["objective"], res.objective)
     with np.load(folder / "snapshots.npz") as z:
         assert sorted(z.files) == ["it00002", "it00004"] and z["it00004"].dtype == np.float16
+
+
+def test_default_start_meets_the_weighted_volume_bound():
+    """B-15: with partial voxels, Volume(weighted=True) is Σ frac·x̄ / Σ frac, but the start design was always built
+    from the element count; the weighted volume of the start missed the bound. Now it starts exactly on it."""
+    shape = (12, 6)
+    frac = np.ones(shape)
+    frac[:, -2:] = 0.3                                       # a band of partial voxels
+    keep = np.zeros(shape, bool)
+    keep[0, :2] = True
+    d = Domain(shape, 1.0, frac=frac, keep=keep)
+    from toporlogy import Chain, Embed
+    for weighted in (False, True):
+        st = Study(d, Elasticity(d, d.dofs(d.nodes_where(lambda X: X[:, 0] < 1e-9))), d.load_vector(),
+                   Chain([Embed(d)]), SIMP(d), Compliance(), [Constraint(Volume(weighted=weighted), 0.4)], OC())
+        v = st.evaluate(st.default_start(), gradients=False).values["volume"]
+        assert v == pytest.approx(0.4, rel=1e-12), (weighted, v)

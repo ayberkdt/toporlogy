@@ -363,7 +363,7 @@ def _print_features(s: C.Setup) -> None:
     cb = s.config.get("connectivity")
     if cb is not None:
         ties = (f"ties {info['ties']} cells + {info.get('frozen_interface_cells', 0)} interface cells frozen"
-                if info.get("ties") else "no ties")
+                if "ties" in info else "no ties")
         con = "no constraint" if cb["constraint"] is None else f"{cb['constraint']} constraint"
         gate = "gate" + (f" + {cb['repair']} repair" if cb["repair"] != "none" else "") if cb["gate"] else "no gate"
         out(kv("connectivity", f"{len(s.interfaces)} interfaces | {ties} | {con} | {gate}"))

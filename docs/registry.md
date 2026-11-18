@@ -1,6 +1,7 @@
 # Component registry — how to add a component
 
-`toporlogy.registry` maps `(kind, name)` to a constructor. A config names a component either as a plain string
+`toporlogy.configuration.registry` maps `(kind, name)` to a constructor (`toporlogy.registry` still imports
+everything from there). A config names a component either as a plain string
 (all defaults) or as a mapping `{type: <name>, <param>: <value>, ...}`. Parameters, defaults and types are read from
 the constructor's signature, so a new component needs **one `register` call**. `python -m toporlogy list`
 shows everything that is registered.
@@ -17,8 +18,12 @@ register("optimizer", "gcmma", "toporlogy.optim.gcmma:GCMMA")  # lazy: imported 
 
 Put the call at the bottom of the module that defines the component. The module must be imported before the
 config is resolved: either `toporlogy` imports it, or the registry imports it lazily through a
-`"package.module:attr"` string (preferred for optional parts; register the string in `registry._register_core`
-or in a module that is imported anyway).
+`"package.module:attr"` string (preferred for optional parts; register the string in the area's module under
+`toporlogy/configuration/components/` or in a module that is imported anyway).
+
+Built-in constructors live in `toporlogy/configuration/components/`, one module per area (`core`, `geometry`,
+`boundary`, `design`, `physics`, `responses`, `schedules`) plus `configuration/post_steps.py`;
+`components.register_all()` registers them in a fixed order, which `python -m toporlogy list` follows.
 
 ## Kinds and what the constructor returns
 
@@ -63,7 +68,7 @@ constraints (`ctx.constraints`) → optimizer → schedule → post steps.
 A response may carry `config_upper` (and `config_scale`): its default constraint bound when the config gives
 `upper: null` (`local_volume` with `t_max`, `min_frequency`, the connectivity responses).
 
-## Feature components (registered in `registry._register_features`)
+## Feature components (registered in `configuration/components/*` and `configuration/post_steps.py`)
 
 `python -m toporlogy list <kind>` prints every parameter with its default and unit.
 

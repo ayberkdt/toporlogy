@@ -139,3 +139,28 @@ def test_find_bores_3d_2d_and_clevis():
     bc_ = g.find_bores(g.voxelize(clevis, 0.5))
     assert len(bc_) == 1 and len(bc_[0].segments) == 2
     assert isinstance(bc_[0].shape(), g.Cylinder)
+
+
+def test_binary_stl_with_trailing_bytes_or_solid_header(tmp_path, sphere_mesh):
+    """B-12: a binary STL was recognised only if its size was exactly 84 + 50 n; padding after the last record sent it
+    to the ASCII parser, which raised. A binary header that starts with "solid" must still read as binary."""
+    V, F = sphere_mesh
+    p = g.write_stl(tmp_path / "s.stl", V, F)
+    raw = p.read_bytes()
+    padded = tmp_path / "padded.stl"
+    padded.write_bytes(raw + b"\x00" * 13)
+    solid = tmp_path / "solid_header.stl"
+    solid.write_bytes(b"solid exported by some CAD".ljust(80, b" ") + raw[80:])
+    V0, F0 = g.read_stl(p)
+    for f in (padded, solid):
+        V1, F1 = g.read_stl(f)
+        assert np.array_equal(V1, V0) and np.array_equal(F1, F0), f.name
+
+
+def test_csg_booleans_reject_mixed_dimensions():
+    """B-13: Difference refused a 2-D and a 3-D shape, Union and Intersection silently took the first one's dim."""
+    sq, cube = g.Box([0, 0], [1, 1]), g.Box([0, 0, 0], [1, 1, 1])
+    for op in (g.Union, g.Intersection, g.Difference):
+        with pytest.raises(ValueError, match="different dimension"):
+            op(sq, cube)
+    assert g.Union(cube, g.Box([1, 0, 0], [2, 1, 1])).dim == 3
