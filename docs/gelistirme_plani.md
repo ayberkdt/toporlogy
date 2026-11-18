@@ -66,6 +66,14 @@ interface"). Aynı sonuç `main`'de (`ff1db52`, bu planın bütün değişiklikl
 aynı sayılarla ölçüldü; değişikliklerden kaynaklanmıyor. Test normal pakette koşmadığı için daha önce görülmedi.
 Nedeni araştırılmadı.
 
+B-21 (18 Kasım 2026, dış incelemeden, düzeltildi): A-02'nin kapısı, onarılmış tasarımın değerlendirilemeyen kısıtlarını
+(`feasible=None`) geçer sayıyordu. `lbracket_bore3d`'de onarılmış bir yoğunlukta amaç ve üç kısıtın hiçbiri
+değerlendirilemiyor (robust yanıtlar ve aşındırılmış alan zincire ihtiyaç duyuyor), yani onarım hacmi ne kadar artırırsa
+artırsın kapı geçiyordu. Artık geçmek için bütün kısıtların değerlendirilip sağlanması gerekiyor; değerlendirilemeyenler
+özette adıyla yazılıyor, düz hacim oranı (önce/sonra) bilgi olarak raporlanıyor. Aynı incelemenin öteki maddeleri: B-02
+(sonlandırma ölçütü, G7), `fem.modal → optimization.dynamics` istisnası (izleniyor) ve CI (G9'un ilk parçası eklendi:
+`.github/workflows/tests.yml`).
+
 ---
 
 ## 1. Özet

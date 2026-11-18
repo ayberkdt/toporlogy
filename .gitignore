@@ -1,6 +1,7 @@
 # This repository publishes only the toporlogy library (whitelist).
 /*
 !/.gitignore
+!/.github/
 !/README.md
 !/LICENSE
 !/pyproject.toml

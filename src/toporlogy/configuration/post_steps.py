@@ -234,8 +234,8 @@ def register_post_steps() -> None:
         """One-body gate (analyse_connectivity) over the interfaces; verdict PASS / FRAGILE / FAIL into
         summary.json (FAIL: exit 1). repair bridge: on FAIL join the bodies into a repaired variant
         (result_repaired.npz; later geometry steps use it, the optimisation result is not modified), gate it again
-        and re-evaluate its objective and constraints ("repaired_design"); a repair that violates a constraint
-        fails the gate."""
+        and re-evaluate its objective and constraints ("repaired_design"); a repair that violates a constraint,
+        or whose constraints cannot all be evaluated (responses that need the design chain), fails the gate."""
         from toporlogy.optimization.connectivity import analyse_connectivity, bridge
         if repair not in ("none", "bridge"):
             raise ValueError(f'repair: none | bridge, got "{repair}"')
@@ -261,15 +261,23 @@ def register_post_steps() -> None:
                                   "added_volume": br.added_volume, "removed_cells": br.removed_cells,
                                   "file": "result_repaired.npz"},
                        "repaired_design": _reevaluate(study, br.xphys, ctx.run)}
+                d = study.domain                            # plain volume fraction (information, not a gate)
+                vf = lambda x: float(np.asarray(x)[d.active].sum() / d.n_active)   # noqa: E731
+                out["repaired_design"]["volume_fraction_plain"] = {"optimized": vf(x0), "repaired": vf(br.xphys)}
             rd = out.get("repaired_design")
-            out["passed"] = out["verdict"] != "FAIL" and (rd is None or rd["feasible"] is not False)
+            # a repaired design passes only if every constraint was evaluated and holds: responses that need the
+            # design chain (robust realisations, eroded-field connectivity) cannot be evaluated on it (None)
+            out["passed"] = out["verdict"] != "FAIL" and (rd is None or rd["feasible"] is True)
             rp = out.get("repair")
             bad = [c["name"] for c in rd["constraints"] if c["satisfied"] is False] if rd else []
+            unknown = [c["name"] for c in rd["constraints"] if c["satisfied"] is None] if rd else []
             out["summary"] = (f"{out['verdict']} ({out['n_bodies']} bod{'y' if out['n_bodies'] == 1 else 'ies'}"
                               f"{', unattached ' + ', '.join(out['unattached']) if out['unattached'] else ''})"
                               + (f" after {rp['bridges']} bridge(s), +{rp['added_cells']} cells; was "
                                  f"{out['verdict_before_repair']}" if rp else "")
-                              + (f"; repaired design violates {', '.join(bad)}" if bad else ""))
+                              + (f"; repaired design violates {', '.join(bad)}" if bad else "")
+                              + (f"; repaired design not verified: {', '.join(unknown)} could not be evaluated"
+                                 if unknown and not bad else ""))
             return out
         return step
 
