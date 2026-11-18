@@ -21,7 +21,7 @@ from toporlogy.core.domain import Domain
 from toporlogy.fem import Elasticity
 from toporlogy.design.interp import RAMP, SIMP
 from toporlogy.optim import MMA, OC, BetaContinuation, Optimizer, Schedule
-from toporlogy.record import Recorder
+from toporlogy.execution.record import Recorder
 from toporlogy.optimization.responses import Compliance, EvalContext, Response, Volume
 from toporlogy.optimization.study import Constraint, Evaluation, Result, Study
 
@@ -33,7 +33,7 @@ from toporlogy import bc, boundary, connectivity, dynamics, geometry, lengthscal
 
 # Old module names that were package attributes before the G5 moves (docs/gelistirme_plani.md): importing their aliases
 # keeps `import toporlogy; toporlogy.study.Study` working (tests/toporlogy/test_api_surface.py).
-from toporlogy import chain, checks, domain, interp, responses, study  # noqa: E402, F401
+from toporlogy import chain, checks, domain, interp, record, responses, study  # noqa: E402, F401
 
 __all__ = ["Domain", "Chain", "Embed", "DensityFilter", "HeavisideProjection", "Passive", "standard_chain",
            "SIMP", "RAMP", "Elasticity", "Response", "EvalContext", "Compliance", "Volume", "Optimizer", "OC", "MMA",

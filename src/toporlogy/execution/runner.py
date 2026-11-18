@@ -29,7 +29,7 @@ def run_setup(setup: Setup, folder: str | Path, progress: Callable[[int, dict[st
     import torch
 
     from toporlogy.optimization.checks import grey_fraction
-    from toporlogy.record import Recorder
+    from toporlogy.execution.record import Recorder
 
     folder = Path(folder)
     r, st = setup.config, setup.study

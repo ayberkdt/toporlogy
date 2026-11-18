@@ -20,7 +20,7 @@ def write_resolved(resolved: dict[str, Any], folder: str | Path, source: str | N
                    overrides: Sequence[str] = ()) -> Path:
     """Write ``config.resolved.yaml`` with a provenance block; returns its path."""
     import toporlogy as _t
-    from toporlogy.record import git_revision
+    from toporlogy.execution.record import git_revision
 
     out = {k: v for k, v in resolved.items() if k != "provenance"}
     out["provenance"] = {"git": git_revision(Path(_t.__file__).parent), "created": time.strftime("%Y-%m-%dT%H:%M:%S"),

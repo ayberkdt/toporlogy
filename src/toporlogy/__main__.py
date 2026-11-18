@@ -1,4 +1,4 @@
 """``python -m toporlogy <command>`` (see :mod:`toporlogy.cli`)."""
-from toporlogy.cli import main
+from toporlogy.execution.cli import main
 
 raise SystemExit(main())

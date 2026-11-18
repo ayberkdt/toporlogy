@@ -25,14 +25,14 @@ LAYER_OF = {
     "fem": "physics", "physics": "physics",
     "design": "design",
     "boundary": "boundary",
-    "optim": "optimization", "optimization": "optimization", "record": "optimization",
+    "optim": "optimization", "optimization": "optimization",
     "post": "postprocessing", "postprocessing": "postprocessing", "verification": "postprocessing",
     "configuration": "configuration",
     "registry": "compat", "config": "compat", "bc": "compat",  # compatibility modules after G2-G4 (re-exports)
     "domain": "compat", "chain": "compat", "interp": "compat", "manufacturing": "compat",   # G5 aliases
     "responses": "compat", "study": "compat", "robust": "compat", "lengthscale": "compat", "connectivity": "compat",
-    "dynamics": "compat", "checks": "compat",
-    "cli": "execution", "__main__": "execution", "execution": "execution",
+    "dynamics": "compat", "checks": "compat", "record": "compat", "cli": "compat",
+    "__main__": "execution", "execution": "execution",
     "": "package",                                          # toporlogy/__init__.py
 }
 ALLOWED = {
@@ -53,7 +53,7 @@ ALLOWED = {
     "compat": {"base", "geometry", "solvers", "physics", "design", "boundary", "optimization", "postprocessing",
                "configuration", "execution", "package"},
     "package": {"base", "geometry", "solvers", "physics", "design", "boundary", "optimization", "postprocessing",
-                "compat"},                                  # toporlogy.bc stays an attribute of the package
+                "execution", "compat"},                     # re-exports Recorder; bc etc. stay attributes
 }
 # (importer, imported) known violations; docs/gelistirme_plani.md §4.3. Remove entries as they are fixed.
 EXCEPTIONS = {
