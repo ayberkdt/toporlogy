@@ -161,3 +161,26 @@ def test_multigrid_reports_the_same_per_load_case_residual():
     assert rep is not None and np.allclose(rep.relative_per_rhs[:2], want, rtol=1e-3)
     assert np.all(rep.relative_per_rhs[:2] <= 1e-9) and np.isnan(rep.relative_per_rhs[2])
     assert np.abs(U[:, 2]).max() == 0.0 and g.last_residual == rep.max_relative
+
+
+def test_high_contrast_wrong_solution_is_still_refused():
+    """The backward-error escape (correct ill-conditioned solves pass) must not let a wrong one through: at stiffness
+    contrast 1e-9 a 1 % wrong solution has η = 1.5e-13 (measured), above BACKWARD_TOL = 1e-14, while the correct one
+    has η ~ 2e-17 and passes although its relative residual exceeds 1e-6."""
+    from toporlogy.fem.elastic import BACKWARD_TOL
+    d = Domain((8, 4))
+    fixed = d.dofs(d.nodes_where(lambda X: X[:, 0] < 1e-9))
+    F = d.load_vector()
+    F[d.dofs(d.nodes_where(lambda X: X[:, 0] > 8 - 1e-9), 1), 0] = -1.0
+    E = np.where(np.random.default_rng(0).random(d.n_active) < 0.5, 1e-9, 1.0)
+    good = Elasticity(d, fixed, solver=DirectSolver("splu"))
+    good.solve_numpy(E, F)
+    rep = good.last_residual_report
+    assert rep.relative_per_rhs[0] > RESIDUAL_TOL and rep.backward_error_per_rhs[0] < BACKWARD_TOL
+
+    class OnePercent(DirectSolver):
+        def solve(self, b):
+            return 1.01 * np.asarray(super().solve(b))
+    bad = Elasticity(d, fixed, solver=OnePercent("splu"))
+    with pytest.raises(SolveResidualError, match=r"backward error 1\.\d+e-13"):
+        bad.solve_numpy(E, F)

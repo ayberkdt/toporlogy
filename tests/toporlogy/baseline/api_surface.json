@@ -3165,6 +3165,7 @@
   "element_matrix": "element_matrix(dim,element,nu)"
  },
  "toporlogy.fem.elastic": {
+  "BACKWARD_TOL": "<float>",
   "Elasticity": {
    "attrs": [
     "check_kinematics",
@@ -3289,10 +3290,20 @@
   "element_nodes": "element_nodes(domain,elements)"
  },
  "toporlogy.fem.mechanisms": {
+  "InvalidModuliError": {
+   "attrs": [
+    "add_note",
+    "args",
+    "code",
+    "with_traceback"
+   ],
+   "class": "InvalidModuliError"
+  },
   "MechanismError": {
    "attrs": [
     "add_note",
     "args",
+    "code",
     "with_traceback"
    ],
    "class": "MechanismError"
@@ -3301,10 +3312,12 @@
    "attrs": [
     "add_note",
     "args",
+    "code",
     "with_traceback"
    ],
    "class": "SolveResidualError"
   },
+  "check_moduli": "check_moduli(values,n,what,allow_zero)",
   "check_supports": "check_supports(domain,elements,rows)",
   "fixed_dof_rows": "fixed_dof_rows(fixed,dim)",
   "zero_energy_modes": "zero_energy_modes(domain,elements,rows,tol)"

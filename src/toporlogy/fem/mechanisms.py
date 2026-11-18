@@ -16,6 +16,15 @@ rotation; 3-D: 3 + 3) such that
 
 The number of such motions is ``n_unknowns − rank``; rank from the eigenvalues of the normal matrix of that linear
 system (coordinates centred and scaled by the part size, so rotations and translations are of the same order).
+
+Contract (PR-02). The check is exact under these assumptions, and they are enforced: every active element has a
+positive, finite modulus (:func:`check_moduli`, called before every factorisation, also by the multigrid and the
+modal paths); the support set of a physics object is frozen (``fixed`` and ``free`` are read-only), so the result
+computed once per object stays valid when only the moduli change. It does not detect ill-conditioning (very small
+but positive moduli, thin necks), constitutive instability or buckling; ill-conditioning is left to the per-load-case
+residual check (``fem.elastic.checked_residual``). The three failures carry distinct codes: ``mechanism``
+(:class:`MechanismError`), ``invalid_moduli`` (:class:`InvalidModuliError`), ``solve_residual``
+(:class:`SolveResidualError`).
 """
 from __future__ import annotations
 
@@ -26,15 +35,26 @@ import numpy as np
 import scipy.sparse as sp
 from scipy import ndimage
 
-__all__ = ["MechanismError", "SolveResidualError", "fixed_dof_rows", "zero_energy_modes", "check_supports"]
+__all__ = ["MechanismError", "SolveResidualError", "InvalidModuliError", "check_moduli", "fixed_dof_rows",
+           "zero_energy_modes", "check_supports"]
 
 
 class MechanismError(ValueError):
     """The supports leave the part a motion without strain energy: the stiffness system is singular."""
 
+    code = "mechanism"
+
 
 class SolveResidualError(RuntimeError):
     """A linear solve returned x with ‖K x − b‖ / ‖b‖ above the tolerance (singular or unsolvable system)."""
+
+    code = "solve_residual"
+
+
+class InvalidModuliError(ValueError):
+    """Element moduli (or densities) that break the model's assumptions: wrong shape, not finite, or not positive."""
+
+    code = "invalid_moduli"
 
 
 def _rigid_basis(X: np.ndarray, dim: int) -> np.ndarray:
@@ -52,6 +72,35 @@ def _rigid_basis(X: np.ndarray, dim: int) -> np.ndarray:
     R[:, 0, 4], R[:, 2, 4] = z, -x                   # about y: (z, 0, -x)
     R[:, 0, 5], R[:, 1, 5] = -y, x                   # about z: (-y, x, 0)
     return R
+
+
+def check_moduli(values: Any, n: int, what: str = "modulus", allow_zero: bool = False) -> np.ndarray:
+    """Element moduli (or densities) as a float array of shape (n,), or raise :class:`InvalidModuliError`.
+
+    The support check is exact only for positive, finite moduli: then every element's stiffness has exactly the rigid
+    motions as null space. A zero modulus would add motions the check does not see; a negative one makes K
+    indefinite, which a direct solver still solves with a small residual (the residual check cannot catch a wrong
+    material model). Very small positive values (SIMP voids, 1e-9 E0) are legal: high contrast is ill-conditioning,
+    not a mechanism. A scalar is broadcast. ``allow_zero``: zero is legal (element densities: the two-range mass
+    interpolation makes void elements massless on purpose; the mass matrix may be semi-definite), negative is not.
+    """
+    arr = np.asarray(values, float)
+    if arr.ndim == 0:
+        arr = np.full(n, float(arr))
+    if arr.shape != (n,):
+        raise InvalidModuliError(f"{what}: shape {arr.shape}, expected ({n},) (one value per active element)")
+    bad = ~np.isfinite(arr)
+    if bad.any():
+        raise InvalidModuliError(f"{what}: {int(bad.sum())} value(s) not finite (first at active element "
+                                 f"{int(np.flatnonzero(bad)[0])})")
+    nonpos = arr < 0 if allow_zero else arr <= 0
+    if nonpos.any():
+        i = int(np.flatnonzero(nonpos)[0])
+        kind = "negative" if allow_zero else "not positive"
+        need = "non-negative" if allow_zero else "positive"
+        raise InvalidModuliError(f"{what}: {int(nonpos.sum())} value(s) {kind} (first at active element {i}: "
+                                 f"{arr[i]:g}); the model assumes {need} values")
+    return arr
 
 
 def fixed_dof_rows(fixed: np.ndarray, dim: int) -> dict[int, np.ndarray]:
