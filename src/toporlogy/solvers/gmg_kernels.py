@@ -1,6 +1,6 @@
 """Numerical kernels of the geometric multigrid solver (:mod:`toporlogy.solvers.gmg`): torch only, any device.
 
-Data layout (the numbering of :class:`toporlogy.domain.Domain`): a nodal field of a grid with ``shape = (nx, ny,
+Data layout (the numbering of :class:`toporlogy.core.domain.Domain`): a nodal field of a grid with ``shape = (nx, ny,
 nz)`` elements is a tensor ``(nx+1, ny+1, nz+1, 3)`` whose C-order flattening is the DOF order ``3n + d``; an element
 field is ``(nx, ny, nz)`` flattened to ``e = (ix·ny + iy)·nz + iz``. Element DOFs follow :data:`CORNERS` (the H8 corner
 order of :mod:`toporlogy.fem.elements`).

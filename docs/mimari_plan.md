@@ -22,22 +22,24 @@ Etiketler: **[Ö]** ölçüldü (dosya/komut verilmiş), **[O]** koddan okundu, 
 ## 2. Katmanlar ve modüller
 
 ```
-Study (bildirimsel kurulum: configuration/ (şema, çözümleme, kurulum, kayıt, bileşenler), koşu: execution/;
-       config.py ve registry.py uyumluluk modülü, CLI: cli.py)
-  ├── Domain           domain.py        ızgara, frac, keep/void, numaralama;  geometry.py  CSG / STL / delik bulma
-  ├── Sınır koşulları  boundary/        seçiciler, mesnetler, yükler, yük durumları, kontroller (bc.py uyumluluk)
-  ├── Chain            chain.py         Embed ► DensityFilter ► [AM / Casting] ► Projection ► Passive
-  │                    manufacturing.py simetri / ekstrüzyon / desen bağlama, AM, döküm yönü
-  ├── Interpolation    interp.py        SIMP, RAMP;  dynamics.py  iki aralıklı kütle/rijitlik
-  ├── Physics          fem/elastic.py   H8, H8IM, Q4 + autograd çözüm;  fem/heat.py;  fem/modal.py
+Study (bildirimsel kurulum: configuration/ (şema, çözümleme, kurulum, kayıt, bileşenler); koşu ve CLI: execution/)
+  ├── Domain           core/domain.py        ızgara, frac, keep/void, numaralama;  geometry.py  CSG / STL / delik bulma
+  ├── Sınır koşulları  boundary/             seçiciler, mesnetler, yükler, yük durumları, rapor
+  ├── Chain            design/chain.py       Embed ► DensityFilter ► [AM / Casting] ► Projection ► Passive
+  │                    design/manufacturing.py  simetri / ekstrüzyon / desen bağlama, AM, döküm yönü
+  ├── Interpolation    design/interp.py      SIMP, RAMP;  optimization/dynamics.py  iki aralıklı kütle/rijitlik
+  ├── Physics          fem/elastic.py        H8, H8IM, Q4 + autograd çözüm;  fem/heat.py;  fem/modal.py
   │     └── Solvers    solvers/direct.py (PARDISO/SuperLU),  solvers/gmg.py (A2)
-  ├── Responses        responses.py     uyum, hacim;  robust.py;  lengthscale.py;  connectivity.py;  dynamics.py
-  ├── Optimizer        optim/oc.py, optim/mma.py, optim/schedule.py
-  ├── Recorder         record.py        koşu klasörü, git sürümü, geçmiş, anlık görüntüler
-  └── Post             post/            SDF, düzenleme, pürüzsüzleştirme, kontroller, T10 doğrulama, dışa aktarma
+  ├── Responses        optimization/         responses, robust, lengthscale, connectivity, dynamics
+  ├── Optimizer        optimizers/           oc.py, mma.py, schedule.py
+  ├── Recorder         execution/record.py   koşu klasörü, git sürümü, geçmiş, anlık görüntüler
+  └── Post             post/                 SDF, düzenleme, pürüzsüzleştirme, kontroller, T10 doğrulama, dışa aktarma
 ```
 
-Kurallar: yanıt yazarı yalnız ileri hesabı yazar; her bağlantı ve yanıt `checks.gradcheck` testinden geçer (bağıl
+Her modülün, sınıfın ve yapılandırma bileşeninin tek adı vardır: eski yollar için takma ad modülü ya da ikinci ad
+tutulmaz (18 Kasım 2026 kararı; `tests/toporlogy/test_architecture.py` bunu denetler).
+
+Kurallar: yanıt yazarı yalnız ileri hesabı yazar; her bağlantı ve yanıt `optimization.diagnostics.gradcheck` testinden geçer (bağıl
 hata ≤ 1e-6, float64); eski sürücüler yalnız `tests/toporlogy/topo_oracles/` altında, regresyon kâhini olarak durur.
 
 ## 3. Aşamalar

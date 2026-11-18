@@ -16,7 +16,7 @@ import pytest
 
 import toporlogy as T
 from toporlogy.execution.runs import flags_of, status_of
-from toporlogy.optim.base import Optimizer
+from toporlogy.optimizers.base import Optimizer
 
 
 def _mbb(opt, nx=30, ny=10, vf=0.5, projection=False, schedule=None):
@@ -161,9 +161,10 @@ def test_unverified_parts_are_flagged_even_when_the_status_is_ok():
 def test_run_summary_carries_the_result_contract(tmp_path):
     from test_config import mbb
 
-    from toporlogy import config as C
-    s = C.build_setup(mbb(max_iter=3))
-    sm = C.run_setup(s, tmp_path / "run")
+    from toporlogy.configuration.build import build_setup
+    from toporlogy.execution.runner import run_setup
+    s = build_setup(mbb(max_iter=3))
+    sm = run_setup(s, tmp_path / "run")
     assert sm["termination"] == "max_iter" and sm["converged"] is False and "not_converged" in sm["flags"]
     assert sm["feasible"] == all(c["satisfied"] for c in sm["constraints"])
     want = max([0.0] + [(c["value"] - c["upper"]) / max(abs(c["upper"]), 1e-12) for c in sm["constraints"]])

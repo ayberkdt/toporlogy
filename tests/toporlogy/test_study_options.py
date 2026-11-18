@@ -11,7 +11,7 @@ import pytest
 import torch
 
 import toporlogy as T
-from toporlogy.robust import DilatedVolume, RobustCompliance, RobustContinuation, RobustSet, robust_chain_settings
+from toporlogy.optimization.robust import DilatedVolume, RobustCompliance, RobustContinuation, RobustSet, robust_chain_settings
 
 
 @pytest.fixture(autouse=True)

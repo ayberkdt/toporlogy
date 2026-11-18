@@ -2,9 +2,9 @@
 
 No new derivation: the two validated pieces of the repository are reused unchanged,
 
-* :func:`toporlogy.optim._mma_core.mma_asymptote` — asymptote update (k ≤ 2: x ± asyinit; then ×asyincr /
+* :func:`toporlogy.optimizers._mma_core.mma_asymptote` — asymptote update (k ≤ 2: x ± asyinit; then ×asyincr /
   ×asydecr on (non-)oscillation, clipped to [asymin, asymax] from x);
-* :func:`toporlogy.optim._mma_core.mma_multi` — convex subproblem with m constraints, dual maximised by
+* :func:`toporlogy.optimizers._mma_core.mma_multi` — convex subproblem with m constraints, dual maximised by
   L-BFGS-B (artificial variables y_i with c = 1000, d = 1; albefa = 0.1, raa0 = 1e-5).
 
 Defaults and why
@@ -31,8 +31,8 @@ there) can end in a 2-cycle around the optimum: on ``min (x − 0.2)²`` amplitu
 asymin = 0.01 from x. Compliance-type problems (∂c/∂x < 0 everywhere, volume constraint active) do not show this.
 
 :meth:`MMA.reset` forgets the asymptotes, the two previous iterates, the iteration counter and the objective scale;
-:class:`toporlogy.study.Study` calls it at every β step (the old drivers do the same, ``stress3d``: "the MMA
-asymptotes are reset at every change").
+:class:`toporlogy.optimization.study.Study` calls it at every β step (the old drivers do the same, ``stress3d``: "the
+MMA asymptotes are reset at every change").
 """
 from __future__ import annotations
 
@@ -41,9 +41,9 @@ from collections.abc import Callable
 
 import numpy as np
 
-from toporlogy.optim._mma_core import mma_asymptote, mma_multi
+from toporlogy.optimizers._mma_core import mma_asymptote, mma_multi
 from toporlogy.references import cite
-from toporlogy.optim.base import Optimizer
+from toporlogy.optimizers.base import Optimizer
 
 __all__ = ["MMA", "MMASubproblemWarning"]
 
@@ -65,9 +65,9 @@ class MMA(Optimizer):
     move : float
         Subproblem move limit (fraction of xmax − xmin = 1), 0 < move ≤ 1.
     asyinit, asydecr, asyincr, asymin, asymax : float
-        Asymptote coefficients (:func:`toporlogy.optim._mma_core.mma_asymptote`).
+        Asymptote coefficients (:func:`toporlogy.optimizers._mma_core.mma_asymptote`).
     albefa, raa0, c, d : float
-        Subproblem constants (:func:`toporlogy.optim._mma_core.mma_multi`).
+        Subproblem constants (:func:`toporlogy.optimizers._mma_core.mma_multi`).
     normalise : {"first", "current", None}
         Objective scaling (module notes).
 

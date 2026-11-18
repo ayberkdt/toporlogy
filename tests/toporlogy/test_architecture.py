@@ -1,10 +1,12 @@
-"""G0: layer rules for internal imports and the PARDISO-before-torch import order (docs/gelistirme_plani.md §4.3,
-§5.1-§5.2).
+"""Layer rules for internal imports, no alias names, and the PARDISO-before-torch import order
+(docs/gelistirme_plani.md §4.3, §5.1-§5.2).
 
 The internal import graph is read from the source with ``ast`` (module-level and function-level imports). Each
-module belongs to a layer by name prefix; old and new (post-migration) names map to the same layer, so the rules
-survive the moves. A layer may import itself and the layers listed for it. Known violations are listed in
-``EXCEPTIONS`` and must shrink, never grow.
+module belongs to a layer by name prefix. A layer may import itself and the layers listed for it. Known violations
+are listed in ``EXCEPTIONS`` and must shrink, never grow.
+
+Every module, class and YAML component has one name: no module that stands in for another (``sys.modules``
+aliases or re-export shims), no second name bound to a class, no constructor registered under two names.
 """
 from __future__ import annotations
 
@@ -22,16 +24,12 @@ LAYER_OF = {
     "references": "base", "core": "base",
     "geometry": "geometry",
     "solvers": "solvers",
-    "fem": "physics", "physics": "physics",
+    "fem": "physics",
     "design": "design",
     "boundary": "boundary",
-    "optim": "optimization", "optimization": "optimization",
-    "post": "postprocessing", "postprocessing": "postprocessing", "verification": "postprocessing",
+    "optimizers": "optimization", "optimization": "optimization",
+    "post": "postprocessing",
     "configuration": "configuration",
-    "registry": "compat", "config": "compat", "bc": "compat",  # compatibility modules after G2-G4 (re-exports)
-    "domain": "compat", "chain": "compat", "interp": "compat", "manufacturing": "compat",   # G5 aliases
-    "responses": "compat", "study": "compat", "robust": "compat", "lengthscale": "compat", "connectivity": "compat",
-    "dynamics": "compat", "checks": "compat", "record": "compat", "cli": "compat",
     "__main__": "execution", "execution": "execution",
     "": "package",                                          # toporlogy/__init__.py
 }
@@ -41,19 +39,14 @@ ALLOWED = {
     "solvers": {"base"},
     "physics": {"base", "solvers"},
     "design": {"base"},
-    "boundary": {"base", "geometry", "physics", "solvers", "optimization"},   # bc: BodyForceCompliance is a response
+    "boundary": {"base", "geometry", "physics", "solvers", "optimization"},   # BodyForceCompliance is a response
     "optimization": {"base", "geometry", "design", "physics", "solvers", "boundary"},
     "postprocessing": {"base", "geometry", "physics", "solvers"},
     "configuration": {"base", "geometry", "solvers", "physics", "design", "boundary", "optimization",
                       "postprocessing", "package"},
     "execution": {"base", "geometry", "solvers", "physics", "design", "boundary", "optimization", "postprocessing",
-                  "configuration", "package", "compat"},
-    # old module paths kept for users: they may re-export anything, but inside the package only the top layer may
-    # still import them (new code imports the new modules)
-    "compat": {"base", "geometry", "solvers", "physics", "design", "boundary", "optimization", "postprocessing",
-               "configuration", "execution", "package"},
-    "package": {"base", "geometry", "solvers", "physics", "design", "boundary", "optimization", "postprocessing",
-                "execution", "compat"},                     # re-exports Recorder; bc etc. stay attributes
+                  "configuration", "package"},
+    "package": {"base", "solvers", "physics", "design", "optimization", "execution"},   # flattens the core names
 }
 # (importer, imported) known violations; docs/gelistirme_plani.md §4.3. Remove entries as they are fixed.
 EXCEPTIONS = {
@@ -144,3 +137,55 @@ def test_importing_toporlogy_does_not_load_torch_before_pardiso() -> None:
     p = subprocess.run([sys.executable, "-c", code], env=env, capture_output=True, text=True, timeout=300)
     assert p.returncode == 0, p.stderr
     assert not p.stdout.strip().startswith("torch already imported"), p.stdout
+
+
+# ---------------------------------------------------------------------------------------------- one name each
+def test_no_module_stands_in_for_another() -> None:
+    """No ``sys.modules[__name__] = ...`` alias modules and no module that only re-exports another one."""
+    bad = []
+    for p in _files():
+        tree = ast.parse(p.read_text(encoding="utf-8"))
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Assign) and any(isinstance(t, ast.Subscript) and ast.unparse(t.value) == "sys.modules"
+                                                    for t in node.targets):
+                bad.append(f"{_module(p)}: assigns sys.modules")
+        body = [n for n in tree.body if not (isinstance(n, ast.Expr) and isinstance(n.value, ast.Constant))]
+        if p.name != "__init__.py" and body and all(isinstance(n, (ast.Import, ast.ImportFrom, ast.Assign))
+                                                    for n in body):
+            names = {t.id for n in body if isinstance(n, ast.Assign) for t in n.targets if isinstance(t, ast.Name)}
+            if names <= {"__all__"}:
+                bad.append(f"{_module(p)}: only imports (a re-export shim)")
+    assert not bad, bad
+
+
+def test_no_second_name_for_a_class_or_function() -> None:
+    """``Sphere = Ball`` at module level, or ``from x import Implicit as ImplicitShape``: the same object under two
+    public names. Module aliases (``import numpy as np``) and private names (``as _x``) are not names of the API."""
+    bad = []
+    for p in _files():
+        tree = ast.parse(p.read_text(encoding="utf-8"))
+        defined = {n.name for n in tree.body if isinstance(n, (ast.ClassDef, ast.FunctionDef))}
+        for n in tree.body:
+            if (isinstance(n, ast.Assign) and isinstance(n.value, ast.Name) and len(n.targets) == 1
+                    and isinstance(n.targets[0], ast.Name) and n.value.id in defined):
+                bad.append(f"{_module(p)}: {n.targets[0].id} = {n.value.id}")
+        for node in ast.walk(tree):
+            if isinstance(node, ast.ImportFrom):
+                for a in node.names:
+                    if a.asname and not a.asname.startswith("_") and a.asname != a.name and a.name[:1].isupper():
+                        bad.append(f"{_module(p)}: {a.name} as {a.asname}")
+    assert not bad, bad
+
+
+def test_no_component_has_two_registry_names() -> None:
+    """A YAML type name is the only name of its constructor: ``ball`` / ``sphere`` / ``circle`` for one function
+    made three spellings of one component."""
+    import collections
+
+    from toporlogy.configuration import REGISTRY
+    names = collections.defaultdict(list)
+    for kind, entries in REGISTRY._entries.items():
+        for name, e in entries.items():
+            names[(kind, e.target if isinstance(e.target, str) else id(e.target))].append(name)
+    shared = [(kind, v) for (kind, _), v in names.items() if len(v) > 1]
+    assert not shared, shared

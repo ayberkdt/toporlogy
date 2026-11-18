@@ -4,13 +4,13 @@ A *component* is a constructor registered under ``(kind, name)``. A config refer
 as a mapping ``{type: <name>, <param>: <value>, ...}``. Parameters, defaults and types are read from the
 constructor's signature, so registering a new component is one line (see ``docs/registry.md``)::
 
-    from toporlogy.registry import register
+    from toporlogy.configuration.registry import register
     register("link", "am_filter", AMFilter, context=("domain",))
 
 Kinds (:data:`KINDS`): ``domain``, ``shape``, ``selector``, ``support``, ``load``, ``link``, ``interpolation``,
 ``solver``, ``physics``, ``response``, ``optimizer``, ``schedule``, ``post``.
 
-Core components are registered by ``_register_core``; the feature modules (:mod:`toporlogy.bc`, ``geometry``,
+Core components are registered by ``_register_core``; the feature modules (:mod:`toporlogy.boundary`, ``geometry``,
 ``robust``, ``lengthscale``, ``connectivity``, ``manufacturing``, ``dynamics``, ``fem.modal``, ``post``) by
 ``_register_features`` (``post`` is imported only when one of its steps is used).
 
@@ -25,13 +25,13 @@ Constructor conventions
   it is resolved and built recursively and the constructor receives the built object.
 * ``units={"h": "length"}`` documents units (shown by ``python -m toporlogy list``).
 
-What each kind's constructor returns: domain → :class:`~toporlogy.domain.Domain`; shape →
+What each kind's constructor returns: domain → :class:`~toporlogy.core.domain.Domain`; shape →
 :class:`~toporlogy.geometry.Shape` (with an ``op`` attribute: add / cut / intersect); selector →
-:class:`~toporlogy.bc.Selector` or node numbers (int array); support → :class:`~toporlogy.bc.Support` or fixed
-DOF numbers; load → :class:`~toporlogy.bc.Load` or a load vector (ndof,) of one case; link → ``torch.nn.Module``;
-interpolation → ``torch.nn.Module`` x̄ → E; solver → object with ``factor`` / ``solve``; physics → object with
-``solve(E_active, F)``; response → :class:`~toporlogy.responses.Response`; optimizer →
-:class:`~toporlogy.optim.base.Optimizer`; schedule → :class:`~toporlogy.optim.schedule.Schedule`;
+:class:`~toporlogy.boundary.Selector` or node numbers (int array); support → :class:`~toporlogy.boundary.Support` or
+fixed DOF numbers; load → :class:`~toporlogy.boundary.Load` or a load vector (ndof,) of one case; link →
+``torch.nn.Module``; interpolation → ``torch.nn.Module`` x̄ → E; solver → object with ``factor`` / ``solve``; physics →
+object with ``solve(E_active, F)``; response → :class:`~toporlogy.optimization.responses.Response`; optimizer →
+:class:`~toporlogy.optimizers.base.Optimizer`; schedule → :class:`~toporlogy.optimizers.schedule.Schedule`;
 post → callable ``step(result, study, run_dir) -> dict | None`` run after the optimisation.
 """
 from __future__ import annotations
@@ -292,7 +292,8 @@ class Entry:
 
 @dataclass
 class BuildContext:
-    """What constructors may read while a study is built (filled step by step by :mod:`toporlogy.config`)."""
+    """What constructors may read while a study is built (filled step by step by
+    :mod:`toporlogy.configuration.build`)."""
 
     config: dict[str, Any] = field(default_factory=dict)       # resolved config
     domain: Any = None
@@ -307,8 +308,8 @@ class BuildContext:
     run: dict[str, Any] = field(default_factory=dict)
     path: str = ""                                              # config path of the component being built
     extra: dict[str, Any] = field(default_factory=dict)
-    bc: Any = None                                              # toporlogy.bc.BoundaryConditions (after loads)
-    robust: Any = None                                          # shared toporlogy.robust.RobustSet (or None)
+    bc: Any = None                                              # toporlogy.boundary.BoundaryConditions (after loads)
+    robust: Any = None                                          # shared optimization.robust.RobustSet or None
     interfaces: Any = None                                      # name -> bool element mask (connectivity)
     links: list[Any] = field(default_factory=list)              # chain links built so far
     objective: Any = None

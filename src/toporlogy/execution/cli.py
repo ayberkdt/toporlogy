@@ -16,8 +16,13 @@ from collections.abc import Sequence
 from pathlib import Path
 from typing import Any
 
-from toporlogy import config as C
-from toporlogy.registry import KINDS, REGISTRY, ConfigError, suggest
+from toporlogy.configuration.build import Setup, build_setup
+from toporlogy.configuration.registry import KINDS, REGISTRY, ConfigError, suggest
+from toporlogy.configuration.resolve import (apply_overrides, combination_label, parse_sweep, read_config, resolve,
+                                             sweep_combinations)
+from toporlogy.configuration.schema import STATUS_OK
+from toporlogy.execution.runner import run_setup
+from toporlogy.execution.runs import read_run, write_sweep_csv
 
 __all__ = ["main"]
 
@@ -177,7 +182,7 @@ def _free_dofs(ph: Any) -> str:
     return " / ".join(str(len(g.free)) for g in _groups(ph))
 
 
-def _problem_line(s: C.Setup) -> str:
+def _problem_line(s: Setup) -> str:
     st, d = s.study, s.study.domain
     grid = " x ".join(str(n) for n in d.shape)
     el = getattr(_groups(st.physics)[0], "element", "?")
@@ -208,10 +213,10 @@ def _next_after_run(sm: dict[str, Any], folder: Path, source: str) -> str:
 def cmd_run(a: argparse.Namespace) -> int:
     src = a.config
     try:
-        raw = C.read_config(src)
+        raw = read_config(src)
         if a.sweep:
             return _run_sweep(a, raw)
-        setup = C.build_setup(raw, a.set)
+        setup = build_setup(raw, a.set)
     except ConfigError as e:
         return report_config_error(e, src, "validate")
     folder = Path(a.out) if a.out else _default_folder(setup.config)
@@ -224,10 +229,10 @@ def cmd_run(a: argparse.Namespace) -> int:
     for w in setup.warnings:
         out(kv("warning", w))
     prog = None if a.quiet else Progress(setup.study.objective.name, setup.constraint_names)
-    sm = C.run_setup(setup, folder, progress=prog, source=str(src), overrides=a.set, post_progress=_post_line)
+    sm = run_setup(setup, folder, progress=prog, source=str(src), overrides=a.set, post_progress=_post_line)
     out(kv("RESULT", _result_line(sm)))
     out(kv("NEXT", _next_after_run(sm, folder, src)))
-    return EXIT_OK if sm["status"] == C.STATUS_OK else EXIT_FAIL
+    return EXIT_OK if sm["status"] == STATUS_OK else EXIT_FAIL
 
 
 def _post_line(name: str, result: dict[str, Any] | None, seconds: float) -> None:
@@ -239,21 +244,21 @@ def _post_line(name: str, result: dict[str, Any] | None, seconds: float) -> None
 
 
 def _run_sweep(a: argparse.Namespace, raw: dict[str, Any]) -> int:
-    sweep = C.parse_sweep(a.sweep)
-    combos = C.sweep_combinations(sweep)
+    sweep = parse_sweep(a.sweep)
+    combos = sweep_combinations(sweep)
     keys = [k for k, _ in sweep]
-    base = C.apply_overrides(raw, a.set)
+    base = apply_overrides(raw, a.set)
     # validate every combination before any solve (a typo in the last value must not cost the first runs)
     problems: list[tuple[str, str]] = []
     for combo in combos:
         try:
-            C.resolve(C.apply_overrides(base, combo))
+            resolve(apply_overrides(base, combo))
         except ConfigError as e:
-            label = C.combination_label(combo)
+            label = combination_label(combo)
             problems += [(f"[{label}] {p}", m) for p, m in e.errors]
     if problems:
         raise ConfigError(problems)
-    first = C.resolve(C.apply_overrides(base, combos[0]))
+    first = resolve(apply_overrides(base, combos[0]))
     root = Path(a.out) if a.out else _default_folder(first, "_sweep")
     if root.is_dir() and any(_finished(x) for x in root.iterdir() if x.is_dir()):
         err(kv("ERROR", f"{root} already holds sweep runs; they are not overwritten"))
@@ -264,26 +269,26 @@ def _run_sweep(a: argparse.Namespace, raw: dict[str, Any]) -> int:
     rows, worst = [], EXIT_OK
     width = len(str(n))
     for i, combo in enumerate(combos, 1):
-        label = C.combination_label(combo)
+        label = combination_label(combo)
         sub = root / f"{i:0{width}d}_{label}"
         head = f"[{i:>{width}}/{n}] " + "  ".join(f"{k}={v}" for k, v in combo)
         print(head, end="", flush=True)
         try:
-            setup = C.build_setup(base, combo)
+            setup = build_setup(base, combo)
         except ConfigError as e:
             print(f"  config error: {e}", flush=True)
             rows.append({"index": i, "folder": sub.name, "values": dict(combo), "status": "config error"})
             worst = EXIT_CONFIG
             continue
-        sm = C.run_setup(setup, sub, source=str(a.config), overrides=[*a.set, *(f"{k}={v}" for k, v in combo)])
+        sm = run_setup(setup, sub, source=str(a.config), overrides=[*a.set, *(f"{k}={v}" for k, v in combo)])
         print(f"  {sm['status']}  {sm['objective_name']} {fobj(sm['objective'])}  {sm['iterations']} it  "
               f"{fsec(sm['seconds'])} s", flush=True)
         rows.append({"index": i, "folder": sub.name, "values": dict(combo), **sm})
-        if sm["status"] != C.STATUS_OK and worst == EXIT_OK:
+        if sm["status"] != STATUS_OK and worst == EXIT_OK:
             worst = EXIT_FAIL
-    csv_path = C.write_sweep_csv(root / "sweep.csv", rows, keys)
-    n_ok = sum(r["status"] == C.STATUS_OK for r in rows)
-    ok_rows = [r for r in rows if r["status"] == C.STATUS_OK]
+    csv_path = write_sweep_csv(root / "sweep.csv", rows, keys)
+    n_ok = sum(r["status"] == STATUS_OK for r in rows)
+    ok_rows = [r for r in rows if r["status"] == STATUS_OK]
     best = ""
     if ok_rows:
         b = min(ok_rows, key=lambda r: r["objective"])
@@ -297,7 +302,7 @@ def _run_sweep(a: argparse.Namespace, raw: dict[str, Any]) -> int:
 def cmd_validate(a: argparse.Namespace) -> int:
     src = a.config
     try:
-        s = C.build_setup(C.read_config(src), a.set)
+        s = build_setup(read_config(src), a.set)
     except ConfigError as e:
         return report_config_error(e, src, "validate")
     r, st = s.config, s.study
@@ -338,7 +343,7 @@ def cmd_validate(a: argparse.Namespace) -> int:
     return EXIT_OK
 
 
-def _print_bc(s: C.Setup) -> None:
+def _print_bc(s: Setup) -> None:
     """Load / support tables of the boundary conditions and the result of their check (errors never get here)."""
     rep = s.bc_report
     if rep is None:
@@ -351,7 +356,7 @@ def _print_bc(s: C.Setup) -> None:
         out(f"  {it}")
 
 
-def _print_features(s: C.Setup) -> None:
+def _print_features(s: Setup) -> None:
     info = s.info
     if info.get("bores"):
         out(kv("bores", info["bores"]))
@@ -381,15 +386,15 @@ def _load_runs(paths: Sequence[str]) -> list[dict[str, Any]]:
         if f.is_dir() and not _finished(f):
             subs = sorted(x for x in f.iterdir() if x.is_dir() and _finished(x))
             if subs:
-                runs += [C.read_run(x) for x in subs]
+                runs += [read_run(x) for x in subs]
                 continue
-        runs.append(C.read_run(f))
+        runs.append(read_run(f))
     return runs
 
 
 def cmd_show(a: argparse.Namespace) -> int:
     try:
-        s = C.read_run(a.run_dir)
+        s = read_run(a.run_dir)
     except FileNotFoundError as e:
         err(kv("ERROR", str(e)))
         err(kv("NEXT", f"{PROG} run <config>   (creates a run folder)"))
@@ -420,7 +425,7 @@ def cmd_show(a: argparse.Namespace) -> int:
         for line in table(header, rows, [True] * len(header)):
             out("  " + line)
     out(kv("NEXT", f"{PROG} compare {s['folder']} <other run folder>"))
-    return EXIT_OK if s["status"] == C.STATUS_OK else EXIT_FAIL
+    return EXIT_OK if s["status"] == STATUS_OK else EXIT_FAIL
 
 
 def cmd_compare(a: argparse.Namespace) -> int:

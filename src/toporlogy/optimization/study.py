@@ -21,8 +21,8 @@ import torch
 
 from toporlogy.design.chain import Chain
 from toporlogy.core.domain import Domain
-from toporlogy.optim.base import Optimizer
-from toporlogy.optim.schedule import Schedule
+from toporlogy.optimizers.base import Optimizer
+from toporlogy.optimizers.schedule import Schedule
 from toporlogy.optimization.responses import EvalContext, Response, Volume
 
 __all__ = ["Constraint", "Study", "Result", "Evaluation", "DensityEvaluation"]

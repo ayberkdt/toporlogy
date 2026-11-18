@@ -8,7 +8,7 @@ stiffness, same fixed DOFs, same reduced numbering ``free``), with
   (:func:`element_mass`), ``s_M = h³`` in 3-D and ``thickness · h²`` in 2-D, ``M_ns`` a diagonal of non-structural
   point masses (:meth:`Modal.add_point_mass`).
 
-``ρ_e`` comes from a mass interpolation module (default :class:`toporlogy.dynamics.LinearMass`) and already
+``ρ_e`` comes from a mass interpolation module (default :class:`toporlogy.optimization.dynamics.LinearMass`) and already
 contains the element's solid fraction. Units: λ = ω² in (model E unit) / ((model ρ unit) · (model length unit)²);
 with SI E [Pa], ρ [kg/m³] and h [m], λ is in rad²/s². Point masses are in (ρ unit) · (length unit)³.
 
@@ -27,7 +27,7 @@ the formula above summed over a whole cluster with *equal* weights is the deriva
 invariant to the basis chosen inside the eigenspace and therefore correct. The backward pass detects clusters
 (relative gap ≤ ``cluster_tol``, one extra mode is always computed so a cluster cut at the last requested mode is
 seen) and warns (or raises) when the incoming weights differ inside a cluster. Smooth symmetric aggregates such as
-:class:`toporlogy.dynamics.MinEigenvalueKS` over all modes of a cluster give equal weights and are safe.
+:class:`toporlogy.optimization.dynamics.MinEigenvalueKS` over all modes of a cluster give equal weights and are safe.
 
 H8IM: the incompatible modes are condensed statically from K; they carry no mass (the consistent mass of the
 compatible trilinear field is used). This is the usual practice; it is not a consistent mass of the enhanced field.
@@ -70,7 +70,7 @@ def element_mass(dim: int) -> np.ndarray:
     """Consistent mass ``∫ Nᵀ N dV`` of the unit cube (3-D, 24×24) or unit square (2-D, 8×8, unit thickness), ρ = 1.
 
     Bilinear / trilinear shape functions, 2-point Gauss rule per axis (exact for the products N_a N_b). Node order
-    of :class:`toporlogy.domain.Domain` (corners in :data:`Domain.corners` order), DOFs node-major (u, v[, w]).
+    of :class:`toporlogy.core.domain.Domain` (corners in :data:`Domain.corners` order), DOFs node-major (u, v[, w]).
     """
     if dim not in (2, 3):
         raise ValueError("dim must be 2 or 3")
@@ -119,7 +119,7 @@ class Modal:
     element : str, optional
         "H8" (3-D default), "H8IM", or "Q4" (2-D).
     mass : torch module x̄ → ρ (element grid), optional
-        Mass interpolation; default :class:`toporlogy.dynamics.LinearMass` with ρ0 = 1.
+        Mass interpolation; default :class:`toporlogy.optimization.dynamics.LinearMass` with ρ0 = 1.
     n_modes : int
         Modes computed per evaluation at least (responses may ask for more).
     sigma : float

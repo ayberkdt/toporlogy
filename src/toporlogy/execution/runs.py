@@ -1,4 +1,4 @@
-"""Run folders: resolved config, run status, sweep CSV, reading a finished run (moved from toporlogy.config).
+"""Run folders: resolved config, run status, sweep CSV, reading a finished run.
 """
 from __future__ import annotations
 
@@ -98,8 +98,8 @@ def write_sweep_csv(path: str | Path, rows: Sequence[dict[str, Any]], keys: Sequ
 # ============================================================================================== reading run folders
 def read_run(folder: str | Path) -> dict[str, Any]:
     """Summary of a finished run: ``summary.json`` (CLI runs) or rebuilt from ``result.json`` + ``history.jsonl``
-    (runs recorded from Python with :class:`~toporlogy.record.Recorder`). Adds ``history`` (list of rows)."""
-    from toporlogy.optimization.checks import grey_fraction
+    (runs recorded from Python with :class:`~toporlogy.execution.record.Recorder`). Adds ``history`` (list of rows)."""
+    from toporlogy.optimization.diagnostics import grey_fraction
 
     f = Path(folder)
     if not f.is_dir():

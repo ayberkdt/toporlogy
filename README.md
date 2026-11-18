@@ -134,9 +134,8 @@ same result. Boundary conditions by geometry instead of DOF numbers: `toporlogy.
 
 ## What is inside
 
-The library follows the optimisation pipeline; every stage is a module that can be used alone or replaced. The
-former flat module paths (`toporlogy.study`, `toporlogy.bc`, `toporlogy.config`, …) still import and refer to the same
-objects.
+The library follows the optimisation pipeline; every stage is a module that can be used alone or replaced. Every
+module, class and config component has one name; there are no alias modules or second names for old paths.
 
 | Stage | Module | Provides |
 |:---|:---|:---|
@@ -145,13 +144,13 @@ objects.
 | Design chain | `design` (`chain`, `interp`, `manufacturing`) | density filter, tanh projection, keep/void regions; AM overhang filter, symmetry, extrusion and pattern tying, casting/milling pull direction |
 | Physics | `fem`, `solvers` | H8, H8IM and Q4 elasticity, heat conduction, modal analysis; PARDISO/SuperLU, or matrix-free multigrid on CUDA with a direct fallback |
 | Responses | `optimization` (`responses`, `robust`, `lengthscale`, `connectivity`, `dynamics`) | compliance, volume; robust minimum solid/void size; maximum thickness; one-body constraints; eigenfrequencies |
-| Optimisation | `optim`, `optimization.study` | OC (one constraint), MMA (any number), β continuation, move-limit control; run folders with git revision |
+| Optimisation | `optimizers`, `optimization.study` | OC (one constraint), MMA (any number), β continuation, move-limit control; run folders with git revision |
 | Post-processing | `post` | density → signed distance → topology-preserving opening/closing → exact functional faces → smooth surface → manufacturing checks → T10 re-analysis → STL/PLY/OBJ |
 
 ## Keeping the part in one body
 
 A compliance optimum often splits into separate load paths joined by nothing, or by a grey film that disappears at
-thresholding. `connectivity.one_body()` stacks three defences: frozen minimal ties between the interfaces, a
+thresholding. `optimization.connectivity.one_body()` stacks three defences: frozen minimal ties between the interfaces, a
 conduction constraint on the eroded field, and a geometric gate that re-checks the result at several thresholds and
 after erosion, with an optional bridge repair.
 

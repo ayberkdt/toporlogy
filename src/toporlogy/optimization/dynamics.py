@@ -3,7 +3,7 @@
 Physics: :class:`toporlogy.fem.modal.Modal` (consistent mass, shift-invert Lanczos, differentiable λ). The study's
 ``physics`` is the :class:`Modal` object; its ``mass`` module maps x̄ → ρ, the study's ``interp`` maps x̄ → E.
 Responses fetch the eigenvalues through :func:`eigenvalues` (computed once per evaluation and cached in
-``ctx.extra``). Pass ``loads = domain.load_vector()`` (zeros) to the :class:`~toporlogy.study.Study`; the
+``ctx.extra``). Pass ``loads = domain.load_vector()`` (zeros) to the :class:`~toporlogy.optimization.study.Study`; the
 responses declare ``needs = {"modes"}``, so no static solve is run.
 
 Interpolations
@@ -87,7 +87,7 @@ class TwoRangeMass(torch.nn.Module):
 class TwoRangeSIMP(torch.nn.Module):
     """``E = (Emin + s(x̄)(E0 − Emin)) · frac``, ``s = x̄^p`` for x̄ ≥ x_t, ``x_t^(p−q) x̄^q`` below (module notes).
 
-    ``penal`` may be scheduled like :class:`toporlogy.interp.SIMP`.
+    ``penal`` may be scheduled like :class:`toporlogy.design.interp.SIMP`.
     """
 
     def __init__(self, domain: Domain, E0: float = 1.0, penal: float = 3.0, threshold: float = 0.1,

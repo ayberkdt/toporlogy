@@ -1,4 +1,4 @@
-"""Robust formulation (minimum solid and void size) — toporlogy.robust.
+"""Robust formulation (minimum solid and void size) — toporlogy.optimization.robust.
 
 1. Size rules: the numeric derivation reproduces Qian & Sigmund Eq. 29 for the hat kernel; settings round trip.
 2. Finite-difference gradients (threshold 1e-6, float64) of RobustCompliance (KS, p-norm), DilatedVolume and the
@@ -17,9 +17,9 @@ import pytest
 import torch
 
 import toporlogy as T
-from toporlogy.lengthscale import measure_lengthscale
-from toporlogy.optim.mma import MMA
-from toporlogy.robust import (DilatedVolume, Robust, RobustCompliance, RobustContinuation, RobustSet,
+from toporlogy.optimization.lengthscale import measure_lengthscale
+from toporlogy.optimizers.mma import MMA
+from toporlogy.optimization.robust import (DilatedVolume, Robust, RobustCompliance, RobustContinuation, RobustSet,
                                  blueprint_size, bound_formulation, eta_for_size, min_size_ratio,
                                  robust_chain_settings)
 

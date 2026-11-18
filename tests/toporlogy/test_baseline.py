@@ -34,7 +34,7 @@ REPO = HERE.parents[1]
 EXAMPLES = REPO / "examples"
 FILE = HERE / "baseline" / "examples.json"
 MAX_ITER = 10
-RUNNER = "import sys, torch; from toporlogy.cli import main; raise SystemExit(main(sys.argv[1:]))"
+RUNNER = "import sys, torch; from toporlogy.execution.cli import main; raise SystemExit(main(sys.argv[1:]))"
 GEOMETRY_FILES = (".stl", ".ply", ".obj")
 
 

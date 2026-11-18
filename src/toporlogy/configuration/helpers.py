@@ -1,4 +1,4 @@
-"""Helpers shared by the component constructors and the post steps (moved from toporlogy.registry).
+"""Helpers shared by the component constructors and the post steps.
 """
 from __future__ import annotations
 

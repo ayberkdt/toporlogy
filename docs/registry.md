@@ -1,7 +1,6 @@
 # Component registry — how to add a component
 
-`toporlogy.configuration.registry` maps `(kind, name)` to a constructor (`toporlogy.registry` still imports
-everything from there). A config names a component either as a plain string
+`toporlogy.configuration.registry` maps `(kind, name)` to a constructor. A config names a component either as a plain string
 (all defaults) or as a mapping `{type: <name>, <param>: <value>, ...}`. Parameters, defaults and types are read from
 the constructor's signature, so a new component needs **one `register` call**. `python -m toporlogy list`
 shows everything that is registered.
@@ -9,11 +8,11 @@ shows everything that is registered.
 ## One line
 
 ```python
-from toporlogy.registry import register
+from toporlogy.configuration.registry import register
 
 register("link", "am_filter", AMFilter, context=("domain",))      # AMFilter(domain, direction="+z", ...)
 register("response", "displacement", Displacement)                # Displacement(dof, case=0)
-register("optimizer", "gcmma", "toporlogy.optim.gcmma:GCMMA")  # lazy: imported on first use
+register("optimizer", "gcmma", "toporlogy.optimizers.gcmma:GCMMA")  # lazy: imported on first use
 ```
 
 Put the call at the bottom of the module that defines the component. The module must be imported before the
@@ -31,9 +30,9 @@ Built-in constructors live in `toporlogy/configuration/components/`, one module 
 |-----------------|-------------------------------------------------------------------------|--------------------|
 | `domain`        | `Domain`                                                                | `domain`           |
 | `shape`         | `geometry.Shape` with attribute `op` (add / cut / intersect)            | csg `shapes`, `keep`/`void`, `in_shape`, finalize `preserve` |
-| `selector`      | `bc.Selector`, or node numbers (int array; empty selection → raise `ValueError`) | `where:` of supports/loads |
-| `support`       | `bc.Support`, or fixed DOF numbers (converted to `bc.Fixed`)            | `supports[]`, `load_cases[].supports[]` |
-| `load`          | `bc.Load`, or a load vector `(ndof,)` of one case (converted to `bc.NodalForces`) | `load_cases[].loads[]` |
+| `selector`      | `boundary.Selector`, or node numbers (int array; empty selection → raise `ValueError`) | `where:` of supports/loads |
+| `support`       | `boundary.Support`, or fixed DOF numbers (converted to `boundary.Fixed`) | `supports[]`, `load_cases[].supports[]` |
+| `load`          | `boundary.Load`, or a load vector `(ndof,)` of one case (converted to `boundary.NodalForces`) | `load_cases[].loads[]` |
 | `link`          | `torch.nn.Module` on the element grid                                   | `chain[]`          |
 | `interpolation` | `torch.nn.Module` x̄ → E                                                 | `interpolation`    |
 | `solver`        | object with `factor(A_upper)` / `solve(B)`                              | `physics.solver`   |
@@ -60,8 +59,8 @@ Built-in constructors live in `toporlogy/configuration/components/`, one module 
   (`supports.0.where: selector plane: plane x = 3.3 selects no node ...`).
 
 Build order (each step may read what the previous ones put into `ctx`): domain → robust thresholds (`ctx.robust`)
-→ supports → loads → `bc.BoundaryConditions` (`ctx.bc`, `ctx.fixed`; connectivity interfaces `ctx.interfaces`, ties
-→ new domain) → `bc.check()` (errors raise `ConfigError`) → physics (with its solver) → chain links (`ctx.links`
+→ supports → loads → `boundary.BoundaryConditions` (`ctx.bc`, `ctx.fixed`; connectivity interfaces `ctx.interfaces`, ties
+→ new domain) → `BoundaryConditions.check()` (errors raise `ConfigError`) → physics (with its solver) → chain links (`ctx.links`
 while building, then `ctx.chain`; `manufacturing.validate_chain`) → interpolation → objective (`ctx.objective`) →
 constraints (`ctx.constraints`) → optimizer → schedule → post steps.
 
@@ -75,7 +74,7 @@ A response may carry `config_upper` (and `config_scale`): its default constraint
 | kind | names |
 |------|-------|
 | domain | `box` (+ `keep`, `void` shapes), `csg` (shapes in order by `op`, h, padding, bounds, min_frac, connectivity), `stl` (path, h, scale, padding) |
-| shape | `box`, `ball` = `sphere` = `circle`, `cylinder`, `capsule`, `halfspace`, `polygon`, `prism`, `slot`, `bore` (auto-detected: `index` 1-based or `near`) |
+| shape | `box`, `ball` (circle in 2-D, sphere in 3-D), `cylinder`, `capsule`, `halfspace`, `polygon`, `prism`, `slot`, `bore` (auto-detected: `index` 1-based or `near`) |
 | selector | `plane`, `box`, `point` (node arrays, kept); `all`, `surface`, `in_box`, `on_plane` (axis + at or point + normal, `facing`), `half_space`, `on_cylinder`, `bore` (`index` / `near` / the only one), `in_sphere`, `in_shape`, `at_points`, `nearest`, `node_ids`, `union` / `intersect` / `subtract` (`of: [selectors]`) |
 | support | `fixed` (dofs: axes or vectors), `roller`, `symmetry`, `pinned_bore`, `elastic` |
 | load | `force` (total spread equally, kept), `point` (spread, zero moment), `surface_force`, `traction`, `pressure`, `bearing`, `remote_force`, `remote_moment`, `torque`, `body_force` |
@@ -102,7 +101,7 @@ last. A link that maps a reduced variable vector to the design vector (symmetry,
 
 ```python
 import numpy as np
-from toporlogy.registry import register
+from toporlogy.configuration.registry import register
 
 def sphere(ctx, centre: list, radius: float):
     """Part nodes within `radius` (length) of `centre`."""
@@ -121,7 +120,7 @@ supports:
 
 ## Testing a new component
 
-Register it, build a small config with `toporlogy.config.build_setup(raw)`, and check the built object
+Register it, build a small config with `toporlogy.configuration.build.build_setup(raw)`, and check the built object
 (`tests/toporlogy/test_config.py::test_register_new_components_one_line` is a template). Remove test-only components with
 `REGISTRY.unregister(kind, name)`. Links and responses also need the finite-difference check
-(`toporlogy.checks.gradcheck`).
+(`toporlogy.optimization.diagnostics.gradcheck`).

@@ -1,4 +1,4 @@
-"""Component constructors: responses (moved from toporlogy.registry).
+"""Component constructors: responses.
 """
 from __future__ import annotations
 
@@ -9,7 +9,7 @@ from toporlogy.configuration.registry import BuildContext, register
 
 
 def register_responses() -> None:
-    """Register the responses components (moved from registry._register_features)."""
+    """Register the responses components."""
     length = "length"
 
     # ---------------------------------------------------------------- responses

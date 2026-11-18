@@ -12,9 +12,11 @@ import pytest
 import torch
 import yaml
 
-from toporlogy import config as C
-from toporlogy.cli import main
-from toporlogy.registry import REGISTRY, BuildContext, ConfigError
+from toporlogy.configuration.build import Setup, build_setup
+from toporlogy.configuration.resolve import resolve
+from toporlogy.execution.runner import run_setup
+from toporlogy.execution.cli import main
+from toporlogy.configuration.registry import BuildContext, ConfigError, REGISTRY
 
 
 @pytest.fixture(autouse=True)
@@ -30,7 +32,7 @@ def plate(**over) -> dict:
     raw = {
         "name": "plate",
         "domain": {"type": "csg", "h": 0.5, "shapes": [{"type": "box", "lo": [0, 0], "hi": [16, 8]},
-                                                      {"type": "circle", "center": [10, 4], "radius": 2,
+                                                      {"type": "ball", "center": [10, 4], "radius": 2,
                                                        "op": "cut"}]},
         "supports": [{"type": "fixed", "where": {"type": "on_plane", "axis": "x", "at": "min"}}],
         "load_cases": [{"name": "tip", "loads": [{"type": "surface_force",
@@ -55,7 +57,7 @@ def box2d(**over) -> dict:
     return raw
 
 
-def evaluate(s: C.Setup) -> None:
+def evaluate(s: Setup) -> None:
     ev = s.study.evaluate(s.study.default_start())
     assert np.isfinite(ev.f0) and np.all(np.isfinite(ev.g)) and np.all(np.isfinite(ev.df0))
 
@@ -63,7 +65,7 @@ def evaluate(s: C.Setup) -> None:
 # ---------------------------------------------------------------------------------------------- shapes, domains
 @pytest.mark.parametrize("spec", [
     {"type": "box", "lo": [0, 0, 0], "hi": [1, 2, 3]}, {"type": "ball", "center": [0, 0], "radius": 1},
-    {"type": "sphere", "center": [0, 0, 0], "radius": 1}, {"type": "circle", "center": [0, 0], "radius": 1},
+    {"type": "ball", "center": [0, 0, 0], "radius": 1},
     {"type": "cylinder", "p0": [0, 0, 0], "p1": [0, 0, 2], "radius": 1},
     {"type": "capsule", "p0": [0, 0], "p1": [2, 0], "radius": 0.5},
     {"type": "halfspace", "point": [0, 0], "normal": [1, 0]},
@@ -80,7 +82,7 @@ def test_shapes_build(spec):
 
 def test_csg_and_stl_domains(tmp_path):
     from toporlogy.geometry import Box, write_stl
-    s = C.build_setup(plate())
+    s = build_setup(plate())
     d = s.study.domain
     assert d.shape == (32, 16) and d.frac[d.active].min() < 1 and d.n_active < 32 * 16   # hole, partial volumes
     V = np.array([[0, 0, 0], [4, 0, 0], [4, 2, 0], [0, 2, 0], [0, 0, 2], [4, 0, 2], [4, 2, 2], [0, 2, 2]], float)
@@ -93,7 +95,7 @@ def test_csg_and_stl_domains(tmp_path):
                 supports=[{"type": "fixed", "where": {"type": "on_plane", "axis": "x", "at": 0}}],
                 load_cases=[{"loads": [{"type": "surface_force", "where": {"type": "on_plane", "axis": "x",
                                                                            "at": 4}, "force": [0, 0, -1]}]}])
-    s = C.build_setup(raw)
+    s = build_setup(raw)
     d = s.study.domain
     assert d.shape == (8, 4, 4) and d.keep.sum() == 2 * 4 * 4
     assert abs(d.frac.sum() * d.h ** 3 - 16.0) < 1e-6
@@ -123,7 +125,7 @@ SELECTORS = [
 def test_selectors_as_load_region(sel):
     raw = plate()
     raw["load_cases"][0]["loads"] = [{"type": "force", "where": sel, "force": [0, -1]}]
-    s = C.build_setup(raw)
+    s = build_setup(raw)
     assert abs(s.cases[0]["resultant"][1] + 1) < 1e-12 and s.cases[0]["n_nodes"] >= 1
 
 
@@ -131,7 +133,7 @@ def test_all_and_surface_selectors():
     raw = plate()
     raw["load_cases"][0]["loads"] = [{"type": "force", "where": "surface", "force": [0, -1]},
                                      {"type": "force", "where": "all", "force": [0, -1]}]
-    s = C.build_setup(raw)
+    s = build_setup(raw)
     assert s.cases[0]["n_nodes"] == len(s.study.domain.active_dofs) // 2
 
 
@@ -147,7 +149,7 @@ def test_supports(sup):
     a support or a spring can only stiffen the part, so under the same load and design the compliance falls."""
     raw = plate()
     raw["supports"].append(sup)
-    s = C.build_setup(raw)
+    s = build_setup(raw)
     assert s.bc_report.ok
     per = s.bc.constraints(0).per_support
     assert [p[1] for p in per[:1]] == ["fixed"] and len(per) == 2          # the base clamp, then the new one
@@ -173,7 +175,7 @@ def test_supports(sup):
         assert kind == "fixed" and len(nodes) == 1 and rows == 1 and np.allclose(X[nodes[0]], [16.0, 0.0])
         u = U[nodes[0]]
         assert abs(u @ [1.0, 1.0]) <= tol and abs(u @ [1.0, -1.0]) > 1e3 * tol
-    base = C.build_setup(plate()).study.evaluate(x0, gradients=False).f0
+    base = build_setup(plate()).study.evaluate(x0, gradients=False).f0
     assert ev.f0 < base * (1 - 1e-6), (ev.f0, base)
     evaluate(s)
 
@@ -192,7 +194,7 @@ def test_supports(sup):
 def test_loads(load):
     raw = plate()
     raw["load_cases"][0]["loads"] = [load]
-    s = C.build_setup(raw)
+    s = build_setup(raw)
     assert s.bc_report.ok and not [i for i in s.bc_report.issues if i.code.startswith("resultant")]
     a = s.bc.applied["tip"][0]
     assert np.allclose(a.force, a.intended_force, atol=1e-9 * max(1.0, np.abs(a.intended_force).max()))
@@ -204,19 +206,19 @@ def test_per_case_supports_and_combinations():
                               "supports": [{"type": "fixed", "where": {"type": "on_plane", "axis": "y",
                                                                        "at": "min"}}],
                               "loads": [{"type": "point", "at": [8, 8], "force": [1, 0]}]})
-    s = C.build_setup(raw)
+    s = build_setup(raw)
     assert type(s.study.physics).__name__ == "PerCaseSupports" and s.study.F.shape[1] == 2
     evaluate(s)
     raw = plate()
     raw["load_cases"].append({"name": "up", "loads": [{"type": "point", "at": [16, 8], "force": [0, 1]}]})
     raw["combinations"] = [{"name": "both", "factors": {"tip": 1.0, "up": 0.5}, "weight": 2.0}]
-    s = C.build_setup(raw)
+    s = build_setup(raw)
     assert s.study.F.shape[1] == 3 and s.cases[2]["combination"] and s.study.objective.weights.tolist() == \
         [1.0, 1.0, 2.0]
     assert np.allclose(s.study.F[:, 2], s.study.F[:, 0] + 0.5 * s.study.F[:, 1])
     raw["combinations"][0]["factors"] = {"tpi": 1.0}
     with pytest.raises(ConfigError, match='did you mean "tip"'):
-        C.build_setup(raw)
+        build_setup(raw)
 
 
 # ---------------------------------------------------------------------------------------------- links, interp, physics
@@ -233,7 +235,7 @@ def test_manufacturing_links(chain):
     design comes out obeying the tying exactly; the untied chain breaks every one of these by ~0.4 (measured
     18 Nov 2026), so each check tells a working tie from a missing one."""
     raw = box2d(chain=chain)
-    s = C.build_setup(raw)
+    s = build_setup(raw)
     names = [lk["type"] for lk in s.config["chain"]]
     assert names[-1] == "passive" and "embed" in names
     built = [type(lk).__name__ for lk in s.study.chain.links]
@@ -266,7 +268,7 @@ def test_manufacturing_links(chain):
 def test_chain_order_is_validated():
     raw = box2d(chain=[{"type": "am_filter"}, {"type": "density_filter", "rmin": 1.5}])
     with pytest.raises(ConfigError, match="out of order|need a DensityFilter"):
-        C.build_setup(raw)
+        build_setup(raw)
 
 
 def test_modal_responses_and_interpolation():
@@ -278,53 +280,53 @@ def test_modal_responses_and_interpolation():
             "constraints": [{"response": "volume", "upper": 0.5}], "optimizer": "mma"}
     for obj in ({"type": "maximize", "response": {"type": "min_eigenvalue_ks", "n_modes": 3}},
                 {"type": "maximize", "response": "eigenvalue"}, {"type": "maximize", "response": "frequency"}):
-        s = C.build_setup(dict(base, objective=obj))
+        s = build_setup(dict(base, objective=obj))
         assert s.cases == [] and type(s.study.physics).__name__ == "Modal"
         evaluate(s)
     raw = dict(base, objective={"type": "maximize", "response": "eigenvalue"},
                constraints=[{"response": "volume", "upper": 0.5}, {"type": "min_frequency", "f_min": 1e-3}])
-    s = C.build_setup(raw)
+    s = build_setup(raw)
     c = s.study.constraints[1]
     assert c.upper == 0.0 and c.scale == 1.0
     evaluate(s)
-    errs = dict(pytest.raises(ConfigError, C.build_setup, dict(box2d(), objective="eigenvalue")).value.errors)
+    errs = dict(pytest.raises(ConfigError, build_setup, dict(box2d(), objective="eigenvalue")).value.errors)
     assert "needs physics modal" in errs["objective"]
 
 
 # ---------------------------------------------------------------------------------------------- robust, length scale
 def test_robust_block_sets_rmin_and_round_trips(tmp_path):
-    from toporlogy.robust import robust_chain_settings
+    from toporlogy.optimization.robust import robust_chain_settings
     raw = box2d(robust={"min_solid": 3.0}, chain=[{"type": "density_filter"}],
                 objective="robust_compliance",
                 constraints=[{"response": "dilated_volume", "upper": 0.5},
                              {"response": {"type": "local_volume", "t_max": 3.0, "source": "dilated"}},
                              {"response": "grey_level", "upper": 0.9}],
                 schedule={"type": "robust_continuation", "every": 2})
-    r = C.resolve(raw)
+    r = resolve(raw)
     exp = robust_chain_settings(3.0, None, h=1.0, dim=2)
     assert [lk["type"] for lk in r["chain"]] == ["embed", "density_filter", "heaviside_projection", "passive"]
     assert r["chain"][1]["rmin"] == exp["rmin"]
-    s = C.build_setup(raw)
+    s = build_setup(raw)
     assert s.study.constraints[1].upper == pytest.approx(s.study.constraints[1].response.settings["alpha"])
     assert s.info["robust"]["eta_e"] == pytest.approx(exp["eta_e"])
     evaluate(s)
-    sm = C.run_setup(s, tmp_path / "r")
-    again = C.resolve(yaml.safe_load((tmp_path / "r" / "config.resolved.yaml").read_text(encoding="utf-8")))
+    sm = run_setup(s, tmp_path / "r")
+    again = resolve(yaml.safe_load((tmp_path / "r" / "config.resolved.yaml").read_text(encoding="utf-8")))
     assert {k: v for k, v in again.items() if k != "provenance"} == s.config
     assert sm["iterations"] == 2
     bad = copy.deepcopy(raw)
     bad["chain"] = [{"type": "density_filter", "rmin": 2.0}]
-    errs = dict(pytest.raises(ConfigError, C.resolve, bad).value.errors)
+    errs = dict(pytest.raises(ConfigError, resolve, bad).value.errors)
     assert "robust.min_solid sets rmin" in errs["chain.0.rmin"]
 
 
 def test_local_volume_by_radius_needs_upper():
     raw = box2d(constraints=[{"response": "volume", "upper": 0.5},
                              {"response": {"type": "local_volume", "radius": 2.0}}])
-    errs = dict(pytest.raises(ConfigError, C.build_setup, raw).value.errors)
+    errs = dict(pytest.raises(ConfigError, build_setup, raw).value.errors)
     assert "set upper" in errs["constraints.1.upper"]
     raw["constraints"][1]["upper"] = 0.6
-    evaluate(C.build_setup(raw))
+    evaluate(build_setup(raw))
 
 
 # ---------------------------------------------------------------------------------------------- connectivity
@@ -344,14 +346,14 @@ def split(nx: int = 30, ny: int = 12, **conn) -> dict:
 
 
 def test_connectivity_block_ties_constraint_interfaces():
-    s = C.build_setup(split(ties=1, constraint="conduction"))
+    s = build_setup(split(ties=1, constraint="conduction"))
     assert list(s.interfaces) == ["sa", "sb", "L1 force", "L2 force"]
     assert s.info["ties"] > 0 and s.info["frozen_interface_cells"] > 0       # a tie must not end in void cells
     assert s.study.domain.keep.sum() == 2 * 3 + 2 * 9 + s.info["ties"] + s.info["frozen_interface_cells"]
     assert s.constraint_names == ["volume", "connectivity"] and s.study.constraints[1].upper == 20.0
     assert [p["type"] for p in s.config["post"]] == ["connectivity_gate"]
     evaluate(s)
-    s = C.build_setup(split(ties=None, constraint="coupling", bound=3.0, gate=False,
+    s = build_setup(split(ties=None, constraint="coupling", bound=3.0, gate=False,
                             interfaces={"a": {"type": "in_box", "lo": [2, 0], "hi": [5, 0]},
                                         "b": {"type": "in_box", "lo": [25, 5], "hi": [28, 8]}}))
     assert list(s.interfaces) == ["a", "b"] and s.config["post"] == [] and s.study.constraints[1].upper == 3.0
@@ -359,7 +361,7 @@ def test_connectivity_block_ties_constraint_interfaces():
     for resp in ("conduction_connectivity", "coupling_compliance"):
         raw = split(ties=None, constraint="none", gate=False)
         raw["constraints"].append({"response": resp})
-        evaluate(C.build_setup(raw))
+        evaluate(build_setup(raw))
 
 
 def test_gate_verdict_in_summary_and_exit_code(capsys, tmp_path):
@@ -384,7 +386,7 @@ def test_bridge_repair_is_a_variant_not_a_mutation(tmp_path):
     """The repair leaves the optimisation result alone (x, xphys, objective, final all describe the optimised
     design), stores the repaired density as a variant that later steps of the same result use, re-evaluates its
     objective and constraints, and fails the gate when the added material breaks a constraint."""
-    s = C.build_setup(split(ties=None, constraint="none", repair="bridge"))
+    s = build_setup(split(ties=None, constraint="none", repair="bridge"))
     res = s.study.run(max_iter=1, tol=0.0)
     x0, xp0, f0, fin0 = res.x.copy(), res.xphys.copy(), res.objective, dict(res.final.values)
     name, step = s.post[0]
@@ -412,7 +414,7 @@ def test_bridge_repair_is_a_variant_not_a_mutation(tmp_path):
 def test_evaluate_density_matches_evaluate_and_skips_chain_responses():
     """evaluate_density(x̄ of x) equals evaluate(x) for responses of x̄ and U; a response of the chain's filtered
     field (conduction connectivity on the eroded field) gets no value but a reason."""
-    s = C.build_setup(split(ties=1, constraint="conduction"))
+    s = build_setup(split(ties=1, constraint="conduction"))
     res = s.study.run(max_iter=1, tol=0.0)
     de = s.study.evaluate_density(res.xphys)
     assert de.values["compliance"] == pytest.approx(res.final.values["compliance"], rel=1e-12)
@@ -447,11 +449,11 @@ def test_validate_prints_bc_summary_and_rejects_under_support(capsys, tmp_path):
 def test_empty_bc_selector_reports_its_path():
     raw = plate()
     raw["supports"][0]["where"] = {"type": "on_plane", "axis": "x", "at": 30}
-    errs = dict(pytest.raises(ConfigError, C.build_setup, raw).value.errors)
+    errs = dict(pytest.raises(ConfigError, build_setup, raw).value.errors)
     assert "selected no node" in errs["supports.0.where"]
     raw = plate()
     raw["load_cases"][0]["loads"] = [{"type": "bearing", "bore": {"type": "bore", "index": 3}, "force": [0, 1]}]
-    errs = dict(pytest.raises(ConfigError, C.build_setup, raw).value.errors)
+    errs = dict(pytest.raises(ConfigError, build_setup, raw).value.errors)
     assert "bore index 3 out of range; found: B1" in errs["load_cases.0.loads.0.bore"]
 
 
@@ -472,8 +474,8 @@ def test_finalize_checks_export_and_lengthscale(tmp_path):
                      "preserve": [{"role": "cut", "shape": {"type": "bore"}, "stock": 0.3, "name": "bore"}]},
                     {"type": "manufacturing_checks", "max_bodies": 1},
                     {"type": "export", "formats": ["stl", "ply"]}]}
-    s = C.build_setup(raw)
-    sm = C.run_setup(s, tmp_path / "r")
+    s = build_setup(raw)
+    sm = run_setup(s, tmp_path / "r")
     post = sm["post"]
     assert post["finalize"]["files"] == {"stl": "part.stl", "report": "part_report.json"}
     assert post["finalize"]["triangles"] > 100 and "error" not in post["manufacturing_checks"]
@@ -487,9 +489,9 @@ def test_finalize_checks_export_and_lengthscale(tmp_path):
 
 def test_post_order_and_reverify_build():
     raw = box2d(post=["export"])
-    errs = dict(pytest.raises(ConfigError, C.resolve, raw).value.errors)
+    errs = dict(pytest.raises(ConfigError, resolve, raw).value.errors)
     assert "needs a finalize step" in errs["post.0"]
-    errs = dict(pytest.raises(ConfigError, C.build_setup, box2d(post=["finalize"])).value.errors)
+    errs = dict(pytest.raises(ConfigError, build_setup, box2d(post=["finalize"])).value.errors)
     assert "3-D" in errs["post.0"]
     pytest.importorskip("gmsh")
     raw = {"name": "r", "domain": {"type": "box", "shape": [6, 3, 3]},
@@ -497,8 +499,8 @@ def test_post_order_and_reverify_build():
                         {"type": "fixed", "where": {"type": "on_plane", "axis": "x", "at": "min"}}],
            "load_cases": [{"loads": [{"type": "point", "at": ["max", "mid", "mid"], "force": [0, 0, -1]}]}],
            "constraints": [{"response": "volume", "upper": 0.5}], "post": ["finalize", "reverify"]}
-    s = C.build_setup(raw)
-    from toporlogy.registry import bc_callables
+    s = build_setup(raw)
+    from toporlogy.configuration.boundary_mapping import bc_callables
     sup, cases, notes = bc_callables(s.bc)
     X = s.study.domain.node_coords()
     assert sup[0][1] == (1,) and sup[0][0](X).sum() > 0 and list(cases) == ["case1"]
@@ -508,17 +510,17 @@ def test_bc_mapping_labels_what_reverify_cannot_carry_over():
     """bc_mapping: equivalent when every support and load maps by type; a bearing load (area-spread resultant)
     makes it approximate; springs (left out) make it unsupported. bc_callables keeps its (supports, cases,
     notes) contract with the same note texts."""
-    from toporlogy.registry import bc_callables, bc_mapping
-    m = bc_mapping(C.build_setup(plate()).bc)
+    from toporlogy.configuration.boundary_mapping import bc_callables, bc_mapping
+    m = bc_mapping(build_setup(plate()).bc)
     assert m["fidelity"] == "equivalent" and m["items"] == [] and m["notes"] == []
     raw = plate()
     raw["load_cases"][0]["loads"].append({"type": "bearing", "bore": {"type": "bore"}, "force": [0, -1]})
-    m = bc_mapping(C.build_setup(raw).bc)
+    m = bc_mapping(build_setup(raw).bc)
     assert m["fidelity"] == "approximate" and [it["fidelity"] for it in m["items"]] == ["approximate"]
     assert "no cosine / moment" in m["items"][0]["note"]
     raw["supports"].append({"type": "elastic", "where": {"type": "on_plane", "axis": "y", "at": "max"}, "k": 0.1,
                             "name": "spring"})
-    bcs = C.build_setup(raw).bc
+    bcs = build_setup(raw).bc
     m = bc_mapping(bcs)
     assert m["fidelity"] == "unsupported"
     assert {(it["name"], it["fidelity"]) for it in m["items"]} >= {("spring", "unsupported")}
@@ -528,9 +530,9 @@ def test_bc_mapping_labels_what_reverify_cannot_carry_over():
 
 
 def test_move_beta_ref_reaches_study():
-    s = C.build_setup(box2d(run={"max_iter": 2, "move_beta_ref": 2.0}))
+    s = build_setup(box2d(run={"max_iter": 2, "move_beta_ref": 2.0}))
     assert s.study.move_beta_ref == 2.0
-    assert C.build_setup(box2d()).study.move_beta_ref is None
+    assert build_setup(box2d()).study.move_beta_ref is None
 
 
 def test_list_shows_feature_components(capsys):
@@ -548,7 +550,7 @@ def test_elasticity_gmg_physics_and_rejections(capsys, tmp_path):
             "supports": [{"type": "fixed", "where": {"type": "plane", "axis": "x", "at": "min"}}],
             "load_cases": [{"loads": [{"type": "point", "at": ["max", "mid", "mid"], "force": [0, 0, -1]}]}],
             "constraints": [{"response": "volume", "upper": 0.5}]}
-    s = C.build_setup(base)
+    s = build_setup(base)
     assert type(s.study.physics).__name__ == "ElasticityGMG"
     evaluate(s)
     bad = {"2-D": (box2d(physics="elasticity_gmg"), "3-D only"),
@@ -575,7 +577,7 @@ def test_repair_whose_constraints_cannot_be_evaluated_does_not_pass(tmp_path):
     raw = split(ties=None, constraint="none", repair="bridge")         # splits into the four pads: FAIL, repaired
     raw["constraints"][0]["upper"] = 0.9                    # the volume bound holds; only the chain response is unknown
     raw["constraints"].append({"response": "conduction_connectivity", "upper": 1e6})   # needs the chain (eroded field)
-    s = C.build_setup(raw)
+    s = build_setup(raw)
     res = s.study.run(x0=np.full(s.study.n_var, 0.15), max_iter=1, tol=0.0)   # low start: the pads stay apart
     name, step = next((n, st) for n, st in s.post if n == "connectivity_gate")
     out = step(res, s.study, tmp_path)

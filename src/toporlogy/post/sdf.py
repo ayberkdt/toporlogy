@@ -264,13 +264,13 @@ def closing(phi: np.ndarray, r: float, h: float) -> np.ndarray:
 
 
 def mask_shape(mask: np.ndarray, grid: Grid, smooth: float = 0.0, name: str = "mask") -> Any:
-    """:class:`~toporlogy.post.primitives.GridShape` of a boolean mask on ``grid`` (surface half-way between
+    """:class:`~toporlogy.post.primitives.GridPrimitive` of a boolean mask on ``grid`` (surface half-way between
     samples). ``smooth`` = Gaussian σ in samples applied to the indicator first (removes the staircase)."""
-    from toporlogy.post.primitives import GridShape
+    from toporlogy.post.primitives import GridPrimitive
     ind = np.asarray(mask, float)
     if smooth > 0:
         ind = ndimage.gaussian_filter(ind, smooth)
-    return GridShape(redistance(0.5 - ind, grid.h), grid.origin, grid.h, name=name)
+    return GridPrimitive(redistance(0.5 - ind, grid.h), grid.origin, grid.h, name=name)
 
 
 def envelope_field(domain: Any, grid: Grid) -> np.ndarray:

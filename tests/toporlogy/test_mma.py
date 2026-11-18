@@ -1,4 +1,4 @@
-"""MMA optimizer of the new core (toporlogy.optim.mma).
+"""MMA optimizer of the new core (toporlogy.optimizers.mma).
 
 1. Analytic problems with known optima (``step`` alone, m = 1 and m = 2).
 2. Oracle: 2-D half MBB beam against ``topo_oracles.topology.topopt(..., optimizer="MMA")``. Same filter,
@@ -17,7 +17,7 @@ import pytest
 import torch
 
 import toporlogy as T
-from toporlogy.optim.mma import MMA
+from toporlogy.optimizers.mma import MMA
 
 
 # ----------------------------------------------------------------------------- helpers
@@ -80,7 +80,7 @@ def test_quadratic_two_constraints_and_bounds():
 
     Not tested on purpose: a variable with an *interior* optimum that no active constraint touches (e.g. t6 = 0.2).
     Plain MMA (not GCMMA) then ends in a 2-cycle around the optimum, amplitude 0.0043 measured, because the
-    asymptotes are clamped at asymin = 0.01 from x (see the module notes of toporlogy.optim.mma)."""
+    asymptotes are clamped at asymin = 0.01 from x (see the module notes of toporlogy.optimizers.mma)."""
     t = np.array([1.0, 1.0, 1.0, 1.0, 1.4, -0.3])
     A = np.array([[1, 1, 0, 0, 0, 0], [0, 0, 1, 1, 0, 0], [0, 0, 0, 0, 1, 1]], float)
     b = np.array([0.6, 1.0, 1.5])
@@ -212,8 +212,8 @@ def test_subproblem_failure_is_reported(monkeypatch):
     early AND is far from the dual optimum warns (MMASubproblemWarning) and is counted."""
     import scipy.optimize as so
 
-    from toporlogy.optim import _mma_core
-    from toporlogy.optim.mma import MMASubproblemWarning
+    from toporlogy.optimizers import _mma_core
+    from toporlogy.optimizers.mma import MMASubproblemWarning
 
     x = np.full(4, 0.5)
     df0, g, dg = -np.ones(4), np.array([-0.1]), np.ones((1, 4)) / 4

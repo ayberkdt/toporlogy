@@ -16,7 +16,7 @@ import toporlogy as T
 from toporlogy.design.interp import RAMP, SIMP
 from toporlogy.fem.heat import ConductivityInterp
 from toporlogy.optimization import dynamics as dyn
-from toporlogy.optimization.checks import gradcheck, grey_fraction
+from toporlogy.optimization.diagnostics import gradcheck, grey_fraction
 from toporlogy.optimization.robust import Robust
 
 X = np.array([0.0, 0.02, 0.05, 0.0999, 0.1, 0.1001, 0.3, 0.5, 0.77, 1.0])

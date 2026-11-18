@@ -1,4 +1,4 @@
-"""Running a built study into a run folder: ``run_setup`` (moved from toporlogy.config).
+"""Running a built study into a run folder: ``run_setup``.
 """
 from __future__ import annotations
 
@@ -20,15 +20,15 @@ def run_setup(setup: Setup, folder: str | Path, progress: Callable[[int, dict[st
     """Run a built study into ``folder``; returns the summary (also written to ``summary.json``).
 
     Folder content: ``config.resolved.yaml``, ``setup.json``, ``history.jsonl``, ``result.npz``, ``result.json``
-    (:class:`~toporlogy.record.Recorder`), ``snapshots.npz`` (if ``output.snapshot_every`` > 0), ``summary.json``,
-    and what the post steps write (STL, reports, ``result_repaired.npz``).
+    (:class:`~toporlogy.execution.record.Recorder`), ``snapshots.npz`` (if ``output.snapshot_every`` > 0),
+    ``summary.json``, and what the post steps write (STL, reports, ``result_repaired.npz``).
     ``progress(it, row)`` gets ``row = {objective, <constraint names>, change, <schedule state>, seconds}``;
     ``post_progress(name, out, seconds)`` is called before each post step (``out`` None) and after it. A post step
     that raises is recorded as ``{"passed": false, "error": ...}`` and the remaining steps still run.
     """
     import torch
 
-    from toporlogy.optimization.checks import grey_fraction
+    from toporlogy.optimization.diagnostics import grey_fraction
     from toporlogy.execution.record import Recorder
 
     folder = Path(folder)

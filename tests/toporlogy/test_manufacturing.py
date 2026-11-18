@@ -1,7 +1,7 @@
-"""Manufacturing-constraint links (toporlogy.manufacturing): AM overhang filter, tying, casting, composition.
+"""Manufacturing-constraint links (toporlogy.design.manufacturing): AM overhang filter, tying, casting, composition.
 
 Pre-registered thresholds: oracle equality of the AM forward pass ≤ 1e-12 (max abs); finite-difference gradients
-≤ 1e-6 relative (:func:`toporlogy.checks.gradcheck`, float64); tied optimisation results exact to 1e-12.
+≤ 1e-6 relative (:func:`toporlogy.optimization.diagnostics.gradcheck`, float64); tied optimisation results exact to 1e-12.
 
 Oracles: :class:`topo_oracles.am_filter.AMFilter2D` (2-D, array (nely, nelx), row 0 at the top) and
 :class:`topo_oracles.topo3d.AMFilter3D` (3-D, VoxelMesh of the full box = C-order of :class:`Domain`). Side names
@@ -18,9 +18,9 @@ import torch
 
 from toporlogy import (OC, SIMP, Compliance, Constraint, DensityFilter, Domain, Elasticity, Embed,
                           HeavisideProjection, Passive, Study, Volume, gradcheck)
-from toporlogy.chain import Chain
+from toporlogy.design.chain import Chain
 from toporlogy.solvers import DirectSolver
-from toporlogy.manufacturing import (AMFilter, Casting, Extrusion, GroupAverage, Pattern, Symmetry, Tying,
+from toporlogy.design.manufacturing import (AMFilter, Casting, Extrusion, GroupAverage, Pattern, Symmetry, Tying,
                                         combine_tying, manufacturing_chain, overhang_map, overhang_violations,
                                         parse_direction, undercut_map, undercuts, validate_chain)
 

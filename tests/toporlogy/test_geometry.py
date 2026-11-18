@@ -60,10 +60,10 @@ def test_voxelize_volumes():
     d = g.voxelize(_lbracket(), 1.0)
     exact = 40 * 10 * 10 + 30 * 10 * 10 - math.pi * 9 * 10
     assert d.frac.sum() / exact - 1 == pytest.approx(0, abs=2e-3)       # measured 4.1e-4
-    d2 = g.voxelize(g.Box([0, 0], [10, 6]) - g.Circle([5, 3], 1.5), 0.25, thickness=2.0)
+    d2 = g.voxelize(g.Box([0, 0], [10, 6]) - g.Ball([5, 3], 1.5), 0.25, thickness=2.0)
     assert d2.dim == 2 and d2.thickness == 2.0
     assert d2.frac.sum() * 0.0625 / (60 - math.pi * 2.25) - 1 == pytest.approx(0, abs=2e-3)
-    ball = g.voxelize(g.Sphere([0, 0, 0], 1.0), 0.1, padding=1)
+    ball = g.voxelize(g.Ball([0, 0, 0], 1.0), 0.1, padding=1)
     assert ball.frac.sum() * 1e-3 / (4 / 3 * math.pi) - 1 == pytest.approx(0, abs=2e-3)   # measured −3.1e-4
     assert ball.active[0].sum() == 0                                   # padding layer empty
 
@@ -129,7 +129,7 @@ def test_find_bores_3d_2d_and_clevis():
     assert np.allclose(b[0].axis, [0, 0, 1]) and np.allclose(b[0].center, [34, 5, 5], atol=0.1)
     assert b[0].radius == pytest.approx(3.0, rel=0.02)                   # measured 2.985
     assert b[0].segments == [(0.0, 10.0)]
-    d2 = g.voxelize(g.Box([0, 0], [10, 6]) - g.Circle([5.1, 3.05], 1.5), 0.25)
+    d2 = g.voxelize(g.Box([0, 0], [10, 6]) - g.Ball([5.1, 3.05], 1.5), 0.25)
     b2 = g.find_bores(d2)
     assert len(b2) == 1 and b2[0].axis is None
     assert np.allclose(b2[0].center, [5.1, 3.05], atol=0.02) and b2[0].radius == pytest.approx(1.5, rel=0.01)

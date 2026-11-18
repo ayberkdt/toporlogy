@@ -33,7 +33,7 @@ h_f = h/upsample. Opening by a ball of radius ρ uses the same convention (centr
 
 Outside the grid. Every face of the box has a rule: ``"void"`` (the part ends there — true free edge), ``"solid"``,
 or ``"reflect"`` (symmetry plane: the design continues as its mirror image). Elements with ``frac = 0`` count as void.
-Note: the density filter (:class:`~toporlogy.chain.DensityFilter`) normalises by the in-domain weight, which
+Note: the density filter (:class:`~toporlogy.design.chain.DensityFilter`) normalises by the in-domain weight, which
 behaves like ``"reflect"`` at every face, so length-scale guarantees of filter-based methods hold in that sense at
 free faces; measure with ``"void"`` to see the true free-edge geometry.
 
@@ -67,7 +67,7 @@ from scipy import ndimage
 from toporlogy.references import cite
 from toporlogy.optimization.responses import EvalContext, Response
 
-__all__ = ["LengthScaleReport", "measure_lengthscale", "local_thickness", "opening_residue", "closing_residue",
+__all__ = ["LengthScaleReport", "measure_lengthscale", "voxel_local_thickness", "opening_residue", "closing_residue",
            "grey_measure", "GreyLevel", "LocalVolume", "local_volume_field", "ball_kernel",
            "max_thickness_settings", "slab_fraction"]
 
@@ -171,7 +171,7 @@ def _edt_padded(ph: np.ndarray, fc: list[tuple[str, str]], pad: int | None) -> t
         p = min(2 * p, cap)
 
 
-def local_thickness(phase: np.ndarray, faces: list[tuple[str, str]] | str = "void", pad: int | None = None,
+def voxel_local_thickness(phase: np.ndarray, faces: list[tuple[str, str]] | str = "void", pad: int | None = None,
                     level_step: float = 0.5, max_levels: int = 48, exact: float = 6.0) -> np.ndarray:
     """Local thickness τ (in cells) of the True phase of a binary array; 0 outside the phase.
 
@@ -338,8 +338,8 @@ def measure_lengthscale(xphys: np.ndarray, h: float = 1.0, threshold: float = 0.
     void = mf & ~solid
     # void phase: cells outside the part (mask False) are void too
     void_all = ~solid
-    tau_s = local_thickness(solid, faces)
-    tau_v = local_thickness(void_all, _invert(faces))
+    tau_s = voxel_local_thickness(solid, faces)
+    tau_v = voxel_local_thickness(void_all, _invert(faces))
     sel = np.ones(solid.shape, bool)
     if margin > 0:
         mc = int(round(margin / h_f))

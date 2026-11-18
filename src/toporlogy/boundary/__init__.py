@@ -68,7 +68,7 @@ from toporlogy.boundary.selectors import (
     Selector, SurfaceNodes, Where,
 )
 from toporlogy.boundary.supports import (
-    ElasticSupport, Fixed, PinnedBore, Roller, Support, Symmetry,
+    ElasticSupport, Fixed, PinnedBore, Roller, Support, SymmetrySupport,
 )
 from toporlogy.boundary.constrained import (
     ConstrainedElasticity, ConstraintSet, PerCaseSupports, reaction_forces,
@@ -77,7 +77,7 @@ from toporlogy.boundary.loads import (
     Applied, BearingLoad, BodyForce, BodyForceCompliance, Load, NodalForces, PointLoad, Pressure, RemoteForce,
     RemoteMoment, SurfaceForce, Torque, Traction, body_force_matrix, design_load_solve, rigid_distribution,
 )
-from toporlogy.boundary.checks import (
+from toporlogy.boundary.report import (
     CheckReport, Issue,
 )
 from toporlogy.boundary.cases import (
@@ -89,7 +89,7 @@ __all__ = [
     "Selector", "AllNodes", "SurfaceNodes", "InBox", "OnPlane", "HalfSpaceNodes", "OnCylinder", "BoreFace",
     "InSphere", "InShape", "AtPoints", "Nearest", "NodeIds", "Where", "EmptySelectionError",
     # supports
-    "Support", "Fixed", "Roller", "Symmetry", "PinnedBore", "ElasticSupport",
+    "Support", "Fixed", "Roller", "SymmetrySupport", "PinnedBore", "ElasticSupport",
     # loads
     "Load", "Applied", "NodalForces", "PointLoad", "SurfaceForce", "Traction", "Pressure", "BearingLoad",
     "RemoteForce", "RemoteMoment", "Torque", "BodyForce",

@@ -37,7 +37,7 @@ import numpy as np
 from toporlogy.post import mesh as M
 from toporlogy.post import sdf as S
 
-__all__ = ["CheckThresholds", "CheckResult", "manufacturing_checks", "local_thickness", "ray_thickness", "overhang",
+__all__ = ["CheckThresholds", "CheckResult", "manufacturing_checks", "sdf_local_thickness", "ray_thickness", "overhang",
            "concave_radius_test"]
 
 
@@ -143,7 +143,7 @@ def _paint(R: np.ndarray, solid: np.ndarray) -> np.ndarray:  # pragma: no cover 
     return LT
 
 
-def local_thickness(phi: np.ndarray, h: float) -> dict[str, Any]:
+def sdf_local_thickness(phi: np.ndarray, h: float) -> dict[str, Any]:
     """Local thickness (length) on the grid of a signed distance φ (φ < 0 inside): field + statistics."""
     solid = phi < 0
     D = np.where(solid, -phi / h, 0.0)
@@ -266,7 +266,7 @@ def manufacturing_checks(res: Any, thresholds: CheckThresholds | None = None, **
         None if th.max_voids is None else tp["cavities"] <= th.max_voids)
     h = res.grid.h
     phi_sd = S.redistance(res.phi, h)
-    lt = local_thickness(phi_sd, h)
+    lt = sdf_local_thickness(phi_sd, h)
     lt.pop("field")
     rt = ray_thickness(V, F, phi_sd, res.grid)
     meas["wall_sphere"] = lt

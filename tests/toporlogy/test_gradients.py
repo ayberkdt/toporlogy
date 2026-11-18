@@ -1,7 +1,7 @@
 """Finite-difference gradient checks of every chain link, interpolation and response (docs/mimari_plan.md §3.1).
 
 Pre-registered threshold: relative error ≤ 1e-6 (float64, CPU) of the directional derivative along random unit
-directions, :func:`toporlogy.checks.gradcheck`. Designs are random interior points (x ∈ [0.2, 0.8]) so no
+directions, :func:`toporlogy.optimization.diagnostics.gradcheck`. Designs are random interior points (x ∈ [0.2, 0.8]) so no
 gradient is degenerate. The domains are NOT boxes (holes, L shape, partial frac, keep and void regions) so masking
 and passive handling are covered.
 
@@ -23,7 +23,7 @@ import torch
 from toporlogy import (RAMP, SIMP, Compliance, Constraint, DensityFilter, Domain, Elasticity, Embed,
                           EvalContext, HeavisideProjection, Passive, Response, Study, Volume, gradcheck,
                           standard_chain, study_gradcheck)
-from toporlogy.optim import Optimizer
+from toporlogy.optimizers import Optimizer
 
 TOL = 1e-6           # pre-registered
 NDIR = 5

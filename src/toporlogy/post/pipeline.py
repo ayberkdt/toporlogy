@@ -44,7 +44,7 @@ from scipy import ndimage
 from toporlogy.post import mesh as M
 from toporlogy.post import sdf as S
 from toporlogy.post import smooth as SM
-from toporlogy.post.primitives import Bound, Box, Cut, Cylinder, GridShape, Keep, Plane, Role, Sphere, assemble
+from toporlogy.post.primitives import Bound, Box, Cut, Cylinder, GridPrimitive, Keep, Plane, Role, Sphere, assemble
 from toporlogy.post.regularize import adaptive_closing, adaptive_opening, fill_voids, remove_islands
 from toporlogy.post.topology import grid_topology
 
@@ -128,7 +128,7 @@ def _envelope_role(domain: Any, grid: S.Grid) -> Role:
     if np.all(np.asarray(domain.frac) >= 1.0):
         lo = np.asarray(domain.origin, float)
         return Bound(Box(lo, lo + domain.h * np.asarray(domain.shape)), functional=True, name="envelope")
-    return Bound(GridShape(S.envelope_field(domain, grid), grid.origin, grid.h, name="envelope"), functional=False,
+    return Bound(GridPrimitive(S.envelope_field(domain, grid), grid.origin, grid.h, name="envelope"), functional=False,
                  name="envelope")
 
 

@@ -7,7 +7,7 @@ h: gradients ∝ 1/h, volume h³) and ``s = thickness`` in 2-D (independent of h
 :class:`toporlogy.fem.Elasticity`. ``k_e`` already contains the element's solid fraction (see
 :class:`ConductivityInterp`).
 
-Nodes and corners follow :class:`toporlogy.domain.Domain`; the node numbers of element e are
+Nodes and corners follow :class:`toporlogy.core.domain.Domain`; the node numbers of element e are
 ``domain.edof[e, ::dim] // dim``.
 
 The differentiable solve reuses the autograd function of :mod:`toporlogy.fem.elastic` unchanged (forward:
@@ -16,7 +16,7 @@ multiple of ``Q``, refactorisation only if another forward refactorised in betwe
 the interface that function needs (``solve_numpy``, ``factor``, ``_solve_free``, ``free``, ``geom``,
 ``element_energy``, ``_token``, counters).
 
-Uses in this library: virtual-temperature connectivity constraints (:mod:`toporlogy.connectivity`).
+Uses in this library: virtual-temperature connectivity constraints (:mod:`toporlogy.optimization.connectivity`).
 """
 from __future__ import annotations
 
@@ -41,7 +41,7 @@ _GAUSS2 = (0.5 - 0.5 / np.sqrt(3.0), 0.5 + 0.5 / np.sqrt(3.0))       # 2-point r
 def conduction_matrix(dim: int) -> np.ndarray:
     """Unit-conductivity element matrix ``∫ ∇Nᵀ ∇N`` of the unit square (dim 2, 4×4) or unit cube (dim 3, 8×8).
 
-    Corner order of :class:`toporlogy.domain.Domain`. 2-point Gauss per axis is exact (the integrand is at most
+    Corner order of :class:`toporlogy.core.domain.Domain`. 2-point Gauss per axis is exact (the integrand is at most
     quadratic in each coordinate). Closed form in 2-D: ``[[4, −1, −2, −1], …] / 6``.
     """
     if dim not in (2, 3):

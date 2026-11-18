@@ -1,7 +1,7 @@
 """Scalar conduction on the grid (toporlogy.fem.heat): element, exact 1-D solutions, patch test, gradients.
 
 Pre-registered thresholds: exact solutions and patch test to 1e-10 relative; gradient checks ≤ 1e-6 relative
-(:func:`toporlogy.checks.gradcheck`, float64).
+(:func:`toporlogy.optimization.diagnostics.gradcheck`, float64).
 """
 from __future__ import annotations
 

@@ -12,7 +12,7 @@ from typing import Any
 
 import numpy as np
 
-from toporlogy.boundary.checks import CheckReport, Issue, _describe_mode, _format_loads, _rb_basis, _table
+from toporlogy.boundary.report import CheckReport, Issue, _describe_mode, _format_loads, _rb_basis, _table
 from toporlogy.boundary.constrained import (
     ConstrainedElasticity, ConstraintSet, PerCaseSupports, _constraint_key, _resolve,
 )

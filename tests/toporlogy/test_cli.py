@@ -1,6 +1,6 @@
 """CLI ``python -m toporlogy``: run / validate / show / compare / list, sweeps, exit codes.
 
-Most commands are driven in-process through :func:`toporlogy.cli.main` (same argv, same exit codes, captured
+Most commands are driven in-process through :func:`toporlogy.execution.cli.main` (same argv, same exit codes, captured
 stdout/stderr): every fresh interpreter pays the torch + SciPy import (measured 26-53 s on 13 Nov 2026 with the CPU
 shared by other jobs). One test runs the real ``python -m toporlogy`` entry point in a subprocess.
 """
@@ -15,7 +15,7 @@ from pathlib import Path
 import pytest
 import yaml
 
-from toporlogy.cli import main
+from toporlogy.execution.cli import main
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -169,7 +169,7 @@ def test_module_entry_point_subprocess(cfg, tmp_path):
 
 
 def test_table_columns_capped_at_seven():
-    from toporlogy.cli import MAX_COLUMNS, column_budget
+    from toporlogy.execution.cli import MAX_COLUMNS, column_budget
 
     cs, st, hidden = column_budget(["c1", "c2", "c3", "c4", "c5"], ["beta"])
     assert (cs, st, hidden) == (["c1", "c2"], ["beta"], 3)

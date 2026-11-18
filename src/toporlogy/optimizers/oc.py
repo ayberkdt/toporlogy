@@ -17,7 +17,7 @@ from collections.abc import Callable
 import numpy as np
 
 from toporlogy.references import cite
-from toporlogy.optim.base import Optimizer
+from toporlogy.optimizers.base import Optimizer
 
 __all__ = ["OC"]
 

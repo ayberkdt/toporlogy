@@ -1,4 +1,4 @@
-"""Post steps (registered as kind ``post``) and their lazy constructors (moved from toporlogy.registry).
+"""Post steps (registered as kind ``post``) and their lazy constructors.
 """
 from __future__ import annotations
 
@@ -45,7 +45,7 @@ def _post_shape(s: Any) -> Any:
         return P.Cylinder(c.tolist(), s.axis.tolist(), s.radius, None if getattr(s, "through", False) else s.length)
     if isinstance(s, G.HalfSpace):
         return P.Plane(s.point.tolist(), s.normal.tolist())
-    return P.Implicit(s.sdf, name=type(s).__name__.lower())
+    return P.ImplicitPrimitive(s.sdf, name=type(s).__name__.lower())
 
 
 def _roles(ctx: BuildContext, preserve: Sequence[Any] | None) -> list[Any]:
@@ -224,7 +224,7 @@ def __getattr__(name: str) -> Any:                     # PEP 562: lazy post-step
 
 
 def register_post_steps() -> None:
-    """Register the post steps components (moved from registry._register_features)."""
+    """Register the post steps components."""
     length = "length"
 
     # ---------------------------------------------------------------- post steps

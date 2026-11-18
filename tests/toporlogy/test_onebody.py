@@ -12,7 +12,7 @@ import torch
 
 from toporlogy import (MMA, BetaContinuation, Compliance, Constraint, Elasticity, SIMP, Study, Volume,
                           standard_chain)
-from toporlogy.connectivity import analyse_connectivity, one_body, split_benchmark
+from toporlogy.optimization.connectivity import analyse_connectivity, one_body, split_benchmark
 
 
 @pytest.fixture(autouse=True)

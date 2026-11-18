@@ -1,5 +1,4 @@
-"""Reading, resolving and validating configs; overrides (``--set``) and sweeps (``--sweep``) (moved from
-toporlogy.config).
+"""Reading, resolving and validating configs; overrides (``--set``) and sweeps (``--sweep``).
 """
 from __future__ import annotations
 

@@ -315,9 +315,11 @@
   },
   "MMA": {
    "attrs": [
+    "kkt_multipliers",
     "max_constraints",
     "name",
     "needs_constraint_fn",
+    "objective_scale",
     "reset",
     "restart",
     "step"
@@ -326,9 +328,11 @@
   },
   "OC": {
    "attrs": [
+    "kkt_multipliers",
     "max_constraints",
     "name",
     "needs_constraint_fn",
+    "objective_scale",
     "reset",
     "restart",
     "step"
@@ -337,9 +341,11 @@
   },
   "Optimizer": {
    "attrs": [
+    "kkt_multipliers",
     "max_constraints",
     "name",
     "needs_constraint_fn",
+    "objective_scale",
     "reset",
     "restart",
     "step"
@@ -480,8 +486,12 @@
   "Result": {
    "attrs": [
     "constraint_values",
+    "feasible",
     "final",
-    "objective"
+    "kkt_residual",
+    "max_violation",
+    "objective",
+    "termination"
    ],
    "class": "Result"
   },
@@ -576,358 +586,6 @@
   "grey_fraction": "grey_fraction(xphys,mask,lo,hi)",
   "standard_chain": "standard_chain(domain,rmin,projection,beta,eta)",
   "study_gradcheck": "study_gradcheck(study,x,which,kw)"
- },
- "toporlogy.bc": {
-  "AllNodes": {
-   "attrs": [
-    "mask",
-    "select",
-    "surface"
-   ],
-   "class": "AllNodes"
-  },
-  "Applied": {
-   "attrs": [
-    "force",
-    "intended_moment",
-    "moment"
-   ],
-   "class": "Applied"
-  },
-  "AtPoints": {
-   "attrs": [
-    "mask",
-    "select",
-    "surface"
-   ],
-   "class": "AtPoints"
-  },
-  "BearingLoad": {
-   "attrs": [
-    "apply",
-    "kind",
-    "name"
-   ],
-   "class": "BearingLoad"
-  },
-  "BodyForce": {
-   "attrs": [
-    "apply",
-    "kind",
-    "name"
-   ],
-   "class": "BodyForce"
-  },
-  "BodyForceCompliance": {
-   "attrs": [
-    "loads",
-    "name",
-    "needs"
-   ],
-   "class": "BodyForceCompliance"
-  },
-  "BoreFace": "BoreFace(bore,p1,radius,kw)",
-  "BoundaryConditions": {
-   "attrs": [
-    "F",
-    "bc_nodes",
-    "case_vector",
-    "check",
-    "constraints",
-    "fixed_dofs",
-    "keep_mask",
-    "names",
-    "physics",
-    "physics_per_support_set",
-    "summary"
-   ],
-   "class": "BoundaryConditions"
-  },
-  "CheckReport": {
-   "attrs": [
-    "codes",
-    "errors",
-    "ok",
-    "raise_on_error",
-    "warnings"
-   ],
-   "class": "CheckReport"
-  },
-  "Combination": {
-   "attrs": [],
-   "class": "Combination"
-  },
-  "ConstrainedElasticity": {
-   "attrs": [
-    "element_energy",
-    "factor",
-    "matrix",
-    "n_elements",
-    "solve",
-    "solve_numpy"
-   ],
-   "class": "ConstrainedElasticity"
-  },
-  "ConstraintSet": {
-   "attrs": [
-    "constrained_directions",
-    "needs_extension"
-   ],
-   "class": "ConstraintSet"
-  },
-  "ElasticSupport": {
-   "attrs": [
-    "directions",
-    "kind",
-    "name",
-    "nodes",
-    "springs"
-   ],
-   "class": "ElasticSupport"
-  },
-  "EmptySelectionError": {
-   "attrs": [
-    "add_note",
-    "args",
-    "with_traceback"
-   ],
-   "class": "EmptySelectionError"
-  },
-  "Fixed": {
-   "attrs": [
-    "directions",
-    "kind",
-    "name",
-    "nodes",
-    "springs"
-   ],
-   "class": "Fixed"
-  },
-  "HalfSpaceNodes": {
-   "attrs": [
-    "mask",
-    "select",
-    "surface"
-   ],
-   "class": "HalfSpaceNodes"
-  },
-  "InBox": {
-   "attrs": [
-    "mask",
-    "select",
-    "surface"
-   ],
-   "class": "InBox"
-  },
-  "InShape": {
-   "attrs": [
-    "mask",
-    "select",
-    "surface"
-   ],
-   "class": "InShape"
-  },
-  "InSphere": {
-   "attrs": [
-    "mask",
-    "select",
-    "surface"
-   ],
-   "class": "InSphere"
-  },
-  "Issue": {
-   "attrs": [
-    "case"
-   ],
-   "class": "Issue"
-  },
-  "Load": {
-   "attrs": [
-    "apply",
-    "name"
-   ],
-   "class": "Load"
-  },
-  "LoadCase": {
-   "attrs": [
-    "supports"
-   ],
-   "class": "LoadCase"
-  },
-  "Nearest": {
-   "attrs": [
-    "mask",
-    "select",
-    "surface"
-   ],
-   "class": "Nearest"
-  },
-  "NodalForces": {
-   "attrs": [
-    "apply",
-    "name"
-   ],
-   "class": "NodalForces"
-  },
-  "NodeIds": {
-   "attrs": [
-    "mask",
-    "select",
-    "surface"
-   ],
-   "class": "NodeIds"
-  },
-  "OnCylinder": {
-   "attrs": [
-    "bands",
-    "coords",
-    "from_bore",
-    "mask",
-    "select",
-    "surface"
-   ],
-   "class": "OnCylinder"
-  },
-  "OnPlane": {
-   "attrs": [
-    "mask",
-    "select",
-    "surface"
-   ],
-   "class": "OnPlane"
-  },
-  "PartInfo": {
-   "attrs": [
-    "faces",
-    "normals",
-    "patch",
-    "patch_normals"
-   ],
-   "class": "PartInfo"
-  },
-  "PerCaseSupports": {
-   "attrs": [
-    "solve"
-   ],
-   "class": "PerCaseSupports"
-  },
-  "PinnedBore": {
-   "attrs": [
-    "directions",
-    "kind",
-    "name",
-    "nodes",
-    "springs"
-   ],
-   "class": "PinnedBore"
-  },
-  "PointLoad": {
-   "attrs": [
-    "apply",
-    "kind",
-    "name"
-   ],
-   "class": "PointLoad"
-  },
-  "Pressure": {
-   "attrs": [
-    "apply",
-    "kind",
-    "name"
-   ],
-   "class": "Pressure"
-  },
-  "RemoteForce": {
-   "attrs": [
-    "apply",
-    "kind",
-    "name"
-   ],
-   "class": "RemoteForce"
-  },
-  "RemoteMoment": {
-   "attrs": [
-    "apply",
-    "kind",
-    "name"
-   ],
-   "class": "RemoteMoment"
-  },
-  "Roller": {
-   "attrs": [
-    "directions",
-    "kind",
-    "name",
-    "nodes",
-    "springs"
-   ],
-   "class": "Roller"
-  },
-  "Selector": {
-   "attrs": [
-    "mask",
-    "select",
-    "surface"
-   ],
-   "class": "Selector"
-  },
-  "Support": {
-   "attrs": [
-    "directions",
-    "kind",
-    "name",
-    "nodes",
-    "springs"
-   ],
-   "class": "Support"
-  },
-  "SurfaceForce": {
-   "attrs": [
-    "apply",
-    "kind",
-    "name"
-   ],
-   "class": "SurfaceForce"
-  },
-  "SurfaceNodes": {
-   "attrs": [
-    "mask",
-    "select",
-    "surface"
-   ],
-   "class": "SurfaceNodes"
-  },
-  "Symmetry": "Symmetry(point,normal,tol,name)",
-  "Torque": {
-   "attrs": [
-    "apply",
-    "kind",
-    "name"
-   ],
-   "class": "Torque"
-  },
-  "Traction": {
-   "attrs": [
-    "apply",
-    "kind",
-    "name"
-   ],
-   "class": "Traction"
-  },
-  "Where": {
-   "attrs": [
-    "mask",
-    "select",
-    "surface"
-   ],
-   "class": "Where"
-  },
-  "body_force_matrix": "body_force_matrix(domain,acceleration,density)",
-  "clearance_mask": "clearance_mask(domain,shape,threshold)",
-  "design_load_solve": "design_load_solve(physics,E_active,F)",
-  "part_info": "part_info(domain)",
-  "reaction_forces": "reaction_forces(physics,E_active,U,F)",
-  "rigid_distribution": "rigid_distribution(X,w,point,force,moment,rtol)"
  },
  "toporlogy.boundary": {
   "AllNodes": {
@@ -1249,7 +907,7 @@
    ],
    "class": "SurfaceNodes"
   },
-  "Symmetry": "Symmetry(point,normal,tol,name)",
+  "SymmetrySupport": "SymmetrySupport(point,normal,tol,name)",
   "Torque": {
    "attrs": [
     "apply",
@@ -1429,25 +1087,6 @@
   "annotations": "<_Feature>",
   "clearance_mask": "clearance_mask(domain,shape,threshold)",
   "part_info": "part_info(domain)"
- },
- "toporlogy.boundary.checks": {
-  "CheckReport": {
-   "attrs": [
-    "codes",
-    "errors",
-    "ok",
-    "raise_on_error",
-    "warnings"
-   ],
-   "class": "CheckReport"
-  },
-  "Issue": {
-   "attrs": [
-    "case"
-   ],
-   "class": "Issue"
-  },
-  "annotations": "<_Feature>"
  },
  "toporlogy.boundary.constrained": {
   "ConstrainedElasticity": {
@@ -1812,6 +1451,25 @@
   "annotations": "<_Feature>",
   "part_info": "part_info(domain)"
  },
+ "toporlogy.boundary.report": {
+  "CheckReport": {
+   "attrs": [
+    "codes",
+    "errors",
+    "ok",
+    "raise_on_error",
+    "warnings"
+   ],
+   "class": "CheckReport"
+  },
+  "Issue": {
+   "attrs": [
+    "case"
+   ],
+   "class": "Issue"
+  },
+  "annotations": "<_Feature>"
+ },
  "toporlogy.boundary.selectors": {
   "AllNodes": {
    "attrs": [
@@ -2086,345 +1744,8 @@
    ],
    "class": "Support"
   },
-  "Symmetry": "Symmetry(point,normal,tol,name)",
+  "SymmetrySupport": "SymmetrySupport(point,normal,tol,name)",
   "annotations": "<_Feature>"
- },
- "toporlogy.chain": {
-  "Chain": {
-   "attrs": [
-    "T_destination",
-    "add_module",
-    "apply",
-    "bfloat16",
-    "buffers",
-    "call_super_init",
-    "children",
-    "compile",
-    "cpu",
-    "cuda",
-    "double",
-    "dump_patches",
-    "eval",
-    "extra_repr",
-    "find",
-    "float",
-    "forward",
-    "get_buffer",
-    "get_extra_state",
-    "get_parameter",
-    "get_submodule",
-    "half",
-    "ipu",
-    "load_state_dict",
-    "modules",
-    "mtia",
-    "named_buffers",
-    "named_children",
-    "named_modules",
-    "named_parameters",
-    "parameters",
-    "register_backward_hook",
-    "register_buffer",
-    "register_forward_hook",
-    "register_forward_pre_hook",
-    "register_full_backward_hook",
-    "register_full_backward_pre_hook",
-    "register_load_state_dict_post_hook",
-    "register_load_state_dict_pre_hook",
-    "register_module",
-    "register_parameter",
-    "register_state_dict_post_hook",
-    "register_state_dict_pre_hook",
-    "requires_grad_",
-    "set_extra_state",
-    "set_submodule",
-    "share_memory",
-    "state_dict",
-    "to",
-    "to_empty",
-    "train",
-    "type",
-    "xpu",
-    "zero_grad"
-   ],
-   "class": "Chain"
-  },
-  "DensityFilter": {
-   "attrs": [
-    "T_destination",
-    "add_module",
-    "apply",
-    "bfloat16",
-    "buffers",
-    "call_super_init",
-    "children",
-    "compile",
-    "cpu",
-    "cuda",
-    "double",
-    "dump_patches",
-    "eval",
-    "extra_repr",
-    "float",
-    "forward",
-    "get_buffer",
-    "get_extra_state",
-    "get_parameter",
-    "get_submodule",
-    "half",
-    "ipu",
-    "load_state_dict",
-    "matrix",
-    "modules",
-    "mtia",
-    "named_buffers",
-    "named_children",
-    "named_modules",
-    "named_parameters",
-    "parameters",
-    "register_backward_hook",
-    "register_buffer",
-    "register_forward_hook",
-    "register_forward_pre_hook",
-    "register_full_backward_hook",
-    "register_full_backward_pre_hook",
-    "register_load_state_dict_post_hook",
-    "register_load_state_dict_pre_hook",
-    "register_module",
-    "register_parameter",
-    "register_state_dict_post_hook",
-    "register_state_dict_pre_hook",
-    "requires_grad_",
-    "set_extra_state",
-    "set_submodule",
-    "share_memory",
-    "state_dict",
-    "to",
-    "to_empty",
-    "train",
-    "type",
-    "xpu",
-    "zero_grad"
-   ],
-   "class": "DensityFilter"
-  },
-  "Embed": {
-   "attrs": [
-    "T_destination",
-    "add_module",
-    "apply",
-    "bfloat16",
-    "buffers",
-    "call_super_init",
-    "children",
-    "compile",
-    "cpu",
-    "cuda",
-    "double",
-    "dump_patches",
-    "eval",
-    "extra_repr",
-    "float",
-    "forward",
-    "get_buffer",
-    "get_extra_state",
-    "get_parameter",
-    "get_submodule",
-    "half",
-    "ipu",
-    "load_state_dict",
-    "modules",
-    "mtia",
-    "named_buffers",
-    "named_children",
-    "named_modules",
-    "named_parameters",
-    "parameters",
-    "register_backward_hook",
-    "register_buffer",
-    "register_forward_hook",
-    "register_forward_pre_hook",
-    "register_full_backward_hook",
-    "register_full_backward_pre_hook",
-    "register_load_state_dict_post_hook",
-    "register_load_state_dict_pre_hook",
-    "register_module",
-    "register_parameter",
-    "register_state_dict_post_hook",
-    "register_state_dict_pre_hook",
-    "requires_grad_",
-    "set_extra_state",
-    "set_submodule",
-    "share_memory",
-    "state_dict",
-    "to",
-    "to_empty",
-    "train",
-    "type",
-    "xpu",
-    "zero_grad"
-   ],
-   "class": "Embed"
-  },
-  "HeavisideProjection": {
-   "attrs": [
-    "T_destination",
-    "add_module",
-    "apply",
-    "bfloat16",
-    "buffers",
-    "call_super_init",
-    "children",
-    "compile",
-    "cpu",
-    "cuda",
-    "double",
-    "dump_patches",
-    "eval",
-    "extra_repr",
-    "float",
-    "forward",
-    "get_buffer",
-    "get_extra_state",
-    "get_parameter",
-    "get_submodule",
-    "half",
-    "ipu",
-    "load_state_dict",
-    "modules",
-    "mtia",
-    "named_buffers",
-    "named_children",
-    "named_modules",
-    "named_parameters",
-    "parameters",
-    "register_backward_hook",
-    "register_buffer",
-    "register_forward_hook",
-    "register_forward_pre_hook",
-    "register_full_backward_hook",
-    "register_full_backward_pre_hook",
-    "register_load_state_dict_post_hook",
-    "register_load_state_dict_pre_hook",
-    "register_module",
-    "register_parameter",
-    "register_state_dict_post_hook",
-    "register_state_dict_pre_hook",
-    "requires_grad_",
-    "set_extra_state",
-    "set_submodule",
-    "share_memory",
-    "state_dict",
-    "to",
-    "to_empty",
-    "train",
-    "type",
-    "xpu",
-    "zero_grad"
-   ],
-   "class": "HeavisideProjection"
-  },
-  "Passive": {
-   "attrs": [
-    "T_destination",
-    "add_module",
-    "apply",
-    "bfloat16",
-    "buffers",
-    "call_super_init",
-    "children",
-    "compile",
-    "cpu",
-    "cuda",
-    "double",
-    "dump_patches",
-    "eval",
-    "extra_repr",
-    "float",
-    "forward",
-    "get_buffer",
-    "get_extra_state",
-    "get_parameter",
-    "get_submodule",
-    "half",
-    "ipu",
-    "load_state_dict",
-    "modules",
-    "mtia",
-    "named_buffers",
-    "named_children",
-    "named_modules",
-    "named_parameters",
-    "parameters",
-    "register_backward_hook",
-    "register_buffer",
-    "register_forward_hook",
-    "register_forward_pre_hook",
-    "register_full_backward_hook",
-    "register_full_backward_pre_hook",
-    "register_load_state_dict_post_hook",
-    "register_load_state_dict_pre_hook",
-    "register_module",
-    "register_parameter",
-    "register_state_dict_post_hook",
-    "register_state_dict_pre_hook",
-    "requires_grad_",
-    "set_extra_state",
-    "set_submodule",
-    "share_memory",
-    "state_dict",
-    "to",
-    "to_empty",
-    "train",
-    "type",
-    "xpu",
-    "zero_grad"
-   ],
-   "class": "Passive"
-  },
-  "standard_chain": "standard_chain(domain,rmin,projection,beta,eta)"
- },
- "toporlogy.checks": {
-  "gradcheck": "gradcheck(fn,x,n_dirs,h,seed)",
-  "grey_fraction": "grey_fraction(xphys,mask,lo,hi)",
-  "study_gradcheck": "study_gradcheck(study,x,which,kw)"
- },
- "toporlogy.cli": {
-  "main": "main(argv)"
- },
- "toporlogy.config": {
-  "ConfigError": {
-   "attrs": [
-    "add_note",
-    "args",
-    "with_traceback"
-   ],
-   "class": "ConfigError"
-  },
-  "SCHEMA_KEYS": "<tuple>",
-  "STATUS_OK": "<str>",
-  "Setup": {
-   "attrs": [
-    "bc",
-    "bc_report",
-    "bc_summary",
-    "run_options"
-   ],
-   "class": "Setup"
-  },
-  "apply_overrides": "apply_overrides(raw,overrides)",
-  "build": "build(resolved)",
-  "build_setup": "build_setup(raw,overrides)",
-  "load_config": "load_config(path,overrides)",
-  "parse_sweep": "parse_sweep(items)",
-  "read_config": "read_config(path)",
-  "read_run": "read_run(folder)",
-  "resolve": "resolve(raw)",
-  "run_setup": "run_setup(setup,folder,progress,source,overrides,post_progress)",
-  "status_of": "status_of(summary)",
-  "study_from_dict": "study_from_dict(d,overrides)",
-  "sweep_combinations": "sweep_combinations(sweep)",
-  "write_resolved": "write_resolved(resolved,folder,source,overrides)"
  },
  "toporlogy.configuration": {
   "REGISTRY": "<Registry>"
@@ -2884,77 +2205,6 @@
   "SCHEMA_KEYS": "<tuple>",
   "STATUS_OK": "<str>",
   "annotations": "<_Feature>"
- },
- "toporlogy.connectivity": {
-  "BridgeResult": {
-   "attrs": [],
-   "class": "BridgeResult"
-  },
-  "ConductionConnectivity": {
-   "attrs": [
-    "aggregate_kind",
-    "field",
-    "name",
-    "needs",
-    "ratios",
-    "ratios_of",
-    "raw",
-    "resistances",
-    "solid_reference"
-   ],
-   "class": "ConductionConnectivity"
-  },
-  "ConnectivityReport": {
-   "attrs": [
-    "min_neck",
-    "ok",
-    "summary"
-   ],
-   "class": "ConnectivityReport"
-  },
-  "CouplingCompliance": {
-   "attrs": [
-    "aggregate_kind",
-    "compliances",
-    "field",
-    "name",
-    "needs",
-    "ratios",
-    "raw",
-    "solid_reference"
-   ],
-   "class": "CouplingCompliance"
-  },
-  "Neck": {
-   "attrs": [],
-   "class": "Neck"
-  },
-  "OneBodyPlan": {
-   "attrs": [
-    "finish",
-    "gate",
-    "repair_section",
-    "threshold"
-   ],
-   "class": "OneBodyPlan"
-  },
-  "SplitBenchmark": {
-   "attrs": [],
-   "class": "SplitBenchmark"
-  },
-  "ThresholdCheck": {
-   "attrs": [],
-   "class": "ThresholdCheck"
-  },
-  "analyse_connectivity": "analyse_connectivity(domain,xphys,interfaces,threshold,connectivity,robust_thresholds,erosion,necks,voids)",
-  "bridge": "bridge(domain,xphys,interfaces,threshold,section,connectivity,void_cost,solid_cost,drop_islands,binary)",
-  "elements_touching_nodes": "elements_touching_nodes(domain,nodes,active_only)",
-  "label_bodies": "label_bodies(solid,connectivity)",
-  "min_cut_cells": "min_cut_cells(solid,a,b,connectivity,frozen)",
-  "one_body": "one_body(domain,interfaces,ties,constraint,eta,bound,sink,threshold,repair_section,response_kw)",
-  "split_benchmark": "split_benchmark(dim,n,coupling,h)",
-  "tie_regions": "tie_regions(domain,groups,section,avoid,keep_cost)",
-  "with_keep": "with_keep(domain,extra_keep)"
  },
  "toporlogy.core": {},
  "toporlogy.core.domain": {
@@ -3833,257 +3083,21 @@
   "undercuts": "undercuts(xphys,direction,domain,parting,threshold)",
   "validate_chain": "validate_chain(chain)"
  },
- "toporlogy.domain": {
-  "Domain": {
-   "attrs": [
-    "active_dofs",
-    "active_elements",
-    "corners",
-    "design_elements",
-    "dofs",
-    "edof",
-    "element_centers",
-    "element_ijk",
-    "load_vector",
-    "n_active",
-    "n_design",
-    "ndof",
-    "ne",
-    "nn",
-    "node_coords",
-    "node_number",
-    "node_shape",
-    "nodes_where",
-    "to_grid",
-    "uniform_start"
-   ],
-   "class": "Domain"
-  }
- },
- "toporlogy.dynamics": {
-  "Eigenvalue": {
-   "attrs": [
-    "name",
-    "needs"
-   ],
-   "class": "Eigenvalue"
-  },
-  "EigenvalueGap": {
-   "attrs": [
-    "name",
-    "needs"
-   ],
-   "class": "EigenvalueGap"
-  },
-  "Frequency": {
-   "attrs": [
-    "name",
-    "needs"
-   ],
-   "class": "Frequency"
-  },
-  "FrequencyMargin": {
-   "attrs": [
-    "name",
-    "needs"
-   ],
-   "class": "FrequencyMargin"
-  },
-  "LinearMass": {
-   "attrs": [
-    "T_destination",
-    "add_module",
-    "apply",
-    "bfloat16",
-    "buffers",
-    "call_super_init",
-    "children",
-    "compile",
-    "cpu",
-    "cuda",
-    "double",
-    "dump_patches",
-    "eval",
-    "extra_repr",
-    "float",
-    "forward",
-    "get_buffer",
-    "get_extra_state",
-    "get_parameter",
-    "get_submodule",
-    "half",
-    "ipu",
-    "load_state_dict",
-    "modules",
-    "mtia",
-    "named_buffers",
-    "named_children",
-    "named_modules",
-    "named_parameters",
-    "parameters",
-    "register_backward_hook",
-    "register_buffer",
-    "register_forward_hook",
-    "register_forward_pre_hook",
-    "register_full_backward_hook",
-    "register_full_backward_pre_hook",
-    "register_load_state_dict_post_hook",
-    "register_load_state_dict_pre_hook",
-    "register_module",
-    "register_parameter",
-    "register_state_dict_post_hook",
-    "register_state_dict_pre_hook",
-    "requires_grad_",
-    "set_extra_state",
-    "set_submodule",
-    "share_memory",
-    "state_dict",
-    "to",
-    "to_empty",
-    "train",
-    "type",
-    "xpu",
-    "zero_grad"
-   ],
-   "class": "LinearMass"
-  },
-  "MinEigenvalueKS": {
-   "attrs": [
-    "aggregate",
-    "name",
-    "needs",
-    "reset_scale"
-   ],
-   "class": "MinEigenvalueKS"
-  },
-  "Negated": {
-   "attrs": [
-    "name",
-    "needs"
-   ],
-   "class": "Negated"
-  },
-  "TwoRangeMass": {
-   "attrs": [
-    "T_destination",
-    "add_module",
-    "apply",
-    "bfloat16",
-    "buffers",
-    "call_super_init",
-    "children",
-    "compile",
-    "cpu",
-    "cuda",
-    "double",
-    "dump_patches",
-    "eval",
-    "extra_repr",
-    "float",
-    "forward",
-    "get_buffer",
-    "get_extra_state",
-    "get_parameter",
-    "get_submodule",
-    "half",
-    "ipu",
-    "load_state_dict",
-    "modules",
-    "mtia",
-    "named_buffers",
-    "named_children",
-    "named_modules",
-    "named_parameters",
-    "parameters",
-    "register_backward_hook",
-    "register_buffer",
-    "register_forward_hook",
-    "register_forward_pre_hook",
-    "register_full_backward_hook",
-    "register_full_backward_pre_hook",
-    "register_load_state_dict_post_hook",
-    "register_load_state_dict_pre_hook",
-    "register_module",
-    "register_parameter",
-    "register_state_dict_post_hook",
-    "register_state_dict_pre_hook",
-    "requires_grad_",
-    "set_extra_state",
-    "set_submodule",
-    "share_memory",
-    "state_dict",
-    "to",
-    "to_empty",
-    "train",
-    "type",
-    "xpu",
-    "zero_grad"
-   ],
-   "class": "TwoRangeMass"
-  },
-  "TwoRangeSIMP": {
-   "attrs": [
-    "T_destination",
-    "add_module",
-    "apply",
-    "bfloat16",
-    "buffers",
-    "call_super_init",
-    "children",
-    "compile",
-    "cpu",
-    "cuda",
-    "double",
-    "dump_patches",
-    "eval",
-    "extra_repr",
-    "float",
-    "forward",
-    "get_buffer",
-    "get_extra_state",
-    "get_parameter",
-    "get_submodule",
-    "half",
-    "ipu",
-    "load_state_dict",
-    "modules",
-    "mtia",
-    "named_buffers",
-    "named_children",
-    "named_modules",
-    "named_parameters",
-    "parameters",
-    "register_backward_hook",
-    "register_buffer",
-    "register_forward_hook",
-    "register_forward_pre_hook",
-    "register_full_backward_hook",
-    "register_full_backward_pre_hook",
-    "register_load_state_dict_post_hook",
-    "register_load_state_dict_pre_hook",
-    "register_module",
-    "register_parameter",
-    "register_state_dict_post_hook",
-    "register_state_dict_pre_hook",
-    "requires_grad_",
-    "set_extra_state",
-    "set_submodule",
-    "share_memory",
-    "state_dict",
-    "to",
-    "to_empty",
-    "train",
-    "type",
-    "xpu",
-    "zero_grad"
-   ],
-   "class": "TwoRangeSIMP"
-  },
-  "eigenvalues": "eigenvalues(ctx,n)",
-  "min_frequency_constraint": "min_frequency_constraint(f_min,n_modes,rho,E_unit,rho_unit,length_unit)",
-  "omega_squared_factor": "omega_squared_factor(E_unit,rho_unit,length_unit)"
- },
  "toporlogy.execution": {},
+ "toporlogy.execution.cli": {
+  "main": "main(argv)"
+ },
+ "toporlogy.execution.record": {
+  "Recorder": {
+   "attrs": [
+    "finish",
+    "log",
+    "start"
+   ],
+   "class": "Recorder"
+  },
+  "git_revision": "git_revision(path)"
+ },
  "toporlogy.execution.runner": {
   "Setup": {
    "attrs": [
@@ -4095,6 +3109,7 @@
    "class": "Setup"
   },
   "annotations": "<_Feature>",
+  "flags_of": "flags_of(summary)",
   "run_setup": "run_setup(setup,folder,progress,source,overrides,post_progress)",
   "status_of": "status_of(summary)",
   "write_resolved": "write_resolved(resolved,folder,source,overrides)"
@@ -4102,6 +3117,7 @@
  "toporlogy.execution.runs": {
   "STATUS_OK": "<str>",
   "annotations": "<_Feature>",
+  "flags_of": "flags_of(summary)",
   "read_run": "read_run(folder)",
   "status_of": "status_of(summary)",
   "write_resolved": "write_resolved(resolved,folder,source,overrides)",
@@ -4322,15 +3338,6 @@
    ],
    "class": "Capsule"
   },
-  "Circle": {
-   "attrs": [
-    "bbox",
-    "dim",
-    "inside",
-    "sdf"
-   ],
-   "class": "Ball"
-  },
   "Cylinder": {
    "attrs": [
     "bbox",
@@ -4403,15 +3410,6 @@
    ],
    "class": "Slot"
   },
-  "Sphere": {
-   "attrs": [
-    "bbox",
-    "dim",
-    "inside",
-    "sdf"
-   ],
-   "class": "Ball"
-  },
   "Union": {
    "attrs": [
     "bbox",
@@ -4435,723 +3433,7 @@
   "winding_number": "winding_number(points,V,F,chunk)",
   "write_stl": "write_stl(path,V,F)"
  },
- "toporlogy.interp": {
-  "RAMP": {
-   "attrs": [
-    "T_destination",
-    "add_module",
-    "apply",
-    "bfloat16",
-    "buffers",
-    "call_super_init",
-    "children",
-    "compile",
-    "cpu",
-    "cuda",
-    "double",
-    "dump_patches",
-    "eval",
-    "extra_repr",
-    "float",
-    "forward",
-    "get_buffer",
-    "get_extra_state",
-    "get_parameter",
-    "get_submodule",
-    "half",
-    "ipu",
-    "load_state_dict",
-    "modules",
-    "mtia",
-    "named_buffers",
-    "named_children",
-    "named_modules",
-    "named_parameters",
-    "parameters",
-    "register_backward_hook",
-    "register_buffer",
-    "register_forward_hook",
-    "register_forward_pre_hook",
-    "register_full_backward_hook",
-    "register_full_backward_pre_hook",
-    "register_load_state_dict_post_hook",
-    "register_load_state_dict_pre_hook",
-    "register_module",
-    "register_parameter",
-    "register_state_dict_post_hook",
-    "register_state_dict_pre_hook",
-    "requires_grad_",
-    "set_extra_state",
-    "set_submodule",
-    "share_memory",
-    "state_dict",
-    "to",
-    "to_empty",
-    "train",
-    "type",
-    "xpu",
-    "zero_grad"
-   ],
-   "class": "RAMP"
-  },
-  "SIMP": {
-   "attrs": [
-    "T_destination",
-    "add_module",
-    "apply",
-    "bfloat16",
-    "buffers",
-    "call_super_init",
-    "children",
-    "compile",
-    "cpu",
-    "cuda",
-    "double",
-    "dump_patches",
-    "eval",
-    "extra_repr",
-    "float",
-    "forward",
-    "get_buffer",
-    "get_extra_state",
-    "get_parameter",
-    "get_submodule",
-    "half",
-    "ipu",
-    "load_state_dict",
-    "modules",
-    "mtia",
-    "named_buffers",
-    "named_children",
-    "named_modules",
-    "named_parameters",
-    "parameters",
-    "register_backward_hook",
-    "register_buffer",
-    "register_forward_hook",
-    "register_forward_pre_hook",
-    "register_full_backward_hook",
-    "register_full_backward_pre_hook",
-    "register_load_state_dict_post_hook",
-    "register_load_state_dict_pre_hook",
-    "register_module",
-    "register_parameter",
-    "register_state_dict_post_hook",
-    "register_state_dict_pre_hook",
-    "requires_grad_",
-    "set_extra_state",
-    "set_submodule",
-    "share_memory",
-    "state_dict",
-    "to",
-    "to_empty",
-    "train",
-    "type",
-    "xpu",
-    "zero_grad"
-   ],
-   "class": "SIMP"
-  }
- },
- "toporlogy.lengthscale": {
-  "GreyLevel": {
-   "attrs": [
-    "name",
-    "needs"
-   ],
-   "class": "GreyLevel"
-  },
-  "LengthScaleReport": {
-   "attrs": [
-    "resolution",
-    "solid_map",
-    "summary",
-    "upsample",
-    "void_map"
-   ],
-   "class": "LengthScaleReport"
-  },
-  "LocalVolume": {
-   "attrs": [
-    "field",
-    "name",
-    "needs"
-   ],
-   "class": "LocalVolume"
-  },
-  "ball_kernel": "ball_kernel(radius,dim)",
-  "closing_residue": "closing_residue(xphys,h,radius,kw)",
-  "grey_measure": "grey_measure(xphys,mask)",
-  "local_thickness": "local_thickness(phase,faces,pad,level_step,max_levels,exact)",
-  "local_volume_field": "local_volume_field(x,radius,outside,mask)",
-  "max_thickness_settings": "max_thickness_settings(t_max,h,dim,radius,member)",
-  "measure_lengthscale": "measure_lengthscale(xphys,h,threshold,outside,upsample,mask,percentiles,radii,margin,smooth,keep_maps)",
-  "opening_residue": "opening_residue(xphys,h,radius,kw)",
-  "slab_fraction": "slab_fraction(u,dim,member)"
- },
- "toporlogy.manufacturing": {
-  "AMFilter": {
-   "attrs": [
-    "T_destination",
-    "add_module",
-    "apply",
-    "bfloat16",
-    "buffers",
-    "call_super_init",
-    "children",
-    "compile",
-    "cpu",
-    "cuda",
-    "double",
-    "dump_patches",
-    "eval",
-    "extra_repr",
-    "float",
-    "forward",
-    "forward_torch",
-    "get_buffer",
-    "get_extra_state",
-    "get_parameter",
-    "get_submodule",
-    "half",
-    "ipu",
-    "load_state_dict",
-    "modules",
-    "mtia",
-    "named_buffers",
-    "named_children",
-    "named_modules",
-    "named_parameters",
-    "parameters",
-    "register_backward_hook",
-    "register_buffer",
-    "register_forward_hook",
-    "register_forward_pre_hook",
-    "register_full_backward_hook",
-    "register_full_backward_pre_hook",
-    "register_load_state_dict_post_hook",
-    "register_load_state_dict_pre_hook",
-    "register_module",
-    "register_parameter",
-    "register_state_dict_post_hook",
-    "register_state_dict_pre_hook",
-    "requires_grad_",
-    "set_extra_state",
-    "set_submodule",
-    "share_memory",
-    "state_dict",
-    "to",
-    "to_empty",
-    "train",
-    "type",
-    "xpu",
-    "zero_grad"
-   ],
-   "class": "AMFilter"
-  },
-  "Casting": {
-   "attrs": [
-    "T_destination",
-    "add_module",
-    "apply",
-    "bfloat16",
-    "buffers",
-    "call_super_init",
-    "children",
-    "compile",
-    "cpu",
-    "cuda",
-    "double",
-    "dump_patches",
-    "eval",
-    "extra_repr",
-    "float",
-    "forward",
-    "get_buffer",
-    "get_extra_state",
-    "get_parameter",
-    "get_submodule",
-    "half",
-    "ipu",
-    "load_state_dict",
-    "modules",
-    "mtia",
-    "named_buffers",
-    "named_children",
-    "named_modules",
-    "named_parameters",
-    "parameters",
-    "register_backward_hook",
-    "register_buffer",
-    "register_forward_hook",
-    "register_forward_pre_hook",
-    "register_full_backward_hook",
-    "register_full_backward_pre_hook",
-    "register_load_state_dict_post_hook",
-    "register_load_state_dict_pre_hook",
-    "register_module",
-    "register_parameter",
-    "register_state_dict_post_hook",
-    "register_state_dict_pre_hook",
-    "requires_grad_",
-    "set_extra_state",
-    "set_submodule",
-    "share_memory",
-    "state_dict",
-    "to",
-    "to_empty",
-    "train",
-    "type",
-    "xpu",
-    "zero_grad"
-   ],
-   "class": "Casting"
-  },
-  "Extrusion": {
-   "attrs": [
-    "T_destination",
-    "add_module",
-    "apply",
-    "bfloat16",
-    "buffers",
-    "call_super_init",
-    "children",
-    "compile",
-    "cpu",
-    "cuda",
-    "double",
-    "dump_patches",
-    "eval",
-    "expand",
-    "extra_repr",
-    "float",
-    "forward",
-    "get_buffer",
-    "get_extra_state",
-    "get_parameter",
-    "get_submodule",
-    "half",
-    "ipu",
-    "load_state_dict",
-    "modules",
-    "mtia",
-    "named_buffers",
-    "named_children",
-    "named_modules",
-    "named_parameters",
-    "parameters",
-    "project",
-    "reduce",
-    "register_backward_hook",
-    "register_buffer",
-    "register_forward_hook",
-    "register_forward_pre_hook",
-    "register_full_backward_hook",
-    "register_full_backward_pre_hook",
-    "register_load_state_dict_post_hook",
-    "register_load_state_dict_pre_hook",
-    "register_module",
-    "register_parameter",
-    "register_state_dict_post_hook",
-    "register_state_dict_pre_hook",
-    "report",
-    "requires_grad_",
-    "set_extra_state",
-    "set_submodule",
-    "share_memory",
-    "state_dict",
-    "to",
-    "to_empty",
-    "train",
-    "type",
-    "xpu",
-    "zero_grad"
-   ],
-   "class": "Extrusion"
-  },
-  "GroupAverage": {
-   "attrs": [
-    "T_destination",
-    "add_module",
-    "apply",
-    "bfloat16",
-    "buffers",
-    "call_super_init",
-    "children",
-    "compile",
-    "cpu",
-    "cuda",
-    "double",
-    "dump_patches",
-    "eval",
-    "extra_repr",
-    "float",
-    "forward",
-    "get_buffer",
-    "get_extra_state",
-    "get_parameter",
-    "get_submodule",
-    "half",
-    "ipu",
-    "load_state_dict",
-    "modules",
-    "mtia",
-    "named_buffers",
-    "named_children",
-    "named_modules",
-    "named_parameters",
-    "parameters",
-    "register_backward_hook",
-    "register_buffer",
-    "register_forward_hook",
-    "register_forward_pre_hook",
-    "register_full_backward_hook",
-    "register_full_backward_pre_hook",
-    "register_load_state_dict_post_hook",
-    "register_load_state_dict_pre_hook",
-    "register_module",
-    "register_parameter",
-    "register_state_dict_post_hook",
-    "register_state_dict_pre_hook",
-    "requires_grad_",
-    "set_extra_state",
-    "set_submodule",
-    "share_memory",
-    "state_dict",
-    "to",
-    "to_empty",
-    "train",
-    "type",
-    "xpu",
-    "zero_grad"
-   ],
-   "class": "GroupAverage"
-  },
-  "Pattern": {
-   "attrs": [
-    "T_destination",
-    "add_module",
-    "apply",
-    "bfloat16",
-    "buffers",
-    "call_super_init",
-    "children",
-    "compile",
-    "cpu",
-    "cuda",
-    "cyclic",
-    "double",
-    "dump_patches",
-    "eval",
-    "expand",
-    "extra_repr",
-    "float",
-    "forward",
-    "get_buffer",
-    "get_extra_state",
-    "get_parameter",
-    "get_submodule",
-    "half",
-    "ipu",
-    "load_state_dict",
-    "modules",
-    "mtia",
-    "named_buffers",
-    "named_children",
-    "named_modules",
-    "named_parameters",
-    "parameters",
-    "project",
-    "reduce",
-    "register_backward_hook",
-    "register_buffer",
-    "register_forward_hook",
-    "register_forward_pre_hook",
-    "register_full_backward_hook",
-    "register_full_backward_pre_hook",
-    "register_load_state_dict_post_hook",
-    "register_load_state_dict_pre_hook",
-    "register_module",
-    "register_parameter",
-    "register_state_dict_post_hook",
-    "register_state_dict_pre_hook",
-    "report",
-    "requires_grad_",
-    "set_extra_state",
-    "set_submodule",
-    "share_memory",
-    "state_dict",
-    "to",
-    "to_empty",
-    "train",
-    "translational",
-    "type",
-    "xpu",
-    "zero_grad"
-   ],
-   "class": "Pattern"
-  },
-  "Symmetry": {
-   "attrs": [
-    "T_destination",
-    "add_module",
-    "apply",
-    "bfloat16",
-    "buffers",
-    "call_super_init",
-    "children",
-    "compile",
-    "cpu",
-    "cuda",
-    "double",
-    "dump_patches",
-    "eval",
-    "expand",
-    "extra_repr",
-    "float",
-    "forward",
-    "get_buffer",
-    "get_extra_state",
-    "get_parameter",
-    "get_submodule",
-    "half",
-    "ipu",
-    "load_state_dict",
-    "modules",
-    "mtia",
-    "named_buffers",
-    "named_children",
-    "named_modules",
-    "named_parameters",
-    "parameters",
-    "project",
-    "reduce",
-    "register_backward_hook",
-    "register_buffer",
-    "register_forward_hook",
-    "register_forward_pre_hook",
-    "register_full_backward_hook",
-    "register_full_backward_pre_hook",
-    "register_load_state_dict_post_hook",
-    "register_load_state_dict_pre_hook",
-    "register_module",
-    "register_parameter",
-    "register_state_dict_post_hook",
-    "register_state_dict_pre_hook",
-    "report",
-    "requires_grad_",
-    "set_extra_state",
-    "set_submodule",
-    "share_memory",
-    "state_dict",
-    "to",
-    "to_empty",
-    "train",
-    "type",
-    "xpu",
-    "zero_grad"
-   ],
-   "class": "Symmetry"
-  },
-  "Tying": {
-   "attrs": [
-    "T_destination",
-    "add_module",
-    "apply",
-    "bfloat16",
-    "buffers",
-    "call_super_init",
-    "children",
-    "compile",
-    "cpu",
-    "cuda",
-    "double",
-    "dump_patches",
-    "eval",
-    "expand",
-    "extra_repr",
-    "float",
-    "forward",
-    "get_buffer",
-    "get_extra_state",
-    "get_parameter",
-    "get_submodule",
-    "half",
-    "ipu",
-    "load_state_dict",
-    "modules",
-    "mtia",
-    "named_buffers",
-    "named_children",
-    "named_modules",
-    "named_parameters",
-    "parameters",
-    "project",
-    "reduce",
-    "register_backward_hook",
-    "register_buffer",
-    "register_forward_hook",
-    "register_forward_pre_hook",
-    "register_full_backward_hook",
-    "register_full_backward_pre_hook",
-    "register_load_state_dict_post_hook",
-    "register_load_state_dict_pre_hook",
-    "register_module",
-    "register_parameter",
-    "register_state_dict_post_hook",
-    "register_state_dict_pre_hook",
-    "report",
-    "requires_grad_",
-    "set_extra_state",
-    "set_submodule",
-    "share_memory",
-    "state_dict",
-    "to",
-    "to_empty",
-    "train",
-    "type",
-    "xpu",
-    "zero_grad"
-   ],
-   "class": "Tying"
-  },
-  "combine_tying": "combine_tying(links)",
-  "manufacturing_chain": "manufacturing_chain(domain,rmin,tying,am,casting,projection,beta,eta,regroup)",
-  "overhang_map": "overhang_map(xphys,build,domain,threshold,base_layer,include_keep)",
-  "overhang_violations": "overhang_violations(xphys,build,domain,threshold,base_layer,include_keep)",
-  "parse_direction": "parse_direction(spec,dim)",
-  "undercut_map": "undercut_map(xphys,direction,domain,parting,threshold)",
-  "undercuts": "undercuts(xphys,direction,domain,parting,threshold)",
-  "validate_chain": "validate_chain(chain)"
- },
- "toporlogy.optim": {
-  "BetaContinuation": {
-   "attrs": [
-    "beta",
-    "finished",
-    "reset",
-    "state",
-    "update"
-   ],
-   "class": "BetaContinuation"
-  },
-  "MMA": {
-   "attrs": [
-    "max_constraints",
-    "name",
-    "needs_constraint_fn",
-    "reset",
-    "restart",
-    "step"
-   ],
-   "class": "MMA"
-  },
-  "OC": {
-   "attrs": [
-    "max_constraints",
-    "name",
-    "needs_constraint_fn",
-    "reset",
-    "restart",
-    "step"
-   ],
-   "class": "OC"
-  },
-  "Optimizer": {
-   "attrs": [
-    "max_constraints",
-    "name",
-    "needs_constraint_fn",
-    "reset",
-    "restart",
-    "step"
-   ],
-   "class": "Optimizer"
-  },
-  "Schedule": {
-   "attrs": [
-    "finished",
-    "reset",
-    "state",
-    "update"
-   ],
-   "class": "Schedule"
-  }
- },
- "toporlogy.optim.base": {
-  "Optimizer": {
-   "attrs": [
-    "max_constraints",
-    "name",
-    "needs_constraint_fn",
-    "reset",
-    "restart",
-    "step"
-   ],
-   "class": "Optimizer"
-  }
- },
- "toporlogy.optim.mma": {
-  "MMA": {
-   "attrs": [
-    "max_constraints",
-    "name",
-    "needs_constraint_fn",
-    "reset",
-    "restart",
-    "step"
-   ],
-   "class": "MMA"
-  },
-  "MMASubproblemWarning": {
-   "attrs": [
-    "add_note",
-    "args",
-    "with_traceback"
-   ],
-   "class": "MMASubproblemWarning"
-  }
- },
- "toporlogy.optim.oc": {
-  "OC": {
-   "attrs": [
-    "max_constraints",
-    "name",
-    "needs_constraint_fn",
-    "reset",
-    "restart",
-    "step"
-   ],
-   "class": "OC"
-  }
- },
- "toporlogy.optim.schedule": {
-  "BetaContinuation": {
-   "attrs": [
-    "beta",
-    "finished",
-    "reset",
-    "state",
-    "update"
-   ],
-   "class": "BetaContinuation"
-  },
-  "Schedule": {
-   "attrs": [
-    "finished",
-    "reset",
-    "state",
-    "update"
-   ],
-   "class": "Schedule"
-  }
- },
  "toporlogy.optimization": {},
- "toporlogy.optimization.checks": {
-  "gradcheck": "gradcheck(fn,x,n_dirs,h,seed)",
-  "grey_fraction": "grey_fraction(xphys,mask,lo,hi)",
-  "study_gradcheck": "study_gradcheck(study,x,which,kw)"
- },
  "toporlogy.optimization.connectivity": {
   "BridgeResult": {
    "attrs": [],
@@ -5222,6 +3504,11 @@
   "split_benchmark": "split_benchmark(dim,n,coupling,h)",
   "tie_regions": "tie_regions(domain,groups,section,avoid,keep_cost)",
   "with_keep": "with_keep(domain,extra_keep)"
+ },
+ "toporlogy.optimization.diagnostics": {
+  "gradcheck": "gradcheck(fn,x,n_dirs,h,seed)",
+  "grey_fraction": "grey_fraction(xphys,mask,lo,hi)",
+  "study_gradcheck": "study_gradcheck(study,x,which,kw)"
  },
  "toporlogy.optimization.dynamics": {
   "Eigenvalue": {
@@ -5475,12 +3762,12 @@
   "ball_kernel": "ball_kernel(radius,dim)",
   "closing_residue": "closing_residue(xphys,h,radius,kw)",
   "grey_measure": "grey_measure(xphys,mask)",
-  "local_thickness": "local_thickness(phase,faces,pad,level_step,max_levels,exact)",
   "local_volume_field": "local_volume_field(x,radius,outside,mask)",
   "max_thickness_settings": "max_thickness_settings(t_max,h,dim,radius,member)",
   "measure_lengthscale": "measure_lengthscale(xphys,h,threshold,outside,upsample,mask,percentiles,radii,margin,smooth,keep_maps)",
   "opening_residue": "opening_residue(xphys,h,radius,kw)",
-  "slab_fraction": "slab_fraction(u,dim,member)"
+  "slab_fraction": "slab_fraction(u,dim,member)",
+  "voxel_local_thickness": "voxel_local_thickness(phase,faces,pad,level_step,max_levels,exact)"
  },
  "toporlogy.optimization.responses": {
   "Compliance": {
@@ -5674,8 +3961,12 @@
   "Result": {
    "attrs": [
     "constraint_values",
+    "feasible",
     "final",
-    "objective"
+    "kkt_residual",
+    "max_violation",
+    "objective",
+    "termination"
    ],
    "class": "Result"
   },
@@ -5691,6 +3982,140 @@
     "settings"
    ],
    "class": "Study"
+  }
+ },
+ "toporlogy.optimizers": {
+  "BetaContinuation": {
+   "attrs": [
+    "beta",
+    "finished",
+    "reset",
+    "state",
+    "update"
+   ],
+   "class": "BetaContinuation"
+  },
+  "MMA": {
+   "attrs": [
+    "kkt_multipliers",
+    "max_constraints",
+    "name",
+    "needs_constraint_fn",
+    "objective_scale",
+    "reset",
+    "restart",
+    "step"
+   ],
+   "class": "MMA"
+  },
+  "OC": {
+   "attrs": [
+    "kkt_multipliers",
+    "max_constraints",
+    "name",
+    "needs_constraint_fn",
+    "objective_scale",
+    "reset",
+    "restart",
+    "step"
+   ],
+   "class": "OC"
+  },
+  "Optimizer": {
+   "attrs": [
+    "kkt_multipliers",
+    "max_constraints",
+    "name",
+    "needs_constraint_fn",
+    "objective_scale",
+    "reset",
+    "restart",
+    "step"
+   ],
+   "class": "Optimizer"
+  },
+  "Schedule": {
+   "attrs": [
+    "finished",
+    "reset",
+    "state",
+    "update"
+   ],
+   "class": "Schedule"
+  }
+ },
+ "toporlogy.optimizers.base": {
+  "Optimizer": {
+   "attrs": [
+    "kkt_multipliers",
+    "max_constraints",
+    "name",
+    "needs_constraint_fn",
+    "objective_scale",
+    "reset",
+    "restart",
+    "step"
+   ],
+   "class": "Optimizer"
+  }
+ },
+ "toporlogy.optimizers.mma": {
+  "MMA": {
+   "attrs": [
+    "kkt_multipliers",
+    "max_constraints",
+    "name",
+    "needs_constraint_fn",
+    "objective_scale",
+    "reset",
+    "restart",
+    "step"
+   ],
+   "class": "MMA"
+  },
+  "MMASubproblemWarning": {
+   "attrs": [
+    "add_note",
+    "args",
+    "with_traceback"
+   ],
+   "class": "MMASubproblemWarning"
+  }
+ },
+ "toporlogy.optimizers.oc": {
+  "OC": {
+   "attrs": [
+    "kkt_multipliers",
+    "max_constraints",
+    "name",
+    "needs_constraint_fn",
+    "objective_scale",
+    "reset",
+    "restart",
+    "step"
+   ],
+   "class": "OC"
+  }
+ },
+ "toporlogy.optimizers.schedule": {
+  "BetaContinuation": {
+   "attrs": [
+    "beta",
+    "finished",
+    "reset",
+    "state",
+    "update"
+   ],
+   "class": "BetaContinuation"
+  },
+  "Schedule": {
+   "attrs": [
+    "finished",
+    "reset",
+    "state",
+    "update"
+   ],
+   "class": "Schedule"
   }
  },
  "toporlogy.post": {
@@ -5767,7 +4192,7 @@
    ],
    "class": "Cylinder"
   },
-  "GridShape": {
+  "GridPrimitive": {
    "attrs": [
     "describe",
     "grad",
@@ -5776,7 +4201,7 @@
     "project",
     "sdf"
    ],
-   "class": "GridShape"
+   "class": "GridPrimitive"
   },
   "Implicit": {
    "attrs": [
@@ -5784,7 +4209,7 @@
    ],
    "class": "Implicit"
   },
-  "ImplicitShape": {
+  "ImplicitPrimitive": {
    "attrs": [
     "describe",
     "grad",
@@ -5794,7 +4219,7 @@
     "project",
     "sdf"
    ],
-   "class": "Implicit"
+   "class": "ImplicitPrimitive"
   },
   "Keep": {
    "attrs": [
@@ -5857,6 +4282,17 @@
    ],
    "class": "PostResult"
   },
+  "Primitive": {
+   "attrs": [
+    "describe",
+    "grad",
+    "kind",
+    "offset",
+    "project",
+    "sdf"
+   ],
+   "class": "Primitive"
+  },
   "Role": {
    "attrs": [
     "describe",
@@ -5869,17 +4305,6 @@
     "stock"
    ],
    "class": "Role"
-  },
-  "Shape": {
-   "attrs": [
-    "describe",
-    "grad",
-    "kind",
-    "offset",
-    "project",
-    "sdf"
-   ],
-   "class": "Shape"
   },
   "Sphere": {
    "attrs": [
@@ -5904,7 +4329,6 @@
   "element_fraction": "element_fraction(domain,shape,samples)",
   "export_result": "export_result(res,folder,name,formats,checks,print_stock,extra)",
   "finalize": "finalize(domain,xphys,preserve,params,envelope,target_volume,log)",
-  "local_thickness": "local_thickness(phi,h)",
   "manufacturing_checks": "manufacturing_checks(res,thresholds,kw)",
   "measure_interfaces": "measure_interfaces(V,F,roles,h,band,angle_deg)",
   "optimised_volume": "optimised_volume(domain,xphys)",
@@ -5912,6 +4336,7 @@
   "print_variant": "print_variant(res,log)",
   "read_stl": "read_stl(path)",
   "reverify": "reverify(res,supports,load_cases,E,nu,size,exclusions,domain,xphys,timeout,penal,surface_edge)",
+  "sdf_local_thickness": "sdf_local_thickness(phi,h)",
   "solve_t10": "solve_t10(m,supports,load_cases,E,nu,exclusions)",
   "tet_mesh": "tet_mesh(V,F,size,angle_deg,timeout,modes)",
   "voxel_reference": "voxel_reference(domain,xphys,supports,load_cases,E,nu,penal,emin_ratio)",
@@ -5944,10 +4369,10 @@
    "class": "CheckThresholds"
   },
   "concave_radius_test": "concave_radius_test(res,r)",
-  "local_thickness": "local_thickness(phi,h)",
   "manufacturing_checks": "manufacturing_checks(res,thresholds,kw)",
   "overhang": "overhang(V,F,build_direction,angle_deg,plate_level,plate_tol)",
-  "ray_thickness": "ray_thickness(V,F,phi,grid,max_length,chunk)"
+  "ray_thickness": "ray_thickness(V,F,phi,grid,max_length,chunk)",
+  "sdf_local_thickness": "sdf_local_thickness(phi,h)"
  },
  "toporlogy.post.export": {
   "export_result": "export_result(res,folder,name,formats,checks,print_stock,extra)",
@@ -6077,7 +4502,7 @@
    ],
    "class": "Cylinder"
   },
-  "GridShape": {
+  "GridPrimitive": {
    "attrs": [
     "describe",
     "grad",
@@ -6086,9 +4511,9 @@
     "project",
     "sdf"
    ],
-   "class": "GridShape"
+   "class": "GridPrimitive"
   },
-  "Implicit": {
+  "ImplicitPrimitive": {
    "attrs": [
     "describe",
     "grad",
@@ -6098,7 +4523,7 @@
     "project",
     "sdf"
    ],
-   "class": "Implicit"
+   "class": "ImplicitPrimitive"
   },
   "Keep": {
    "attrs": [
@@ -6135,6 +4560,17 @@
    ],
    "class": "Plane"
   },
+  "Primitive": {
+   "attrs": [
+    "describe",
+    "grad",
+    "kind",
+    "offset",
+    "project",
+    "sdf"
+   ],
+   "class": "Primitive"
+  },
   "Role": {
    "attrs": [
     "describe",
@@ -6147,17 +4583,6 @@
     "stock"
    ],
    "class": "Role"
-  },
-  "Shape": {
-   "attrs": [
-    "describe",
-    "grad",
-    "kind",
-    "offset",
-    "project",
-    "sdf"
-   ],
-   "class": "Shape"
   },
   "Sphere": {
    "attrs": [
@@ -6249,17 +4674,6 @@
   "von_mises": "von_mises(s)",
   "voxel_reference": "voxel_reference(domain,xphys,supports,load_cases,E,nu,penal,emin_ratio)"
  },
- "toporlogy.record": {
-  "Recorder": {
-   "attrs": [
-    "finish",
-    "log",
-    "start"
-   ],
-   "class": "Recorder"
-  },
-  "git_revision": "git_revision(path)"
- },
  "toporlogy.references": {
   "REFERENCES": "<mappingproxy>",
   "Reference": {
@@ -6276,261 +4690,6 @@
   "cite": "cite(keys,note)",
   "format_bibliography": "format_bibliography(keys)",
   "references_of": "references_of(obj)"
- },
- "toporlogy.registry": {
-  "BuildContext": {
-   "attrs": [
-    "bc",
-    "chain",
-    "domain",
-    "fixed",
-    "interfaces",
-    "interp",
-    "n_cases",
-    "objective",
-    "path",
-    "physics",
-    "robust",
-    "solver"
-   ],
-   "class": "BuildContext"
-  },
-  "ConfigError": {
-   "attrs": [
-    "add_note",
-    "args",
-    "with_traceback"
-   ],
-   "class": "ConfigError"
-  },
-  "Entry": {
-   "attrs": [
-    "construct",
-    "context",
-    "doc",
-    "params",
-    "resolve_target",
-    "summary"
-   ],
-   "class": "Entry"
-  },
-  "KINDS": "<dict>",
-  "Param": {
-   "attrs": [
-    "coerce",
-    "default",
-    "nested",
-    "nullable",
-    "required",
-    "type",
-    "unit"
-   ],
-   "class": "Param"
-  },
-  "REGISTRY": "<Registry>",
-  "REQUIRED": "<_Required>",
-  "Registry": {
-   "attrs": [
-    "build",
-    "get",
-    "kinds",
-    "names",
-    "register",
-    "resolve",
-    "unregister"
-   ],
-   "class": "Registry"
-  },
-  "SpreadForce": {
-   "attrs": [
-    "apply",
-    "kind",
-    "name"
-   ],
-   "class": "SpreadForce"
-  },
-  "as_selector": "as_selector(v)",
-  "bc_callables": "bc_callables(bcs)",
-  "bc_mapping": "bc_mapping(bcs)",
-  "checked_selector": "checked_selector(ctx,v,key)",
-  "find_bore": "find_bore(ctx,index,near,min_diameter,max_roundness,min_length)",
-  "get": "<method>",
-  "names": "<method>",
-  "normalise_name": "normalise_name(name)",
-  "register": "<method>",
-  "selector_callable": "selector_callable(sel,info,h)",
-  "suggest": "suggest(word,options)"
- },
- "toporlogy.responses": {
-  "Compliance": {
-   "attrs": [
-    "name",
-    "needs",
-    "per_case"
-   ],
-   "class": "Compliance"
-  },
-  "EvalContext": {
-   "attrs": [
-    "F",
-    "U",
-    "chain",
-    "field_after",
-    "interp",
-    "physics",
-    "x"
-   ],
-   "class": "EvalContext"
-  },
-  "Response": {
-   "attrs": [
-    "name",
-    "needs"
-   ],
-   "class": "Response"
-  },
-  "Volume": {
-   "attrs": [
-    "name",
-    "needs"
-   ],
-   "class": "Volume"
-  }
- },
- "toporlogy.robust": {
-  "BoundObjective": {
-   "attrs": [
-    "name",
-    "needs"
-   ],
-   "class": "BoundObjective"
-  },
-  "BoundSplit": {
-   "attrs": [
-    "T_destination",
-    "add_module",
-    "apply",
-    "bfloat16",
-    "buffers",
-    "call_super_init",
-    "children",
-    "compile",
-    "cpu",
-    "cuda",
-    "double",
-    "dump_patches",
-    "eval",
-    "extra_repr",
-    "float",
-    "forward",
-    "get_buffer",
-    "get_extra_state",
-    "get_parameter",
-    "get_submodule",
-    "half",
-    "ipu",
-    "load_state_dict",
-    "modules",
-    "mtia",
-    "named_buffers",
-    "named_children",
-    "named_modules",
-    "named_parameters",
-    "parameters",
-    "reduce",
-    "register_backward_hook",
-    "register_buffer",
-    "register_forward_hook",
-    "register_forward_pre_hook",
-    "register_full_backward_hook",
-    "register_full_backward_pre_hook",
-    "register_load_state_dict_post_hook",
-    "register_load_state_dict_pre_hook",
-    "register_module",
-    "register_parameter",
-    "register_state_dict_post_hook",
-    "register_state_dict_pre_hook",
-    "requires_grad_",
-    "set_extra_state",
-    "set_submodule",
-    "share_memory",
-    "state_dict",
-    "to",
-    "to_empty",
-    "train",
-    "type",
-    "xpu",
-    "zero_grad"
-   ],
-   "class": "BoundSplit"
-  },
-  "DilatedVolume": {
-   "attrs": [
-    "name",
-    "needs"
-   ],
-   "class": "DilatedVolume"
-  },
-  "RealisationBound": {
-   "attrs": [
-    "name",
-    "needs"
-   ],
-   "class": "RealisationBound"
-  },
-  "RealisationVolume": {
-   "attrs": [
-    "name",
-    "needs"
-   ],
-   "class": "RealisationVolume"
-  },
-  "Robust": {
-   "attrs": [
-    "name",
-    "needs",
-    "reset_scale",
-    "values"
-   ],
-   "class": "Robust"
-  },
-  "RobustCompliance": {
-   "attrs": [
-    "name",
-    "needs",
-    "reset_scale",
-    "values"
-   ],
-   "class": "RobustCompliance"
-  },
-  "RobustContinuation": {
-   "attrs": [
-    "beta",
-    "finished",
-    "reset",
-    "state",
-    "update"
-   ],
-   "class": "RobustContinuation"
-  },
-  "RobustSet": {
-   "attrs": [
-    "beta_of",
-    "context",
-    "field",
-    "from_settings",
-    "realisation",
-    "thresholds"
-   ],
-   "class": "RobustSet"
-  },
-  "blueprint_size": "blueprint_size(eta_e,rmin,dim,eta_i)",
-  "bound_formulation": "bound_formulation(chain,robust,n_design,response,realisations,reference,factor,z0)",
-  "eta_for_size": "eta_for_size(b_over_r)",
-  "filter_profile": "filter_profile(rmin,dim)",
-  "min_size_ratio": "min_size_ratio(eta_e)",
-  "project": "project(xt,beta,eta)",
-  "robust_chain_settings": "robust_chain_settings(min_solid,min_void,h,dim,eta_max,kernel)"
  },
  "toporlogy.solvers": {
   "DirectSolver": {
@@ -6649,45 +4808,5 @@
   "available": "available()",
   "load": "load()",
   "state": "state()"
- },
- "toporlogy.study": {
-  "Constraint": {
-   "attrs": [
-    "g",
-    "key",
-    "name",
-    "scale"
-   ],
-   "class": "Constraint"
-  },
-  "DensityEvaluation": {
-   "attrs": [],
-   "class": "DensityEvaluation"
-  },
-  "Evaluation": {
-   "attrs": [],
-   "class": "Evaluation"
-  },
-  "Result": {
-   "attrs": [
-    "constraint_values",
-    "final",
-    "objective"
-   ],
-   "class": "Result"
-  },
-  "Study": {
-   "attrs": [
-    "constraint_values",
-    "context",
-    "default_start",
-    "evaluate",
-    "evaluate_density",
-    "physical",
-    "run",
-    "settings"
-   ],
-   "class": "Study"
-  }
  }
 }

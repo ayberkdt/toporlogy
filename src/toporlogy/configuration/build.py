@@ -1,5 +1,4 @@
-"""Building a study from a resolved config: ``Setup``, boundary conditions, ``build``, ``build_setup``
-(moved from toporlogy.config).
+"""Building a study from a resolved config: ``Setup``, boundary conditions, ``build``, ``build_setup``.
 """
 from __future__ import annotations
 
@@ -26,7 +25,7 @@ class Setup:
     constraint_names: list[str]
     post: list[tuple[str, Callable[..., Any]]] = field(default_factory=list)
     warnings: list[str] = field(default_factory=list)
-    bc: Any = None                             # toporlogy.bc.BoundaryConditions
+    bc: Any = None                             # toporlogy.boundary.BoundaryConditions
     bc_report: Any = None                      # its CheckReport (no errors: those raise ConfigError)
     interfaces: dict[str, int] = field(default_factory=dict)      # connectivity interface name → elements
     info: dict[str, Any] = field(default_factory=dict)            # robust settings, ties, bores, notes
@@ -36,7 +35,7 @@ class Setup:
         return dict(self.config["run"])
 
     def bc_summary(self) -> str:
-        """Load and support tables of :meth:`toporlogy.bc.BoundaryConditions.summary` (its last line, the
+        """Load and support tables of :meth:`toporlogy.boundary.BoundaryConditions.summary` (its last line, the
         verdict for the Python API, left out: the CLI prints the check itself)."""
         if self.bc is None:
             return ""

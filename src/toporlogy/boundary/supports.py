@@ -69,7 +69,7 @@ class Roller(Fixed):
         super().__init__(where, [normal], name or f"Roller {where!r}")
 
 
-def Symmetry(point: Sequence[float], normal: Sequence[float] | int, tol: float | None = None,
+def SymmetrySupport(point: Sequence[float], normal: Sequence[float] | int, tol: float | None = None,
              name: str | None = None) -> Roller:
     """Symmetry plane: zero normal displacement of the part's surface nodes on the plane."""
     sel = OnPlane(point, normal, tol=tol, facing=None)

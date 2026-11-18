@@ -175,8 +175,8 @@ class Domain:
         """Design vector that gives mean x̄ = ``volume_fraction`` over the part before filtering (topo3d start rule).
 
         Keep elements count as 1, void as 0; the free elements share the rest, clipped to [0, 1]. ``weighted``: the
-        mean of :class:`~toporlogy.responses.Volume` ``(weighted=True)``, Σ frac·x̄ / Σ frac (partial voxels count by
-        their solid fraction); default: element count.
+        mean of :class:`~toporlogy.optimization.responses.Volume` ``(weighted=True)``, Σ frac·x̄ / Σ frac (partial
+        voxels count by their solid fraction); default: element count.
         """
         if weighted:
             fr = self.frac

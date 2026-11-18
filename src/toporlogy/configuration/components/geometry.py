@@ -1,4 +1,4 @@
-"""Component constructors: geometry (moved from toporlogy.registry).
+"""Component constructors: geometry.
 """
 from __future__ import annotations
 
@@ -11,7 +11,7 @@ from toporlogy.configuration.registry import BuildContext, register
 
 
 def register_geometry() -> None:
-    """Register the geometry components (moved from registry._register_features)."""
+    """Register the geometry components."""
     from toporlogy import geometry as G
     from toporlogy.core.domain import Domain
 
@@ -68,7 +68,7 @@ def register_geometry() -> None:
         s.through, s.bore = bool(through), b
         return s
 
-    for name, fn in (("box", box_shape), ("ball", ball), ("sphere", ball), ("circle", ball),
+    for name, fn in (("box", box_shape), ("ball", ball),
                      ("cylinder", cylinder), ("capsule", capsule), ("halfspace", halfspace),
                      ("polygon", polygon), ("prism", prism), ("slot", slot)):
         register("shape", name, fn, types={"axis": None},

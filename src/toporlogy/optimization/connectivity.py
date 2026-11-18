@@ -11,8 +11,8 @@ Detection
     cross-section ("neck") between every pair of interfaces by an exact max-flow / min-cut on the element graph,
     and robustness checks at other thresholds and after an erosion by one element. Verdict PASS / FRAGILE / FAIL.
 
-Prevention (differentiable responses for :class:`toporlogy.study.Study`, use with MMA — they are constraints in
-addition to the volume bound)
+Prevention (differentiable responses for :class:`toporlogy.optimization.study.Study`, use with MMA — they are
+constraints in addition to the volume bound)
     :class:`ConductionConnectivity` — virtual heat conduction: solid conducts, void insulates; one interface is the
     heat sink (T = 0), every other interface receives unit heat in its own load case. Its thermal resistance
     ``R_i = q_iᵀ T_i`` stays O(path length / section) when a solid path to the sink exists and grows like 1/k_min

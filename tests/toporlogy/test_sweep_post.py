@@ -218,7 +218,7 @@ def r3_bores() -> Input:
 
 
 def r4_robust() -> Input:
-    from toporlogy.robust import DilatedVolume, RobustCompliance, RobustContinuation, RobustSet, \
+    from toporlogy.optimization.robust import DilatedVolume, RobustCompliance, RobustContinuation, RobustSet, \
         robust_chain_settings
     nx, ny, nz = 30, 8, 10
     keep = np.zeros((nx, ny, nz), bool)
@@ -247,7 +247,7 @@ def r4_robust() -> Input:
 
 def r5_onebody() -> Input:
     import test_sweep_connectivity as C                     # tests/toporlogy is on sys.path (conftest)
-    from toporlogy.connectivity import one_body
+    from toporlogy.optimization.connectivity import one_body
     case = C.CASES["c12_3d_four_supports"]
     b = C.build(case)
     plan = one_body(b.domain, b.interfaces)

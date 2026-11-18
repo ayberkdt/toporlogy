@@ -1,4 +1,4 @@
-"""Supports and loads as callables for the T10 re-analysis, with their fidelity (moved from toporlogy.registry).
+"""Supports and loads as callables for the T10 re-analysis, with their fidelity.
 """
 from __future__ import annotations
 
@@ -10,8 +10,8 @@ import numpy as np
 
 def bc_mapping(bcs: Any) -> dict[str, Any]:
     """Supports ``[(select, dirs)]`` and load cases ``{name: [(select, force)]}`` for
-    :func:`toporlogy.post.reverify` from a :class:`~toporlogy.bc.BoundaryConditions` (the bc selectors as callables
-    ``select(X (n, dim)) -> bool`` in physical coordinates), and how faithful that translation is.
+    :func:`toporlogy.post.reverify` from a :class:`~toporlogy.boundary.BoundaryConditions` (the bc selectors as
+    callables ``select(X (n, dim)) -> bool`` in physical coordinates), and how faithful that translation is.
 
     Returns ``{"supports", "cases", "items", "notes", "fidelity"}``. ``items``: one ``{"name", "fidelity",
     "note"}`` per support or load that is not carried over as it is: "approximate" (carried over as a different

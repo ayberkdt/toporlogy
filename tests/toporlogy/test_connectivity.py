@@ -14,12 +14,12 @@ import torch
 
 from toporlogy import (SIMP, BetaContinuation, Compliance, Constraint, Domain, Elasticity, Study, Volume,
                           standard_chain, study_gradcheck)
-from toporlogy.connectivity import (ConductionConnectivity, CouplingCompliance, analyse_connectivity, bridge,
+from toporlogy.optimization.connectivity import (ConductionConnectivity, CouplingCompliance, analyse_connectivity, bridge,
                                        elements_touching_nodes, label_bodies, min_cut_cells, split_benchmark,
                                        tie_regions, with_keep)
-from toporlogy.connectivity import _nodes_of
+from toporlogy.optimization.connectivity import _nodes_of
 from toporlogy.fem.heat import ConductivityInterp, HeatConduction
-from toporlogy.optim.mma import MMA
+from toporlogy.optimizers.mma import MMA
 
 TOL = 1e-6
 # Central-difference step of the response gradient checks. The extra solves (clamped coupling cases, eroded

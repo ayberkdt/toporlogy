@@ -8,7 +8,7 @@ and 1-Lipschitz (|sdf(a) − sdf(b)| ≤ |a − b|). The primitives return the e
 sign. 1-Lipschitz plus zero on the surface gives ``|sdf(x)| ≤ dist(x, surface)``, so a voxel whose centre has
 ``|sdf| > h·√dim / 2`` cannot be cut by the surface: :func:`coverage` sub-samples only the voxels near the surface.
 
-* any dimension: :class:`Box`, :class:`Ball` (``Sphere`` / ``Circle``), :class:`Capsule` (2-D: rounded slot),
+* any dimension: :class:`Box`, :class:`Ball` (circle in 2-D, sphere in 3-D), :class:`Capsule` (2-D: rounded slot),
   :class:`HalfSpace`;
 * 2-D: :class:`Polygon`;
 * 3-D: :class:`Cylinder` (capped, arbitrary axis), :class:`Prism` (polygon extruded along x, y or z),
@@ -33,7 +33,7 @@ Bores
 -----
 :func:`find_bores` finds axis-aligned round holes in a voxel domain (slice by slice, as the
 repository's earlier hole detector) and estimates the radius and centre from the partial volumes
-(sub-voxel), returning :class:`Bore` objects that the selectors and loads of :mod:`toporlogy.bc` accept.
+(sub-voxel), returning :class:`Bore` objects that the selectors and loads of :mod:`toporlogy.boundary` accept.
 """
 from __future__ import annotations
 
@@ -50,7 +50,7 @@ from scipy import ndimage
 from toporlogy.references import cite
 from toporlogy.core.domain import Domain
 
-__all__ = ["Shape", "Box", "Ball", "Sphere", "Circle", "Capsule", "HalfSpace", "Polygon", "Cylinder", "Prism",
+__all__ = ["Shape", "Box", "Ball", "Capsule", "HalfSpace", "Polygon", "Cylinder", "Prism",
            "Slot", "Union", "Intersection", "Difference", "csg", "grid_for", "coverage", "voxelize",
            "read_stl", "write_stl", "mesh_volume", "winding_number", "coverage_mesh", "voxelize_mesh",
            "Bore", "find_bores", "largest_component", "shape_from_function"]
@@ -145,9 +145,6 @@ class Ball(Shape):
     def __repr__(self) -> str:
         return f"Ball({self.center.tolist()}, r={self.radius:g})"
 
-
-Sphere = Ball
-Circle = Ball
 
 
 class Capsule(Shape):
