@@ -21,7 +21,7 @@ def register_core() -> None:
     from toporlogy.design.interp import RAMP, SIMP
     from toporlogy.optim.oc import OC
     from toporlogy.optim.schedule import BetaContinuation
-    from toporlogy.responses import Compliance, Volume
+    from toporlogy.optimization.responses import Compliance, Volume
     from toporlogy.solvers.direct import DirectSolver
 
     # ---------------------------------------------------------------- domain

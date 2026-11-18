@@ -128,7 +128,7 @@ def _boundary_conditions(domain: Any, supports: list[Any], cases: list[Any], com
 def _default_interfaces(bcs: Any) -> dict[str, np.ndarray]:
     """One interface per support and per load (bc node sets → elements touching them); body forces left out."""
     from toporlogy.boundary import BodyForce
-    from toporlogy.connectivity import elements_touching_nodes
+    from toporlogy.optimization.connectivity import elements_touching_nodes
     d = bcs.domain
     out: dict[str, np.ndarray] = {}
     multi = len(bcs.cases) > 1
@@ -148,7 +148,7 @@ def _default_interfaces(bcs: Any) -> dict[str, np.ndarray]:
 
 def _explicit_interfaces(ctx: BuildContext, specs: dict[str, Any]) -> dict[str, np.ndarray]:
     from toporlogy.boundary import EmptySelectionError
-    from toporlogy.connectivity import elements_touching_nodes
+    from toporlogy.optimization.connectivity import elements_touching_nodes
     from toporlogy.configuration.helpers import as_selector
     out = {}
     for name, spec in specs.items():
@@ -185,7 +185,7 @@ def build(resolved: dict[str, Any]) -> Setup:
     from toporlogy.design.chain import Chain, DensityFilter, HeavisideProjection
     from toporlogy.design.manufacturing import GroupAverage, Tying, validate_chain
     from toporlogy.configuration.helpers import SpreadForce
-    from toporlogy.study import Constraint, Study
+    from toporlogy.optimization.study import Constraint, Study
 
     r = resolved
     modal = r["physics"]["type"] == "modal"
@@ -199,7 +199,7 @@ def build(resolved: dict[str, Any]) -> Setup:
 
     rb = r.get("robust")
     if rb is not None:
-        from toporlogy.robust import RobustSet
+        from toporlogy.optimization.robust import RobustSet
         if rb.get("min_solid") is not None:
             s = _robust_settings(rb, d.h, d.dim)
             info["robust"] = {k: float(v) for k, v in s.items()}
@@ -237,7 +237,7 @@ def build(resolved: dict[str, Any]) -> Setup:
     else:
         ctx.interfaces = _default_interfaces(bcs)
     if cb is not None:
-        from toporlogy.connectivity import one_body
+        from toporlogy.optimization.connectivity import one_body
         if len(ctx.interfaces) < 2:
             raise ConfigError(f"connectivity needs at least 2 interfaces, found {len(ctx.interfaces)}",
                               "connectivity.interfaces")
@@ -248,7 +248,7 @@ def build(resolved: dict[str, Any]) -> Setup:
         if cb["ties"]:
             # tie_regions returns the tie WITHOUT the interface cells: an interface cell that is not frozen can go
             # void and cut the tie (measured on examples/split_connectivity2d.yaml: 2 bodies). Freeze them.
-            from toporlogy.connectivity import with_keep
+            from toporlogy.optimization.connectivity import with_keep
             pads = np.logical_or.reduce(list(ctx.interfaces.values())) & d.active
             info["frozen_interface_cells"] = int((pads & ~d.keep).sum())
             d0 = with_keep(d, pads)

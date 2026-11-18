@@ -16,14 +16,14 @@ from toporlogy.solvers import pardiso as _pardiso
 _pardiso.load()
 
 from toporlogy.design.chain import Chain, DensityFilter, Embed, HeavisideProjection, Passive, standard_chain
-from toporlogy.checks import grey_fraction, gradcheck, study_gradcheck
+from toporlogy.optimization.checks import grey_fraction, gradcheck, study_gradcheck
 from toporlogy.core.domain import Domain
 from toporlogy.fem import Elasticity
 from toporlogy.design.interp import RAMP, SIMP
 from toporlogy.optim import MMA, OC, BetaContinuation, Optimizer, Schedule
 from toporlogy.record import Recorder
-from toporlogy.responses import Compliance, EvalContext, Response, Volume
-from toporlogy.study import Constraint, Evaluation, Result, Study
+from toporlogy.optimization.responses import Compliance, EvalContext, Response, Volume
+from toporlogy.optimization.study import Constraint, Evaluation, Result, Study
 
 # Feature modules (import as toporlogy.<module>; their classes are not flattened into this namespace):
 # bc (supports, loads, checks), geometry (CSG / STL domains, bores), lengthscale (min/max thickness, measurement),

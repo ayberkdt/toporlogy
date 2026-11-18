@@ -10,7 +10,7 @@ from dataclasses import dataclass, field
 from toporlogy.core.domain import Domain
 from toporlogy.fem.elastic import Elasticity
 from toporlogy.geometry import Bore
-from toporlogy.responses import EvalContext, Response
+from toporlogy.optimization.responses import EvalContext, Response
 from typing import Any
 
 import numpy as np

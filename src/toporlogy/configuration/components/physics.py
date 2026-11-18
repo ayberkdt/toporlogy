@@ -15,7 +15,7 @@ def register_physics() -> None:
     def two_range_simp(ctx: BuildContext, penal: float = 3.0, threshold: float = 0.1, q: float = 1.0,
                        emin_ratio: float = 1e-9) -> Any:
         """SIMP x^p above threshold, threshold^(p-q) x^q below (no spurious low-density modes); E0 from material."""
-        from toporlogy.dynamics import TwoRangeSIMP
+        from toporlogy.optimization.dynamics import TwoRangeSIMP
         return TwoRangeSIMP(ctx.domain, E0=ctx.material["E0"], penal=penal, threshold=threshold, q=q,
                             emin_ratio=emin_ratio)
 
@@ -28,7 +28,7 @@ def register_physics() -> None:
         """Free vibration K phi = lambda M phi (no static solve; load_cases optional); rho0 = material.rho; mass
         "linear" or "two_range"; added_mass (total) spread over the nodes of added_mass_at. Supports: fixed DOFs
         along axes only, one support set."""
-        from toporlogy.dynamics import LinearMass, TwoRangeMass
+        from toporlogy.optimization.dynamics import LinearMass, TwoRangeMass
         from toporlogy.fem.modal import Modal
         bcs, d = ctx.bc, ctx.domain
         sets = {id(bcs.constraints(i)) for i in range(len(bcs.cases))}

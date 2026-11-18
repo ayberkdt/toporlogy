@@ -209,7 +209,7 @@ def _is_cylinder(s: Any, what: str) -> Any:
 
 
 def _robust_set(ctx: BuildContext) -> Any:
-    from toporlogy.robust import RobustSet
+    from toporlogy.optimization.robust import RobustSet
     if ctx.robust is None:
         ctx.robust = RobustSet()
         ctx.extra.setdefault("notes", []).append("robust: no robust block; default thresholds eta_e 0.75, eta_d 0.25")

@@ -25,13 +25,13 @@ LAYER_OF = {
     "fem": "physics", "physics": "physics",
     "design": "design",
     "boundary": "boundary",
-    "responses": "optimization", "study": "optimization", "robust": "optimization", "lengthscale": "optimization",
-    "connectivity": "optimization", "dynamics": "optimization", "checks": "optimization", "optim": "optimization",
-    "optimization": "optimization", "record": "optimization",
+    "optim": "optimization", "optimization": "optimization", "record": "optimization",
     "post": "postprocessing", "postprocessing": "postprocessing", "verification": "postprocessing",
     "configuration": "configuration",
     "registry": "compat", "config": "compat", "bc": "compat",  # compatibility modules after G2-G4 (re-exports)
     "domain": "compat", "chain": "compat", "interp": "compat", "manufacturing": "compat",   # G5 aliases
+    "responses": "compat", "study": "compat", "robust": "compat", "lengthscale": "compat", "connectivity": "compat",
+    "dynamics": "compat", "checks": "compat",
     "cli": "execution", "__main__": "execution", "execution": "execution",
     "": "package",                                          # toporlogy/__init__.py
 }
@@ -57,7 +57,7 @@ ALLOWED = {
 }
 # (importer, imported) known violations; docs/gelistirme_plani.md §4.3. Remove entries as they are fixed.
 EXCEPTIONS = {
-    ("fem.modal", "dynamics"),                              # physics -> optimization (lazy, eigenvalue cache)
+    ("fem.modal", "optimization.dynamics"),                 # physics -> optimization (lazy, eigenvalue cache)
 }
 
 

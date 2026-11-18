@@ -236,7 +236,7 @@ def register_post_steps() -> None:
         (result_repaired.npz; later geometry steps use it, the optimisation result is not modified), gate it again
         and re-evaluate its objective and constraints ("repaired_design"); a repair that violates a constraint
         fails the gate."""
-        from toporlogy.connectivity import analyse_connectivity, bridge
+        from toporlogy.optimization.connectivity import analyse_connectivity, bridge
         if repair not in ("none", "bridge"):
             raise ValueError(f'repair: none | bridge, got "{repair}"')
         masks = _interfaces(ctx)
@@ -277,7 +277,7 @@ def register_post_steps() -> None:
                          upsample: int | None = None, smooth: float = 0.0, margin: float = 0.0,
                          percentiles: list = (1.0, 5.0, 50.0), radii: list = ()) -> Any:
         """Measure member thickness and void size of the final design (lengths in the unit of h)."""
-        from toporlogy.lengthscale import measure_lengthscale
+        from toporlogy.optimization.lengthscale import measure_lengthscale
         state = _post_state(ctx)
 
         def step(res: Any, study: Any, folder: Any) -> dict[str, Any]:

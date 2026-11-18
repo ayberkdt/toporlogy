@@ -19,7 +19,8 @@ bugünkü durumunu, bulunan açıkları ve sonraki işlerin sırasını tutar.
 | G2 `registry.py`'yi böl | tamam | `configuration/` paketi; `registry.py` uyumluluk modülü (aşağıda) |
 | G3 `config.py`'yi böl | tamam | `configuration/{schema,resolve,build}.py`, `execution/{runner,runs}.py`; `config.py` uyumluluk modülü |
 | G4 `bc.py`'yi böl | tamam | `boundary/{part,selectors,supports,constrained,loads,checks,cases}.py`; `bc.py` uyumluluk modülü |
-| G5–G9 | başlamadı | K1 kararı verildi: sınırlı (K1-a) |
+| G5 katman paketleri | kısmen | `core/`, `design/`, `optimization/` tamam; `execution/` (`record`, `cli`) yapılmadı |
+| G6–G9 | başlamadı | K1 kararı verildi: sınırlı (K1-a) |
 | K5 lisans | kapandı | tescilli, tüm hakları saklı (`LICENSE`) |
 
 G1 bulgularının kapandığı commit'ler: B-01 `aeb3ac3`; B-03 `6dca762`; B-04 `a6b0bc6`; B-05 `cf83e40`; B-07 `54ff90f`,
@@ -51,6 +52,19 @@ G4: `bc.py`'nin 1912 satırı `boundary/` paketine taşındı: `part.py` (`PartI
 Paketin içindeki 16 içe aktarma `toporlogy.boundary`'ye taşındı. Plandan sapma: plandaki `assembly.py` ve
 `validation.py` ayrı modül olmadı, çünkü birleştirme ve kontroller `BoundaryConditions` sınıfının yöntemleri; sınıfın
 dışındaki yardımcılar `checks.py`'de.
+
+G5 (iki adım): modüller bölünmeden `git mv` ile taşındı: `domain` → `core/`; `chain`, `interp`, `manufacturing` →
+`design/`; `responses`, `study`, `robust`, `lengthscale`, `connectivity`, `dynamics`, `checks` → `optimization/`.
+Eski adlar `sys.modules` takma adı: `toporlogy.study` ile `toporlogy.optimization.study` aynı modül nesnesi (özel adlar,
+modül durumu ve monkeypatch ortak). Paketin içindeki içe aktarmalar yeni yollara çevrildi; katman testi eski adları
+`compat` katmanında sayıyor, bu yüzden eski yolda kalan bir iç içe aktarma testi düşürür. Kalan adım: `record` ve
+`cli` → `execution/`.
+
+Yeni açık bulgu (B-20, 18 Kasım 2026): yavaş test `test_connectivity.py::test_split_scenario_all_measures[3]`
+("coupling" senaryosu) başarısız: tasarım tek gövde yerine iki gövde (209 + 7 hücre, "1 floating body without
+interface"). Aynı sonuç `main`'de (`ff1db52`, bu planın bütün değişikliklerinden önce) ve G5'ten önceki `e57444c`'de
+aynı sayılarla ölçüldü; değişikliklerden kaynaklanmıyor. Test normal pakette koşmadığı için daha önce görülmedi.
+Nedeni araştırılmadı.
 
 ---
 

@@ -165,7 +165,7 @@ class Modal:
         self.elements, self.edof = self.elastic.elements, self.elastic.edof
         self.free, self.fixed = self.elastic.free, self.elastic.fixed
         if mass is None:
-            from toporlogy.dynamics import LinearMass
+            from toporlogy.optimization.dynamics import LinearMass
             mass = LinearMass(domain)
         self.mass = mass
         self.n_modes, self.sigma, self.tol = int(n_modes), float(sigma), float(tol)

@@ -134,16 +134,18 @@ same result. Boundary conditions by geometry instead of DOF numbers: `toporlogy.
 
 ## What is inside
 
-The library follows the optimisation pipeline; every stage is a module that can be used alone or replaced.
+The library follows the optimisation pipeline; every stage is a module that can be used alone or replaced. The
+former flat module paths (`toporlogy.study`, `toporlogy.bc`, `toporlogy.config`, …) still import and refer to the same
+objects.
 
 | Stage | Module | Provides |
 |:---|:---|:---|
 | Geometry | `geometry` | CSG primitives, STL voxelisation with partial volumes, bore detection |
 | Boundary conditions | `boundary` | 18 geometric selectors; 5 support types (fixed, roller, symmetry, pinned bore, springs); nodal and 9 distributed load types incl. bearing and remote loads; load cases and combinations; resultant and rigid-body checks |
-| Design chain | `chain`, `manufacturing` | density filter, tanh projection, keep/void regions; AM overhang filter, symmetry, extrusion and pattern tying, casting/milling pull direction |
+| Design chain | `design` (`chain`, `interp`, `manufacturing`) | density filter, tanh projection, keep/void regions; AM overhang filter, symmetry, extrusion and pattern tying, casting/milling pull direction |
 | Physics | `fem`, `solvers` | H8, H8IM and Q4 elasticity, heat conduction, modal analysis; PARDISO/SuperLU, or matrix-free multigrid on CUDA with a direct fallback |
-| Responses | `responses`, `robust`, `lengthscale`, `connectivity`, `dynamics` | compliance, volume; robust minimum solid/void size; maximum thickness; one-body constraints; eigenfrequencies |
-| Optimisation | `optim`, `study` | OC (one constraint), MMA (any number), β continuation, move-limit control; run folders with git revision |
+| Responses | `optimization` (`responses`, `robust`, `lengthscale`, `connectivity`, `dynamics`) | compliance, volume; robust minimum solid/void size; maximum thickness; one-body constraints; eigenfrequencies |
+| Optimisation | `optim`, `optimization.study` | OC (one constraint), MMA (any number), β continuation, move-limit control; run folders with git revision |
 | Post-processing | `post` | density → signed distance → topology-preserving opening/closing → exact functional faces → smooth surface → manufacturing checks → T10 re-analysis → STL/PLY/OBJ |
 
 ## Keeping the part in one body

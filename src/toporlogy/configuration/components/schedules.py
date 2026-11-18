@@ -16,7 +16,7 @@ def register_schedules() -> None:
                             update_volume: bool = True) -> Any:
         """beta doubles every `every` iterations or when change <= tol (null = run.tol); every volume_every
         iterations the dilated volume bound becomes target V_d / V_i (target null = its initial upper)."""
-        from toporlogy.robust import RealisationVolume, Robust, RobustContinuation
+        from toporlogy.optimization.robust import RealisationVolume, Robust, RobustContinuation
         vol = next((c for c in ctx.constraints if isinstance(c.response, RealisationVolume)), None) \
             if update_volume else None
         rescale = [r for r in [ctx.objective, *[c.response for c in ctx.constraints]] if isinstance(r, Robust)]

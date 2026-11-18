@@ -107,7 +107,7 @@ def _h_dim(domain: dict[str, Any] | None, errors: list[tuple[str, str]]) -> tupl
 
 
 def _robust_settings(rb: dict[str, Any], h: float, dim: int) -> dict[str, float]:
-    from toporlogy.robust import robust_chain_settings
+    from toporlogy.optimization.robust import robust_chain_settings
     return robust_chain_settings(rb["min_solid"], rb["min_void"], h=h, dim=dim, eta_max=rb["eta_max"],
                                  kernel=rb["kernel"])
 
