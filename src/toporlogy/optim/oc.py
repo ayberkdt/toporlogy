@@ -38,6 +38,12 @@ class OC(Optimizer):
         self.bisection_tol, self.max_bisect, self.dv_scale = float(bisection_tol), int(max_bisect), float(dv_scale)
         self.last_lambda = float("nan")
 
+    def kkt_multipliers(self) -> np.ndarray | None:
+        """The update is x * sqrt(-df0 / (lambda * dv_scale * dg)); at an interior stationary point
+        -df0 = lambda * dv_scale * dg, so the multiplier of g is lambda * dv_scale (unscaled objective)."""
+        lm = float(self.last_lambda)
+        return None if not np.isfinite(lm) else np.array([lm * self.dv_scale])
+
     def step(self, x: np.ndarray, f0: float, df0: np.ndarray, g: np.ndarray, dg: np.ndarray,
              constraint_fn: Callable[[np.ndarray], np.ndarray] | None = None) -> np.ndarray:
         dg = np.atleast_2d(dg)

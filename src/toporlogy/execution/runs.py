@@ -45,6 +45,35 @@ def status_of(summary: dict[str, Any]) -> str:
     return ", ".join(flags) or STATUS_OK
 
 
+def flags_of(summary: dict[str, Any]) -> list[str]:
+    """Machine-readable findings of a run summary, one code each (empty list: nothing to report). The status line
+    says the same in words; the flags also name what was NOT verified (docs/gelistirme_plani.md G7):
+
+    ``not_converged``, ``schedule_step_at_max_iter``, ``constraint_violated``, ``<post step>_failed``,
+    ``repair_unverified`` (a connectivity repair whose constraints could not all be evaluated),
+    ``bc_mapping_approximate`` / ``bc_mapping_unsupported`` (a re-analysis that did not solve the optimisation's
+    exact supports and loads)."""
+    flags: list[str] = []
+    if not summary.get("converged", False):
+        flags.append("not_converged")
+    if summary.get("termination") == "schedule_step_at_max_iter":
+        flags.append("schedule_step_at_max_iter")
+    if any(not c.get("satisfied", True) for c in summary.get("constraints", [])):
+        flags.append("constraint_violated")
+    for name, out in (summary.get("post") or {}).items():
+        if not isinstance(out, dict):
+            continue
+        if out.get("passed") is False:
+            flags.append(f"{name}_failed")
+        rd = out.get("repaired_design")
+        if isinstance(rd, dict) and rd.get("feasible") is None:
+            flags.append("repair_unverified")
+        fid = out.get("bc_fidelity")
+        if fid in ("approximate", "unsupported"):
+            flags.append(f"bc_mapping_{fid}")
+    return list(dict.fromkeys(flags))
+
+
 def write_sweep_csv(path: str | Path, rows: Sequence[dict[str, Any]], keys: Sequence[str]) -> Path:
     """``sweep.csv``: index, folder, swept keys, status, objective, constraint values, iterations, seconds, grey."""
     cnames: list[str] = []

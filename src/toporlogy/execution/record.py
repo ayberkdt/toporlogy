@@ -63,5 +63,7 @@ class Recorder:
             np.savez_compressed(self.folder / "snapshots.npz", **self._snaps)
         out = {"iterations": res.iterations, "converged": res.converged, "seconds": res.seconds,
                "objective": res.objective if (res.final is not None or res.history["f0"]) else None,
-               "constraints": res.constraint_values, "settings": res.settings}
+               "constraints": res.constraint_values, "termination": getattr(res, "termination", ""),
+               "feasible": getattr(res, "feasible", None), "max_violation": getattr(res, "max_violation", None),
+               "kkt_residual": getattr(res, "kkt_residual", None), "settings": res.settings}
         (self.folder / "result.json").write_text(json.dumps(out, indent=1, default=str), encoding="utf-8")

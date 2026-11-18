@@ -104,6 +104,13 @@ class MMA(Optimizer):
         self.last_subproblem: dict = {}
         self.reset()
 
+    def kkt_multipliers(self) -> np.ndarray | None:
+        """Dual solution of the last subproblem (normalised objective, constraints as passed)."""
+        return self.last_lambda.copy() if self.last_lambda.size else None
+
+    def objective_scale(self, f0: float) -> float:
+        return float(self.f0_scale) if self.f0_scale is not None else 1.0
+
     def restart(self) -> None:
         """New run: ``reset()`` and count the resets of this run only (n_resets = β steps of the run)."""
         self.reset()

@@ -11,7 +11,7 @@ from typing import Any
 import numpy as np
 
 from toporlogy.configuration.build import Setup
-from toporlogy.execution.runs import status_of, write_resolved
+from toporlogy.execution.runs import flags_of, status_of, write_resolved
 
 
 def run_setup(setup: Setup, folder: str | Path, progress: Callable[[int, dict[str, Any]], None] | None = None,
@@ -47,7 +47,8 @@ def run_setup(setup: Setup, folder: str | Path, progress: Callable[[int, dict[st
                **st.schedule.state(), "seconds": time.perf_counter() - t0}
         progress(it, row)
 
-    res = st.run(max_iter=int(run["max_iter"]), tol=float(run["tol"]), callback=cb)
+    res = st.run(max_iter=int(run["max_iter"]), tol=float(run["tol"]), callback=cb,
+                 feasibility_tol=float(run["feasibility_tol"]))
     ftol = float(run["feasibility_tol"])
     cons = []
     final = res.constraint_values               # returned design, as res.objective (history[-1] is the step before)
@@ -58,7 +59,8 @@ def run_setup(setup: Setup, folder: str | Path, progress: Callable[[int, dict[st
     summary: dict[str, Any] = {
         "name": r["name"], "objective_name": st.objective.name, "objective": res.objective,
         "constraints": cons, "iterations": res.iterations, "max_iter": int(run["max_iter"]),
-        "converged": bool(res.converged), "seconds": res.seconds,
+        "converged": bool(res.converged), "termination": res.termination, "feasible": res.feasible,
+        "max_violation": res.max_violation, "kkt_residual": res.kkt_residual, "seconds": res.seconds,
         "grey_fraction": grey_fraction(res.xphys, st.domain.active), "tol": float(run["tol"]),
         "config": "config.resolved.yaml", "source": source, "created": time.strftime("%Y-%m-%dT%H:%M:%S"),
         "post": {}}
@@ -82,5 +84,6 @@ def run_setup(setup: Setup, folder: str | Path, progress: Callable[[int, dict[st
         if post_progress is not None:
             post_progress(key, out or {}, time.perf_counter() - tp)
     summary["status"] = status_of(summary)
+    summary["flags"] = flags_of(summary)
     (folder / "summary.json").write_text(json.dumps(summary, indent=1, default=str), encoding="utf-8")
     return summary
