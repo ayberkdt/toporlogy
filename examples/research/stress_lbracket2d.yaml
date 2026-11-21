@@ -1,0 +1,40 @@
+# L-bracket (2-D, 40 x 40 with the upper right 24 x 24 removed), clamped at the top, load on the tip of the leg:
+# minimise volume subject to the largest relaxed von Mises stress <= sigma_lim. The re-entrant corner is the stress
+# concentration a compliance design leaves sharp and a stress design rounds. The load is spread over 4 nodes and the
+# elements around it are excluded (a point load is a stress singularity).
+# P-norm (p = 8) with the adaptive scale; GCMMA because the constraint is strongly nonlinear.
+# Units: consistent (h = 1, E0 = 1, load 1, thickness 1).
+name: stress_lbracket2d
+domain:
+  type: csg
+  h: 1.0
+  shapes:
+    - {type: box, lo: [0, 0], hi: [40, 16]}
+    - {type: box, lo: [0, 0], hi: [16, 40]}
+material: {E0: 1.0, nu: 0.3}
+supports:
+  - {type: fixed, where: {type: on_plane, axis: y, at: max}}
+load_cases:
+  - name: tip
+    loads:
+      - {type: force, where: {type: in_box, lo: [37, 16], hi: [40, 16]}, force: [0, -1]}
+chain:
+  - {type: density_filter, rmin: 2.0}
+  - {type: heaviside_projection, beta: 1.0}
+interpolation: {type: simp, penal: 3.0, emin_ratio: 1.0e-6}
+objective: volume
+constraints:
+  - response:
+      type: stress
+      sigma_lim: 2.5
+      aggregate: pnorm
+      parameter: 8.0
+      q: 0.5
+      adaptive: 0.5
+      exclude:
+        - {type: box, lo: [34, 12], hi: [40, 16]}
+optimizer: {type: gcmma, move: 0.1}
+schedule: {type: beta_continuation, beta_max: 8.0, every: 30}
+run: {max_iter: 120, tol: 0.002}
+post:
+  - {type: discrete_check, volume: null, threshold: 0.5}

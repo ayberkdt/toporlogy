@@ -116,6 +116,23 @@ class Result:
         return {k: v for k, v in self.final.values.items() if k in self.settings.get("constraint_keys", ())}
 
 
+def _reset_scales(response: Any, _seen: set[int] | None = None) -> None:
+    """Call ``reset_scale()`` on a response and on the responses it wraps (attributes ``response``, ``responses``,
+    ``objective``, ``numerator``, ``denominator``): a scale taken at the first evaluation (KS scale, adaptive
+    constraint scale, reference of a weighted sum) belongs to one run."""
+    seen = set() if _seen is None else _seen
+    if response is None or id(response) in seen:
+        return
+    seen.add(id(response))
+    fn = getattr(response, "reset_scale", None)
+    if callable(fn):
+        fn()
+    for name in ("response", "objective", "numerator", "denominator"):
+        _reset_scales(getattr(response, name, None), seen)
+    for child in getattr(response, "responses", None) or ():
+        _reset_scales(child, seen)
+
+
 class Study:
     """One topology optimisation problem.
 
@@ -272,6 +289,8 @@ class Study:
         # reads the volume bound
         self.schedule.reset()
         self.optimizer.restart()
+        for r in [self.objective, *[c.response for c in self.constraints]]:
+            _reset_scales(r)                                   # scales frozen at a first evaluation are taken again
         x = self.default_start() if x0 is None else np.asarray(x0, float).copy()
         if x.shape != (self.n_var,):
             raise ValueError(f"x0 must have {self.n_var} entries")
@@ -288,6 +307,11 @@ class Study:
         it, change, ev = 0, 1.0, None
         termination, stepped_last = "max_iter", False
         move0 = getattr(self.optimizer, "move", None)
+        if getattr(self.optimizer, "needs_value_fn", False):
+            def value_fn(xc: np.ndarray) -> tuple[float, np.ndarray]:
+                e = self.evaluate(xc, gradients=False)
+                return e.f0, e.g
+            self.optimizer.value_fn = value_fn
         try:
             while it < max_iter:
                 it += 1
@@ -334,6 +358,8 @@ class Study:
                          final.U, self.settings(), final, termination=termination, feasible=feasible,
                          max_violation=max(worst, 0.0), kkt_residual=kkt)
         finally:
+            if getattr(self.optimizer, "needs_value_fn", False):
+                self.optimizer.value_fn = None
             if move0 is not None:
                 cast(_HasMove, self.optimizer).move = move0     # leave the optimizer as it was given, also on an error
         if self.recorder is not None:
@@ -362,6 +388,8 @@ class Study:
                 s[k] = getattr(self.physics, k)
         if hasattr(self.physics, "solver"):
             s["solver"] = getattr(self.physics.solver, "name", type(self.physics.solver).__name__)
+        if hasattr(self.optimizer, "n_inner_total"):             # GCMMA / SiMPL: evaluations inside the steps
+            s["inner_evaluations"] = int(self.optimizer.n_inner_total)
         if hasattr(self.optimizer, "subproblem_failures"):       # MMA: dual solves that did not converge this run
             s["subproblem_failures"] = int(self.optimizer.subproblem_failures)
         return s

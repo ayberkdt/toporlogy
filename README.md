@@ -2,11 +2,13 @@
 
 **Topology optimisation you can take apart.** Density-based structural optimisation on regular 2-D and 3-D grids,
 built from small, replaceable pieces: geometry and boundary conditions, a differentiable design chain, linear FEM
-with an exact adjoint, OC and MMA optimisers, manufacturing and connectivity constraints, a GPU multigrid solver,
-and a post-processing pipeline that turns the density field into a checked, printable surface.
+with an exact adjoint, four optimisers (OC, MMA, GCMMA, SiMPL), stress, buckling, eigenfrequency, manufacturing and
+connectivity constraints, a GPU multigrid solver, and a post-processing pipeline that turns the density field into a
+checked, printable surface.
 
 Derivatives come from PyTorch autograd plus one hand-written adjoint for the linear solve. A new objective or
-constraint is therefore a forward computation and a finite-difference test, nothing more.
+constraint is therefore a forward computation and a finite-difference test, nothing more
+([`docs/deriving_methods.md`](docs/deriving_methods.md) shows four worked derivations, all executed by a test).
 
 > **Proprietary software — all rights reserved.** No licence to use, copy, modify or distribute this code is
 > granted; see [LICENSE](LICENSE). Access to the repository does not imply permission.
@@ -19,7 +21,8 @@ constraint is therefore a forward computation and a finite-difference test, noth
 | Developed and tested on | Windows 11, CPU; CUDA for the multigrid solver |
 
 **Contents:** [Install](#install) · [Quickstart](#quickstart) · [Configuration](#configuration) ·
-[Python API](#python-api) · [What is inside](#what-is-inside) · [One body](#keeping-the-part-in-one-body) ·
+[Python API](#python-api) · [What is inside](#what-is-inside) · [Methods of 21 Nov 2026](#methods-added-on-21-nov-2026) ·
+[One body](#keeping-the-part-in-one-body) ·
 [Evidence](#evidence) · [Limitations](#known-limitations) · [Development](#development) · [Licence](#licence)
 
 ## Install
@@ -105,8 +108,9 @@ run: {max_iter: 300, tol: 0.01}
 ```
 
 Seven examples cover 2-D and 3-D compliance, multiple load cases, eigenfrequency maximisation, symmetry with an
-additive-manufacturing filter, connectivity and the full post-processing chain (`examples/`). 87 components in 13
-kinds are available from YAML; `python -m toporlogy list` documents them and
+additive-manufacturing filter, connectivity and the full post-processing chain (`examples/`); five more in
+`examples/research/` cover stress constraints (aggregated and augmented Lagrangian), buckling, a compliant inverter
+and SiMPL with a PDE filter. 95 components in 13 kinds are available from YAML; `python -m toporlogy list` documents them and
 [`docs/registry.md`](docs/registry.md) shows how to add one in a single line.
 
 ## Python API
@@ -141,11 +145,34 @@ module, class and config component has one name; there are no alias modules or s
 |:---|:---|:---|
 | Geometry | `geometry` | CSG primitives, STL voxelisation with partial volumes, bore detection |
 | Boundary conditions | `boundary` | 18 geometric selectors; 5 support types (fixed, roller, symmetry, pinned bore, springs); nodal and 9 distributed load types incl. bearing and remote loads; load cases and combinations; resultant and rigid-body checks |
-| Design chain | `design` (`chain`, `interp`, `manufacturing`) | density filter, tanh projection, keep/void regions; AM overhang filter, symmetry, extrusion and pattern tying, casting/milling pull direction |
-| Physics | `fem`, `solvers` | H8, H8IM and Q4 elasticity, heat conduction, modal analysis; PARDISO/SuperLU, or matrix-free multigrid on CUDA with a direct fallback |
-| Responses | `optimization` (`responses`, `robust`, `lengthscale`, `connectivity`, `dynamics`) | compliance, volume; robust minimum solid/void size; maximum thickness; one-body constraints; eigenfrequencies |
-| Optimisation | `optimizers`, `optimization.study` | OC (one constraint), MMA (any number), β continuation, move-limit control; run folders with git revision |
+| Design chain | `design` (`chain`, `pde_filter`, `interp`, `manufacturing`) | cone density filter, Helmholtz (PDE) filter, tanh projection, keep/void regions; AM overhang filter, symmetry, extrusion and pattern tying, casting/milling pull direction |
+| Physics | `fem`, `solvers` | H8, H8IM and Q4 elasticity, heat conduction, modal analysis, linear buckling; PARDISO/SuperLU, or matrix-free multigrid on CUDA with a direct fallback |
+| Responses | `optimization` (`responses`, `robust`, `lengthscale`, `connectivity`, `dynamics`, `stress`, `buckling`, `compose`) | compliance, volume; robust minimum solid/void size; maximum thickness; one-body constraints; eigenfrequencies; von Mises stress; buckling load factor; displacement; sums and ratios of responses |
+| Method toolkit | `optimization` (`aggregates`, `local`, `benchmark`) | six smooth aggregates with proven bounds; any local criterion as one aggregated constraint or as an augmented Lagrangian; evaluation of the thresholded design and comparison tables |
+| Optimisation | `optimizers`, `optimization.study` | OC (one constraint), MMA and GCMMA (any number), SiMPL (one volume-type constraint), β continuation, multiplier updates, move-limit control; run folders with git revision |
 | Post-processing | `post` | density → signed distance → topology-preserving opening/closing → exact functional faces → smooth surface → manufacturing checks → T10 re-analysis → STL/PLY/OBJ |
+
+## Methods added on 21 Nov 2026
+
+Stress, buckling, two optimizers, a PDE filter and a toolkit for deriving and comparing methods. Sources: the
+network policy of the session that added them blocked publisher and arXiv pages, so **no paper text was read**;
+every docstring says whether a formula was derived and verified here, read from public reference code, or written
+from memory. The literature survey, the gaps it found and the verification status of every citation are in
+[`docs/literatur_2026-11-21.md`](docs/literatur_2026-11-21.md); all numbers below are in
+[`docs/olcumler/yontemler.md`](docs/olcumler/yontemler.md), measured on small 2-D problems under machine load.
+
+| Addition | Verified by | Measured |
+|:---|:---|:---|
+| von Mises stress field, qp and polynomial relaxation (`optimization.stress`) | uniform tension exact to 1e-9 (2-D, 3-D); gradients ≤ 1e-6 | pure bending: centroid stress of Q4 1.8 % off |
+| Aggregated constraint and augmented Lagrangian for any local field (`optimization.local`) | gradients ≤ 1e-6; small problem with known multipliers | L-bracket: both meet the relaxed constraint on the grey design; the thresholded design exceeds the limit by 71 % (aggregated) and 2.5 % (augmented Lagrangian) |
+| Linear buckling (`fem.buckling`, `optimization.buckling`), sensitivity by autograd through a Rayleigh quotient | Euler column 2-D 1.125 → 1.031 → 1.007 → 1.0015 with refinement, 3-D H8IM 0.9975; gradients 8.5e-9 / 2.6e-9 | constraint λ₁ ≥ 0.02 raises λ₁ by 46 % for 21 % more compliance |
+| GCMMA (`optimizers.gcmma`) | every accepted step conservative; no 2-cycle at an interior optimum | MBB: same result as MMA at twice the solves |
+| SiMPL (`optimizers.simpl`) | known optima to 1e-10; descent with line search | MBB: within 0.1 % of MMA; without line search at the same number of solves |
+| Helmholtz filter (`design.pde_filter`) | volume preserving, bounded, constants reproduced at walls; gradient ≤ 1e-6 | kernel variance equals the cone filter's only in 1-D: 11 % larger in 2-D, 25 % in 3-D |
+| 0/1 evaluation (`optimization.benchmark`, post step `discrete_check`) | exact volume, deterministic | MBB: binary compliance 11–14 % below the grey value; ranking of methods changes |
+
+The augmented Lagrangian did not work with its first settings (optimizer reset at every multiplier update) and its
+present defaults were tuned on one problem; neither stress strategy yields a stress-feasible 0/1 structure.
 
 ## Keeping the part in one body
 
@@ -185,6 +212,7 @@ they show that the implementation did not change, not that it is independently c
 | Multigrid solver | PARDISO, same system | 7.2× faster at 163 k DOF; 10⁶ elements to 1e-8 | `docs/olcumler/A2.md` |
 | Post-processing, 12 inputs | pre-registered criteria | 9/12 pass the geometric criteria, 7/12 all criteria incl. exact-solid volume and T10 mesh convergence; 12/12 watertight with topology preserved | `docs/olcumler/robustness.json`, `tests/toporlogy/test_sweep_post.py` |
 | Reproducibility | two runs in separate processes | the seven examples bitwise identical (CPU, SuperLU) | `tests/toporlogy/test_baseline.py` |
+| Stress, buckling, GCMMA, SiMPL, PDE filter | closed forms, invariants, finite differences | table above | `tests/toporlogy/test_stress.py`, `test_buckling.py`, `test_gcmma.py`, `test_simpl.py`, `test_pde_filter.py`, `test_aggregates.py` |
 
 ## Known limitations
 
@@ -193,23 +221,35 @@ they show that the implementation did not change, not that it is independently c
   the two tet sizes; on the MBB the finer tet size barely refined the mesh.
 - **`Result.converged`** means "design change below `tol` and continuation finished"; it does not include constraint
   feasibility or optimality. Check `summary.json` → `status` and the constraint values.
-- **MMA** is plain MMA, not GCMMA: no global convergence guarantee; a two-cycle has been seen without an active
-  constraint.
-- **OC** handles exactly one constraint, and only one that needs no state solve (rejected at build otherwise).
+- **No paper text behind the methods of 21 Nov 2026:** records and abstracts only; SiMPL and the augmented
+  Lagrangian are this library's implementations of the published ideas, not verified reproductions.
+- **Stress:** centroid stress of a voxel model (inaccurate at jagged boundaries, under-reported in grey elements);
+  no regional aggregation, no robust (eroded/dilated) stress, no body-fitted check in the loop. Results satisfy the
+  relaxed constraint on the grey design, not the stress limit on the thresholded one.
+- **Buckling:** plain `Elasticity` only (direct solver, axis-aligned supports, one support set); no regularisation
+  of the stress field against localised modes; the number of aggregated modes is fixed by the user.
+- **Baseline on another platform:** in numerical mode on Linux / Python 3.13 six of the seven examples agree with
+  the Windows reference to 1e-6; `lbracket_bore3d` differs by 0.6 % in the objective (measured 21 Nov 2026 on the
+  unchanged code of `5f97b86`, cause not investigated).
+- **MMA** is plain MMA: no global convergence guarantee; a two-cycle has been seen without an active constraint.
+  GCMMA removes it at the cost of extra solves.
+- **OC and SiMPL** handle exactly one constraint, and only one that needs no state solve (rejected at build
+  otherwise).
 - **Multigrid** is 3-D only, H8/H8IM only, and a separate physics class (`ElasticityGMG`), not a pluggable solver.
 - **Geometry:** bore detection is axis-aligned only; CSG Booleans give a distance bound, not the exact distance.
-- **Not ported yet:** 3-D stress constraints, buckling, thermoelasticity. **Not provided:** STEP or other B-rep
-  output (STL/PLY/OBJ only).
+- **Not provided:** thermoelasticity, nonlinear analysis, multi-material, de-homogenisation, neural
+  parameterisations; STEP or other B-rep output (STL/PLY/OBJ only).
 - **RAMP** interpolation is experimental and used by no default.
 
 The full inventory, the open findings and the migration plan are in
 [`docs/gelistirme_plani.md`](docs/gelistirme_plani.md); the method decisions in
-[`docs/mimari_plan.md`](docs/mimari_plan.md).
+[`docs/mimari_plan.md`](docs/mimari_plan.md); the literature survey and open problems in
+[`docs/literatur_2026-11-21.md`](docs/literatur_2026-11-21.md).
 
 ## Development
 
 ```bash
-python -m pytest tests/toporlogy -m "not slow"                  # main suite (5–10 min)
+python -m pytest tests/toporlogy -m "not slow"                  # main suite (5–10 min; 521 tests on 21 Nov 2026)
 python -m pytest tests/toporlogy/test_baseline.py -m baseline   # bitwise baseline of the examples (~3.5 min)
 python -m pytest tests/toporlogy -m slow                        # pre-registered sweeps (hours; gmsh for T10)
 ```

@@ -124,3 +124,23 @@ yumuşatma yok, figür notu buna göre.
 | Y1 | İlk araştırma hattı | R-01 / R-02 | R-01: PR-05 ve PR-07'nin altyapısını doğrudan kullanır |
 | Y2 | Simetrik problem algılanınca bağlar | her zaman simetrik / kullanıcı seçimi | PR-11'in ölçümünden sonra karar |
 | Y3 | gmsh / T10 CI'da | her PR / planlı iş akışı | planlı iş akışı (koşu süresi) |
+
+## 6. Ek (21 Kasım 2026): sıra dışı güçlendirme çalışması
+
+Depo sahibinin isteğiyle, §3'teki sıranın dışında bir çalışma yapıldı: literatür taraması, güncel yöntemlerin
+eklenmesi ve yöntem türetme altyapısı. Kayıt: [`literatur_2026-11-21.md`](literatur_2026-11-21.md); ölçümler:
+[`olcumler/yontemler.md`](olcumler/yontemler.md). Bu planla ilişkisi:
+
+| Bu plandaki madde | 21 Kasım çalışmasının etkisi |
+|---|---|
+| "P0 bitmeden FEM çekirdeğine yeni fizik yok" (§1) | **Çiğnendi:** gerilme ve doğrusal burkulma eklendi. Çekirdeğin mevcut yolları değişmedi (OC/MMA, `Elasticity`, zincir); eklenenler ayrı modüller. PR-05–PR-12 açık kalıyor. |
+| R-04 (3-D gerilme, burkulma: "tek bir fizik seçilmeden ve doğrulaması planlanmadan başlamaz") | İkisi de başladı. Doğrulama: kapalı çözümler ve sonlu farklar (yapıldı); bağımsız kodlarla karşılaştırma (yapılmadı; PR-09 ile aynı eksik). |
+| PR-04'ün açık sorusu: "1e-6 toleransın Linux'ta tutup tutmadığı" | **Ölçüldü [Ö]:** Linux, Python 3.13.18, NumPy 2.5.3, SciPy 1.18.1, torch 2.15.0'da, değiştirilmemiş `5f97b86` üzerinde, yedi örnekten altısı 1e-6'yı tutuyor; `lbracket_bore3d` tutmuyor (amaç 285,434 ↔ 283,693, %0,6; kısıtlar da farklı). Neden araştırılmadı; aday: yüksek β'da robust + bağlantılılık kısıtlı problemin çözücü yuvarlamasına duyarlılığı [D]. `backends.yml`'in sayısal baseline işi bu örnekte kırmızı olacaktır. |
+| PR-09 (bağımsız V&V) | Yeni modüller de aynı durumda: kendi kapalı çözümlerine karşı doğrulandı, topBuck250 / PolyStress / MFEM SiMPL örneğine karşı değil. |
+| PR-12 / R-01 (mekaniği koruyan geometri sonlandırma) | Destekleyen yeni ölçüm: gri → 0/1 geçişte gerilme aşımı %2,5–71 (tek problem). `optimization/benchmark.py` bu hattın ölçüm aracının ilk parçası. |
+| Y1 (ilk araştırma hattı) | Öneri değişmedi: R-01. Literatür taramasında bu boşluğu sistematik ölçen çalışma bulunamadı (yokluğun kanıtı değil). |
+
+Yeni açık işler (öncelik sırasıyla): (1) tam metinlerin okunup kodlardaki "text not read" notlarının kapatılması;
+(2) robust uzunluk ölçeği tablolarının Wang–Lazarov–Sigmund 2022 düzeltmesine karşı denetimi; (3) `lbracket_bore3d`
+platform farkının nedeni; (4) burkulmada küme kesilmesi uyarısı; (5) GMG float32 yolunda rijit gövde modu enerjisi
+ölçümü; (6) yeni yöntemlerin GMG fiziğiyle (`ElasticityGMG`) çalıştırılması — denenmedi.

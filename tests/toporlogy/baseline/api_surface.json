@@ -320,10 +320,12 @@
     "max_constraints",
     "name",
     "needs_constraint_fn",
+    "needs_value_fn",
     "objective_scale",
     "reset",
     "restart",
-    "step"
+    "step",
+    "value_fn"
    ],
    "class": "MMA"
   },
@@ -333,10 +335,12 @@
     "max_constraints",
     "name",
     "needs_constraint_fn",
+    "needs_value_fn",
     "objective_scale",
     "reset",
     "restart",
-    "step"
+    "step",
+    "value_fn"
    ],
    "class": "OC"
   },
@@ -346,10 +350,12 @@
     "max_constraints",
     "name",
     "needs_constraint_fn",
+    "needs_value_fn",
     "objective_scale",
     "reset",
     "restart",
-    "step"
+    "step",
+    "value_fn"
    ],
    "class": "Optimizer"
   },
@@ -1959,6 +1965,7 @@
    "class": "BuildContext"
   },
   "annotations": "<_Feature>",
+  "checked_selector": "checked_selector(ctx,v,key)",
   "register": "<method>",
   "register_responses": "register_responses()"
  },
@@ -3095,6 +3102,68 @@
   "undercuts": "undercuts(xphys,direction,domain,parting,threshold)",
   "validate_chain": "validate_chain(chain)"
  },
+ "toporlogy.design.pde_filter": {
+  "HelmholtzFilter": {
+   "attrs": [
+    "T_destination",
+    "add_module",
+    "apply",
+    "apply_numpy",
+    "bfloat16",
+    "buffers",
+    "call_super_init",
+    "children",
+    "compile",
+    "cpu",
+    "cuda",
+    "double",
+    "dump_patches",
+    "eval",
+    "extra_repr",
+    "float",
+    "forward",
+    "get_buffer",
+    "get_extra_state",
+    "get_parameter",
+    "get_submodule",
+    "half",
+    "ipu",
+    "load_state_dict",
+    "modules",
+    "mtia",
+    "named_buffers",
+    "named_children",
+    "named_modules",
+    "named_parameters",
+    "parameters",
+    "register_backward_hook",
+    "register_buffer",
+    "register_forward_hook",
+    "register_forward_pre_hook",
+    "register_full_backward_hook",
+    "register_full_backward_pre_hook",
+    "register_load_state_dict_post_hook",
+    "register_load_state_dict_pre_hook",
+    "register_module",
+    "register_parameter",
+    "register_state_dict_post_hook",
+    "register_state_dict_pre_hook",
+    "requires_grad_",
+    "set_extra_state",
+    "set_submodule",
+    "share_memory",
+    "state_dict",
+    "to",
+    "to_empty",
+    "train",
+    "type",
+    "xpu",
+    "zero_grad"
+   ],
+   "class": "HelmholtzFilter"
+  },
+  "helmholtz_matrix": "helmholtz_matrix(active,r)"
+ },
  "toporlogy.execution": {},
  "toporlogy.execution.cli": {
   "main": "main(argv)"
@@ -3163,6 +3232,20 @@
    "class": "ElasticityGMG"
   },
   "element_matrix": "element_matrix(dim,element,nu)"
+ },
+ "toporlogy.fem.buckling": {
+  "LinearBuckling": {
+   "attrs": [
+    "element_matrices",
+    "element_stress",
+    "geometric_matrix",
+    "mode_forms",
+    "modes"
+   ],
+   "class": "LinearBuckling"
+  },
+  "gauss_operators": "gauss_operators(dim)",
+  "voigt_pairs": "voigt_pairs(dim)"
  },
  "toporlogy.fem.elastic": {
   "BACKWARD_TOL": "<float>",
@@ -3499,6 +3582,86 @@
   "write_stl": "write_stl(path,V,F,header)"
  },
  "toporlogy.optimization": {},
+ "toporlogy.optimization.aggregates": {
+  "AGGREGATES": "<dict>",
+  "AdaptiveScale": {
+   "attrs": [
+    "reset",
+    "update"
+   ],
+   "class": "AdaptiveScale"
+  },
+  "aggregate": "aggregate(g,kind,parameter,weights)",
+  "induced_exponential": "induced_exponential(g,rho,weights)",
+  "induced_power": "induced_power(g,p,weights)",
+  "is_upper_bound": "is_upper_bound(kind)",
+  "ks": "ks(g,rho,weights)",
+  "ks_lower": "ks_lower(g,rho,weights)",
+  "pmean": "pmean(g,p,weights)",
+  "pnorm": "pnorm(g,p,weights)"
+ },
+ "toporlogy.optimization.benchmark": {
+  "binarize": "binarize(xphys,domain,volume,threshold)",
+  "compare_runs": "compare_runs(runs,volume,threshold)",
+  "discrete_report": "discrete_report(study,result,volume,threshold)",
+  "format_table": "format_table(rows)"
+ },
+ "toporlogy.optimization.buckling": {
+  "BucklingKS": {
+   "attrs": [
+    "name",
+    "needs",
+    "reset_scale"
+   ],
+   "class": "BucklingKS"
+  },
+  "BucklingLoadFactor": {
+   "attrs": [
+    "name",
+    "needs"
+   ],
+   "class": "BucklingLoadFactor"
+  },
+  "inverse_load_factors": "inverse_load_factors(ctx,n_modes,case,penal_g,E0)"
+ },
+ "toporlogy.optimization.compose": {
+  "Displacement": {
+   "attrs": [
+    "name",
+    "needs"
+   ],
+   "class": "Displacement"
+  },
+  "Functional": {
+   "attrs": [
+    "name",
+    "needs"
+   ],
+   "class": "Functional"
+  },
+  "Ratio": {
+   "attrs": [
+    "name",
+    "needs"
+   ],
+   "class": "Ratio"
+  },
+  "Shifted": {
+   "attrs": [
+    "name",
+    "needs"
+   ],
+   "class": "Shifted"
+  },
+  "WeightedSum": {
+   "attrs": [
+    "name",
+    "needs",
+    "reset_scale"
+   ],
+   "class": "WeightedSum"
+  }
+ },
  "toporlogy.optimization.connectivity": {
   "BridgeResult": {
    "attrs": [],
@@ -3833,6 +3996,52 @@
   "slab_fraction": "slab_fraction(u,dim,member)",
   "voxel_local_thickness": "voxel_local_thickness(phase,faces,pad,level_step,max_levels,exact)"
  },
+ "toporlogy.optimization.local": {
+  "Aggregated": {
+   "attrs": [
+    "name",
+    "needs",
+    "reset_scale"
+   ],
+   "class": "Aggregated"
+  },
+  "AugmentedLagrangian": {
+   "attrs": [
+    "max_violation",
+    "name",
+    "needs",
+    "penalty",
+    "reset",
+    "update"
+   ],
+   "class": "AugmentedLagrangian"
+  },
+  "FunctionField": {
+   "attrs": [
+    "name",
+    "needs",
+    "weights"
+   ],
+   "class": "FunctionField"
+  },
+  "LocalField": {
+   "attrs": [
+    "name",
+    "needs",
+    "weights"
+   ],
+   "class": "LocalField"
+  },
+  "MultiplierUpdate": {
+   "attrs": [
+    "finished",
+    "reset",
+    "state",
+    "update"
+   ],
+   "class": "MultiplierUpdate"
+  }
+ },
  "toporlogy.optimization.responses": {
   "Compliance": {
    "attrs": [
@@ -4004,6 +4213,21 @@
   "project": "project(xt,beta,eta)",
   "robust_chain_settings": "robust_chain_settings(min_solid,min_void,h,dim,eta_max,kernel)"
  },
+ "toporlogy.optimization.stress": {
+  "FORMS": "<tuple>",
+  "VonMises": {
+   "attrs": [
+    "density",
+    "name",
+    "needs",
+    "solid_ratio",
+    "weights"
+   ],
+   "class": "VonMises"
+  },
+  "centroid_stress": "centroid_stress(domain,U,nu,E0,elements)",
+  "von_mises_matrix": "von_mises_matrix(dim)"
+ },
  "toporlogy.optimization.study": {
   "Constraint": {
    "attrs": [
@@ -4059,16 +4283,33 @@
    ],
    "class": "BetaContinuation"
   },
+  "GCMMA": {
+   "attrs": [
+    "kkt_multipliers",
+    "max_constraints",
+    "name",
+    "needs_constraint_fn",
+    "needs_value_fn",
+    "objective_scale",
+    "reset",
+    "restart",
+    "step",
+    "value_fn"
+   ],
+   "class": "GCMMA"
+  },
   "MMA": {
    "attrs": [
     "kkt_multipliers",
     "max_constraints",
     "name",
     "needs_constraint_fn",
+    "needs_value_fn",
     "objective_scale",
     "reset",
     "restart",
-    "step"
+    "step",
+    "value_fn"
    ],
    "class": "MMA"
   },
@@ -4078,10 +4319,12 @@
     "max_constraints",
     "name",
     "needs_constraint_fn",
+    "needs_value_fn",
     "objective_scale",
     "reset",
     "restart",
-    "step"
+    "step",
+    "value_fn"
    ],
    "class": "OC"
   },
@@ -4091,10 +4334,12 @@
     "max_constraints",
     "name",
     "needs_constraint_fn",
+    "needs_value_fn",
     "objective_scale",
     "reset",
     "restart",
-    "step"
+    "step",
+    "value_fn"
    ],
    "class": "Optimizer"
   },
@@ -4106,6 +4351,21 @@
     "update"
    ],
    "class": "Schedule"
+  },
+  "SiMPL": {
+   "attrs": [
+    "kkt_multipliers",
+    "max_constraints",
+    "name",
+    "needs_constraint_fn",
+    "needs_value_fn",
+    "objective_scale",
+    "reset",
+    "restart",
+    "step",
+    "value_fn"
+   ],
+   "class": "SiMPL"
   }
  },
  "toporlogy.optimizers.base": {
@@ -4115,13 +4375,33 @@
     "max_constraints",
     "name",
     "needs_constraint_fn",
+    "needs_value_fn",
     "objective_scale",
     "reset",
     "restart",
-    "step"
+    "step",
+    "value_fn"
    ],
    "class": "Optimizer"
   }
+ },
+ "toporlogy.optimizers.gcmma": {
+  "GCMMA": {
+   "attrs": [
+    "kkt_multipliers",
+    "max_constraints",
+    "name",
+    "needs_constraint_fn",
+    "needs_value_fn",
+    "objective_scale",
+    "reset",
+    "restart",
+    "step",
+    "value_fn"
+   ],
+   "class": "GCMMA"
+  },
+  "conservative_subproblem": "conservative_subproblem(x,low,upp,df,f,rho,move,albefa,c,d)"
  },
  "toporlogy.optimizers.mma": {
   "MMA": {
@@ -4130,10 +4410,12 @@
     "max_constraints",
     "name",
     "needs_constraint_fn",
+    "needs_value_fn",
     "objective_scale",
     "reset",
     "restart",
-    "step"
+    "step",
+    "value_fn"
    ],
    "class": "MMA"
   },
@@ -4153,10 +4435,12 @@
     "max_constraints",
     "name",
     "needs_constraint_fn",
+    "needs_value_fn",
     "objective_scale",
     "reset",
     "restart",
-    "step"
+    "step",
+    "value_fn"
    ],
    "class": "OC"
   }
@@ -4181,6 +4465,26 @@
    ],
    "class": "Schedule"
   }
+ },
+ "toporlogy.optimizers.simpl": {
+  "SiMPL": {
+   "attrs": [
+    "kkt_multipliers",
+    "max_constraints",
+    "name",
+    "needs_constraint_fn",
+    "needs_value_fn",
+    "objective_scale",
+    "reset",
+    "restart",
+    "step",
+    "value_fn"
+   ],
+   "class": "SiMPL"
+  },
+  "bregman_divergence": "bregman_divergence(a,b,eps)",
+  "logit": "logit(x,eps)",
+  "sigmoid": "sigmoid(psi)"
  },
  "toporlogy.post": {
   "Bound": {
