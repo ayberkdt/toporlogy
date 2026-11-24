@@ -163,6 +163,39 @@ yüzeyin aynaya uzaklığını da (örneklenmiş simetrik Hausdorff, alan ağır
 y = 200,56'da 0,1174 / 0,4559 / 0,4739, kayma 3,62 mm. §2.3'teki sayıların hepsi tekrar üretildi. Son STL'nin aynaya
 uzaklığı x = 500'de en çok 82,1, ortalama 4,04, p95 21,9 mm; CAD'in kendisi x'te 1,03 / 0,063 / 0,754 mm.
 
+PR-07, PR-11 ve PR-12 tek dalda (`feat/roadmap-pr07-pr12`, 24 Kasım 2026).
+
+PR-07 yapıldı: `post.verify.assess_convergence` üç ağdan görünür mertebe, Richardson değeri ve ince ağ GCI'si
+(güvenlik katsayısı 1,25) hesaplıyor (Celik vd. 2008'in üç ağ yöntemi; makale bu oturumda okunmadı). NOT CONVERGED
+nedenleri: üçten az ağ, inceltme oranı < 1,3, salınım ya da durma, mertebe [0,5, 6] dışında, GCI > %5, dört ve
+daha çok ağda iki üçlünün mertebesi %30'dan fazla farklı. Eşikler bu kütüphanenin seçimi. `mesh_convergence` aynı
+geometriyi her boyda gmsh'e veriyor ve ağ başına eleman, düğüm, gmsh kipi, h, tet kalitesi ve yük durumu başına
+uyumu yazıyor. Saklanan kayıtlarla kırmızı test (`robustness.json`): r2 eski ölçütle %0,93 değişimle "yakınsadı"
+sayılıyordu, oysa ince boy yalnız %1,8 eleman ekliyordu (140 550 → 143 062). r1'in %12,4'ü farklı geometriler
+arasındaydı (tet hacmi voksel hacminin 0,988'i → 0,998'i). İkisi de artık NOT CONVERGED; kayıtlar değişmedi.
+Kutu konsolda (20 × 4 × 4) 2,0 / 1,25 / 0,8 / 0,5 boyları NOT CONVERGED (mertebe 0,11 ve 2,44), 0,8 / 0,5 / 0,32
+CONVERGED (mertebe 1,47, GCI %0,07). Bulgu: gmsh yüzeyi yeniden parametrelendiremeyince ("discrete" kipi) yüzey
+üçgenlerini koruyor; finalize STL'si üç boyda 23 048 / 23 048 / 23 227 eleman verdi. `subdivide=True` yüzeyi bir kez
+kabalaştırıp her boyda k² üçgene bölüyor (`post.mesh.subdivide`, aynı parçalı doğrusal yüzey).
+
+PR-11 yapıldı: `connectivity.symmetry` (verilmezse zincirdeki `symmetry` bağlantısının düzlemleri) bağları ve
+arayüz pedlerini aynalıyor (`design.manufacturing.mirror_closure`). Varsayılan değişmedi. Braket, 150 iterasyon,
+dört kol (`docs/olcumler/simetrik_baglar.md`): aynalı bağ e_sym(keep)'i 0,224'ten 0'a indiriyor, tasarımı simetrik
+yapmıyor (e_sym(x̄) 0,454; tek taraflı bağda 0,419, bağsız 0,275); uyum %2,2 artıyor. Asimetri bağdan değil, dışbükey
+olmayan problemden geliyor. Tam simetri `SymmetryTying` ile (e_sym(x̄) 2e-7, uyum +%1,5). Yan bulgu: aynalı bağlarla
+arayüzlerin hepsi dondurulmuş hücrelerle birleşiyor, kapının en dar boyun ölçüsü tanımsız (36 çiftin 36'sı
+kesilemez; tek taraflı bağda 32'si). 18 Kasım'daki saklanan koşu 29e2ac5'ten önceki bağlarla optimize edilmişti;
+karşılaştırmada bugünkü kodla yeniden koşulan tek taraflı bağ kullanıldı. Y2 için ölçüm: §5.
+
+PR-12: ön kayıt yazıldı ve koşudan önce commit'lendi (`docs/olcumler/r01_onkayit.md`, 97e0659); deney koşulmadı.
+P1'deki deneme koşusu ön kayıttaki ölçüm planının bu yüzeylerde işlemediğini gösterdi. Finalize yüzeylerinin kenarı
+yaklaşık 0,33 h, yani ön kayıttaki üç tet boyunun (1,0 / 0,65 / 0,42 h) hepsinden ince. gmsh "discrete" kipinde
+yüzeyi koruduğu için ağlar incelmiyor: M1'de 20 613 / 20 613 / 20 721 eleman. Yüzeyi h kenarına seyreltmek üçgenleri
+bozuyor (en küçük açı 0,3°, en-boy oranı 3 400'e kadar) ve gmsh 0,42 h'de 30 dakikada bitmiyor. Şekli her boyda
+yeniden ağlamak topolojiyi korumuyor: kenar 0,13–0,25 h'ye inene kadar yarılıyor. Sabit yüzeyle 0,33 / 0,167 /
+0,111 h ise en ince ağda belleğe sığmıyor (P1, yaklaşık 750 000 T10 elemanı, birleştirmede 5 GB'lık tek dizi; makine
+16 GB). Ön kayıttan sapma gerekiyor; karar bekliyor.
+
 Görselleştirme betiği (panel b) PR değil, çalışma klasöründe düzeltilir: ham iso-yüzey, CAD'le kırpılmış, ek
 yumuşatma yok, figür notu buna göre.
 
@@ -180,7 +213,7 @@ yumuşatma yok, figür notu buna göre.
 | No | Karar | Seçenekler | Öneri |
 |---|---|---|---|
 | Y1 | İlk araştırma hattı | R-01 / R-02 | R-01: PR-05 ve PR-07'nin altyapısını doğrudan kullanır |
-| Y2 | Simetrik problem algılanınca bağlar | her zaman simetrik / kullanıcı seçimi | PR-11'in ölçümünden sonra karar |
+| Y2 | Simetrik problem algılanınca bağlar | her zaman simetrik / kullanıcı seçimi | PR-11 ölçtü (braket, tek problem): aynalı bağ uyumu %2,2 artırıyor, tasarımı simetrik yapmıyor; simetrik tasarım `SymmetryTying` ile. Ölçüm "her zaman simetrik"i desteklemiyor; kod kullanıcı seçimi olarak bırakıldı, karar bekliyor |
 | Y3 | gmsh / T10 CI'da | her PR / planlı iş akışı | planlı iş akışı (koşu süresi) |
 
 ## 6. Ek (21 Kasım 2026): sıra dışı güçlendirme çalışması
