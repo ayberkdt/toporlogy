@@ -53,6 +53,7 @@ from toporlogy.core.domain import Domain
 __all__ = ["Shape", "Box", "Ball", "Capsule", "HalfSpace", "Polygon", "Cylinder", "Prism",
            "Slot", "Union", "Intersection", "Difference", "csg", "grid_for", "coverage", "voxelize",
            "read_stl", "write_stl", "mesh_volume", "winding_number", "coverage_mesh", "voxelize_mesh",
+           "mesh_sdf_grid",
            "Bore", "find_bores", "largest_component", "shape_from_function"]
 
 _AX = {"x": 0, "y": 1, "z": 2}
@@ -671,6 +672,93 @@ def voxelize_mesh(V: np.ndarray, F: np.ndarray, h: float, padding: int = 1, sub:
     dom = _finish(frac, h, origin, min_frac, connectivity, keep, void, 1.0)
     dom.voxelization_info = info          # rays used / dropped per axis (diagnostic)
     return dom
+
+
+def _point_triangle_distance(P: np.ndarray, A: np.ndarray, B: np.ndarray, C: np.ndarray) -> np.ndarray:
+    """Distance of every point P[k] to the triangle (A[k], B[k], C[k]) (all (m, 3)): to the plane if the projection
+    lies inside the triangle, else to the nearest edge. Degenerate triangles fall back to their edges."""
+    def seg(a: np.ndarray, b: np.ndarray) -> np.ndarray:
+        ab = b - a
+        L2 = np.einsum("ij,ij->i", ab, ab)
+        t = np.clip(np.einsum("ij,ij->i", P - a, ab) / np.where(L2 > 0, L2, 1.0), 0.0, 1.0)
+        q = a + t[:, None] * ab - P
+        return np.sqrt(np.einsum("ij,ij->i", q, q))
+    n = np.cross(B - A, C - A)
+    nn = np.sqrt(np.einsum("ij,ij->i", n, n))
+    ok = nn > 1e-300
+    nh = n / np.where(ok, nn, 1.0)[:, None]
+    dp = np.einsum("ij,ij->i", P - A, nh)
+    Q = P - dp[:, None] * nh                                   # projection onto the plane
+    inside = ok.copy()
+    for a, b in ((A, B), (B, C), (C, A)):
+        inside &= np.einsum("ij,ij->i", np.cross(b - a, Q - a), nh) >= 0.0
+    d = np.minimum(np.minimum(seg(A, B), seg(B, C)), seg(C, A))
+    return np.where(inside, np.abs(dp), d)
+
+
+def _inside_by_parity(T: np.ndarray, origin: np.ndarray, h: float, shape: tuple[int, ...]) -> np.ndarray:
+    """Inside mask of the samples ``origin + h·(i, j, k)``: ray parity along x, y and z, majority of the three (a
+    ray through an edge or a hole in the surface spoils one direction, rarely two)."""
+    votes = np.zeros(shape, np.int8)
+    n = np.asarray(shape)
+    for ax in range(3):
+        i, j = _PLANE[ax]
+        ray, z = _ray_hits(T, ax, origin[i] - 0.5 * h, origin[j] - 0.5 * h, h, int(n[i]), int(n[j]))
+        k = np.clip(np.floor((z - origin[ax]) / h).astype(np.int64) + 1, 0, n[ax])   # first sample above z
+        cnt = np.zeros((int(n[i]) * int(n[j]), int(n[ax]) + 1), np.int32)
+        np.add.at(cnt, (ray, k), 1)
+        odd = (np.cumsum(cnt, axis=1)[:, :n[ax]] % 2).astype(np.int8)
+        votes += np.moveaxis(odd.reshape(int(n[i]), int(n[j]), int(n[ax])), [0, 1, 2], [i, j, ax])
+    return votes >= 2
+
+
+def mesh_sdf_grid(V: np.ndarray, F: np.ndarray, origin: Sequence[float] | np.ndarray, h: float,
+                  shape: Sequence[int], band: float, chunk: int = 4_000_000) -> np.ndarray:
+    """Signed distance to a closed triangle surface at the samples ``origin + h·(i, j, k)`` (negative inside).
+
+    Exact within ``band`` of the surface (point–triangle distance to every triangle whose box, grown by ``band``,
+    holds the sample); farther out ``±max(band, EDT distance to the other side)``, which keeps the sign and a
+    distance-like slope. The sign is ray parity along x, y and z (majority). Cost ~ triangles × (2·band/h + 1)³.
+    """
+    V, F = np.asarray(V, float), np.asarray(F, np.int64)
+    T = V[F]
+    org = np.asarray(origin, float)
+    n = tuple(int(s) for s in shape)
+    if len(n) != 3:
+        raise ValueError("mesh_sdf_grid is 3-D")
+    if not band > 0:
+        raise ValueError("band > 0 is required")
+    inside = _inside_by_parity(T, org, float(h), n)
+    dist = np.full(int(np.prod(n)), np.inf)
+    nn = np.asarray(n)
+    lo = np.clip(np.ceil((T.min(axis=1) - band - org) / h - 1e-9), 0, nn).astype(np.int64)      # inclusive at band
+    hi = np.clip(np.floor((T.max(axis=1) + band - org) / h + 1e-9), -1, nn - 1).astype(np.int64)
+    ext = np.maximum(hi - lo + 1, 0)
+    cnt = ext.prod(axis=1)
+    tri = np.flatnonzero(cnt > 0)
+    start = 0
+    while start < len(tri):                                    # chunks of triangles with bounded pair count
+        csum = np.cumsum(cnt[tri[start:]])
+        stop = start + max(1, int(np.searchsorted(csum, chunk)))
+        t = tri[start:stop]
+        start = stop
+        k = cnt[t]
+        tt = np.repeat(t, k)
+        loc = np.arange(int(k.sum())) - np.repeat(np.cumsum(k) - k, k)
+        ey, ez = ext[tt, 1], ext[tt, 2]
+        I = lo[tt, 0] + loc // (ey * ez)
+        J = lo[tt, 1] + (loc // ez) % ey
+        K = lo[tt, 2] + loc % ez
+        P = org + h * np.stack([I, J, K], axis=1)
+        d = _point_triangle_distance(P, T[tt, 0], T[tt, 1], T[tt, 2])
+        np.minimum.at(dist, (I * nn[1] + J) * nn[2] + K, d)
+    sd = dist.reshape(n)
+    far = sd > band * (1.0 + 1e-9)                            # a sample exactly at band distance counts as near
+    if far.any():
+        edt_in = ndimage.distance_transform_edt(inside) * h
+        edt_out = ndimage.distance_transform_edt(~inside) * h
+        sd[far] = np.maximum(band, np.where(inside, edt_in, edt_out)[far])
+    return np.where(inside, -sd, sd)
 
 
 # --------------------------------------------------------------------------------------- bores

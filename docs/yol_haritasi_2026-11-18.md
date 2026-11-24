@@ -111,7 +111,18 @@ sürümüne bağlı. `lbracket_bore3d`'de 252 dondurulmuş bağ hücresinin 14'�
 amaç ilk iterasyonda 1,6e-3 bağıl farklıydı, 10 iterasyon sonunda en büyük fark 2,2e-2'ydi (bağlantı kısıtı). Yol artık uzaklıklardan geri izleniyor,
 eşitlikte en küçük hücre indeksi seçiliyor (dal `fix/baseline-linux-tolerance`). Baseline'da yalnız `lbracket_bore3d`
 değişti. Windows'ta NumPy 2.5.5 / SciPy 1.18.1 / torch 2.15.0 ile en büyük skaler fark 2,7e-10; 1e-6 tolerans
-değişmedi. Linux değeri `backends.yml` koşusunun örnek başına açıklama satırlarında görülecek; yerelde ölçülmedi.
+değişmedi. Linux'ta (PR #9'un `backends.yml` koşusu) en büyük fark 1,5e-10 (`lbracket_bore3d`).
+
+PR-05 yapıldı (dal `feat/cad-envelope`): `finalize` için `envelope: cad` (Python: `PostParams(envelope="cad")`,
+`finalize(..., part=...)`). Zarf, parça geometrisinin işaretli uzaklığından ince ızgarada kuruluyor: CSG alanında
+şekillerin `sdf`'i, STL alanında yeni `geometry.mesh_sdf_grid` (yüzeyden 3 h_f içinde nokta–üçgen uzaklığı tam,
+işaret x, y, z ışın paritesinin çoğunluğu). Alan kurucuları geometriyi `BuildContext.part`'a yazıyor; box alanında
+`envelope: cad` yapılandırma hatası. Varsayılan `voxel` kaldı, baseline değişmedi. Braket (h = 7,5 mm, h_f = 2,5 mm,
+VTK ile ölçüldü): zarf sıfır düzeyinin CAD'den p95 sapması 1,29 → 0,010 mm, en çok 3,37 → 0,51 mm (keskin kenarlarda);
+R80 yayında zarfın yarıçapı 79,05–80,68 → 79,93–80,00 mm. Son parçada (mevcut tasarım, 150 iterasyon) yayın 109
+açı × kalınlık diliminin 97'si 79,95–80,00 mm'de; `voxel` ile hiçbiri bu aralıkta değil, 73'ü 80,0–80,5 mm'de (CAD'in
+dışında). Kulak ön yüzündeki basamak çerçevesi gözle kayboldu. Bedeli: braket zarfı 42 s (voksel 4–8 s), `finalize`
+107 → 142 s. Varsayılanın `cad` olması ayrı karar: baseline'da `lbracket_bore3d`'nin geometri dosyalarını değiştirir.
 
 Görselleştirme betiği (panel b) PR değil, çalışma klasöründe düzeltilir: ham iso-yüzey, CAD'le kırpılmış, ek
 yumuşatma yok, figür notu buna göre.

@@ -28,6 +28,11 @@ Stages and defaults (h = element size of the optimisation grid, h_f = h / upsamp
     mean/min/max over the full face, face flatness), comparison with the raw iso-surface (volume change, Hausdorff
     both ways, normal deviation), triangle quality.
 
+The envelope (outer boundary of the design domain) is, by default (``envelope="voxel"``), the 0.5 level of the
+element partial volumes interpolated to the fine grid: within ~h of the CAD surface, wavy at the element scale on
+curved faces (bracket, h = 7.5 mm: p95 1.29 mm off the CAD). ``envelope="cad"`` samples the signed distance to the
+part geometry itself (CSG shapes or the STL triangles, :func:`toporlogy.geometry.mesh_sdf_grid`) on the fine grid.
+
 Smoothing changes stiffness, stress and even feasibility (Swierstra, Gupta & Langelaar 2020; Subedi, Verma &
 Suresh 2020 — neither read in this session), so the finished part is re-verified (:mod:`toporlogy.post.verify`).
 """
@@ -80,6 +85,7 @@ class PostParams:
     feature_angle_deg: float = 60.0
     adaptive_radius: float = 0.0          # > 0: curvature-adaptive Taubin weights 1/(1 + (κ r)²)
     target_faces: int | None = None
+    envelope: str = "voxel"               # "voxel" (element partial volumes) | "cad" (signed distance to the part)
 
 
 def optimised_volume(domain: Any, xphys: np.ndarray) -> float:
@@ -125,7 +131,25 @@ class PostResult:
         return export_result(self, folder, name, **kw)
 
 
-def _envelope_role(domain: Any, grid: S.Grid) -> Role:
+def _envelope_role(domain: Any, grid: S.Grid, mode: str = "voxel", part: Any = None) -> Role:
+    """Bound role of the design domain's outer boundary on ``grid`` (see the module notes).
+
+    ``mode="cad"`` needs ``part``: a :class:`toporlogy.geometry.Shape` (CSG) or a closed triangle surface ``(V, F)``
+    in the length unit of the domain. Its signed distance is sampled on the fine grid (exact within 3 h_f of the
+    surface for a mesh; the CSG bound with exact zero level for shapes)."""
+    if mode not in ("voxel", "cad"):
+        raise ValueError(f'envelope: "voxel" | "cad", got "{mode}"')
+    if mode == "cad":
+        if part is None:
+            raise ValueError('envelope="cad" needs the part geometry (a domain built from CSG shapes or an STL '
+                             "surface; Python: finalize(..., part=shape or (V, F)))")
+        from toporlogy import geometry as G
+        if isinstance(part, G.Shape):
+            phi = part.sdf(grid.points()).reshape(grid.shape)
+        else:
+            V, F = part
+            phi = G.mesh_sdf_grid(V, F, grid.origin, grid.h, grid.shape, band=3.0 * grid.h)
+        return Bound(GridPrimitive(phi, grid.origin, grid.h, name="envelope"), functional=False, name="envelope")
     if np.all(np.asarray(domain.frac) >= 1.0):
         lo = np.asarray(domain.origin, float)
         return Bound(BoxPrimitive(lo, lo + domain.h * np.asarray(domain.shape)), functional=True, name="envelope")
@@ -139,8 +163,11 @@ def _cache(roles: Sequence[Role], X: np.ndarray, shape: tuple[int, ...]) -> dict
 
 def finalize(domain: Any, xphys: np.ndarray, preserve: Sequence[Role] = (), params: PostParams | None = None,
              envelope: Role | None = None, target_volume: float | None = None,
-             log: Callable[[str], None] | None = None) -> PostResult:
-    """Run the whole pipeline on the physical density ``xphys`` (``domain.shape``) of a 3-D :class:`Domain`."""
+             log: Callable[[str], None] | None = None, part: Any = None) -> PostResult:
+    """Run the whole pipeline on the physical density ``xphys`` (``domain.shape``) of a 3-D :class:`Domain`.
+
+    ``envelope`` (a Bound role) replaces the one built from ``params.envelope``; ``part`` is the part geometry that
+    ``params.envelope="cad"`` needs (see :func:`_envelope_role`)."""
     p = params or PostParams()
     say = log or (lambda s: None)
     t_start = time.perf_counter()
@@ -153,7 +180,7 @@ def finalize(domain: Any, xphys: np.ndarray, preserve: Sequence[Role] = (), para
     grid = S.grid_for_domain(domain, p.upsample, pad=max(r_open, r_close) + h)
     hf = grid.h
     X = grid.points()
-    env = envelope if envelope is not None else _envelope_role(domain, grid)
+    env = envelope if envelope is not None else _envelope_role(domain, grid, p.envelope, part)
     roles: list[Role] = [env] + list(preserve)
     cache = _cache(roles, X, grid.shape)
 

@@ -87,6 +87,7 @@ def register_geometry() -> None:
         bb = None if bounds is None else (list(bounds[0]), list(bounds[1]))
         d = G.voxelize(shape, h, padding=padding, bounds=bb, sub=sub, min_frac=min_frac, connectivity=connectivity,
                        thickness=thickness)
+        ctx.part = shape                                    # finalize envelope="cad"
         return _with_regions(d, keep, void)
 
     def stl_domain(ctx: BuildContext, path: str, h: float, scale: float = 1.0, padding: int = 1, sub: int = 3,
@@ -99,8 +100,10 @@ def register_geometry() -> None:
         if not p.is_file():
             raise ValueError(f"STL file not found: {p.resolve()}")
         V, F = G.read_stl(p)
+        V = np.asarray(V, float) * float(scale)
         bb = None if bounds is None else (list(bounds[0]), list(bounds[1]))
-        d = G.voxelize_mesh(np.asarray(V, float) * float(scale), F, h, padding=padding, sub=sub, min_frac=min_frac,
+        ctx.part = (V, F)                                   # finalize envelope="cad"
+        d = G.voxelize_mesh(V, F, h, padding=padding, sub=sub, min_frac=min_frac,
                             connectivity=connectivity, bounds=bb)
         return _with_regions(d, keep, void)
 

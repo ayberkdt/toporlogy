@@ -164,3 +164,42 @@ def test_csg_booleans_reject_mixed_dimensions():
         with pytest.raises(ValueError, match="different dimension"):
             op(sq, cube)
     assert g.Union(cube, g.Box([1, 0, 0], [2, 1, 1])).dim == 3
+
+
+def _box_mesh(lo, hi):
+    """Closed box surface, 8 vertices / 12 triangles, float64 (no float32 rounding of the corners)."""
+    (x0, y0, z0), (x1, y1, z1) = lo, hi
+    V = np.array([[x0, y0, z0], [x1, y0, z0], [x1, y1, z0], [x0, y1, z0],
+                  [x0, y0, z1], [x1, y0, z1], [x1, y1, z1], [x0, y1, z1]], float)
+    F = np.array([[0, 2, 1], [0, 3, 2], [4, 5, 6], [4, 6, 7], [0, 1, 5], [0, 5, 4],
+                  [1, 2, 6], [1, 6, 5], [2, 3, 7], [2, 7, 6], [3, 0, 4], [3, 4, 7]])
+    return V, F
+
+
+@pytest.mark.parametrize("lo, hi", [((0.1234, 0.2345, 0.0567), (2.3123, 1.7321, 1.3311)),   # faces between samples
+                                    ((0.1, 0.2, 0.05), (2.3, 1.7, 1.33))])                   # faces on sample planes
+def test_mesh_sdf_grid_is_exact_near_the_surface_and_signed_everywhere(lo, hi):
+    V, F = _box_mesh(lo, hi)
+    org, h, shape, band = np.array([-0.5, -0.5, -0.5]), 0.1, (35, 30, 25), 0.3
+    d = g.mesh_sdf_grid(V, F, org, h, shape, band=band)
+    ax = [org[k] + h * np.arange(shape[k]) for k in range(3)]
+    P = np.stack(np.meshgrid(*ax, indexing="ij"), -1).reshape(-1, 3)
+    ref = g.Box(lo, hi).sdf(P).reshape(shape)
+    near = np.abs(ref) <= band
+    assert np.abs(d - ref)[near & (np.abs(ref) > 1e-9)].max() < 1e-12
+    on = np.abs(ref) <= 1e-9                                            # samples on the surface: |d| = 0
+    assert not on.any() or np.abs(d[on]).max() < 1e-12
+    off = np.abs(ref) > 1e-9
+    assert (np.sign(d[off]) == np.sign(ref[off])).all()
+    assert (np.abs(d[~near]) >= band * (1 - 1e-9)).all()
+
+
+def test_mesh_sdf_grid_sign_matches_winding_number(sphere_mesh):
+    V, F = sphere_mesh
+    org, h, shape = np.array([-1.3, -1.3, -1.3]), 0.1, (27, 27, 27)
+    d = g.mesh_sdf_grid(V, F, org, h, shape, band=0.25)
+    ax = [org[k] + h * np.arange(shape[k]) for k in range(3)]
+    P = np.stack(np.meshgrid(*ax, indexing="ij"), -1).reshape(-1, 3)
+    w = g.winding_number(P, V, F)
+    clear = np.abs(np.linalg.norm(P, axis=1) - 1.0) > 0.02             # off the (faceted) surface
+    assert ((d.ravel() < 0) == (w > 0.5))[clear].all()
