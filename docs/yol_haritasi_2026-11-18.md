@@ -124,6 +124,45 @@ açı × kalınlık diliminin 97'si 79,95–80,00 mm'de; `voxel` ile hiçbiri bu
 dışında). Kulak ön yüzündeki basamak çerçevesi gözle kayboldu. Bedeli: braket zarfı 42 s (voksel 4–8 s), `finalize`
 107 → 142 s. Varsayılanın `cad` olması ayrı karar: baseline'da `lbracket_bore3d`'nin geometri dosyalarını değiştirir.
 
+PR-06, PR-08, PR-09 ve PR-10 paralel yapıldı ve tek dalda birleştirildi (`feat/roadmap-pr06-pr10`, 24 Kasım 2026).
+
+PR-06 yapıldı: küre, silindir, düzlem ve kutu ilkelleri parametrelerini kurulurken denetliyor (sonlu 3-vektör,
+yarıçap ve boy > 0, sıfır olmayan eksen ve normal, lo < hi); `geometry.HalfSpace` sıfır normali reddediyor. Şekli yok
+eden ofset artık hata ("offset d removes the …"); önceden yarıçapı 1 olan küre −2 ofsetle yarıçapı −1 olan, her yerde
+boş bir şekle dönüşüyordu, sıfır eksen NaN veriyordu, `element_fraction(samples=0)` NaN döndürüyordu. `finalize`,
+talaş payı deliği yok eden Cut'ı boru hattı başlamadan reddediyor. `element_fraction` için hata sınırı belgelendi
+(düzlemsel kesitte eleman başına ≤ 3 / samples); eğik düzlemin tam kesit hacmine karşı 2 örnekte 0,115, varsayılan
+6'da 0,0096, 16'da 0,0014. Kütüphane sayıları değişmedi.
+
+PR-08 yapıldı: koşu özetinde her kısıt `verdict` (PASS / FAIL / UNVERIFIED) ve değerin kaynağını (`returned design`,
+`last iterate`, `unknown`, `missing`) taşıyor; yalnız döndürülen tasarımın değeri PASS ya da FAIL olabiliyor.
+`summary.json`, `read_run` ve CLI (`show`, `compare`) aynı kuralı kullanıyor; doğrulanmamış değer varken durum "ok"
+değil, "constraint unverified" / "objective unverified". Eski kodda kırmızı olan dört test: 99d8d67 öncesi
+`result.json` "ok" çıkıyordu; G7 öncesi `summary.json` "ok" çıkıyordu; `read_run` sabit 1e-3 ile yargılıyordu;
+`show` eski klasörde 0 ile çıkıyordu. `Result.feasibility_tol` artık `result.json`'a yazılıyor. Birleştirmede aynı
+sözcükler onarılmış tasarıma (`connectivity_gate`) ve 0/1 raporuna (`optimization.benchmark`) da uygulandı;
+sözcükler ve kural `toporlogy.core.verdict`'te. Eski `satisfied` / `feasible` alanları kaldırıldı, eş ad yok
+(`Result.feasible` optimizerin kendi bayrağı, ayrı kavram).
+
+PR-09 yapıldı: toleranslar ilk koşudan önce yazıldı. Top88 (`mbb2d.yaml`) ve Top3D (24×8×4), yayımlanmış kodların
+NumPy aktarımına (`tests/toporlogy/published_codes.py`) karşı: sabit tasarımda amaç ve gradyan farkı ≤ 2,1e-11; 50 ve
+30 iterasyonluk geçmişte ≤ 1e-11; yakınsamaya kadar iterasyon sayıları eşit (158 = 158, 141 = 141). Bulgu: OC'nin
+bisection sonucu kısıt ölçeğine bağlı; ölçek 2'nin kuvvetiyse top3d yuvarlama düzeyinde tutuyor, s = 1/0,3'te fark
+1,9e-3 (ilk Top3D koşusu bu yüzden kaldı; kütüphane değiştirilmedi, davranış testle sabitlendi). Uç yüklü konsolun
+kesin çözümünde Q4 enerji mertebesi 2,00, uç çökmesi 1,84 (henüz artıyor). Kaygan duvarlı kare ve küpte özdeğer
+mertebesi 2,0; çift ve üçlü tekrarlı özdeğerler tam bulundu. Yapılmadı: gerilme ve burkulmanın bağımsız kodlarla
+karşılaştırılması, NAFEMS (eğri sınır düzgün ızgarada kurulamıyor). Q4 karşılaştırması bağımsız değil (`ke_q4`
+top88'den alınmış).
+
+PR-10 yapıldı: yeni `symmetry_check` post adımı (düzlemler simetri bağlantısıyla aynı biçimde: `{x: 500}` ya da
+`[[x, 500], [y, mid]]`). `summary.json["post"]["symmetry_check"]` her düzlem için frac, keep (bağlar dahil) ve x̄'nin
+e_sym = ‖f − R(f)‖₂ / ‖f‖₂ değerini, uyuşmayan hücre sayısını ve ızgara kaymasını yazıyor; `finalize`'dan sonra son
+yüzeyin aynaya uzaklığını da (örneklenmiş simetrik Hausdorff, alan ağırlıklı ortalama, p95). Karar vermiyor; eşik
+ölçülmeden konmadı; simetri bağlama yine isteğe bağlı `symmetry` bağlantısı. Braket, saklanan koşudan
+(`docs/olcumler/simetri.py`): x = 500'de e_sym(frac) 0,0122, e_sym(keep) 0,2240 (228 hücre), e_sym(x̄) 0,4777;
+y = 200,56'da 0,1174 / 0,4559 / 0,4739, kayma 3,62 mm. §2.3'teki sayıların hepsi tekrar üretildi. Son STL'nin aynaya
+uzaklığı x = 500'de en çok 82,1, ortalama 4,04, p95 21,9 mm; CAD'in kendisi x'te 1,03 / 0,063 / 0,754 mm.
+
 Görselleştirme betiği (panel b) PR değil, çalışma klasöründe düzeltilir: ham iso-yüzey, CAD'le kırpılmış, ek
 yumuşatma yok, figür notu buna göre.
 
