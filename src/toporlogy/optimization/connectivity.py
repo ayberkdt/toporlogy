@@ -955,13 +955,16 @@ class OneBodyPlan:
 def one_body(domain: Domain, interfaces: Mapping[str, Any], *, ties: int | None = 1,
              constraint: str | None = "conduction", eta: float | None = 0.7, bound: float | None = None,
              sink: str | None = None, threshold: float = 0.5, repair_section: int = 2,
-             **response_kw: Any) -> OneBodyPlan:
+             symmetry: Sequence[tuple[Any, float]] = (), **response_kw: Any) -> OneBodyPlan:
     """Layered protection against a design that falls apart (defaults from the measured comparison in
     ``tests/toporlogy/test_connectivity.py``: only frozen ties survived the one-element erosion test; the conduction and
     coupling constraints are robust to the 0.3/0.7 thresholds only when they see the eroded field, ``eta`` ≈ 0.7).
 
     interfaces : name → bool element mask, or name → node numbers (converted to the elements touching them).
     ties : section (elements) of frozen minimal ties between the interfaces; None/0 = no ties.
+    symmetry : mirror planes (axis, coordinate); the frozen ties and interface cells are united with all their
+        mirror images (:func:`toporlogy.design.manufacturing.mirror_closure`), so a symmetric problem keeps a
+        symmetric frozen region (a tie on one side only breaks the symmetry, roadmap §2.3: e_sym(keep) 0.224).
     constraint : "conduction" (virtual heat conduction, bound default 20 with k_min 1e-3), "coupling" (auxiliary
         structural case, bound default 2.5 × first value) or None.
     """
@@ -982,6 +985,9 @@ def one_body(domain: Domain, interfaces: Mapping[str, Any], *, ties: int | None 
         # (measured on the splitting benchmark: interface cells at x̄ = 0.014 left 2 bodies despite the tie)
         for m in masks.values():
             tie_mask = tie_mask | m
+        if symmetry:
+            from toporlogy.design.manufacturing import mirror_closure
+            tie_mask = mirror_closure(domain, tie_mask, symmetry) & domain.active & ~domain.void
         dom = with_keep(domain, tie_mask)
     cons: list[Any] = []
     if constraint == "conduction":

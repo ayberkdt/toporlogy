@@ -3770,7 +3770,7 @@
   "bridge": "bridge(domain,xphys,interfaces,threshold,section,connectivity,void_cost,solid_cost,drop_islands,binary)",
   "elements_touching_nodes": "elements_touching_nodes(domain,nodes,active_only)",
   "min_cut_cells": "min_cut_cells(solid,a,b,connectivity,frozen)",
-  "one_body": "one_body(domain,interfaces,ties,constraint,eta,bound,sink,threshold,repair_section,response_kw)",
+  "one_body": "one_body(domain,interfaces,ties,constraint,eta,bound,sink,threshold,repair_section,symmetry,response_kw)",
   "split_benchmark": "split_benchmark(dim,n,coupling,h)",
   "tie_regions": "tie_regions(domain,groups,section,avoid,keep_cost)",
   "with_keep": "with_keep(domain,extra_keep)"

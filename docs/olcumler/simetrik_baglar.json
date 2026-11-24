@@ -1,0 +1,408 @@
+{
+ "plane": [
+  "x",
+  500.0
+ ],
+ "rows": [
+  {
+   "arm": "ref_stored",
+   "objective": 61232.35178263431,
+   "verdict": "PASS",
+   "status": "not converged",
+   "iterations": 150,
+   "kkt_residual": 0.053393116709430005,
+   "max_violation": 0.0,
+   "constraints": {
+    "volume": 0.3299998428490369,
+    "connectivity": 16.858598861051927
+   },
+   "n_bodies": 1,
+   "gate": "PASS",
+   "robust_checks": [
+    [
+     "t=0.3",
+     1
+    ],
+    [
+     "t=0.7",
+     1
+    ],
+    [
+     "eroded",
+     1
+    ]
+   ],
+   "min_neck_cells": 66,
+   "min_neck_area": 3712.5,
+   "keep_cells": 4542,
+   "keep_void_cells": 23,
+   "e_sym_keep": 0.22404943783560757,
+   "e_sym_xphys": 0.4776813352710429,
+   "necks": {
+    "pairs": 36,
+    "pairs_without_cut": 12,
+    "min_cut_cells": 54,
+    "frozen_solid_components": 4,
+    "cuts": {
+     "H3-H4": null,
+     "H3-H5": 54,
+     "H3-H6": 54,
+     "H3-LC1a.L1 bearing": 81,
+     "H3-LC1a.L2 surface_force": 81,
+     "H3-LC1b.L1 bearing": 81,
+     "H3-LC1b.L2 surface_force": 81,
+     "H3-LC2.L1 torque": 81,
+     "H4-H5": 54,
+     "H4-H6": 54,
+     "H4-LC1a.L1 bearing": 81,
+     "H4-LC1a.L2 surface_force": 81,
+     "H4-LC1b.L1 bearing": 81,
+     "H4-LC1b.L2 surface_force": 81,
+     "H4-LC2.L1 torque": 81,
+     "H5-H6": null,
+     "H5-LC1a.L1 bearing": 54,
+     "H5-LC1a.L2 surface_force": 54,
+     "H5-LC1b.L1 bearing": 54,
+     "H5-LC1b.L2 surface_force": 54,
+     "H5-LC2.L1 torque": 54,
+     "H6-LC1a.L1 bearing": 54,
+     "H6-LC1a.L2 surface_force": 54,
+     "H6-LC1b.L1 bearing": 54,
+     "H6-LC1b.L2 surface_force": 54,
+     "H6-LC2.L1 torque": 54,
+     "LC1a.L1 bearing-LC1a.L2 surface_force": null,
+     "LC1a.L1 bearing-LC1b.L1 bearing": null,
+     "LC1a.L1 bearing-LC1b.L2 surface_force": null,
+     "LC1a.L1 bearing-LC2.L1 torque": null,
+     "LC1a.L2 surface_force-LC1b.L1 bearing": null,
+     "LC1a.L2 surface_force-LC1b.L2 surface_force": null,
+     "LC1a.L2 surface_force-LC2.L1 torque": null,
+     "LC1b.L1 bearing-LC1b.L2 surface_force": null,
+     "LC1b.L1 bearing-LC2.L1 torque": null,
+     "LC1b.L2 surface_force-LC2.L1 torque": null
+    }
+   },
+   "seconds": 1875.720688500005
+  },
+  {
+   "arm": "r_one_sided_tie",
+   "objective": 60000.07191534008,
+   "verdict": "PASS",
+   "status": "not converged",
+   "iterations": 150,
+   "kkt_residual": 0.1531283806670568,
+   "max_violation": 0.0,
+   "constraints": {
+    "volume": 0.3299999878856847,
+    "connectivity": 19.096814611741987
+   },
+   "n_bodies": 1,
+   "gate": "PASS",
+   "robust_checks": [
+    [
+     "t=0.3",
+     1
+    ],
+    [
+     "t=0.7",
+     1
+    ],
+    [
+     "eroded",
+     21
+    ]
+   ],
+   "min_neck_cells": 65,
+   "min_neck_area": 3656.25,
+   "keep_cells": 4542,
+   "keep_void_cells": 0,
+   "e_sym_keep": 0.22404943783560757,
+   "e_sym_xphys": 0.4185227813814547,
+   "necks": {
+    "pairs": 36,
+    "pairs_without_cut": 32,
+    "min_cut_cells": 65,
+    "frozen_solid_components": 2,
+    "cuts": {
+     "H3-H4": null,
+     "H3-H5": 65,
+     "H3-H6": 65,
+     "H3-LC1a.L1 bearing": null,
+     "H3-LC1a.L2 surface_force": null,
+     "H3-LC1b.L1 bearing": null,
+     "H3-LC1b.L2 surface_force": null,
+     "H3-LC2.L1 torque": null,
+     "H4-H5": 65,
+     "H4-H6": 65,
+     "H4-LC1a.L1 bearing": null,
+     "H4-LC1a.L2 surface_force": null,
+     "H4-LC1b.L1 bearing": null,
+     "H4-LC1b.L2 surface_force": null,
+     "H4-LC2.L1 torque": null,
+     "H5-H6": null,
+     "H5-LC1a.L1 bearing": null,
+     "H5-LC1a.L2 surface_force": null,
+     "H5-LC1b.L1 bearing": null,
+     "H5-LC1b.L2 surface_force": null,
+     "H5-LC2.L1 torque": null,
+     "H6-LC1a.L1 bearing": null,
+     "H6-LC1a.L2 surface_force": null,
+     "H6-LC1b.L1 bearing": null,
+     "H6-LC1b.L2 surface_force": null,
+     "H6-LC2.L1 torque": null,
+     "LC1a.L1 bearing-LC1a.L2 surface_force": null,
+     "LC1a.L1 bearing-LC1b.L1 bearing": null,
+     "LC1a.L1 bearing-LC1b.L2 surface_force": null,
+     "LC1a.L1 bearing-LC2.L1 torque": null,
+     "LC1a.L2 surface_force-LC1b.L1 bearing": null,
+     "LC1a.L2 surface_force-LC1b.L2 surface_force": null,
+     "LC1a.L2 surface_force-LC2.L1 torque": null,
+     "LC1b.L1 bearing-LC1b.L2 surface_force": null,
+     "LC1b.L1 bearing-LC2.L1 torque": null,
+     "LC1b.L2 surface_force-LC2.L1 torque": null
+    }
+   },
+   "seconds": 1428.0875766999998
+  },
+  {
+   "arm": "a_no_ties",
+   "objective": 60011.2193448134,
+   "verdict": "PASS",
+   "status": "not converged",
+   "iterations": 150,
+   "kkt_residual": 0.15921673042185172,
+   "max_violation": 0.0,
+   "constraints": {
+    "volume": 0.32999950876751993,
+    "connectivity": 19.135758665506767
+   },
+   "n_bodies": 1,
+   "gate": "PASS",
+   "robust_checks": [
+    [
+     "t=0.3",
+     1
+    ],
+    [
+     "t=0.7",
+     1
+    ],
+    [
+     "eroded",
+     5
+    ]
+   ],
+   "min_neck_cells": 28,
+   "min_neck_area": 1575.0,
+   "keep_cells": 4428,
+   "keep_void_cells": 0,
+   "e_sym_keep": 0.0,
+   "e_sym_xphys": 0.2753146405558885,
+   "necks": {
+    "pairs": 36,
+    "pairs_without_cut": 10,
+    "min_cut_cells": 28,
+    "frozen_solid_components": 6,
+    "cuts": {
+     "H3-H4": 28,
+     "H3-H5": 40,
+     "H3-H6": 28,
+     "H3-LC1a.L1 bearing": 52,
+     "H3-LC1a.L2 surface_force": 52,
+     "H3-LC1b.L1 bearing": 52,
+     "H3-LC1b.L2 surface_force": 52,
+     "H3-LC2.L1 torque": 52,
+     "H4-H5": 28,
+     "H4-H6": 38,
+     "H4-LC1a.L1 bearing": 48,
+     "H4-LC1a.L2 surface_force": 48,
+     "H4-LC1b.L1 bearing": 48,
+     "H4-LC1b.L2 surface_force": 48,
+     "H4-LC2.L1 torque": 48,
+     "H5-H6": 28,
+     "H5-LC1a.L1 bearing": 40,
+     "H5-LC1a.L2 surface_force": 40,
+     "H5-LC1b.L1 bearing": 40,
+     "H5-LC1b.L2 surface_force": 40,
+     "H5-LC2.L1 torque": 40,
+     "H6-LC1a.L1 bearing": 38,
+     "H6-LC1a.L2 surface_force": 38,
+     "H6-LC1b.L1 bearing": 38,
+     "H6-LC1b.L2 surface_force": 38,
+     "H6-LC2.L1 torque": 38,
+     "LC1a.L1 bearing-LC1a.L2 surface_force": null,
+     "LC1a.L1 bearing-LC1b.L1 bearing": null,
+     "LC1a.L1 bearing-LC1b.L2 surface_force": null,
+     "LC1a.L1 bearing-LC2.L1 torque": null,
+     "LC1a.L2 surface_force-LC1b.L1 bearing": null,
+     "LC1a.L2 surface_force-LC1b.L2 surface_force": null,
+     "LC1a.L2 surface_force-LC2.L1 torque": null,
+     "LC1b.L1 bearing-LC1b.L2 surface_force": null,
+     "LC1b.L1 bearing-LC2.L1 torque": null,
+     "LC1b.L2 surface_force-LC2.L1 torque": null
+    }
+   },
+   "seconds": 1832.5032850999996
+  },
+  {
+   "arm": "b_sym_ties",
+   "objective": 61328.79696896844,
+   "verdict": "PASS",
+   "status": "not converged",
+   "iterations": 150,
+   "kkt_residual": 0.15860566635846324,
+   "max_violation": 0.0,
+   "constraints": {
+    "volume": 0.32999889205168487,
+    "connectivity": 14.744480125988833
+   },
+   "n_bodies": 1,
+   "gate": "PASS",
+   "robust_checks": [
+    [
+     "t=0.3",
+     1
+    ],
+    [
+     "t=0.7",
+     1
+    ],
+    [
+     "eroded",
+     1
+    ]
+   ],
+   "min_neck_cells": null,
+   "min_neck_area": null,
+   "keep_cells": 4656,
+   "keep_void_cells": 0,
+   "e_sym_keep": 0.0,
+   "e_sym_xphys": 0.4540508750568198,
+   "necks": {
+    "pairs": 36,
+    "pairs_without_cut": 36,
+    "min_cut_cells": null,
+    "frozen_solid_components": 1,
+    "cuts": {
+     "H3-H4": null,
+     "H3-H5": null,
+     "H3-H6": null,
+     "H3-LC1a.L1 bearing": null,
+     "H3-LC1a.L2 surface_force": null,
+     "H3-LC1b.L1 bearing": null,
+     "H3-LC1b.L2 surface_force": null,
+     "H3-LC2.L1 torque": null,
+     "H4-H5": null,
+     "H4-H6": null,
+     "H4-LC1a.L1 bearing": null,
+     "H4-LC1a.L2 surface_force": null,
+     "H4-LC1b.L1 bearing": null,
+     "H4-LC1b.L2 surface_force": null,
+     "H4-LC2.L1 torque": null,
+     "H5-H6": null,
+     "H5-LC1a.L1 bearing": null,
+     "H5-LC1a.L2 surface_force": null,
+     "H5-LC1b.L1 bearing": null,
+     "H5-LC1b.L2 surface_force": null,
+     "H5-LC2.L1 torque": null,
+     "H6-LC1a.L1 bearing": null,
+     "H6-LC1a.L2 surface_force": null,
+     "H6-LC1b.L1 bearing": null,
+     "H6-LC1b.L2 surface_force": null,
+     "H6-LC2.L1 torque": null,
+     "LC1a.L1 bearing-LC1a.L2 surface_force": null,
+     "LC1a.L1 bearing-LC1b.L1 bearing": null,
+     "LC1a.L1 bearing-LC1b.L2 surface_force": null,
+     "LC1a.L1 bearing-LC2.L1 torque": null,
+     "LC1a.L2 surface_force-LC1b.L1 bearing": null,
+     "LC1a.L2 surface_force-LC1b.L2 surface_force": null,
+     "LC1a.L2 surface_force-LC2.L1 torque": null,
+     "LC1b.L1 bearing-LC1b.L2 surface_force": null,
+     "LC1b.L1 bearing-LC2.L1 torque": null,
+     "LC1b.L2 surface_force-LC2.L1 torque": null
+    }
+   },
+   "seconds": 4701.940408099999
+  },
+  {
+   "arm": "c_sym_tying",
+   "objective": 60882.269605223446,
+   "verdict": "PASS",
+   "status": "not converged",
+   "iterations": 150,
+   "kkt_residual": 0.05826319598181677,
+   "max_violation": 0.0,
+   "constraints": {
+    "volume": 0.32999951753330015,
+    "connectivity": 16.695603626375213
+   },
+   "n_bodies": 1,
+   "gate": "PASS",
+   "robust_checks": [
+    [
+     "t=0.3",
+     1
+    ],
+    [
+     "t=0.7",
+     1
+    ],
+    [
+     "eroded",
+     1
+    ]
+   ],
+   "min_neck_cells": null,
+   "min_neck_area": null,
+   "keep_cells": 4656,
+   "keep_void_cells": 0,
+   "e_sym_keep": 0.0,
+   "e_sym_xphys": 2.014242139024153e-07,
+   "necks": {
+    "pairs": 36,
+    "pairs_without_cut": 36,
+    "min_cut_cells": null,
+    "frozen_solid_components": 1,
+    "cuts": {
+     "H3-H4": null,
+     "H3-H5": null,
+     "H3-H6": null,
+     "H3-LC1a.L1 bearing": null,
+     "H3-LC1a.L2 surface_force": null,
+     "H3-LC1b.L1 bearing": null,
+     "H3-LC1b.L2 surface_force": null,
+     "H3-LC2.L1 torque": null,
+     "H4-H5": null,
+     "H4-H6": null,
+     "H4-LC1a.L1 bearing": null,
+     "H4-LC1a.L2 surface_force": null,
+     "H4-LC1b.L1 bearing": null,
+     "H4-LC1b.L2 surface_force": null,
+     "H4-LC2.L1 torque": null,
+     "H5-H6": null,
+     "H5-LC1a.L1 bearing": null,
+     "H5-LC1a.L2 surface_force": null,
+     "H5-LC1b.L1 bearing": null,
+     "H5-LC1b.L2 surface_force": null,
+     "H5-LC2.L1 torque": null,
+     "H6-LC1a.L1 bearing": null,
+     "H6-LC1a.L2 surface_force": null,
+     "H6-LC1b.L1 bearing": null,
+     "H6-LC1b.L2 surface_force": null,
+     "H6-LC2.L1 torque": null,
+     "LC1a.L1 bearing-LC1a.L2 surface_force": null,
+     "LC1a.L1 bearing-LC1b.L1 bearing": null,
+     "LC1a.L1 bearing-LC1b.L2 surface_force": null,
+     "LC1a.L1 bearing-LC2.L1 torque": null,
+     "LC1a.L2 surface_force-LC1b.L1 bearing": null,
+     "LC1a.L2 surface_force-LC1b.L2 surface_force": null,
+     "LC1a.L2 surface_force-LC2.L1 torque": null,
+     "LC1b.L1 bearing-LC1b.L2 surface_force": null,
+     "LC1b.L1 bearing-LC2.L1 torque": null,
+     "LC1b.L2 surface_force-LC2.L1 torque": null
+    }
+   },
+   "seconds": 4563.623681699999
+  }
+ ]
+}

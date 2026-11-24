@@ -678,6 +678,22 @@ class Casting(torch.nn.Module):
         return torch.where(self.keep, one, torch.where(self.zero, zero, out))
 
 
+
+def mirror_closure(domain: Domain, mask: np.ndarray, planes: Sequence[tuple[Any, float]]) -> np.ndarray:
+    """``mask`` united with all its mirror images about ``planes`` (the closure of the symmetry group: with two
+    planes the four images), using the partner relation of :func:`mirror_partner` (the one :class:`SymmetryTying`
+    ties). Images that leave the box are dropped."""
+    m = np.asarray(mask, bool).reshape(-1).copy()
+    partners = [mirror_partner(domain, a, c) for a, c in planes]
+    while True:
+        new = m.copy()
+        for pt in partners:
+            ok = pt >= 0
+            new[pt[ok]] |= m[ok]
+        if np.array_equal(new, m):
+            return m.reshape(domain.shape)
+        m = new
+
 def undercut_map(xphys: np.ndarray, direction: Any = "+z", domain: Domain | None = None,
                  parting: float | None = None, threshold: float = 0.5) -> np.ndarray:
     """Boolean grid of undercut cells: empty cells (≤ ``threshold``, or void / outside the part) that lie after the
