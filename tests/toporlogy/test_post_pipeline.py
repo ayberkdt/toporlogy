@@ -101,3 +101,59 @@ def test_sinc_and_decimation(smoothing: str) -> None:
     assert r["decimation"]["applied"] and len(res.F) < 6000
     assert r["edges"]["open"] == 0 and r["edges"]["non_manifold"] == 0
     assert abs(r["volume_mesh"] / (4 / 3 * np.pi * R ** 3) - 1) < 0.01
+
+
+# ------------------------------------------------------------------------------------- PR-05: CAD envelope
+@pytest.mark.parametrize("source", ["csg", "stl"])
+def test_cad_envelope_follows_the_curved_part_surface(source: str) -> None:
+    """Full-density cylinder (no volume matching): the finished side face is the envelope. Measured 24 Nov 2026 at
+    h_f = 1/3: envelope="voxel" max |r − R| = 0.113 (0.34 h_f), "cad" from the CSG shape 0.0025 (0.008 h_f)."""
+    import pyvista as pv
+
+    from toporlogy import geometry as G
+    R, H, c = 5.3, 6.0, np.array([0.37, 0.21])
+    shape = G.Cylinder((c[0], c[1], 0.0), (c[0], c[1], H), R)
+    d = G.voxelize(shape, 1.0, padding=1)
+    if source == "csg":
+        part = shape
+    else:                                       # 192-gon: within R·(1 − cos(π/192)) = 7e-4 of the cylinder
+        cy = pv.Cylinder(center=(c[0], c[1], H / 2), direction=(0, 0, 1), radius=R, height=H, resolution=192,
+                         capping=True).triangulate()
+        part = (np.asarray(cy.points, float), np.asarray(cy.faces).reshape(-1, 4)[:, 1:])
+    err = {}
+    for env in ("voxel", "cad"):
+        res = finalize(d, np.ones(d.shape), params=PostParams(upsample=3, envelope=env, volume_match="none"),
+                       part=part if env == "cad" else None)
+        side = np.abs(res.V[:, 2] - H / 2) < 2.0
+        err[env] = float(np.abs(np.hypot(res.V[side, 0] - c[0], res.V[side, 1] - c[1]) - R).max())
+        h_f = res.grid.h
+    assert err["cad"] < 0.25 * h_f
+    assert err["cad"] < 0.1 * err["voxel"]
+    print(f"\n  {source}: max |r - R| voxel {err['voxel']:.4f}, cad {err['cad']:.4f} (h_f {h_f:.3f})")
+
+
+def test_cad_envelope_needs_the_part_geometry() -> None:
+    d = Domain((6, 6, 6), h=1.0, frac=np.full((6, 6, 6), 0.5))
+    with pytest.raises(ValueError, match="needs the part geometry"):
+        finalize(d, np.ones(d.shape), params=PostParams(upsample=2, envelope="cad"))
+    with pytest.raises(ValueError, match=r'"voxel" \| "cad"'):
+        finalize(d, np.ones(d.shape), params=PostParams(upsample=2, envelope="exact"))
+
+
+def test_yaml_envelope_cad_needs_a_csg_or_stl_domain() -> None:
+    from pathlib import Path
+
+    import yaml
+
+    from toporlogy.configuration.build import build_setup
+    from toporlogy.configuration.registry import ConfigError
+    ex = Path(__file__).resolve().parents[2] / "examples"
+    raw = yaml.safe_load((ex / "lbracket_bore3d.yaml").read_text(encoding="utf-8"))      # domain type csg
+    for st in raw["post"]:
+        if st["type"] == "finalize":
+            st["envelope"] = "cad"
+    assert "finalize" in [n for n, _ in build_setup(raw).post]
+    raw = yaml.safe_load((ex / "cantilever3d.yaml").read_text(encoding="utf-8"))         # domain type box
+    raw["post"] = [{"type": "finalize", "envelope": "cad"}]
+    with pytest.raises(ConfigError, match="envelope: cad needs the part geometry"):
+        build_setup(raw)

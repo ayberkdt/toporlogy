@@ -109,12 +109,15 @@ def _make_finalize() -> Callable[..., Any]:
         if ctx.domain.dim != 3:
             raise ValueError("finalize needs a 3-D domain")
         pp = PostParams(**params)
+        if pp.envelope == "cad" and ctx.part is None:
+            raise ValueError('envelope: cad needs the part geometry: a domain of type csg or stl')
+        part = ctx.part
         roles = _roles(ctx, preserve)
         state = _post_state(ctx)
 
         def step(res: Any, study: Any, folder: Any) -> dict[str, Any]:
             xp, label = _design(state, res)
-            pr = finalize(study.domain, xp, preserve=roles, params=pp)
+            pr = finalize(study.domain, xp, preserve=roles, params=pp, part=part)
             state["result"] = pr
             state["result_design"] = label
             rep = pr.report

@@ -299,6 +299,7 @@ class BuildContext:
 
     config: dict[str, Any] = field(default_factory=dict)       # resolved config
     domain: Any = None
+    part: Any = None                                            # part geometry: Shape (csg) or (V, F) (stl)
     material: dict[str, float] = field(default_factory=dict)
     fixed: Any = None                                           # fixed DOF numbers (after supports)
     solver: Any = None

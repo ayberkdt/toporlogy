@@ -151,7 +151,7 @@ post  - post-processing step after the run (7)
                         radius_trials=6  keep_bodies=interfaces  fill_voids=true  smoothing=taubin
                         smooth_iter=20  lam=0.5  mu=-0.53  pass_band=0.1  relax_iter=5
                         project_to_implicit=true  feature_tol=null  feature_angle_deg=60.0
-                        adaptive_radius=0.0  target_faces=null
+                        adaptive_radius=0.0  target_faces=null  envelope=voxel
   manufacturing_checks  max_bodies=1  max_voids=0  min_wall=null [length]  wall_statistic=p1
                         wall_method=ray  build_direction=[0.0, 0.0, 1.0]  overhang_deg=45.0
                         plate_level=null [length]  max_overhang_fraction=null
