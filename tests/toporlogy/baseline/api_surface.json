@@ -493,6 +493,7 @@
   "Result": {
    "attrs": [
     "constraint_values",
+    "feasibility_tol",
     "feasible",
     "final",
     "kkt_residual",
@@ -2265,6 +2266,21 @@
    "class": "Domain"
   }
  },
+ "toporlogy.core.verdict": {
+  "BINARY_DESIGN": "<str>",
+  "EVALUATED": "<tuple>",
+  "FAIL": "<str>",
+  "LAST_ITERATE": "<str>",
+  "MISSING": "<str>",
+  "PASS": "<str>",
+  "REPAIRED_DESIGN": "<str>",
+  "RETURNED_DESIGN": "<str>",
+  "UNKNOWN": "<str>",
+  "UNVERIFIED": "<str>",
+  "combine": "combine(verdicts)",
+  "constraint_entry": "constraint_entry(name,value,upper,tol,source)",
+  "constraint_verdict": "constraint_verdict(value,upper,tol,source)"
+ },
  "toporlogy.design": {},
  "toporlogy.design.chain": {
   "Chain": {
@@ -3193,6 +3209,7 @@
   "git_revision": "git_revision(path)"
  },
  "toporlogy.execution.runner": {
+  "RETURNED_DESIGN": "<str>",
   "Setup": {
    "attrs": [
     "bc",
@@ -3203,17 +3220,29 @@
    "class": "Setup"
   },
   "annotations": "<_Feature>",
+  "constraint_entry": "constraint_entry(name,value,upper,tol,source)",
   "flags_of": "flags_of(summary)",
   "run_setup": "run_setup(setup,folder,progress,source,overrides,post_progress)",
   "status_of": "status_of(summary)",
+  "verdict_of": "verdict_of(summary)",
   "write_resolved": "write_resolved(resolved,folder,source,overrides)"
  },
  "toporlogy.execution.runs": {
+  "FAIL": "<str>",
+  "LAST_ITERATE": "<str>",
+  "MISSING": "<str>",
+  "PASS": "<str>",
+  "RETURNED_DESIGN": "<str>",
   "STATUS_OK": "<str>",
+  "UNKNOWN": "<str>",
+  "UNVERIFIED": "<str>",
   "annotations": "<_Feature>",
+  "combine": "combine(verdicts)",
+  "constraint_entry": "constraint_entry(name,value,upper,tol,source)",
   "flags_of": "flags_of(summary)",
   "read_run": "read_run(folder)",
   "status_of": "status_of(summary)",
+  "verdict_of": "verdict_of(summary)",
   "write_resolved": "write_resolved(resolved,folder,source,overrides)",
   "write_sweep_csv": "write_sweep_csv(path,rows,keys)"
  },
@@ -4264,6 +4293,7 @@
   "Result": {
    "attrs": [
     "constraint_values",
+    "feasibility_tol",
     "feasible",
     "final",
     "kkt_residual",

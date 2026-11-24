@@ -403,7 +403,7 @@ def test_bridge_repair_is_a_variant_not_a_mutation(tmp_path):
     assert vol["value"] == pytest.approx(rep[act].sum() / act.sum(), rel=1e-12)
     assert rd["objective"] < f0                                    # more material, stiffer
     # this repair more than doubles the volume (bound 0.15): before, the gate reported passed for it
-    assert vol["value"] > 0.15 * 1.01 and vol["satisfied"] is False and rd["feasible"] is False
+    assert vol["value"] > 0.15 * 1.01 and vol["verdict"] == "FAIL" and rd["verdict"] == "FAIL"
     assert out["passed"] is False and "repaired design violates volume" in out["summary"]
     again = step(res, s.study, tmp_path)                           # a later step of the same result: the variant
     assert again["design"] == "repaired" and "repair" not in again
@@ -584,8 +584,8 @@ def test_repair_whose_constraints_cannot_be_evaluated_does_not_pass(tmp_path):
     out = step(res, s.study, tmp_path)
     assert out["verdict_before_repair"] == "FAIL" and out["verdict"] != "FAIL"
     rd = out["repaired_design"]
-    skipped = [c["name"] for c in rd["constraints"] if c["satisfied"] is None]
-    assert rd["feasible"] is None and len(skipped) == 1 and "connectivity" in skipped[0]
+    skipped = [c["name"] for c in rd["constraints"] if c["verdict"] == "UNVERIFIED"]
+    assert rd["verdict"] == "UNVERIFIED" and len(skipped) == 1 and "connectivity" in skipped[0]
     assert out["passed"] is False and "not verified" in out["summary"] and "connectivity" in out["summary"]
     vf = rd["volume_fraction_plain"]
     assert vf["repaired"] > vf["optimized"]

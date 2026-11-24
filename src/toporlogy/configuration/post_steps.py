@@ -278,10 +278,10 @@ def register_post_steps() -> None:
             rd = out.get("repaired_design")
             # a repaired design passes only if every constraint was evaluated and holds: responses that need the
             # design chain (robust realisations, eroded-field connectivity) cannot be evaluated on it (None)
-            out["passed"] = out["verdict"] != "FAIL" and (rd is None or rd["feasible"] is True)
+            out["passed"] = out["verdict"] != "FAIL" and (rd is None or rd["verdict"] == "PASS")
             rp = out.get("repair")
-            bad = [c["name"] for c in rd["constraints"] if c["satisfied"] is False] if rd else []
-            unknown = [c["name"] for c in rd["constraints"] if c["satisfied"] is None] if rd else []
+            bad = [c["name"] for c in rd["constraints"] if c["verdict"] == "FAIL"] if rd else []
+            unknown = [c["name"] for c in rd["constraints"] if c["verdict"] == "UNVERIFIED"] if rd else []
             out["summary"] = (f"{out['verdict']} ({out['n_bodies']} bod{'y' if out['n_bodies'] == 1 else 'ies'}"
                               f"{', unattached ' + ', '.join(out['unattached']) if out['unattached'] else ''})"
                               + (f" after {rp['bridges']} bridge(s), +{rp['added_cells']} cells; was "
@@ -325,8 +325,7 @@ def register_post_steps() -> None:
 
         def step(res: Any, study: Any, folder: Any) -> dict[str, Any]:
             out = discrete_report(study, res, volume, threshold)
-            sat = [c["satisfied"] for c in out["constraints"].values()]
-            ok = not any(s is False for s in sat)
+            ok = all(c["verdict"] != "FAIL" for c in out["constraints"].values())
             if max_ratio is not None and out["ratio"] is not None:
                 ok = ok and out["ratio"] <= float(max_ratio)
             out["passed"] = bool(ok)

@@ -22,7 +22,8 @@ from toporlogy.configuration.resolve import (apply_overrides, combination_label,
                                              sweep_combinations)
 from toporlogy.configuration.schema import STATUS_OK
 from toporlogy.execution.runner import run_setup
-from toporlogy.execution.runs import PASS, RETURNED_DESIGN, UNVERIFIED, read_run, write_sweep_csv
+from toporlogy.core.verdict import PASS, RETURNED_DESIGN, UNVERIFIED
+from toporlogy.execution.runs import read_run, write_sweep_csv
 
 __all__ = ["main"]
 

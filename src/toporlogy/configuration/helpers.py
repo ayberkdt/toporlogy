@@ -247,27 +247,22 @@ def _design(state: dict[str, Any], res: Any) -> tuple[np.ndarray, str]:
 
 
 def _reevaluate(study: Any, xphys: np.ndarray, run: dict[str, Any]) -> dict[str, Any]:
-    """Objective and constraints of a repaired density (Study.evaluate_density), with the run_setup feasibility
-    rule. Constraints that need the design chain are listed with ``value: None`` and the reason; ``feasible`` is
-    False if an evaluated constraint is violated, None if none is violated but some could not be evaluated."""
+    """Objective and constraints of a repaired density (Study.evaluate_density), judged by the run's feasibility
+    rule (:func:`toporlogy.core.verdict.constraint_entry`, source "repaired design"). Constraints that need the
+    design chain are UNVERIFIED with source "missing", ``value: None`` and the reason; ``verdict`` combines them
+    (FAIL if one fails, UNVERIFIED if one could not be evaluated, else PASS)."""
+    from toporlogy.core.verdict import MISSING, REPAIRED_DESIGN, combine, constraint_entry
     ev = study.evaluate_density(xphys)
     ftol = float(run.get("feasibility_tol", 1e-3))
     cons = []
     for c in study.constraints:
         if c.key in ev.values:
-            v = ev.values[c.key]
-            cons.append({"name": c.key, "value": v, "upper": c.upper,
-                         "satisfied": bool(v <= c.upper + ftol * max(abs(c.upper), 1e-12))})
+            cons.append(constraint_entry(c.key, ev.values[c.key], c.upper, ftol, REPAIRED_DESIGN))
         else:
-            cons.append({"name": c.key, "value": None, "upper": c.upper, "satisfied": None,
-                         "not_evaluated": ev.skipped[c.key]})
+            cons.append({**constraint_entry(c.key, None, c.upper, ftol, MISSING), "not_evaluated": ev.skipped[c.key]})
     obj = study.objective.name
-    feasible: bool | None = True
-    if any(c["satisfied"] is False for c in cons):
-        feasible = False
-    elif any(c["satisfied"] is None for c in cons):
-        feasible = None
-    return {"objective": ev.values.get(obj), "objective_name": obj, "constraints": cons, "feasible": feasible,
+    return {"objective": ev.values.get(obj), "objective_name": obj, "constraints": cons,
+            "verdict": combine(c["verdict"] for c in cons),
             **({"objective_not_evaluated": ev.skipped[obj]} if obj in ev.skipped else {})}
 
 

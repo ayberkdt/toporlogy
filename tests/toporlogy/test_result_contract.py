@@ -143,8 +143,8 @@ def test_flags_name_every_finding_once_and_nothing_for_a_clean_run():
     assert flags_of(_summary()) == [] and status_of(_summary()) == "ok"
     s = _summary(converged=False, termination="schedule_step_at_max_iter",
                  constraints=[{"name": "v", "verdict": "FAIL"}, {"name": "w", "verdict": "FAIL"}],
-                 post={"connectivity_gate": {"passed": False, "repaired_design": {"feasible": None}},
-                       "connectivity_gate_2": {"passed": False, "repaired_design": {"feasible": None}},
+                 post={"connectivity_gate": {"passed": False, "repaired_design": {"verdict": "UNVERIFIED"}},
+                       "connectivity_gate_2": {"passed": False, "repaired_design": {"verdict": "UNVERIFIED"}},
                        "reverify": {"bc_fidelity": "unsupported"}})
     assert flags_of(s) == ["not_converged", "schedule_step_at_max_iter", "constraint_violated",
                            "connectivity_gate_failed", "repair_unverified", "connectivity_gate_2_failed",

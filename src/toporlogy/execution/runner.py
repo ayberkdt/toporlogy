@@ -11,8 +11,8 @@ from typing import Any
 import numpy as np
 
 from toporlogy.configuration.build import Setup
-from toporlogy.execution.runs import (RETURNED_DESIGN, constraint_entry, flags_of, status_of, verdict_of,
-                                      write_resolved)
+from toporlogy.core.verdict import RETURNED_DESIGN, constraint_entry
+from toporlogy.execution.runs import flags_of, status_of, verdict_of, write_resolved
 
 
 def run_setup(setup: Setup, folder: str | Path, progress: Callable[[int, dict[str, Any]], None] | None = None,
