@@ -429,6 +429,9 @@ def assess_convergence(h: Sequence[float], values: Sequence[float], min_refineme
     if min(r21, r32) < min_refinement:
         reasons.append(f"refinement factor {min(r21, r32):.3f} < {min_refinement:g}: the meshes are not really "
                        "different")
+    if min(r21, r32) <= 1.0 + 1e-12:                 # equal sizes: no order can be computed
+        out["verdict"] = NOT_CONVERGED
+        return out
     e21, e32 = float(ff[1] - ff[0]), float(ff[2] - ff[1])
     if e21 == 0.0 or e32 / e21 <= 0.0:
         reasons.append("oscillatory or stalled: the differences between successive meshes change sign or vanish")
@@ -459,13 +462,18 @@ def assess_convergence(h: Sequence[float], values: Sequence[float], min_refineme
 
 def mesh_convergence(res: Any, supports: Sequence[Any], load_cases: Any, E: float, nu: float = 0.3,
                      sizes: Sequence[float] = (), exclusions: Sequence[Select] = (), timeout: float = 1800.0,
-                     surface_edge: float | None = None, **assess: Any) -> dict[str, Any]:
+                     surface_edge: float | None = None, subdivide: bool = False, base_edge: float | None = None,
+                     **assess: Any) -> dict[str, Any]:
     """T10 compliance of ONE finished geometry on several tet sizes, :func:`assess_convergence` per load case.
 
-    The surface handed to gmsh is the same for every size (``res`` remeshed once at ``surface_edge``, default half
-    the smallest size; a plain (V, F) as it is), so only the volume mesh changes; the relative spread of the
-    tet-mesh volumes is reported. Per mesh: elements, nodes, gmsh mode, h = (volume / elements)^(1/3),
-    :func:`tet_quality` and the compliance per case (consistent nodal loads of :func:`solve_t10` on every mesh).
+    The geometry handed to gmsh is the same for every size: a surface (``res`` remeshed once at ``surface_edge``,
+    default half the smallest size, or a plain (V, F)), coarsened once to edge ``base_edge`` (default the largest
+    size) when ``subdivide`` is set, and then split into k² triangles per size (k = ceil(base edge / size),
+    :func:`toporlogy.post.mesh.subdivide`, the same piecewise-linear surface). gmsh keeps the surface triangles when
+    it cannot reparametrise the surface ("discrete" mode), so without subdivision only the interior would refine.
+    The relative spread of the tet-mesh volumes is reported. Per mesh: elements, nodes, gmsh mode,
+    h = (volume / elements)^(1/3), :func:`tet_quality` and the compliance per case (consistent nodal loads of
+    :func:`solve_t10` on every mesh).
     ``verdict`` is CONVERGED only if every load case is."""
     if len(sizes) < 3:
         raise ValueError(f"mesh_convergence needs at least 3 tet sizes, got {len(sizes)}")
@@ -477,13 +485,25 @@ def mesh_convergence(res: Any, supports: Sequence[Any], load_cases: Any, E: floa
         from toporlogy.post.pipeline import remesh
         V, F, dec = remesh(res, edge=se)
         dec["applied"] = "edge" in dec
+    if subdivide:
+        be = float(max(sizes) if base_edge is None else base_edge)
+        target = int(4 * M.area(V, F) / (np.sqrt(3) * be ** 2))
+        if len(F) > 1.5 * target:
+            V, F, dec2 = M.decimate(V, F, target)
+            dec["coarsened"] = dec2
+        base = float(M.quality(V, F)["edge_mean"])
+    else:
+        base = 0.0
     meshes = []
     for size in sorted(sizes, reverse=True):
         t0 = time.perf_counter()
-        m = tet_mesh(V, F, float(size), timeout=timeout)
+        k = max(1, int(np.ceil(base / float(size) - 1e-9))) if subdivide else 1
+        Vk, Fk = M.subdivide(V, F, k) if k > 1 else (V, F)
+        m = tet_mesh(Vk, Fk, float(size), timeout=timeout)
         sol = solve_t10(m, supports, load_cases, E, nu, exclusions)
         meshes.append({"size": float(size), "elements": sol["elements"], "nodes": sol["nodes"], "dofs": sol["dofs"],
-                       "mode": m.info.get("mode"), "volume": sol["volume"],
+                       "mode": m.info.get("mode"), "volume": sol["volume"], "surface_split": k,
+                       "surface_triangles": int(len(Fk)),
                        "h": (sol["volume"] / sol["elements"]) ** (1.0 / 3.0), "quality": tet_quality(m),
                        "compliance": {c["name"]: c["compliance"] for c in sol["cases"]},
                        "seconds": time.perf_counter() - t0})

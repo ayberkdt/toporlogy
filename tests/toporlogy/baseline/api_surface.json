@@ -4829,6 +4829,7 @@
   "mesh_topology": "mesh_topology(V,F)",
   "mirror_distance": "mirror_distance(V,F,axis,coordinate)",
   "quality": "quality(V,F)",
+  "subdivide": "subdivide(V,F,k)",
   "to_polydata": "to_polydata(V,F)",
   "vertex_normals": "vertex_normals(V,F)"
  },
@@ -5114,6 +5115,8 @@
   "same_topology": "same_topology(a,b)"
  },
  "toporlogy.post.verify": {
+  "CONVERGED": "<str>",
+  "NOT_CONVERGED": "<str>",
   "TetMesh": {
    "attrs": [
     "boundary_nodes",
@@ -5122,11 +5125,14 @@
    ],
    "class": "TetMesh"
   },
+  "assess_convergence": "assess_convergence(h,values,min_refinement,gci_tol,order_range,order_spread)",
   "d_iso": "d_iso(E,nu)",
+  "mesh_convergence": "mesh_convergence(res,supports,load_cases,E,nu,sizes,exclusions,timeout,surface_edge,subdivide,base_edge,assess)",
   "reverify": "reverify(res,supports,load_cases,E,nu,size,exclusions,domain,xphys,timeout,penal,surface_edge)",
   "solve_t10": "solve_t10(m,supports,load_cases,E,nu,exclusions)",
   "stiffness_t10": "stiffness_t10(m,E,nu,chunk)",
   "tet_mesh": "tet_mesh(V,F,size,angle_deg,timeout,modes)",
+  "tet_quality": "tet_quality(m)",
   "von_mises": "von_mises(s)",
   "voxel_reference": "voxel_reference(domain,xphys,supports,load_cases,E,nu,penal,emin_ratio)"
  },

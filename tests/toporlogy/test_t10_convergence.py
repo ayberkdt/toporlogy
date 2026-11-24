@@ -70,6 +70,23 @@ def test_not_converged_cases_name_their_reason():
     assert any("not stable" in s or "coarser triplet" in s for s in unstable["reasons"])
 
 
+def test_equal_meshes_are_not_convergence_and_do_not_divide_by_zero():
+    r = assess_convergence([0.5, 0.5, 0.4], [10.0, 10.0, 10.2])
+    assert r["verdict"] == NOT_CONVERGED and "order" not in r
+
+
+def test_subdivided_surface_is_the_same_watertight_surface():
+    from toporlogy.post import mesh as M
+    V, F = _box_surface((0, 0, 0), (2, 1, 1))
+    for k in (2, 3):
+        Vk, Fk = M.subdivide(V, F, k)
+        assert len(Fk) == k * k * len(F)
+        rep = M.edge_report(Fk, len(Vk))
+        assert rep["open"] == 0 and rep["non_manifold"] == 0 and rep["misoriented"] == 0
+        assert M.enclosed_volume(Vk, Fk) == pytest.approx(2.0, rel=1e-12)
+        assert M.area(Vk, Fk) == pytest.approx(M.area(V, F), rel=1e-12)
+
+
 def test_mesh_convergence_needs_three_sizes():
     from toporlogy.post.verify import mesh_convergence
     with pytest.raises(ValueError, match="at least 3"):

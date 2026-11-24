@@ -16,7 +16,7 @@ from toporlogy.references import cite
 
 __all__ = ["extract", "to_polydata", "from_polydata", "edge_report", "components", "mesh_topology", "enclosed_volume",
            "area", "face_normals", "vertex_normals", "quality", "clean", "decimate", "flip_edges", "compare",
-           "mirror_distance", "is_watertight"]
+           "mirror_distance", "is_watertight", "subdivide"]
 
 
 def to_polydata(V: np.ndarray, F: np.ndarray) -> Any:
@@ -357,3 +357,37 @@ def compare(V: np.ndarray, F: np.ndarray, V0: np.ndarray, F0: np.ndarray) -> dic
             "mean_distance_final_to_ref": float(d_fr.mean()),
             "normal_dev_max_deg": float(ang.max()), "normal_dev_p99_deg": float(np.percentile(ang, 99)),
             "normal_dev_mean_deg": float(ang.mean())}
+
+
+def subdivide(V: np.ndarray, F: np.ndarray, k: int) -> tuple[np.ndarray, np.ndarray]:
+    """Every triangle split into k² congruent triangles (each edge into k parts). The new vertices lie on the old
+    triangles, so the surface (the piecewise-linear shape) is exactly the same; vertices on shared edges are shared
+    (a watertight surface stays watertight). k = 1 returns the input."""
+    k = int(k)
+    if k < 1:
+        raise ValueError("k >= 1 is required")
+    V, F = np.asarray(V, float), np.asarray(F, np.int64)
+    if k == 1:
+        return V.copy(), F.copy()
+    # barycentric lattice (i, j), i + j <= k, of every triangle; a point is identified by its two or three
+    # integer weights on the original vertex ids, so points on a shared edge get the same key in both triangles
+    ij = [(i, j) for i in range(k + 1) for j in range(k + 1 - i)]
+    local = {p: n for n, p in enumerate(ij)}
+    keys: dict[tuple[tuple[int, int], ...], int] = {}
+    pts: list[np.ndarray] = []
+    tris: list[tuple[int, int, int]] = []
+    for a, b, c in F.tolist():
+        ids = []
+        for i, j in ij:
+            w = {a: k - i - j, b: i, c: j}
+            key = tuple(sorted((v, wt) for v, wt in w.items() if wt))
+            if key not in keys:
+                keys[key] = len(pts)
+                pts.append(((k - i - j) * V[a] + i * V[b] + j * V[c]) / k)
+            ids.append(keys[key])
+        for i in range(k):
+            for j in range(k - i):
+                tris.append((ids[local[(i, j)]], ids[local[(i + 1, j)]], ids[local[(i, j + 1)]]))
+                if i + j < k - 1:
+                    tris.append((ids[local[(i + 1, j)]], ids[local[(i + 1, j + 1)]], ids[local[(i, j + 1)]]))
+    return np.asarray(pts), np.asarray(tris, np.int64)
