@@ -171,7 +171,10 @@ class HalfSpace(Shape):
     def __init__(self, point: Sequence[float], normal: Sequence[float]) -> None:
         self.point = np.asarray(point, float)
         n = np.asarray(normal, float)
-        self.normal = n / np.linalg.norm(n)
+        nn = float(np.linalg.norm(n))
+        if n.shape != self.point.shape or self.point.size not in (2, 3) or not (np.isfinite(nn) and nn > 0):
+            raise ValueError("HalfSpace needs a 2-D or 3-D point and a finite, non-zero normal of the same size")
+        self.normal = n / nn
         self.dim = self.point.size
 
     def sdf(self, P: np.ndarray) -> np.ndarray:
