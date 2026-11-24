@@ -122,7 +122,7 @@ class BucklingKS(Response):
         self.E0, self.name = E0, name
         self.fixed_scale = scale
         self.scale: float | None = scale
-        self.last_load_factors = np.zeros(0)
+        self.last_load_factors: np.ndarray = np.zeros(0)
 
     def reset_scale(self) -> None:
         self.scale = self.fixed_scale
