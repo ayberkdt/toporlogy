@@ -156,7 +156,7 @@ def test_resolved_config_round_trip_and_run_folder(tmp_path):
     strip = lambda r: {k: v for k, v in r.items() if k != "provenance"}
     assert strip(again) == strip(s.config)
     assert sm["iterations"] == 3 and sm["status"] == "not converged"
-    assert sm["constraints"][0]["name"] == "volume" and sm["constraints"][0]["satisfied"]
+    assert sm["constraints"][0]["name"] == "volume" and sm["constraints"][0]["verdict"] == "PASS"
     back = read_run(tmp_path / "run")
     assert back["objective"] == sm["objective"] and len(back["history"]) == 3
 

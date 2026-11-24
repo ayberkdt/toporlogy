@@ -66,5 +66,6 @@ class Recorder:
                "objective": res.objective if (res.final is not None or res.history["f0"]) else None,
                "constraints": res.constraint_values, "termination": getattr(res, "termination", ""),
                "feasible": getattr(res, "feasible", None), "max_violation": getattr(res, "max_violation", None),
+               "feasibility_tol": getattr(res, "feasibility_tol", None),
                "kkt_residual": getattr(res, "kkt_residual", None), "settings": res.settings}
         (self.folder / "result.json").write_text(json.dumps(out, indent=1, default=str), encoding="utf-8")

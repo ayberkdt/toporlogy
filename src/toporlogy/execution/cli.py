@@ -22,7 +22,7 @@ from toporlogy.configuration.resolve import (apply_overrides, combination_label,
                                              sweep_combinations)
 from toporlogy.configuration.schema import STATUS_OK
 from toporlogy.execution.runner import run_setup
-from toporlogy.execution.runs import read_run, write_sweep_csv
+from toporlogy.execution.runs import PASS, RETURNED_DESIGN, UNVERIFIED, read_run, write_sweep_csv
 
 __all__ = ["main"]
 
@@ -404,10 +404,12 @@ def cmd_show(a: argparse.Namespace) -> int:
     mx = s.get("max_iter")
     out(kv("RUN", s["folder"]))
     out(kv("status", f"{s['status']} ({it}{f' of {mx}' if mx else ''} iterations)"))
-    out(kv("objective", f"{s['objective_name']} {fobj(s['objective'])}"))
+    osrc = s.get("objective_source")
+    out(kv("objective", f"{s['objective_name']} {fobj(s['objective'])}"
+                        + ("" if osrc == RETURNED_DESIGN else f"  {UNVERIFIED} ({osrc})")))
     for c in s.get("constraints", []):
-        out(kv("constraint", f"{c['name']} {fval(c['value'])} <= {fval(c['upper'])}  "
-                             f"{'satisfied' if c['satisfied'] else 'VIOLATED'}"))
+        out(kv("constraint", f"{c['name']} {fval(c['value'])} <= {fval(c['upper'])}  {c['verdict']}"
+                             + ("" if c["source"] == RETURNED_DESIGN else f" ({c['source']})")))
     out(kv("time", f"{fsec(s.get('seconds'))} s | grey {fpct(s.get('grey_fraction'))}"))
     out(kv("created", f"{s.get('created') or '-'} | git {s.get('git') or 'none'}"))
     hist = s.get("history", [])
@@ -443,8 +445,7 @@ def cmd_compare(a: argparse.Namespace) -> int:
         for c in r.get("constraints", []):
             if c["name"] not in cnames:
                 cnames.append(c["name"])
-    feasible = [r for r in runs if all(c["satisfied"] for c in r.get("constraints", []))
-                and r.get("objective") is not None]
+    feasible = [r for r in runs if r["verdict"] == PASS and r.get("objective") is not None]
     best = min(feasible, key=lambda r: r["objective"]) if feasible else None
     header = ["  run", "status", oname, *cnames, "it", "s", "grey"]
     rows = []
@@ -457,7 +458,7 @@ def cmd_compare(a: argparse.Namespace) -> int:
     for line in table(header, rows, numeric):
         out(line)
     if best is not None:
-        out(f"* lowest {oname} with every constraint satisfied")
+        out(f"* lowest {oname} with every constraint {PASS} on the returned design")
     out(kv("NEXT", f"{PROG} show {best['folder'] if best else runs[0]['folder']}"))
     return EXIT_OK
 

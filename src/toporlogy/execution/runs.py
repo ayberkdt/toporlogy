@@ -31,14 +31,55 @@ def write_resolved(resolved: dict[str, Any], folder: str | Path, source: str | N
     return p
 
 
+# Result contract (docs/yol_haritasi_2026-11-18.md §3, PR-08). Each constraint of a run summary has a ``verdict``
+# and the ``source`` of its value; only a value of the returned design (result.npz x, re-evaluated) can PASS or FAIL.
+PASS, FAIL, UNVERIFIED = "PASS", "FAIL", "UNVERIFIED"
+RETURNED_DESIGN = "returned design"   # evaluated at the returned design
+LAST_ITERATE = "last iterate"         # history: the design analysed before the last optimizer update
+UNKNOWN = "unknown"                   # a summary.json written before 18 Nov 2026 (no "flags"): either of the two
+MISSING = "missing"                   # no value recorded
+
+
+def constraint_entry(name: str, value: float | None, upper: float, tol: float, source: str) -> dict[str, Any]:
+    """``{name, value, upper, verdict, source}``. A value of the returned design PASSes when
+    ``value <= upper + tol * max(|upper|, 1e-12)`` (the rule of ``Study.run``) and FAILs otherwise; a value from
+    any other source, or none, is UNVERIFIED whatever it is."""
+    if value is None or source != RETURNED_DESIGN:
+        verdict = UNVERIFIED
+    else:
+        verdict = PASS if value <= upper + tol * max(abs(upper), 1e-12) else FAIL
+    return {"name": name, "value": value, "upper": upper, "verdict": verdict, "source": source}
+
+
+def verdict_of(summary: dict[str, Any]) -> str:
+    """Overall verdict of a run summary: FAIL if a constraint FAILs, else UNVERIFIED if a constraint is UNVERIFIED
+    or the objective does not belong to the returned design, else PASS (also with no constraints)."""
+    verdicts = _verdicts(summary)
+    if FAIL in verdicts:
+        return FAIL
+    if UNVERIFIED in verdicts or summary.get("objective_source") != RETURNED_DESIGN:
+        return UNVERIFIED
+    return PASS
+
+
+def _verdicts(summary: dict[str, Any]) -> list[str]:
+    """Constraint verdicts; a constraint without one is UNVERIFIED."""
+    return [c.get("verdict", UNVERIFIED) for c in summary.get("constraints", [])]
+
+
 def status_of(summary: dict[str, Any]) -> str:
-    """"ok", or the problems joined by ", ": "not converged", "constraint violated", "<post step> failed" (a post
+    """"ok", or the problems joined by ", ": "not converged", "constraint violated", "constraint unverified",
+    "objective unverified" (a value that does not belong to the returned design), "<post step> failed" (a post
     step whose result has ``passed: false``, e.g. connectivity verdict FAIL, failed manufacturing checks, an error)."""
     flags = []
     if not summary.get("converged", False):
         flags.append("not converged")
-    if any(not c.get("satisfied", True) for c in summary.get("constraints", [])):
+    if FAIL in _verdicts(summary):
         flags.append("constraint violated")
+    if UNVERIFIED in _verdicts(summary):
+        flags.append("constraint unverified")
+    if summary.get("objective_source") != RETURNED_DESIGN:
+        flags.append("objective unverified")
     for name, out in (summary.get("post") or {}).items():
         if isinstance(out, dict) and out.get("passed") is False:
             flags.append(f"{name} failed")
@@ -49,7 +90,8 @@ def flags_of(summary: dict[str, Any]) -> list[str]:
     """Machine-readable findings of a run summary, one code each (empty list: nothing to report). The status line
     says the same in words; the flags also name what was NOT verified (docs/gelistirme_plani.md G7):
 
-    ``not_converged``, ``schedule_step_at_max_iter``, ``constraint_violated``, ``<post step>_failed``,
+    ``not_converged``, ``schedule_step_at_max_iter``, ``constraint_violated``, ``constraint_unverified``,
+    ``objective_unverified``, ``<post step>_failed``,
     ``repair_unverified`` (a connectivity repair whose constraints could not all be evaluated),
     ``bc_mapping_approximate`` / ``bc_mapping_unsupported`` (a re-analysis that did not solve the optimisation's
     exact supports and loads)."""
@@ -58,8 +100,12 @@ def flags_of(summary: dict[str, Any]) -> list[str]:
         flags.append("not_converged")
     if summary.get("termination") == "schedule_step_at_max_iter":
         flags.append("schedule_step_at_max_iter")
-    if any(not c.get("satisfied", True) for c in summary.get("constraints", [])):
+    if FAIL in _verdicts(summary):
         flags.append("constraint_violated")
+    if UNVERIFIED in _verdicts(summary):
+        flags.append("constraint_unverified")
+    if summary.get("objective_source") != RETURNED_DESIGN:
+        flags.append("objective_unverified")
     for name, out in (summary.get("post") or {}).items():
         if not isinstance(out, dict):
             continue
@@ -98,7 +144,13 @@ def write_sweep_csv(path: str | Path, rows: Sequence[dict[str, Any]], keys: Sequ
 # ============================================================================================== reading run folders
 def read_run(folder: str | Path) -> dict[str, Any]:
     """Summary of a finished run: ``summary.json`` (CLI runs) or rebuilt from ``result.json`` + ``history.jsonl``
-    (runs recorded from Python with :class:`~toporlogy.execution.record.Recorder`). Adds ``history`` (list of rows)."""
+    (runs recorded from Python with :class:`~toporlogy.execution.record.Recorder`). Adds ``history`` (list of rows).
+
+    Both paths give the same contract: per constraint ``verdict`` and ``source`` (:func:`constraint_entry`),
+    ``objective_source``, the overall ``verdict``, and ``status`` / ``flags`` recomputed from them. Values that may
+    not belong to the returned design are UNVERIFIED: a result.json written before 14 Nov 2026 (no "constraints";
+    values and objective of the last iterate) and a summary.json written before 18 Nov 2026 (no "flags"; before
+    17 Nov run_setup took the constraint values from the last iterate)."""
     from toporlogy.optimization.diagnostics import grey_fraction
 
     f = Path(folder)
@@ -109,31 +161,42 @@ def read_run(folder: str | Path) -> dict[str, Any]:
         if hist_path.is_file() else []
     if (f / "summary.json").is_file():
         s = json.loads((f / "summary.json").read_text(encoding="utf-8"))
+        if "objective_source" not in s:              # written before the verdict contract
+            # "flags" came with G7 (a7a5631, 18 Nov 2026), after run_setup switched to the returned design's
+            # constraint values (42f593c, 17 Nov); without it the values may be those of the last iterate.
+            src = RETURNED_DESIGN if "flags" in s else UNKNOWN
+            s["constraints"] = [{"name": c["name"], "value": c.get("value"), "upper": c.get("upper"),
+                                 "verdict": UNVERIFIED if src != RETURNED_DESIGN or c.get("satisfied") is None
+                                 else PASS if c["satisfied"] else FAIL, "source": src}
+                                for c in s.get("constraints", [])]   # judged with the run's own feasibility_tol
+            s["objective_source"] = src
+            s.pop("feasible", None)                  # the overall verdict below says it
     elif (f / "result.json").is_file():
         res = json.loads((f / "result.json").read_text(encoding="utf-8"))
         settings = res.get("settings", {})
-        # The returned design's constraint values are in result.json. The last history row belongs to the design
-        # BEFORE the final update, so it is only a fallback for result files written before "constraints" existed.
+        # The returned design's constraint values are in result.json (since 99d8d67, 14 Nov 2026). Before, result.json
+        # had none and its objective was history f0[-1]: the last iterate, the design BEFORE the final update.
         if isinstance(res.get("constraints"), dict):
-            final, source = res["constraints"], "result.json"
+            final, source = res["constraints"], RETURNED_DESIGN
         else:
-            final, source = (history[-1] if history else {}), "history.jsonl (last iterate, not the returned design)"
-        cons = [{"name": n, "value": final.get(n, float("nan")), "upper": u,
-                 "satisfied": bool(final.get(n, float("inf")) <= u + 1e-3 * max(abs(u), 1e-12))}
+            final, source = (history[-1] if history else {}), LAST_ITERATE
+        tol = float(res.get("feasibility_tol") or 1e-3)   # not recorded before PR-08: Study.run's default
+        cons = [constraint_entry(n, final.get(n), u, tol, source if n in final else MISSING)
                 for n, u in settings.get("constraints", [])]
         grey = None
         if (f / "result.npz").is_file():
             with np.load(f / "result.npz") as z:
                 grey = grey_fraction(z["xphys"])
         s = {"name": f.name, "objective_name": settings.get("objective", "objective"),
-             "objective": res.get("objective"), "constraints": cons, "iterations": res.get("iterations"),
-             "max_iter": None, "converged": res.get("converged"), "seconds": res.get("seconds"),
-             "grey_fraction": grey, "constraint_source": source, "termination": res.get("termination"),
-             "feasible": res.get("feasible"), "max_violation": res.get("max_violation"),
-             "kkt_residual": res.get("kkt_residual")}
-        s["status"] = status_of(s)
+             "objective": res.get("objective"), "objective_source": source, "constraints": cons,
+             "iterations": res.get("iterations"), "max_iter": None, "converged": res.get("converged"),
+             "seconds": res.get("seconds"), "grey_fraction": grey, "termination": res.get("termination"),
+             "max_violation": res.get("max_violation"), "kkt_residual": res.get("kkt_residual")}
     else:
         raise FileNotFoundError(f"{f} has neither summary.json nor result.json (is the run finished?)")
+    s["verdict"] = verdict_of(s)
+    s["status"] = status_of(s)
+    s["flags"] = flags_of(s)
     s["history"] = history
     s["folder"] = str(f)
     setup = f / "setup.json"
