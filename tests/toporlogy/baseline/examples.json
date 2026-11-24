@@ -1,14 +1,16 @@
 {
  "meta": {
-  "created": "2026-11-17T14:55:44",
-  "git": "cf83e40",
+  "created": "2026-11-24T16:23:46",
+  "git": "5f97b86",
   "max_iter": 10,
   "solver": "SuperLU (torch imported first)",
   "python": "3.12.1",
   "numpy": "2.2.6",
   "torch": "2.5.1+cu121",
   "scipy": "1.14.1",
-  "machine": "Windows-11-10.0.26200-SP0"
+  "machine": "Windows-11-10.0.26200-SP0",
+  "system": "Windows",
+  "arch": "AMD64"
  },
  "examples": {
   "cantilever3d": {
@@ -43,14 +45,14 @@
    "returncode": 1,
    "status": "not converged",
    "iterations": 10,
-   "objective": 285.4339522160699,
+   "objective": 296.07128672461727,
    "constraints": {
-    "volume_dilated": 0.398441608002679,
-    "local_volume": 0.2982022001246167,
-    "connectivity": 9.764504065502914
+    "volume_dilated": 0.39799818890606325,
+    "local_volume": 0.3014582538331579,
+    "connectivity": 9.569717186954152
    },
-   "x": "71e6b102779fba4743739a35b0e77227591d3398dc739dfcf60eb230dc8d9515",
-   "xphys": "39cfe13d10e22602a597b881445f2302a10601046f6d0d861deb429c6dc22455",
+   "x": "10c94708eeb09c7a6b6d0fe3b11f74358a4d209aa5e85b143de83f95b9438756",
+   "xphys": "f3cc20bf81b264d8750def378d98618d38e080c88a976c8e8c1d893a6c6a4043",
    "post_steps": [
     "connectivity_gate",
     "export",
@@ -60,9 +62,9 @@
    ],
    "post_errors": [],
    "geometry_files": {
-    "part.ply": "b7f63621270f18c1812008b7a8f00d8c5275cacac3ee8b390b18db0909eeb0ce",
-    "part.stl": "b1f3c5a6b843bd7f692c23f7ed638806e12229814f5301dc8f1c20861814510a",
-    "part_print_stock.stl": "823e4aa2a77fd8e76d730389a79ba8672e38aeec894d1f3c838e7ad2a88522a4"
+    "part.ply": "6df229690c1a8e5e5c7ec3718258b60438616bcfbb7d7cef35d91a51943f36e9",
+    "part.stl": "e7106f1e89964b11ed72a85ffda696307803cdfc2444109e987e8ee8fddaa537",
+    "part_print_stock.stl": "dd6709ffcc84ca2ad905d3c5865641f200dffa960f58ca3f955a4ddaf063de9b"
    }
   },
   "mbb2d": {

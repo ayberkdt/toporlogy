@@ -105,6 +105,14 @@ toleransla, dizi ve dosya özetleri NOT VERIFIED. Yeni `backends.yml`: PARDISO, 
 (haftalık, elle ve ilgili dosyalar değişince). 1e-6 toleransın Linux'ta tutup tutmadığı bu iş akışının ilk koşusunda
 görülecek (henüz ölçülmedi). CUDA için GPU koşucusu yok: NOT VERIFIED.
 
+İlk Linux koşusunda baseline işi kaldı. Neden tolerans değil, kütüphanedeki bir tekrarlanabilirlik hatasıydı:
+`tie_regions` ve `bridge` eşit maliyetli yollar arasında SciPy Dijkstra'nın öncül dizisine uyuyordu ve bu seçim SciPy
+sürümüne bağlı. `lbracket_bore3d`'de 252 dondurulmuş bağ hücresinin 14'ü SciPy 1.14.1 ile 1.18.1 arasında farklıydı;
+amaç ilk iterasyonda 1,6e-3 bağıl farklıydı, 10 iterasyon sonunda en büyük fark 2,2e-2'ydi (bağlantı kısıtı). Yol artık uzaklıklardan geri izleniyor,
+eşitlikte en küçük hücre indeksi seçiliyor (dal `fix/baseline-linux-tolerance`). Baseline'da yalnız `lbracket_bore3d`
+değişti. Windows'ta NumPy 2.5.5 / SciPy 1.18.1 / torch 2.15.0 ile en büyük skaler fark 2,7e-10; 1e-6 tolerans
+değişmedi. Linux değeri `backends.yml` koşusunun örnek başına açıklama satırlarında görülecek; yerelde ölçülmedi.
+
 Görselleştirme betiği (panel b) PR değil, çalışma klasöründe düzeltilir: ham iso-yüzey, CAD'le kırpılmış, ek
 yumuşatma yok, figür notu buna göre.
 

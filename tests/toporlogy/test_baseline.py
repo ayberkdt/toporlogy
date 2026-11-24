@@ -38,7 +38,11 @@ HERE = Path(__file__).resolve().parent
 REPO = HERE.parents[1]
 EXAMPLES = REPO / "examples"
 FILE = HERE / "baseline" / "examples.json"
-REL_TOL = 1e-6                     # objective and constraints outside the reference environment (not yet measured)
+# Objective and constraints outside the reference environment. Measured 24 Nov 2026 on Windows with NumPy 2.5.5, SciPy
+# 1.18.1, torch 2.15.0 against the reference (NumPy 2.2.6, SciPy 1.14.1, torch 2.5.1): largest relative difference
+# 2.7e-10 (lbracket_bore3d), the others 3.6e-14 .. 1.6e-10. Linux not measured locally: the backends workflow
+# prints every example's difference as an annotation.
+REL_TOL = 1e-6
 EXACT_KEYS = ("returncode", "status", "iterations", "post_steps", "post_errors")
 MAX_ITER = 10
 RUNNER = "import sys, torch; from toporlogy.execution.cli import main; raise SystemExit(main(sys.argv[1:]))"
@@ -132,6 +136,15 @@ def compare(want: dict[str, Any], got: dict[str, Any], bitwise: bool) -> dict[st
     return diff
 
 
+def max_rel_diff(want: dict[str, Any], got: dict[str, Any]) -> float:
+    """Largest relative difference of the objective and the constraint values (inf if one is missing)."""
+    pairs = [(want.get("objective"), got.get("objective"))]
+    wc, gc = want.get("constraints", {}), got.get("constraints", {})
+    pairs += [(wc.get(k), gc.get(k)) for k in sorted(set(wc) | set(gc))]
+    return max((abs(a - b) / max(abs(a), abs(b), 1e-300) if a is not None and b is not None else float("inf"))
+               for a, b in pairs)
+
+
 @pytest.mark.parametrize("path", examples(), ids=lambda p: p.stem)
 def test_example_matches_baseline(path: Path, tmp_path: Path) -> None:
     import _verification as V
@@ -149,6 +162,8 @@ def test_example_matches_baseline(path: Path, tmp_path: Path) -> None:
                       f"scalars to {REL_TOL:g}; array and file hashes NOT VERIFIED")
     got = run_example(path, tmp_path / path.stem)
     diff = compare(stored[path.stem], got, bitwise)
+    V.BASELINE.setdefault("examples", {})[path.stem] = {"max_rel": max_rel_diff(stored[path.stem], got),
+                                                         "differs": sorted(diff)}
     assert not diff, (f"{path.stem} differs from the baseline ({'bitwise' if bitwise else 'numerical'}; stored, now): "
                       f"{json.dumps(diff, indent=1)}")
 

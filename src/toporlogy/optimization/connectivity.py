@@ -624,6 +624,9 @@ class CouplingCompliance(_RatioResponse):
 
 
 # ====================================================================================================== paths, ties
+_TIE_TOL = 1e-9                     # relative: path costs this close count as equal (rounding)
+
+
 def _path_graph(allowed: np.ndarray, cost: np.ndarray) -> sp.csr_matrix:
     """Directed face-neighbour graph on all box cells; edge p→q weighs cost[q] (> 0) and exists if both allowed."""
     p, q = _neighbour_pairs(allowed, neighbourhood(allowed.ndim, "face"))
@@ -634,22 +637,34 @@ def _path_graph(allowed: np.ndarray, cost: np.ndarray) -> sp.csr_matrix:
 
 
 def _nearest_path(G: sp.csr_matrix, tree: np.ndarray, targets: list[np.ndarray]) -> tuple[int, np.ndarray] | None:
-    """Shortest path from any cell of ``tree`` to the nearest target set: (target index, path cells) or None."""
-    dist, pred, _ = csgraph.dijkstra(G, directed=True, indices=np.flatnonzero(tree.ravel()),
-                                     return_predecessors=True, min_only=True)
+    """Shortest path from any cell of ``tree`` to the nearest target set: (target index, path cells) or None.
+
+    Only the distances come from :func:`scipy.sparse.csgraph.dijkstra`; the path is traced back here. Its
+    predecessor array breaks ties between paths of equal cost by heap order, which changed between SciPy versions
+    (examples/lbracket_bore3d.yaml: 14 of 252 frozen tie cells differed between SciPy 1.14.1 and 1.18.1, and the
+    10-iteration objective by 1.6e-3 from the first iteration on). Here ties go to the lowest index: the first
+    target set, the lowest target cell, the lowest predecessor cell, each within a relative ``_TIE_TOL``.
+    """
+    dist = csgraph.dijkstra(G, directed=True, indices=np.flatnonzero(tree.ravel()), min_only=True)
     best, bk, bt = np.inf, -1, -1
     for k, t in enumerate(targets):
-        cells = np.flatnonzero(t.ravel())
+        cells = np.flatnonzero(t.ravel())                       # ascending
         if cells.size == 0:
             continue
-        i = cells[np.argmin(dist[cells])]
-        if dist[i] < best:
-            best, bk, bt = float(dist[i]), k, int(i)
+        d = dist[cells]
+        m = float(d.min())
+        if np.isfinite(m) and (bk < 0 or m < best - _TIE_TOL * max(1.0, best)):
+            best, bk, bt = m, k, int(cells[np.flatnonzero(d <= m + _TIE_TOL * max(1.0, m))[0]])
     if not np.isfinite(best):
         return None
+    incoming = G.T.tocsr()                                      # row v: edges u -> v, weight w(u, v)
     path = [bt]
-    while pred[path[-1]] >= 0:
-        path.append(int(pred[path[-1]]))
+    while dist[path[-1]] > 0.0:                                 # tree cells have distance 0, every edge costs > 0
+        v = path[-1]
+        lo, hi = incoming.indptr[v], incoming.indptr[v + 1]
+        u, w = incoming.indices[lo:hi], incoming.data[lo:hi]
+        on = np.abs(dist[u] + w - dist[v]) <= _TIE_TOL * max(1.0, float(dist[v]))
+        path.append(int(u[on].min()))
     return bk, np.asarray(path[::-1], np.int64)
 
 
