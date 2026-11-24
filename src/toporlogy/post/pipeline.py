@@ -50,7 +50,7 @@ from toporlogy.post import mesh as M
 from toporlogy.post import sdf as S
 from toporlogy.post import smooth as SM
 from toporlogy.post.primitives import (Bound, BoxPrimitive, Cut, CylinderPrimitive, GridPrimitive, Keep, PlanePrimitive,
-                                          Role, SpherePrimitive, assemble)
+                                          Primitive, Role, SpherePrimitive, assemble)
 from toporlogy.post.regularize import adaptive_closing, adaptive_opening, fill_voids, remove_islands
 from toporlogy.post.topology import grid_topology
 
@@ -157,6 +157,13 @@ def _envelope_role(domain: Any, grid: S.Grid, mode: str = "voxel", part: Any = N
                  name="envelope")
 
 
+def _stock_offset(r: Role, d: float) -> Primitive:
+    try:
+        return r.shape.offset(d)
+    except ValueError as e:
+        raise ValueError(f"{r.role} {r.name or r.shape.kind!r}: machining stock {r.stock:g}: {e}") from None
+
+
 def _cache(roles: Sequence[Role], X: np.ndarray, shape: tuple[int, ...]) -> dict[int, np.ndarray]:
     return {id(r): r.shape.sdf(X).reshape(shape) for r in roles}
 
@@ -169,6 +176,9 @@ def finalize(domain: Any, xphys: np.ndarray, preserve: Sequence[Role] = (), para
     ``envelope`` (a Bound role) replaces the one built from ``params.envelope``; ``part`` is the part geometry that
     ``params.envelope="cad"`` needs (see :func:`_envelope_role`)."""
     p = params or PostParams()
+    for r in preserve:                      # a bore whose stock removes it fails here, not after the pipeline
+        if r.stock > 0 and isinstance(r, Cut):
+            _stock_offset(r, -r.stock)
     say = log or (lambda s: None)
     t_start = time.perf_counter()
     times: dict[str, float] = {}
@@ -440,7 +450,7 @@ def print_variant(res: PostResult, log: Callable[[str], None] | None = None) -> 
             new_roles.append(r)
             continue
         if isinstance(r, Cut):
-            new_roles.append(Cut(r.shape.offset(-r.stock), r.functional, 0.0, r.name + "_print"))
+            new_roles.append(Cut(_stock_offset(r, -r.stock), r.functional, 0.0, r.name + "_print"))
         elif isinstance(r, Keep):
             new_roles.append(Keep(r.shape.offset(r.stock), r.functional, 0.0, r.name + "_print"))
         elif isinstance(r, Bound) and isinstance(r.shape, PlanePrimitive):

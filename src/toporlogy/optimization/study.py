@@ -98,6 +98,7 @@ class Result:
     # Constraint feasibility of the returned design, same rule as the run summary: value <= upper + tol * |upper|.
     feasible: bool | None = None
     max_violation: float | None = None  # max over constraints of max(0, (value - upper) / |upper|)
+    feasibility_tol: float | None = None  # the tol of that rule (Study.run's feasibility_tol)
     # Estimate of the KKT residual at the returned design (optimizers with ``kkt_multipliers``: MMA, OC): max of the
     # relative projected stationarity |s grad f0 + mu^T grad g| (box 0..1) and the complementarity |mu_j g_j|, with
     # the multipliers of the last step (an estimate: they belong to the previous iterate). None without multipliers.
@@ -356,7 +357,7 @@ class Study:
             kkt = self._kkt_residual(x, final, lam) if with_kkt else None
             res = Result(x, final.xphys, hist, it, termination == "design_change", time.perf_counter() - t0,
                          final.U, self.settings(), final, termination=termination, feasible=feasible,
-                         max_violation=max(worst, 0.0), kkt_residual=kkt)
+                         max_violation=max(worst, 0.0), feasibility_tol=float(feasibility_tol), kkt_residual=kkt)
         finally:
             if getattr(self.optimizer, "needs_value_fn", False):
                 self.optimizer.value_fn = None

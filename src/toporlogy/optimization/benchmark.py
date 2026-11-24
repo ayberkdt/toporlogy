@@ -25,6 +25,7 @@ from typing import Any
 
 import numpy as np
 
+from toporlogy.core.verdict import BINARY_DESIGN, combine, constraint_verdict
 from toporlogy.optimization.responses import Volume
 from toporlogy.references import cite
 
@@ -71,8 +72,9 @@ def discrete_report(study: Any, result: Any, volume: float | str | None = "const
     volume constraint (falls back to ``threshold`` when there is none); None = fixed ``threshold``.
 
     Returns a dict with ``objective`` (grey), ``objective_binary``, ``ratio`` (binary / grey), ``m_nd`` (grey design),
-    ``volume_binary`` (element count), ``constraints`` ({name: {grey, binary, upper, satisfied}} with None for
-    values that could not be evaluated), ``not_evaluated`` ({name: reason}), ``evaluations`` (study total so far),
+    ``volume_binary`` (element count), ``constraints`` ({name: {grey, binary, upper, verdict}}: verdict of the 0/1
+    value with tolerance 1e-9, UNVERIFIED when it could not be evaluated, :mod:`toporlogy.core.verdict`),
+    ``not_evaluated`` ({name: reason}), ``evaluations`` (study total so far),
     ``inner_evaluations`` (inside optimizer steps, when reported), ``iterations`` and ``threshold_rule``.
     """
     d = study.domain
@@ -95,7 +97,7 @@ def discrete_report(study: Any, result: Any, volume: float | str | None = "const
     for c in study.constraints:
         v = ev.values.get(c.key)
         cons[c.key] = {"grey": result.constraint_values.get(c.key), "binary": v, "upper": float(c.upper),
-                       "satisfied": None if v is None else bool(v <= c.upper + 1e-9 * max(abs(c.upper), 1e-12))}
+                       "verdict": constraint_verdict(v, float(c.upper), 1e-9, BINARY_DESIGN)}
     return {"objective": grey, "objective_binary": binary,
             "ratio": None if binary is None or grey == 0 else float(binary) / grey,
             "m_nd": _m_nd(result.xphys, d.design), "volume_binary": float(xb[d.active].sum() / d.n_active),
@@ -115,12 +117,11 @@ def format_table(rows: list[dict[str, Any]]) -> str:
     """Text table of :func:`compare_runs` rows; the reference of ``rel`` is the best binary objective."""
     vals = [r["objective_binary"] for r in rows if r["objective_binary"] is not None]
     best = min(vals) if vals else None
-    head = f"{'name':<18}{'grey obj':>12}{'binary obj':>12}{'rel':>8}{'M_nd':>8}{'vol(bin)':>10}{'evals':>7}  feasible"
+    head = f"{'name':<18}{'grey obj':>12}{'binary obj':>12}{'rel':>8}{'M_nd':>8}{'vol(bin)':>10}{'evals':>7}  verdict"
     lines = [head, "-" * len(head)]
     for r in rows:
         b = r["objective_binary"]
-        sat = [c["satisfied"] for c in r["constraints"].values()]
-        feas = "not evaluated" if any(s is None for s in sat) else ("yes" if all(sat) else "NO")
+        feas = combine(c["verdict"] for c in r["constraints"].values())
         lines.append(f"{r['name']:<18}{r['objective']:>12.5g}"
                      + (f"{b:>12.5g}{b / best:>8.3f}" if b is not None and best else f"{'-':>12}{'-':>8}")
                      + f"{r['m_nd']:>8.3f}{r['volume_binary']:>10.4f}{r['evaluations']:>7d}  {feas}")

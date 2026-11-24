@@ -1,0 +1,111 @@
+{
+ "environment": {
+  "python": "3.12.1",
+  "numpy": "2.2.6",
+  "scipy": "1.14.1",
+  "system": "Windows",
+  "machine": "AMD64"
+ },
+ "domain": "Domain(shape=(91, 48, 41), h=7.5, active=50389, design=45847, keep=4542, void=0)",
+ "y_mid_cad": 200.55999755859375,
+ "reference_2_3": {
+  "x": {
+   "frac": 0.012,
+   "xphys": 0.478,
+   "keep": 0.224,
+   "keep_mismatch_cells": 228,
+   "grid_shift_max": 0.0
+  },
+  "y": {
+   "frac": 0.117,
+   "xphys": 0.474,
+   "grid_shift_max": 3.62
+  }
+ },
+ "symmetry_check": {
+  "design": "optimized",
+  "threshold": 0.5,
+  "mesh_design": null,
+  "planes": [
+   {
+    "axis": "x",
+    "coordinate": 500.0,
+    "grid_shift_max": 0.0,
+    "cells_outside_box": 0,
+    "fields": {
+     "frac": {
+      "e_sym": 0.01215116613755131,
+      "mismatch_cells": 108
+     },
+     "keep": {
+      "e_sym": 0.22404943783560757,
+      "mismatch_cells": 228
+     },
+     "xphys": {
+      "e_sym": 0.4776813352710429,
+      "mismatch_cells": 3926
+     }
+    }
+   },
+   {
+    "axis": "y",
+    "coordinate": 200.56,
+    "grid_shift_max": 3.6200000000000045,
+    "cells_outside_box": 0,
+    "fields": {
+     "frac": {
+      "e_sym": 0.11737948225615173,
+      "mismatch_cells": 692
+     },
+     "keep": {
+      "e_sym": 0.4558924838678566,
+      "mismatch_cells": 944
+     },
+     "xphys": {
+      "e_sym": 0.47387766471750126,
+      "mismatch_cells": 3864
+     }
+    }
+   }
+  ],
+  "summary": "x=500: e_sym frac 0.012, keep 0.224, xphys 0.478; y=200.56: e_sym frac 0.117, keep 0.456, xphys 0.474"
+ },
+ "surface": {
+  "part.stl": [
+   {
+    "hausdorff": 82.09225561116791,
+    "mean": 4.040397874142963,
+    "p95": 21.946299940765957,
+    "bbox_diagonal": 749.0761551622725,
+    "samples": 356250
+   },
+   {
+    "hausdorff": 27.16305604411562,
+    "mean": 2.263215076948139,
+    "p95": 9.413270275580935,
+    "bbox_diagonal": 749.0761551622725,
+    "samples": 356250
+   }
+  ],
+  "initial_exact.stl (CAD)": [
+   {
+    "hausdorff": 1.0300836278997523,
+    "mean": 0.06278203388738858,
+    "p95": 0.7540603178833494,
+    "bbox_diagonal": 798.8701760196657,
+    "samples": 193622
+   },
+   {
+    "hausdorff": 1.1366813468685215,
+    "mean": 0.14714336069784228,
+    "p95": 1.1200000000000045,
+    "bbox_diagonal": 798.8701760196657,
+    "samples": 193622
+   }
+  ]
+ },
+ "seconds": {
+  "build": 5.9137119999995775,
+  "surface": 16.696085000001403
+ }
+}

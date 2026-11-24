@@ -6,7 +6,8 @@ REFERENCES: tuple[Reference, ...] = (
     Reference("andreassen_2011", "E. Andreassen, A. Clausen, M. Schevenels, B. S. Lazarov, O. Sigmund", 2011,
               "Efficient topology optimization in MATLAB using 88 lines of code",
               "Structural and Multidisciplinary Optimization 43(1):1-16", doi="10.1007/s00158-010-0594-7",
-              note="top88: KE, edofMat, filters, OC update, extensions §5.1-5.4"),
+              note="top88: KE, edofMat, filters, OC update, extensions §5.1-5.4; top88.m (Nov 2010, DTU TopOpt page) "
+                   "read on 2026-11-24 and transcribed in tests/toporlogy/published_codes.py"),
     Reference("sigmund_1997", "O. Sigmund", 1997, "On the design of compliant mechanisms using topology optimization",
               "Mechanics of Structures and Machines 25(4):493-524", doi="10.1080/08905459708945415",
               note="heuristic sensitivity filter"),
@@ -34,7 +35,8 @@ REFERENCES: tuple[Reference, ...] = (
     Reference("liu_tovar_2014", "K. Liu, A. Tovar", 2014,
               "An efficient 3D topology optimization code written in Matlab",
               "Structural and Multidisciplinary Optimization 50(6):1175-1196", doi="10.1007/s00158-014-1107-x",
-              note="top3d; not read in this repository"),
+              note="top3d.m (JUL 2013, GitHub kliu99/Top3d release 1.0, 1/144 erratum included) read on 2026-11-24 "
+                   "and transcribed in tests/toporlogy/published_codes.py; the paper text not read"),
     Reference("langelaar_2017", "M. Langelaar", 2017,
               "An additive manufacturing filter for topology optimization of print-ready designs",
               "Structural and Multidisciplinary Optimization 55(3):871-883", doi="10.1007/s00158-016-1522-2",

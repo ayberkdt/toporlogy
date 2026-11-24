@@ -493,6 +493,7 @@
   "Result": {
    "attrs": [
     "constraint_values",
+    "feasibility_tol",
     "feasible",
     "final",
     "kkt_residual",
@@ -2265,6 +2266,21 @@
    "class": "Domain"
   }
  },
+ "toporlogy.core.verdict": {
+  "BINARY_DESIGN": "<str>",
+  "EVALUATED": "<tuple>",
+  "FAIL": "<str>",
+  "LAST_ITERATE": "<str>",
+  "MISSING": "<str>",
+  "PASS": "<str>",
+  "REPAIRED_DESIGN": "<str>",
+  "RETURNED_DESIGN": "<str>",
+  "UNKNOWN": "<str>",
+  "UNVERIFIED": "<str>",
+  "combine": "combine(verdicts)",
+  "constraint_entry": "constraint_entry(name,value,upper,tol,source)",
+  "constraint_verdict": "constraint_verdict(value,upper,tol,source)"
+ },
  "toporlogy.design": {},
  "toporlogy.design.chain": {
   "Chain": {
@@ -3107,6 +3123,7 @@
   },
   "combine_tying": "combine_tying(links)",
   "manufacturing_chain": "manufacturing_chain(domain,rmin,tying,am,casting,projection,beta,eta,regroup)",
+  "mirror_partner": "mirror_partner(domain,axis,coordinate)",
   "overhang_map": "overhang_map(xphys,build,domain,threshold,base_layer,include_keep)",
   "overhang_violations": "overhang_violations(xphys,build,domain,threshold,base_layer,include_keep)",
   "parse_direction": "parse_direction(spec,dim)",
@@ -3192,6 +3209,7 @@
   "git_revision": "git_revision(path)"
  },
  "toporlogy.execution.runner": {
+  "RETURNED_DESIGN": "<str>",
   "Setup": {
    "attrs": [
     "bc",
@@ -3202,17 +3220,29 @@
    "class": "Setup"
   },
   "annotations": "<_Feature>",
+  "constraint_entry": "constraint_entry(name,value,upper,tol,source)",
   "flags_of": "flags_of(summary)",
   "run_setup": "run_setup(setup,folder,progress,source,overrides,post_progress)",
   "status_of": "status_of(summary)",
+  "verdict_of": "verdict_of(summary)",
   "write_resolved": "write_resolved(resolved,folder,source,overrides)"
  },
  "toporlogy.execution.runs": {
+  "FAIL": "<str>",
+  "LAST_ITERATE": "<str>",
+  "MISSING": "<str>",
+  "PASS": "<str>",
+  "RETURNED_DESIGN": "<str>",
   "STATUS_OK": "<str>",
+  "UNKNOWN": "<str>",
+  "UNVERIFIED": "<str>",
   "annotations": "<_Feature>",
+  "combine": "combine(verdicts)",
+  "constraint_entry": "constraint_entry(name,value,upper,tol,source)",
   "flags_of": "flags_of(summary)",
   "read_run": "read_run(folder)",
   "status_of": "status_of(summary)",
+  "verdict_of": "verdict_of(summary)",
   "write_resolved": "write_resolved(resolved,folder,source,overrides)",
   "write_sweep_csv": "write_sweep_csv(path,rows,keys)"
  },
@@ -3746,6 +3776,7 @@
   "with_keep": "with_keep(domain,extra_keep)"
  },
  "toporlogy.optimization.diagnostics": {
+  "field_symmetry": "field_symmetry(domain,fields,axis,coordinate,threshold)",
   "gradcheck": "gradcheck(fn,x,n_dirs,h,seed)",
   "grey_fraction": "grey_fraction(xphys,mask,lo,hi)",
   "study_gradcheck": "study_gradcheck(study,x,which,kw)"
@@ -4262,6 +4293,7 @@
   "Result": {
    "attrs": [
     "constraint_values",
+    "feasibility_tol",
     "feasible",
     "final",
     "kkt_residual",
@@ -4795,6 +4827,7 @@
   "from_polydata": "from_polydata(pd)",
   "is_watertight": "is_watertight(F,n_vertices)",
   "mesh_topology": "mesh_topology(V,F)",
+  "mirror_distance": "mirror_distance(V,F,axis,coordinate)",
   "quality": "quality(V,F)",
   "to_polydata": "to_polydata(V,F)",
   "vertex_normals": "vertex_normals(V,F)"

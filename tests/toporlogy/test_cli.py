@@ -112,7 +112,7 @@ def test_run_show_compare(capsys, cfg, tmp_path):
     code, out, _ = run_cli(capsys, "show", b)
     assert code == 0
     assert out.splitlines()[1].split()[:2] == ["status", "ok"]
-    assert "satisfied" in out and "history" in out
+    assert "volume" in out and "PASS" in out and "history" in out
 
     code, out, _ = run_cli(capsys, "compare", a, b)
     assert code == 0

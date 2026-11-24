@@ -180,7 +180,7 @@ def test_new_optimizer_runs_in_the_study_and_is_compared_on_equal_terms() -> Non
     rows = compare_runs(runs)
     print("\n" + format_table(rows))
     by = {r["name"]: r for r in rows}
-    assert all(r["constraints"]["volume"]["satisfied"] for r in rows)
+    assert all(r["constraints"]["volume"]["verdict"] == "PASS" for r in rows)
     assert by["PG"]["evaluations"] == by["OC"]["evaluations"] == by["MMA"]["evaluations"] == 81   # equal budget
     # measured 21 Nov 2026: see docs/deriving_methods.md §4; the gate only says the baseline works at all
     assert by["PG"]["objective_binary"] <= 1.5 * by["MMA"]["objective_binary"]

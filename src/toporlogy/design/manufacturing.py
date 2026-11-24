@@ -44,7 +44,8 @@ from toporlogy.design.chain import Chain, DensityFilter, Embed, HeavisideProject
 from toporlogy.core.domain import Domain
 
 __all__ = ["parse_direction", "AMFilter", "overhang_map", "overhang_violations",
-           "Tying", "SymmetryTying", "ExtrusionTying", "PatternTying", "GroupAverage", "combine_tying",
+           "Tying", "SymmetryTying", "mirror_partner", "ExtrusionTying", "PatternTying", "GroupAverage",
+           "combine_tying",
            "Casting", "undercut_map", "undercuts",
            "manufacturing_chain", "validate_chain"]
 
@@ -461,13 +462,19 @@ class SymmetryTying(Tying):
         if not items:
             raise ValueError("at least one plane is required")
         self.planes = [(_axis_index(a, domain.dim), float(c)) for a, c in items]
-        X = domain.element_centers()
-        maps = []
-        for k, c in self.planes:
-            Y = X.copy()
-            Y[:, k] = 2.0 * c - X[:, k]
-            maps.append(_cell_of(domain, Y))
+        maps = [mirror_partner(domain, k, c) for k, c in self.planes]
         super().__init__(domain, maps, kind="symmetry")
+
+
+def mirror_partner(domain: Domain, axis: Any, coordinate: float) -> np.ndarray:
+    """Mirror partner of every box element about the plane ``axis = coordinate``: (ne,) element numbers, −1 where
+    the mirrored centre leaves the box. The partner is the cell that contains the mirrored centre (nearest cell
+    centre), the same relation :class:`SymmetryTying` ties; it is exact when the plane lies on a grid line or a
+    cell centre, else the partner centre is off the mirror image by less than h/2 along ``axis``."""
+    k = _axis_index(axis, domain.dim)
+    Y = domain.element_centers()
+    Y[:, k] = 2.0 * float(coordinate) - Y[:, k]
+    return _cell_of(domain, Y)
 
 
 class ExtrusionTying(Tying):

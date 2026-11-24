@@ -16,7 +16,7 @@ from toporlogy.references import cite
 
 __all__ = ["extract", "to_polydata", "from_polydata", "edge_report", "components", "mesh_topology", "enclosed_volume",
            "area", "face_normals", "vertex_normals", "quality", "clean", "decimate", "flip_edges", "compare",
-           "is_watertight"]
+           "mirror_distance", "is_watertight"]
 
 
 def to_polydata(V: np.ndarray, F: np.ndarray) -> Any:
@@ -304,6 +304,34 @@ def flip_edges(V: np.ndarray, F: np.ndarray, passes: int = 5, max_dihedral_deg: 
         if not changed:
             break
     return np.asarray(faces, np.int64), nflip
+
+
+def mirror_distance(V: np.ndarray, F: np.ndarray, axis: Any, coordinate: float) -> dict[str, float]:
+    """Geometric mirror-symmetry error of a surface S = (V, F) about the plane ``axis = coordinate``.
+
+    With R the reflection, d(q) = dist(R(q), S) for q on S: how far the mirror image of each surface point is from
+    the surface. R is an isometry and its own inverse, so dist(R(q), S) = dist(q, R(S)): the distances S → R(S) and
+    R(S) → S have the same distribution and the symmetric Hausdorff distance is d_H(S, R(S)) = sup_q d(q). It is 0
+    for a mirror-symmetric surface. Samples: the vertices and the face centroids (closest point on the triangles,
+    exact; VTK cell locator); ``hausdorff`` is the largest sample (a lower bound of the supremum), ``mean`` and
+    ``p95`` are weighted by face area over the centroids. ``bbox_diagonal`` scales the lengths (same unit as V).
+    """
+    V, F = np.asarray(V, float), np.asarray(F, np.int64)
+    k = "xyz".index(axis.lower()) if isinstance(axis, str) else int(axis)
+    if not 0 <= k < 3:
+        raise ValueError(f"axis must be x, y, z (or 0, 1, 2), got {axis!r}")
+    C = V[F].mean(axis=1)
+    S = np.vstack([V, C])
+    S[:, k] = 2.0 * float(coordinate) - S[:, k]
+    _, cp = to_polydata(V, F).find_closest_cell(S, return_closest_point=True)
+    d = np.linalg.norm(S - cp, axis=1)
+    dc = d[len(V):]
+    w = area(V, F, per_face=True)
+    order = np.argsort(dc)
+    cw = np.cumsum(w[order])
+    p95 = float(dc[order][min(int(np.searchsorted(cw, 0.95 * cw[-1])), len(dc) - 1)])
+    return {"hausdorff": float(d.max()), "mean": float(np.sum(w * dc) / np.sum(w)), "p95": p95,
+            "bbox_diagonal": float(np.linalg.norm(V.max(axis=0) - V.min(axis=0))), "samples": int(len(d))}
 
 
 def compare(V: np.ndarray, F: np.ndarray, V0: np.ndarray, F0: np.ndarray) -> dict[str, float]:

@@ -40,6 +40,26 @@ def _x(X: Any) -> np.ndarray:
     return np.atleast_2d(np.asarray(X, float))
 
 
+def _vec3(v: Any, what: str, nonzero: bool = False) -> np.ndarray:
+    a = np.asarray(v, float).reshape(-1)
+    if a.size != 3 or not np.isfinite(a).all():
+        raise ValueError(f"{what} must be 3 finite numbers, got {v!r}")
+    if nonzero and not np.linalg.norm(a) > 0:
+        raise ValueError(f"{what} must not be the zero vector")
+    return a
+
+
+def _positive(x: Any, what: str) -> float:
+    v = float(x)
+    if not (np.isfinite(v) and v > 0):
+        raise ValueError(f"{what} must be a finite number > 0, got {x!r}")
+    return v
+
+
+def _removed(kind: str, d: float, size: str) -> ValueError:
+    return ValueError(f"offset {d:g} removes the {kind} ({size}): nothing would be left")
+
+
 class Primitive(Shape):
     """A 3-D :class:`~toporlogy.geometry.Shape` with an exact surface: gradient, closest point and offset."""
 
@@ -103,6 +123,10 @@ class SpherePrimitive(Primitive):
     radius: float
     kind = "sphere"
 
+    def __post_init__(self) -> None:
+        _vec3(self.center, "sphere centre")
+        _positive(self.radius, "sphere radius")
+
     def sdf(self, X: np.ndarray) -> np.ndarray:
         return np.linalg.norm(_x(X) - np.asarray(self.center, float), axis=1) - self.radius
 
@@ -112,6 +136,8 @@ class SpherePrimitive(Primitive):
         return d / np.where(n > 0, n, 1.0)
 
     def offset(self, d: float) -> Primitive:
+        if self.radius + d <= 0:
+            raise _removed("sphere", d, f"radius {self.radius:g}")
         return SpherePrimitive(self.center, self.radius + d)
 
     def describe(self) -> dict[str, Any]:
@@ -135,6 +161,13 @@ class CylinderPrimitive(Primitive):
     radius: float
     length: float | None = None
     kind = "cylinder"
+
+    def __post_init__(self) -> None:
+        _vec3(self.center, "cylinder centre")
+        _vec3(self.axis, "cylinder axis", nonzero=True)
+        _positive(self.radius, "cylinder radius")
+        if self.length is not None:
+            _positive(self.length, "cylinder length")
 
     def _frame(self, X: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         a = np.asarray(self.axis, float)
@@ -188,6 +221,9 @@ class CylinderPrimitive(Primitive):
 
     def offset(self, d: float) -> Primitive:
         length = None if self.length is None else self.length + 2 * d
+        if self.radius + d <= 0 or (length is not None and length <= 0):
+            size = f"radius {self.radius:g}" + ("" if self.length is None else f", length {self.length:g}")
+            raise _removed("cylinder", d, size)
         return CylinderPrimitive(self.center, self.axis, self.radius + d, length)
 
     def describe(self) -> dict[str, Any]:
@@ -202,6 +238,10 @@ class PlanePrimitive(Primitive):
     point: Sequence[float] | np.ndarray
     normal: Sequence[float]
     kind = "plane"
+
+    def __post_init__(self) -> None:
+        _vec3(self.point, "plane point")
+        _vec3(self.normal, "plane normal", nonzero=True)
 
     def _n(self) -> np.ndarray:
         n = np.asarray(self.normal, float)
@@ -227,6 +267,11 @@ class BoxPrimitive(Primitive):
     lo: Sequence[float] | np.ndarray
     hi: Sequence[float] | np.ndarray
     kind = "box"
+
+    def __post_init__(self) -> None:
+        lo, hi = _vec3(self.lo, "box lo"), _vec3(self.hi, "box hi")
+        if not (lo < hi).all():
+            raise ValueError(f"box needs lo < hi in every coordinate, got lo {lo.tolist()}, hi {hi.tolist()}")
 
     def sdf(self, X: np.ndarray) -> np.ndarray:
         lo, hi = np.asarray(self.lo, float), np.asarray(self.hi, float)
@@ -254,6 +299,9 @@ class BoxPrimitive(Primitive):
 
     def offset(self, d: float) -> Primitive:
         if d <= 0:
+            lo, hi = np.asarray(self.lo, float), np.asarray(self.hi, float)
+            if not (lo - d < hi + d).all():
+                raise _removed("box", d, f"edges {(hi - lo).tolist()}")
             return BoxPrimitive(np.asarray(self.lo, float) - d, np.asarray(self.hi, float) + d)
         return OffsetPrimitive(self, d)                                   # rounded box: exact as an offset field
 
@@ -365,7 +413,14 @@ class Bound(Role):
 def element_fraction(domain: Any, shape: Primitive | Callable[[np.ndarray], np.ndarray],
                      samples: int = 6) -> np.ndarray:
     """Solid fraction of every element of a regular-grid domain for the solid ``sdf < 0`` (``samples``³ points per
-    element). Useful to build ``Domain.frac`` from an envelope primitive or a density of an analytic solid."""
+    element). Useful to build ``Domain.frac`` from an envelope primitive or a density of an analytic solid.
+
+    Midpoint rule: for a planar cut the per-element error is at most 3 / samples (each of the samples² columns along
+    the dominant normal axis crosses at most 3 sub-cells). Measured against the exact cut volume of an oblique plane
+    (tests/toporlogy/test_sdf_contract.py): 0.115 at 2 samples, 0.0096 at 6 (the default), 0.0014 at 16."""
+    if isinstance(samples, bool) or int(samples) != samples or samples < 1:
+        raise ValueError(f"samples must be an integer >= 1, got {samples!r}")
+    samples = int(samples)
     f = shape.sdf if isinstance(shape, Primitive) else shape
     n, h = tuple(domain.shape), float(domain.h)
     off = (np.arange(samples) + 0.5) / samples

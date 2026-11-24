@@ -132,8 +132,9 @@ def test_optimizer_without_multipliers_reports_none():
 
 # ---------------------------------------------------------------------------------------------- summary flags
 def _summary(**over):
-    s = {"converged": True, "termination": "design_change",
-         "constraints": [{"name": "volume", "value": 0.3, "upper": 0.3, "satisfied": True}], "post": {}}
+    s = {"converged": True, "termination": "design_change", "objective_source": "returned design",
+         "constraints": [{"name": "volume", "value": 0.3, "upper": 0.3, "verdict": "PASS",
+                          "source": "returned design"}], "post": {}}
     s.update(over)
     return s
 
@@ -141,9 +142,9 @@ def _summary(**over):
 def test_flags_name_every_finding_once_and_nothing_for_a_clean_run():
     assert flags_of(_summary()) == [] and status_of(_summary()) == "ok"
     s = _summary(converged=False, termination="schedule_step_at_max_iter",
-                 constraints=[{"name": "v", "satisfied": False}, {"name": "w", "satisfied": False}],
-                 post={"connectivity_gate": {"passed": False, "repaired_design": {"feasible": None}},
-                       "connectivity_gate_2": {"passed": False, "repaired_design": {"feasible": None}},
+                 constraints=[{"name": "v", "verdict": "FAIL"}, {"name": "w", "verdict": "FAIL"}],
+                 post={"connectivity_gate": {"passed": False, "repaired_design": {"verdict": "UNVERIFIED"}},
+                       "connectivity_gate_2": {"passed": False, "repaired_design": {"verdict": "UNVERIFIED"}},
                        "reverify": {"bc_fidelity": "unsupported"}})
     assert flags_of(s) == ["not_converged", "schedule_step_at_max_iter", "constraint_violated",
                            "connectivity_gate_failed", "repair_unverified", "connectivity_gate_2_failed",
@@ -166,7 +167,7 @@ def test_run_summary_carries_the_result_contract(tmp_path):
     s = build_setup(mbb(max_iter=3))
     sm = run_setup(s, tmp_path / "run")
     assert sm["termination"] == "max_iter" and sm["converged"] is False and "not_converged" in sm["flags"]
-    assert sm["feasible"] == all(c["satisfied"] for c in sm["constraints"])
+    assert sm["verdict"] == ("PASS" if all(c["verdict"] == "PASS" for c in sm["constraints"]) else "FAIL")
     want = max([0.0] + [(c["value"] - c["upper"]) / max(abs(c["upper"]), 1e-12) for c in sm["constraints"]])
     assert sm["max_violation"] == pytest.approx(want, abs=1e-15)
     # the KKT residual recomputed from the returned design and the optimizer's last multipliers
@@ -176,7 +177,7 @@ def test_run_summary_carries_the_result_contract(tmp_path):
                                                rel=1e-9)
     import json
     rj = json.loads((tmp_path / "run" / "result.json").read_text(encoding="utf-8"))
-    assert rj["termination"] == sm["termination"] and rj["feasible"] == sm["feasible"]
+    assert rj["termination"] == sm["termination"] and rj["feasible"] == (sm["verdict"] == "PASS")
 
 
 # ---------------------------------------------------------------------------------------------- read_run
@@ -196,14 +197,148 @@ def test_read_run_reports_the_returned_designs_constraints(tmp_path):
     assert v["volume"] == res.constraint_values["volume"] == pytest.approx(again["volume"], rel=1e-12)
     last = s["history"][-1]["volume"]
     assert abs(last - v["volume"]) > 1e-3                               # the old source really is a different design
-    assert s["constraint_source"] == "result.json"
-    assert s["termination"] == res.termination and s["feasible"] == res.feasible
+    assert [c["source"] for c in s["constraints"]] == ["returned design"]
+    assert s["termination"] == res.termination and s["verdict"] == ("PASS" if res.feasible else "FAIL")
     assert s["max_violation"] == pytest.approx(res.max_violation, abs=1e-15)
-    assert [c["satisfied"] for c in s["constraints"]] == [bool(res.feasible)]
+    assert [c["verdict"] for c in s["constraints"]] == ["PASS" if res.feasible else "FAIL"]
     # a result.json written before "constraints" existed: the fallback is used and says what it is
     rj = tmp_path / "run" / "result.json"
     old = json.loads(rj.read_text(encoding="utf-8"))
     del old["constraints"]
     rj.write_text(json.dumps(old), encoding="utf-8")
     s_old = read_run(tmp_path / "run")
-    assert s_old["constraints"][0]["value"] == last and s_old["constraint_source"].startswith("history.jsonl")
+    assert s_old["constraints"][0]["value"] == last and s_old["constraints"][0]["source"] == "last iterate"
+
+
+# ---------------------------------------------------------------------------------------------- PR-08 verdicts
+# Every constraint of a run summary carries a verdict PASS / FAIL / UNVERIFIED and the source of its value; a value
+# that does not belong to the returned design (result.npz x) is UNVERIFIED, never "satisfied", and the run status is
+# then never "ok" (docs/yol_haritasi_2026-11-18.md §3, PR-08).
+def _old_python_run(folder, volumes, upper=0.5, converged=True):
+    """A run folder as Recorder wrote it before 14 Nov 2026 (99d8d67): result.json without "constraints", its
+    objective = history f0[-1]; the constraint values exist only in history.jsonl, for the iterates."""
+    import json
+    folder.mkdir()
+    rows = [{"it": i + 1, "t": 0.1 * i, "f0": 10.0 - i, "change": 0.5 / (i + 1), "volume": v}
+            for i, v in enumerate(volumes)]
+    (folder / "history.jsonl").write_text("".join(json.dumps(r) + "\n" for r in rows), encoding="utf-8")
+    res = {"iterations": len(rows), "converged": converged, "seconds": 1.0, "objective": rows[-1]["f0"],
+           "settings": {"objective": "compliance", "constraints": [["volume", upper]]}}
+    (folder / "result.json").write_text(json.dumps(res), encoding="utf-8")
+
+
+def test_old_result_json_is_unverified_not_ok(tmp_path):
+    """Red before PR-08: the last history row satisfies the constraint and the run converged, so read_run said
+    "ok" and "satisfied" although that row belongs to the design BEFORE the last update; the returned design's
+    constraint value was never recorded. Now the constraint is UNVERIFIED and the status says so."""
+    from toporlogy.execution.runs import read_run
+    _old_python_run(tmp_path / "run", [0.7, 0.55, 0.499])
+    s = read_run(tmp_path / "run")
+    assert s["status"] != "ok"
+    c = s["constraints"][0]
+    assert c["value"] == 0.499 and c["verdict"] == "UNVERIFIED" and c["source"] == "last iterate"
+    assert "satisfied" not in c
+    assert s["verdict"] == "UNVERIFIED" and s["objective_source"] == "last iterate"
+    assert s["status"] == "constraint unverified, objective unverified"
+    assert "constraint_unverified" in s["flags"] and "objective_unverified" in s["flags"]
+    # a last iterate that violates is not a FAIL of the returned design either: still UNVERIFIED
+    _old_python_run(tmp_path / "run2", [0.7, 0.6])
+    assert read_run(tmp_path / "run2")["constraints"][0]["verdict"] == "UNVERIFIED"
+
+
+def test_old_summary_json_is_unverified_not_ok(tmp_path):
+    """Red before PR-08: a summary.json written before the G7 contract (18 Nov 2026, no "flags") was returned as
+    stored, status "ok". Before 42f593c (17 Nov 2026) run_setup took the constraint values from history[-1], and
+    such a file cannot be told apart from one written in between, so its constraints are UNVERIFIED."""
+    import json
+
+    from toporlogy.execution.runs import read_run
+    f = tmp_path / "run"
+    f.mkdir()
+    old = {"name": "mbb", "objective_name": "compliance", "objective": 5.0, "iterations": 40, "max_iter": 100,
+           "converged": True, "seconds": 2.0, "grey_fraction": 0.1, "post": {}, "status": "ok",
+           "constraints": [{"name": "volume", "value": 0.5, "upper": 0.5, "satisfied": True}]}
+    (f / "summary.json").write_text(json.dumps(old), encoding="utf-8")
+    s = read_run(f)
+    assert s["status"] != "ok"
+    assert [(c["verdict"], c["source"]) for c in s["constraints"]] == [("UNVERIFIED", "unknown")]
+    assert s["verdict"] == "UNVERIFIED" and s["objective_source"] == "unknown"
+    # with "flags" (written by G7 or later, after 42f593c) the stored values are the returned design's
+    old.update(flags=[], termination="design_change", feasible=True)
+    (f / "summary.json").write_text(json.dumps(old), encoding="utf-8")
+    s = read_run(f)
+    assert s["status"] == "ok" and s["verdict"] == "PASS"
+    assert [(c["verdict"], c["source"]) for c in s["constraints"]] == [("PASS", "returned design")]
+    assert "feasible" not in s and "satisfied" not in s["constraints"][0]          # one name per concept
+
+
+def test_read_run_judges_with_the_runs_own_feasibility_tol(tmp_path):
+    """Red before PR-08: read_run judged result.json constraints with a fixed 1e-3 while Study.run used its
+    feasibility_tol, so the same design was "feasible" in result.json and "constraint violated" in read_run.
+    Volume 0.6 against 0.5 is 20 % over: inside feasibility_tol 0.5, outside 1e-3."""
+    import json
+
+    from toporlogy.execution.runs import read_run
+    st = _mbb(T.MMA(move=0.2), vf=0.5)
+    st.recorder = T.Recorder(tmp_path / "run")
+    res = st.run(x0=np.full(st.n_var, 0.6), max_iter=0, feasibility_tol=0.5)
+    assert res.feasible is True and res.constraint_values["volume"] == pytest.approx(0.6, rel=1e-12)
+    s = read_run(tmp_path / "run")
+    assert "constraint violated" not in s["status"]
+    assert json.loads((tmp_path / "run" / "result.json").read_text(encoding="utf-8"))["feasibility_tol"] == 0.5
+    assert [(c["verdict"], c["source"]) for c in s["constraints"]] == [("PASS", "returned design")]
+    assert s["verdict"] == "PASS" and s["status"] == "not converged"
+
+
+def test_summary_result_and_read_run_report_the_same_design(tmp_path):
+    """summary.json, result.json, read_run (from summary.json and, without it, from result.json) give the same
+    objective, constraint values and verdicts, those of the returned design (result.npz x re-evaluated), not those
+    of the last iterate."""
+    import json
+    import shutil
+
+    from test_config import mbb
+
+    from toporlogy.configuration.build import build_setup
+    from toporlogy.execution.runner import run_setup
+    from toporlogy.execution.runs import read_run
+    s = build_setup(mbb(max_iter=3))
+    sm = run_setup(s, tmp_path / "run")
+    ev = s.study.evaluate(np.load(tmp_path / "run" / "result.npz")["x"], gradients=False)
+    rj = json.loads((tmp_path / "run" / "result.json").read_text(encoding="utf-8"))
+    from_summary = read_run(tmp_path / "run")
+    shutil.copytree(tmp_path / "run", tmp_path / "py")
+    (tmp_path / "py" / "summary.json").unlink()
+    from_result = read_run(tmp_path / "py")
+    last = from_summary["history"][-1]
+    assert abs(last["f0"] - ev.f0) > 1e-6 * abs(ev.f0)          # the last iterate is a different design
+    assert abs(last["volume"] - ev.values["volume"]) > 1e-6
+    for rep in (sm, from_summary, from_result):
+        assert rep["objective"] == pytest.approx(ev.f0, rel=1e-12) and rep["objective_source"] == "returned design"
+        assert [(c["name"], c["source"]) for c in rep["constraints"]] == [("volume", "returned design")]
+        assert rep["constraints"][0]["value"] == pytest.approx(ev.values["volume"], rel=1e-12)
+        assert rep["verdict"] == ("PASS" if rj["feasible"] else "FAIL")
+        assert rep["status"] == sm["status"]
+    assert rj["objective"] == pytest.approx(ev.f0, rel=1e-12)
+    assert rj["constraints"]["volume"] == pytest.approx(ev.values["volume"], rel=1e-12)
+    assert [c["verdict"] for c in from_result["constraints"]] == [c["verdict"] for c in sm["constraints"]]
+
+
+def test_cli_never_shows_an_unverified_run_as_ok(tmp_path, capsys):
+    """show prints the verdict and the source of an unverified value and exits 1; compare does not pick an
+    unverified run as the best feasible one."""
+    from toporlogy.execution.cli import main
+    _old_python_run(tmp_path / "old", [0.7, 0.55, 0.499])
+    code = main(["show", str(tmp_path / "old")])
+    out = capsys.readouterr().out
+    assert code == 1
+    status = next(ln for ln in out.splitlines() if ln.startswith("status"))
+    assert "ok" not in status.split() and "unverified" in status
+    line = next(ln for ln in out.splitlines() if ln.startswith("constraint"))
+    assert "UNVERIFIED" in line and "last iterate" in line and "satisfied" not in line
+    obj = next(ln for ln in out.splitlines() if ln.startswith("objective"))
+    assert "UNVERIFIED" in obj and "last iterate" in obj
+    _old_python_run(tmp_path / "old2", [0.7, 0.55, 0.45])
+    main(["compare", str(tmp_path / "old"), str(tmp_path / "old2")])
+    rows = capsys.readouterr().out.splitlines()
+    assert not any(r.startswith("*") for r in rows)                     # no run is verified feasible

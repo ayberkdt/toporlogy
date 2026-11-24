@@ -59,14 +59,14 @@ def test_discrete_report_and_compare() -> None:
     for r, (st, res) in zip(rows, runs.values(), strict=True):
         assert r["objective"] == res.objective and r["iterations"] == 25
         assert r["evaluations"] == st.n_evaluations == 26                 # 25 iterations + the final re-evaluation
-        assert r["volume_binary"] == pytest.approx(0.5) and r["constraints"]["volume"]["satisfied"] is True
+        assert r["volume_binary"] == pytest.approx(0.5) and r["constraints"]["volume"]["verdict"] == "PASS"
         # the grey design uses intermediate stiffness the 0/1 design does not have: values differ, both positive
         assert r["objective_binary"] > 0 and r["ratio"] == pytest.approx(r["objective_binary"] / r["objective"])
         assert 0 < r["m_nd"] < 1 and r["threshold_rule"] == "volume 0.5" and r["not_evaluated"] == {}
     direct = runs["oc"][0].evaluate_density(binarize(runs["oc"][1].xphys, runs["oc"][0].domain, 0.5))
     assert rows[0]["objective_binary"] == direct.values["compliance"]
     table = format_table(rows)
-    assert table.count("\n") == 3 and "1.000" in table and "yes" in table
+    assert table.count("\n") == 3 and "1.000" in table and "PASS" in table
     fixed = discrete_report(*runs["oc"], volume=None, threshold=0.5)
     assert fixed["threshold_rule"] == "threshold 0.5"
     with pytest.raises(ValueError):
