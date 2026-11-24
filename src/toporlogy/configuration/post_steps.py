@@ -9,7 +9,7 @@ from typing import Any
 import numpy as np
 
 from toporlogy.configuration.boundary_mapping import bc_mapping
-from toporlogy.configuration.helpers import _design, _interfaces, _post_state, _reevaluate, _rel
+from toporlogy.configuration.helpers import _axis, _coord, _design, _interfaces, _post_state, _reevaluate, _rel
 from toporlogy.configuration.registry import BuildContext, ConfigError, REGISTRY, join, register
 
 
@@ -337,7 +337,45 @@ def register_post_steps() -> None:
             return out
         return step
 
+    def symmetry_check(ctx: BuildContext, planes: Any, threshold: float = 0.5, mesh: bool = True) -> Any:
+        """Mirror-symmetry diagnosis about planes {x: 500} or [[x, 500], [y, mid]] (as the symmetry link): e_sym =
+        ‖f − R(f)‖₂ / ‖f‖₂ of frac (design space), keep (frozen cells, ties included) and xphys (design used by the
+        geometry steps), and, after a finalize step with mesh true, the mirror distance of the final surface
+        (post.mesh.mirror_distance). Information only: no verdict, never changes the design. Mirror tying is the
+        separate, opt-in symmetry link."""
+        from toporlogy.optimization.diagnostics import field_symmetry
+        d0 = ctx.domain
+        items = list(planes.items()) if isinstance(planes, dict) else [tuple(pl) for pl in planes]
+        if not items:
+            raise ValueError("planes: at least one plane is required")
+        pls = [(_axis(a, d0.dim), _coord(c, _axis(a, d0.dim), d0)) for a, c in items]
+        state = _post_state(ctx)
+
+        def step(res: Any, study: Any, folder: Any) -> dict[str, Any]:
+            d = study.domain
+            xp, label = _design(state, res)
+            pr = state.get("result") if mesh else None
+            fields = {"frac": d.frac, "keep": d.keep.astype(float), "xphys": xp}
+            rows = []
+            for k, c in pls:
+                row = field_symmetry(d, fields, k, c, threshold)
+                if pr is not None:
+                    from toporlogy.post.mesh import mirror_distance
+                    row["mesh"] = mirror_distance(pr.V, pr.F, k, c)
+                rows.append(row)
+            out: dict[str, Any] = {"design": label, "threshold": float(threshold),
+                                   "mesh_design": state.get("result_design") if pr is not None else None,
+                                   "planes": rows}
+            out["summary"] = "; ".join(
+                f"{r['axis']}={r['coordinate']:g}: e_sym frac {r['fields']['frac']['e_sym']:.3f}, keep "
+                f"{r['fields']['keep']['e_sym']:.3f}, xphys {r['fields']['xphys']['e_sym']:.3f}"
+                + (f", surface mean {r['mesh']['mean']:.3g} / max {r['mesh']['hausdorff']:.3g}" if "mesh" in r
+                   else "") for r in rows)
+            return out
+        return step
+
     register("post", "connectivity_gate", connectivity_gate, types={"connectivity": None})
+    register("post", "symmetry_check", symmetry_check, types={"planes": None}, units={"planes": length})
     register("post", "measure_lengthscale", lengthscale_step, types={"outside": None},
              units={"margin": length, "radii": length, "smooth": "elements"})
     register("post", "finalize", "toporlogy.configuration.post_steps:finalize_step",

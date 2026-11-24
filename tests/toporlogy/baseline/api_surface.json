@@ -3107,6 +3107,7 @@
   },
   "combine_tying": "combine_tying(links)",
   "manufacturing_chain": "manufacturing_chain(domain,rmin,tying,am,casting,projection,beta,eta,regroup)",
+  "mirror_partner": "mirror_partner(domain,axis,coordinate)",
   "overhang_map": "overhang_map(xphys,build,domain,threshold,base_layer,include_keep)",
   "overhang_violations": "overhang_violations(xphys,build,domain,threshold,base_layer,include_keep)",
   "parse_direction": "parse_direction(spec,dim)",
@@ -3746,6 +3747,7 @@
   "with_keep": "with_keep(domain,extra_keep)"
  },
  "toporlogy.optimization.diagnostics": {
+  "field_symmetry": "field_symmetry(domain,fields,axis,coordinate,threshold)",
   "gradcheck": "gradcheck(fn,x,n_dirs,h,seed)",
   "grey_fraction": "grey_fraction(xphys,mask,lo,hi)",
   "study_gradcheck": "study_gradcheck(study,x,which,kw)"
@@ -4795,6 +4797,7 @@
   "from_polydata": "from_polydata(pd)",
   "is_watertight": "is_watertight(F,n_vertices)",
   "mesh_topology": "mesh_topology(V,F)",
+  "mirror_distance": "mirror_distance(V,F,axis,coordinate)",
   "quality": "quality(V,F)",
   "to_polydata": "to_polydata(V,F)",
   "vertex_normals": "vertex_normals(V,F)"
