@@ -7,7 +7,7 @@ import platform
 import numpy as np
 import scipy
 import torch
-from test_baseline import REL_TOL, compare, environment_mismatch
+from test_baseline import REL_TOL, compare, environment_mismatch, max_rel_diff
 
 
 def _meta(**over):
@@ -46,3 +46,11 @@ def test_numerical_comparison_ignores_hashes_but_not_numbers_or_outcomes():
     assert set(compare(want, _row(constraints={"volume": 0.5}), bitwise=False)) == {"constraints.volume"}
     assert set(compare(want, _row(constraints={}), bitwise=False)) == {"constraints.volume"}
     assert set(compare(want, _row(iterations=9, status="converged"), bitwise=False)) == {"iterations", "status"}
+
+
+def test_max_rel_diff_reports_the_largest_scalar_difference():
+    want = _row()
+    assert max_rel_diff(want, _row()) == 0.0
+    got = _row(objective=want["objective"] * (1 + 2e-9), constraints={"volume": 0.4999302124524384 * (1 - 3e-8)})
+    assert abs(max_rel_diff(want, got) - 3e-8) < 1e-12
+    assert max_rel_diff(want, _row(constraints={})) == float("inf")

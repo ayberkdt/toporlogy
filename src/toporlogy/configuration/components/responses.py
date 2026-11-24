@@ -5,7 +5,11 @@ from __future__ import annotations
 from collections.abc import Sequence
 from typing import Any
 
-from toporlogy.configuration.helpers import _case_weights, _field_source, _interfaces, _robust_set
+import numpy as np
+
+from toporlogy.configuration.helpers import (
+    _case_weights, _field_source, _interfaces, _region_mask, _robust_set, _vector, checked_selector,
+)
 from toporlogy.configuration.registry import BuildContext, register
 
 
@@ -116,6 +120,75 @@ def register_responses() -> None:
         r.config_scale = 1.0
         return r
 
+    # ---------------------------------------------------------------- stress, buckling, displacement, algebra
+    def _von_mises(ctx: BuildContext, sigma_lim: float, form: str, q: float, penal: float, exclude: Any,
+                   cases: list | None) -> Any:
+        from toporlogy.optimization.stress import VonMises
+        mask = None if not exclude else _region_mask(exclude, ctx.domain)
+        return VonMises(ctx.domain, sigma_lim, nu=ctx.material["nu"], E0=ctx.material["E0"], form=form, q=q,
+                        penal=penal, exclude=mask, cases=cases)
+
+    def stress(ctx: BuildContext, sigma_lim: float, aggregate: str = "pnorm", parameter: float = 8.0,
+               q: float = 0.5, adaptive: float | None = 0.5, exclude: Any = None, cases: list | None = None) -> Any:
+        """Largest relaxed von Mises stress / sigma_lim (centroid, solid stress x^q), aggregated: max | pnorm |
+        pmean | ks | ks_lower | induced_exponential | induced_power with its parameter; adaptive: damping of the
+        scale that ties the aggregate to the true maximum (null = none). exclude: shapes whose elements are left
+        out (point loads, supports). Upper default 1."""
+        from toporlogy.optimization.local import Aggregated
+        r = Aggregated(_von_mises(ctx, sigma_lim, "ratio", q, 3.0, exclude, cases), aggregate, parameter, adaptive,
+                       name="stress")
+        r.config_upper = 1.0
+        r.config_scale = 1.0
+        return r
+
+    def stress_augmented_lagrangian(ctx: BuildContext, objective: Any, sigma_lim: float, form: str = "polynomial",
+                                    mu0: float = 10.0, alpha: float = 1.1, mu_max: float = 1.0e4,
+                                    penal: float = 3.0, q: float = 0.5, exclude: Any = None,
+                                    cases: list | None = None, reference: Any = "first") -> Any:
+        """objective / reference + augmented Lagrangian of the local stress constraints (one per element and
+        case; form polynomial | margin). Use it as the objective with schedule multiplier_update."""
+        from toporlogy.optimization.local import AugmentedLagrangian
+        return AugmentedLagrangian(objective, _von_mises(ctx, sigma_lim, form, q, penal, exclude, cases), mu0, alpha,
+                                   mu_max, reference, name="stress_al")
+
+    def buckling(ctx: BuildContext, load_factor: float | None = None, n_modes: int = 6, rho: float = 50.0,
+                 case: int = 0, penal_g: float = 3.0, scale: float | None = None) -> Any:
+        """KS upper bound of 1 / lambda_1 (linear buckling of load case `case`); with load_factor the constraint
+        lambda_1 >= load_factor is this response <= 1 / load_factor (default upper and scale). Plain elasticity
+        physics with the direct solver only."""
+        from toporlogy.optimization.buckling import BucklingKS
+        r = BucklingKS(n_modes, rho, case, penal_g, scale, E0=ctx.material["E0"])
+        if load_factor is not None:
+            if not load_factor > 0:
+                raise ValueError("load_factor > 0 is required")
+            r.config_upper = 1.0 / float(load_factor)
+            r.config_scale = float(load_factor)
+        return r
+
+    def displacement(ctx: BuildContext, where: Any, direction: Any, case: int = 0, name: str = "displacement") -> Any:
+        """Mean displacement of the selected nodes along `direction` (axis or vector) in load case `case`:
+        mechanism output (objective) or deflection bound (constraint)."""
+        from toporlogy.optimization.compose import Displacement
+        d = ctx.domain
+        nodes = np.asarray(checked_selector(ctx, where).select(d), np.int64)
+        e = _vector(direction, d.dim)
+        dofs = np.concatenate([d.dim * nodes + k for k in range(d.dim) if e[k] != 0.0])
+        w = np.concatenate([np.full(nodes.size, e[k] / nodes.size) for k in range(d.dim) if e[k] != 0.0])
+        return Displacement(dofs, w, case, name)
+
+    def weighted_sum(ctx: BuildContext, responses: Any, weights: list | None = None, references: Any = None) -> Any:
+        """sum_i w_i r_i / ref_i; references: null, numbers, or "first" (each value at the first evaluation)."""
+        from toporlogy.optimization.compose import WeightedSum
+        return WeightedSum(responses, weights, references)
+
+    register("response", "stress", stress, nested={"exclude": "shape[]"}, units={"sigma_lim": "force/length^2"})
+    register("response", "stress_augmented_lagrangian", stress_augmented_lagrangian,
+             nested={"objective": "response", "exclude": "shape[]"}, types={"reference": None},
+             units={"sigma_lim": "force/length^2"})
+    register("response", "buckling", buckling)
+    register("response", "displacement", displacement, nested={"where": "selector"}, types={"direction": None})
+    register("response", "weighted_sum", weighted_sum, nested={"responses": "response[]"},
+             types={"references": None})
     register("response", "robust_compliance", robust_compliance, types={"realisations": list})
     register("response", "dilated_volume", dilated_volume)
     register("response", "local_volume", local_volume, types={"outside": None},

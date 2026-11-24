@@ -1,0 +1,23 @@
+# Compression member (2-D, 20 x 60) clamped at the bottom, load on the middle of the top edge: minimum compliance at
+# 35 % volume with a lower bound on the linear buckling load factor. Without the buckling constraint the optimum is
+# a slender column; the constraint spreads material sideways. lambda_1 >= load_factor is imposed as
+# KS(1/lambda_i) <= 1/load_factor over 6 modes (conservative by at most ln(6)/rho of the scale).
+# Units: consistent (h = 1, E0 = 1, load 1).
+name: buckling_column2d
+domain: {type: box, shape: [20, 60], h: 1.0}
+material: {E0: 1.0, nu: 0.3}
+supports:
+  - {type: fixed, where: {type: plane, axis: y, at: min}}
+load_cases:
+  - name: compression
+    loads:
+      - {type: force, where: {type: in_box, lo: [8, 60], hi: [12, 60]}, force: [0, -1]}
+chain:
+  - {type: density_filter, rmin: 2.0}
+interpolation: {type: simp, penal: 3.0, emin_ratio: 1.0e-6}
+objective: compliance
+constraints:
+  - {response: volume, upper: 0.35}
+  - {response: {type: buckling, load_factor: 0.02, n_modes: 6, rho: 30.0}}
+optimizer: {type: mma, move: 0.1}
+run: {max_iter: 80, tol: 0.001}

@@ -62,7 +62,7 @@ load  - load of one load case (10)
   torque         bore=?  torque=? [force*length]  name=null
   traction       where=?  traction=? [force/length^2]  geometric=true  name=null
 
-link  - chain link (design -> physical density) (10)
+link  - chain link (design -> physical density) (11)
   am_filter             build=null  base_layer=0  base_coordinate=null [length]  P=40.0
                         eps=0.0001  xi0=0.5  masked=true  autograd=false
   casting               direction=+z  parting=null [length]  p=40.0
@@ -71,6 +71,7 @@ link  - chain link (design -> physical density) (10)
   extrusion             axis=?
   group_average         (no parameters)
   heaviside_projection  beta=1.0  eta=0.5
+  helmholtz_filter      rmin=? [elements]
   passive               (no parameters)
   pattern               kind=translational  offset=null [length]  n=null  center=null [length]
                         axis=z
@@ -93,38 +94,55 @@ physics  - physics model (state solve) (3)
                   rhomin_ratio=0.0  mass_threshold=0.1  mass_q=6.0  added_mass=0.0 [mass (total)]
                   added_mass_at=null  cluster_tol=0.001  repeated=warn
 
-response  - objective or constraint response (13)
-  compliance               weights=null
-  conduction_connectivity  sink=null  kmin_ratio=0.001  penal=3.0  aggregate=pnorm  p=8.0  eta=0.7
-                           reference=solid
-  coupling_compliance      held=null  aggregate=pnorm  p=8.0  eta=0.7  reference=first
-  dilated_volume           weighted=false
-  eigenvalue               k=1
-  frequency                k=1  E_unit=1.0  rho_unit=1.0  length_unit=1.0
-  grey_level               source=xphys
-  local_volume             t_max=null [length]  radius=null [elements]  member=null  p=16.0
-                           aggregate=pmean  adaptive=0.0  outside=void  source=xphys
-  maximize                 response=?
-  min_eigenvalue_ks        n_modes=3  rho=50.0  scale=null  kind=ks
-  min_frequency            f_min=? [Hz]  n_modes=1  rho=50.0  E_unit=1.0  rho_unit=1.0
-                           length_unit=1.0
-  robust_compliance        realisations=["eroded", "intermediate", "dilated"]  aggregate=ks
-                           rho=50.0  p=16.0  scale=null  weights=null
-  volume                   weighted=false
+response  - objective or constraint response (18)
+  buckling                     load_factor=null  n_modes=6  rho=50.0  case=0  penal_g=3.0
+                               scale=null
+  compliance                   weights=null
+  conduction_connectivity      sink=null  kmin_ratio=0.001  penal=3.0  aggregate=pnorm  p=8.0
+                               eta=0.7  reference=solid
+  coupling_compliance          held=null  aggregate=pnorm  p=8.0  eta=0.7  reference=first
+  dilated_volume               weighted=false
+  displacement                 where=?  direction=?  case=0  name=displacement
+  eigenvalue                   k=1
+  frequency                    k=1  E_unit=1.0  rho_unit=1.0  length_unit=1.0
+  grey_level                   source=xphys
+  local_volume                 t_max=null [length]  radius=null [elements]  member=null  p=16.0
+                               aggregate=pmean  adaptive=0.0  outside=void  source=xphys
+  maximize                     response=?
+  min_eigenvalue_ks            n_modes=3  rho=50.0  scale=null  kind=ks
+  min_frequency                f_min=? [Hz]  n_modes=1  rho=50.0  E_unit=1.0  rho_unit=1.0
+                               length_unit=1.0
+  robust_compliance            realisations=["eroded", "intermediate", "dilated"]  aggregate=ks
+                               rho=50.0  p=16.0  scale=null  weights=null
+  stress                       sigma_lim=? [force/length^2]  aggregate=pnorm  parameter=8.0  q=0.5
+                               adaptive=0.5  exclude=null  cases=null
+  stress_augmented_lagrangian  objective=?  sigma_lim=? [force/length^2]  form=polynomial
+                               mu0=10.0  alpha=1.1  mu_max=10000.0  penal=3.0  q=0.5  exclude=null
+                               cases=null  reference=first
+  volume                       weighted=false
+  weighted_sum                 responses=?  weights=null  references=null
 
-optimizer  - optimizer (2)
-  mma  move=0.2  asyinit=0.5  asydecr=0.7  asyincr=1.2  asymin=0.01  asymax=10.0  albefa=0.1
-       raa0=1e-05  c=1000.0  d=1.0  normalise=first
-  oc   move=0.2  l1=0.0  l2=1000000000.0  bisection_tol=0.0001  max_bisect=80  dv_scale=null
+optimizer  - optimizer (4)
+  gcmma  move=1.0  max_inner=15  rho_init=0.1  rho_min=1e-06  conservative_tol=1e-09  asyinit=0.5
+         asydecr=0.7  asyincr=1.2  asymin=0.01  asymax=10.0  albefa=0.1  c=1000.0  d=1.0
+         normalise=first
+  mma    move=0.2  asyinit=0.5  asydecr=0.7  asyincr=1.2  asymin=0.01  asymax=10.0  albefa=0.1
+         raa0=1e-05  c=1000.0  d=1.0  normalise=first
+  oc     move=0.2  l1=0.0  l2=1000000000.0  bisection_tol=0.0001  max_bisect=80  dv_scale=null
+  simpl  line_search=armijo  c1=0.0001  max_backtrack=10  alpha_min=1e-12
+         alpha_max=1000000000000.0  shift_tol=1e-10  psi_max=30.0
 
-schedule  - continuation schedule (2)
+schedule  - continuation schedule (3)
   beta_continuation    beta0=1.0  beta_max=16.0  every=25  tol=null
+  multiplier_update    every=5  tol=0.001  min_updates=1  beta0=null  beta_max=16.0  beta_every=25
+                       reset_optimizer=false
   robust_continuation  beta0=1.0  beta_max=32.0  every=50  tol=null  volume_every=20  target=null
                        update_volume=true
 
-post  - post-processing step after the run (6)
+post  - post-processing step after the run (7)
   connectivity_gate     threshold=0.5  connectivity=face  robust_thresholds=[0.3, 0.7]
                         erosion=true  voids=fail  repair=none  section=2
+  discrete_check        volume=constraint  threshold=0.5  max_ratio=null
   export                formats=["stl"]  name=part  print_stock=true
   finalize              preserve=null  name=part  write=true  upsample=4  interp_order=1
                         sigma=null [length]  volume_match=threshold  level=0.5

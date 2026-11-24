@@ -208,6 +208,21 @@ def test_tie_straight_path_length():
     assert tie3[2:18, 3:6].all() and tie3.sum() == 56          # 3×16 plus the box overhang at the pads
 
 
+def test_tie_between_equal_cost_paths_is_the_lowest_index_one():
+    # 12 x 12 open box, pads at opposite corners: C(20, 10) staircase paths of equal cost. SciPy's predecessor array
+    # picks one by heap order, which changed between SciPy versions (examples/lbracket_bore3d.yaml: 14 of 252 tie
+    # cells moved between SciPy 1.14.1 and 1.18.1). The traced path takes the lowest-index predecessor: back from
+    # (11, 11) up column 11, then along row 0.
+    shape = (12, 12)
+    a, b = _box(shape, np.s_[0, 0]), _box(shape, np.s_[11, 11])
+    d = Domain(shape, keep=a | b)
+    tie = tie_regions(d, {"a": a, "b": b}, section=1)
+    want = np.zeros(shape, bool)
+    want[0, 1:] = True
+    want[:11, 11] = True
+    assert np.array_equal(tie, want)
+
+
 def test_bridge_repairs_to_one_body():
     shape = (40, 20)
     d = Domain(shape)

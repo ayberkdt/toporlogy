@@ -50,3 +50,5 @@ def register_design() -> None:
     register("link", "extrusion", MF.ExtrusionTying, context=("domain",), types={"axis": None})
     register("link", "pattern", pattern, types={"axis": None}, units={"offset": length, "center": length})
     register("link", "group_average", group_average)
+    register("link", "helmholtz_filter", "toporlogy.design.pde_filter:HelmholtzFilter", context=("domain",),
+             types={"rmin": float}, units={"rmin": "elements"})

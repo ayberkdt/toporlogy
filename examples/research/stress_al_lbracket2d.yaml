@@ -1,0 +1,38 @@
+# The L-bracket of stress_lbracket2d.yaml with LOCAL stress constraints (one per element) handled by an augmented
+# Lagrangian: the objective is volume / volume0 + penalty, the multipliers are updated every iteration
+# (penalty growth 1 % per update) and the optimizer is not reset. MMA needs
+# one constraint: the exact maximum of the relaxed stress is listed with a bound far away (100), so it never binds
+# and serves as the monitor of what the augmented Lagrangian achieves (read it in the RESULT line: <= 1 is feasible).
+name: stress_al_lbracket2d
+domain:
+  type: csg
+  h: 1.0
+  shapes:
+    - {type: box, lo: [0, 0], hi: [40, 16]}
+    - {type: box, lo: [0, 0], hi: [16, 40]}
+material: {E0: 1.0, nu: 0.3}
+supports:
+  - {type: fixed, where: {type: on_plane, axis: y, at: max}}
+load_cases:
+  - name: tip
+    loads:
+      - {type: force, where: {type: in_box, lo: [37, 16], hi: [40, 16]}, force: [0, -1]}
+chain:
+  - {type: density_filter, rmin: 2.0}
+  - {type: heaviside_projection, beta: 1.0}
+interpolation: {type: simp, penal: 3.0, emin_ratio: 1.0e-6}
+objective:
+  type: stress_augmented_lagrangian
+  objective: volume
+  sigma_lim: 2.5
+  form: polynomial
+  mu0: 10.0
+  alpha: 1.01
+  exclude:
+    - {type: box, lo: [34, 12], hi: [40, 16]}
+constraints:
+  - response: {type: stress, sigma_lim: 2.5, aggregate: max, adaptive: null, exclude: [{type: box, lo: [34, 12], hi: [40, 16]}]}
+    upper: 100.0
+optimizer: {type: mma, move: 0.05}
+schedule: {type: multiplier_update, every: 1, tol: 0.02, beta0: 1.0, beta_max: 8.0, beta_every: 30}
+run: {max_iter: 600, tol: 0.002}

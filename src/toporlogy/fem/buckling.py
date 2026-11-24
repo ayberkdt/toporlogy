@@ -1,0 +1,199 @@
+"""Linearised buckling on the regular grid: stress (geometric) stiffness and the buckling eigenproblem.
+
+For a reference load F with displacements u (``K u = F``) the structure buckles at the load λ F, where λ is the
+smallest positive eigenvalue of
+
+    (K + λ K_G(u)) φ = 0 ,          K_G = Σ_e ∫ Gᵀ S(σ_e) G dV ,
+
+with G the gradient operator of the displacement components and S the stress tensor of the reference state (positive
+in tension, so compression makes K_G negative along the buckling mode). The eigenproblem is solved in the form
+
+    (−K_G) φ = μ K φ ,              μ = 1/λ ,
+
+for the largest μ: K is positive definite (its factorisation from the static solve is reused as the inverse), −K_G is
+indefinite, and the modes of interest are the largest μ, which is what a Lanczos method finds first. Modes are
+returned K-normalised (φᵀ K φ = 1), so μ = −φᵀ K_G φ.
+
+Element level (unit element, unit modulus; ``B`` strain matrix, ``D`` elasticity matrix, ``dN`` shape-function
+gradients, 2-point Gauss rule per axis):
+
+    K_G,e = s_G · E_G,e · Σ_gp w · (dNᵀ S_gp dN) ⊗ I_dim ,       S_gp = tensor of σ = D B_gp u_e ,
+
+with ``s_G = 1`` in 3-D (h³ · h⁻² · h⁻¹) and ``thickness / h`` in 2-D. ``E_G,e`` is the modulus used for the stress
+of element e; it is a separate argument because the standard remedy against spurious buckling modes in void regions
+is to interpolate it WITHOUT the lower bound E_min of the stiffness (void elements then carry no stress stiffness).
+The element matrix is linear in u_e. For H8IM the incompatible modes are condensed in K only; K_G uses the compatible
+trilinear field (the same choice as for the mass matrix in :mod:`toporlogy.fem.modal`).
+
+Verification (``tests/toporlogy/test_buckling.py``): the Gauss-point strain matrices reproduce the element
+stiffness; K_G vanishes for rigid-body displacement fields and scales linearly with the load; Euler columns in 2-D and
+3-D against π² E I / (K L)².
+
+Literature. The formulation is the classical one (Cook et al. 2002, ch. 18). The practice of a separate stress
+interpolation and of aggregating μ = 1/λ follows what is reported for Ferrari & Sigmund (2019) and Ferrari, Sigmund &
+Guest (2021); only records and abstracts of those were seen (``docs/literatur_2026-11-21.md``).
+"""
+from __future__ import annotations
+
+from itertools import product
+import numpy as np
+import scipy.sparse as sp
+import scipy.sparse.linalg as spla
+
+from toporlogy.fem.elastic import Elasticity
+from toporlogy.fem.elements import D_iso, D_plane_stress, H8_CORNER, Q4_CORNER
+from toporlogy.references import cite
+
+__all__ = ["gauss_operators", "LinearBuckling", "voigt_pairs"]
+
+_G = 1.0 / np.sqrt(3.0)
+
+
+def voigt_pairs(dim: int) -> list[tuple[int, int]]:
+    """Tensor index (i, j) of each Voigt component in the order of :mod:`toporlogy.fem.elements`."""
+    return [(0, 0), (1, 1), (0, 1)] if dim == 2 else [(0, 0), (1, 1), (2, 2), (1, 2), (0, 2), (0, 1)]
+
+
+def gauss_operators(dim: int) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Unit-element operators at the 2^dim Gauss points: ``dN`` (ngp, dim, nn) shape-function gradients, ``B``
+    (ngp, nvoigt, dim·nn) strain matrices (node-major DOFs), ``w`` (ngp,) weights including det J (they sum to the
+    unit element volume 1)."""
+    corners = Q4_CORNER if dim == 2 else H8_CORNER
+    nn = len(corners)
+    pairs = voigt_pairs(dim)
+    dNs, Bs = [], []
+    for p in product((-_G, _G), repeat=dim):
+        a = 1.0 + corners * np.asarray(p)
+        dN = np.empty((dim, nn))
+        for i in range(dim):
+            others = np.prod(np.delete(a, i, axis=1), axis=1)
+            dN[i] = corners[:, i] * others / 2.0 ** dim * 2.0          # d/dx = 2 d/dxi on the unit element
+        B = np.zeros((len(pairs), dim * nn))
+        for v, (i, j) in enumerate(pairs):
+            if i == j:
+                B[v, i::dim] = dN[i]
+            else:
+                B[v, i::dim] = dN[j]
+                B[v, j::dim] = dN[i]
+        dNs.append(dN)
+        Bs.append(B)
+    w = np.full(2 ** dim, 1.0 / 2 ** dim)
+    return np.array(dNs), np.array(Bs), w
+
+
+@cite("cook_2002", "ferrari_sigmund_2019", "ferrari_sigmund_guest_2021",
+      note="stress stiffness (Cook ch. 18); eigenproblem in μ = 1/λ and separate stress modulus as reported for "
+           "Ferrari et al. (records seen, texts not read)")
+class LinearBuckling:
+    """Buckling analysis on top of an :class:`~toporlogy.fem.elastic.Elasticity` model (same mesh, supports and
+    reduced numbering).
+
+    Parameters
+    ----------
+    model : Elasticity
+        Plain elasticity with axis-aligned fixed DOFs (the direct-solver model).
+    """
+
+    def __init__(self, model: Elasticity) -> None:
+        if not isinstance(model, Elasticity):
+            raise TypeError("LinearBuckling needs an Elasticity model (direct solver, axis-aligned fixed DOFs)")
+        self.model = model
+        d = model.domain
+        self.dim = d.dim
+        self.dN, self.B, self.w = gauss_operators(d.dim)
+        self.D = D_iso(model.nu) if d.dim == 3 else D_plane_stress(model.nu)
+        self.DB = np.einsum("vw,gwk->gvk", self.D, self.B)                 # (ngp, nvoigt, nloc): σ per unit u_e
+        self.scale = 1.0 if d.dim == 3 else d.thickness / d.h
+        self.h = d.h
+        nf = len(model.free)
+        gmap = np.full(d.ndof, -1, np.int64)
+        gmap[model.free] = np.arange(nf)
+        nl = model.edof.shape[1]
+        r = gmap[np.repeat(model.edof, nl, axis=1).ravel()]
+        c = gmap[np.tile(model.edof, (1, nl)).ravel()]
+        self._keep = (r >= 0) & (c >= 0)
+        self._rows, self._cols, self._nf = r[self._keep], c[self._keep], nf
+
+    # ------------------------------------------------------------------ element level
+    def element_stress(self, EG_active: np.ndarray, u: np.ndarray) -> np.ndarray:
+        """Gauss-point stresses (na, ngp, nvoigt) of the active elements for displacements ``u`` (ndof,), with the
+        stress modulus ``EG_active`` (na,)."""
+        ue = np.asarray(u, float)[self.model.edof]                           # (na, nloc)
+        return np.einsum("gvk,ek->egv", self.DB, ue) * (np.asarray(EG_active, float)[:, None, None] / self.h)
+
+    def element_matrices(self, EG_active: np.ndarray, u: np.ndarray) -> np.ndarray:
+        """(na, nloc, nloc) stress stiffness of every active element (physical scale)."""
+        s = self.element_stress(EG_active, u) * self.h                       # unit-element stress per unit h
+        dim, nn = self.dim, self.dN.shape[2]
+        S = np.zeros(s.shape[:2] + (dim, dim))
+        for v, (i, j) in enumerate(voigt_pairs(dim)):
+            S[..., i, j] = s[..., v]
+            S[..., j, i] = s[..., v]
+        kn = np.einsum("g,gia,egij,gjb->eab", self.w, self.dN, S, self.dN) * self.scale      # (na, nn, nn)
+        out = np.zeros((len(kn), dim * nn, dim * nn))
+        for c in range(dim):
+            out[:, c::dim, c::dim] = kn
+        return out
+
+    def geometric_matrix(self, EG_active: np.ndarray, u: np.ndarray) -> sp.csr_matrix:
+        """K_G on the free DOFs (symmetric, full storage) for the reference displacements ``u`` (ndof,)."""
+        ke = self.element_matrices(EG_active, u).ravel()[self._keep]
+        K = sp.coo_matrix((ke, (self._rows, self._cols)), shape=(self._nf, self._nf)).tocsr()
+        return ((K + K.T) * 0.5).tocsr()
+
+    # ------------------------------------------------------------------ eigenproblem
+    def modes(self, E_active: np.ndarray, EG_active: np.ndarray, u: np.ndarray, k: int = 6,
+              tol: float = 1e-10) -> tuple[np.ndarray, np.ndarray]:
+        """The ``k`` largest μ = 1/λ (descending) and their modes (ndof, k), K-normalised.
+
+        ``u``: reference displacements (ndof,) of the SAME moduli ``E_active``. The model's factorisation is reused
+        when it belongs to ``E_active``; otherwise K is factorised again. μ ≤ 0 means that mode does not buckle under
+        the reference load direction (tension).
+        """
+        m = self.model
+        E = np.asarray(E_active, float)
+        if m._factored_E is None or m._A is None or not np.array_equal(m._factored_E, E):
+            m.factor(E)
+        A = m._A
+        assert A is not None
+        n = self._nf
+        if not 1 <= k < n - 1:
+            raise ValueError(f"need 1 <= k < {n - 1} (free DOFs − 1), got {k}")
+        Kfull = (A + A.T - sp.diags(A.diagonal())).tocsr()
+        KG = self.geometric_matrix(EG_active, u)
+        Minv = spla.LinearOperator((n, n), matvec=lambda b: np.asarray(m.solver.solve(b)).reshape(-1),
+                                   dtype=float)
+        v0 = np.random.default_rng(0).standard_normal(n)                     # fixed start: reproducible runs
+        mu, Phi = spla.eigsh(-KG, k=k, M=Kfull, Minv=Minv, which="LA", tol=tol, v0=v0,
+                             ncv=min(n - 1, max(2 * k + 2, 24)), maxiter=20 * n)
+        # Rayleigh–Ritz in the returned span: K-orthonormal modes and consistent μ to round-off
+        Kr = Phi.T @ (Kfull @ Phi)
+        Gr = -(Phi.T @ (KG @ Phi))
+        Lc = np.linalg.cholesky(0.5 * (Kr + Kr.T))
+        Li = np.linalg.inv(Lc)
+        mu, V = np.linalg.eigh(Li @ (0.5 * (Gr + Gr.T)) @ Li.T)
+        order = np.argsort(-mu)
+        mu, Phi = mu[order], Phi @ (Li.T @ V[:, order])
+        full = np.zeros((m.domain.ndof, k))
+        full[m.free] = Phi
+        return mu, full
+
+    # ------------------------------------------------------------------ pieces of the Rayleigh quotient
+    def mode_forms(self, modes: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+        """Per element and mode, the two quadratic forms of the Rayleigh quotient as functions of the design:
+
+        ``C`` (na, k, nloc) with ``φ_iᵀ K_G φ_i = Σ_e E_G,e · (C[e, i] · u_e)`` and ``kE`` (na, k) with
+        ``φ_iᵀ K φ_i = Σ_e E_e · kE[e, i]`` (both include the geometric scale factors).
+        """
+        m = self.model
+        pe = modes[m.edof]                                                   # (na, nloc, k)
+        dim, nn = self.dim, self.dN.shape[2]
+        pc = pe.reshape(len(pe), nn, dim, -1)                                # (na, node, comp, k)
+        G = np.einsum("gia,eack->egick", self.dN, pc)                        # ∂φ_c/∂x_i at the Gauss points
+        M = np.einsum("egick,egjck->egijk", G, G)                            # Σ_c ∂_i φ_c ∂_j φ_c
+        pairs = voigt_pairs(dim)
+        mv = np.stack([M[:, :, i, j] if i == j else 2.0 * M[:, :, i, j] for i, j in pairs], axis=2)   # (na,g,v,k)
+        C = np.einsum("g,egvk,gvl->ekl", self.w, mv, self.DB) * self.scale
+        kE = np.einsum("eak,ab,ebk->ek", pe, m.KE, pe) * m.geom
+        return C, kE
+

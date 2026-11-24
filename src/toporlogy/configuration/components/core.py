@@ -156,6 +156,8 @@ def register_core() -> None:
 
     register("optimizer", "oc", oc)
     register("optimizer", "mma", "toporlogy.optimizers.mma:MMA")
+    register("optimizer", "gcmma", "toporlogy.optimizers.gcmma:GCMMA")
+    register("optimizer", "simpl", "toporlogy.optimizers.simpl:SiMPL")
 
     # ---------------------------------------------------------------- schedules
     def beta_continuation(ctx: BuildContext, beta0: float = 1.0, beta_max: float = 16.0, every: int = 25,

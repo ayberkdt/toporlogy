@@ -1,0 +1,22 @@
+# The half MBB beam of examples/mbb2d.yaml with the SiMPL optimizer (mirror descent in a latent variable, Armijo line
+# search) and the Helmholtz PDE filter instead of the cone filter; the post step re-evaluates the 0/1 design.
+name: mbb_simpl2d
+domain: {type: box, shape: [60, 20], h: 1.0}
+material: {E0: 1.0, nu: 0.3}
+supports:
+  - {type: fixed, where: {type: plane, axis: x, at: min}, dofs: x}
+  - {type: fixed, where: {type: point, at: [max, min]}, dofs: y}
+load_cases:
+  - name: centre
+    loads:
+      - {type: force, where: {type: point, at: [min, max]}, force: [0, -1]}
+chain:
+  - {type: helmholtz_filter, rmin: 2.0}
+interpolation: {type: simp, penal: 3.0, emin_ratio: 1.0e-9}
+objective: compliance
+constraints:
+  - {response: volume, upper: 0.5}
+optimizer: {type: simpl, line_search: armijo}
+run: {max_iter: 150, tol: 0.005}
+post:
+  - {type: discrete_check}

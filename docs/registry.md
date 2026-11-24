@@ -78,12 +78,13 @@ A response may carry `config_upper` (and `config_scale`): its default constraint
 | selector | `plane`, `box`, `point` (node arrays, kept); `all`, `surface`, `in_box`, `on_plane` (axis + at or point + normal, `facing`), `half_space`, `on_cylinder`, `bore` (`index` / `near` / the only one), `in_sphere`, `in_shape`, `at_points`, `nearest`, `node_ids`, `union` / `intersect` / `subtract` (`of: [selectors]`) |
 | support | `fixed` (dofs: axes or vectors), `roller`, `symmetry`, `pinned_bore`, `elastic` |
 | load | `force` (total spread equally, kept), `point` (spread, zero moment), `surface_force`, `traction`, `pressure`, `bearing`, `remote_force`, `remote_moment`, `torque`, `body_force` |
-| link | `am_filter`, `casting`, `symmetry` / `extrusion` / `pattern` (tying: first link, `embed` is put after it), `group_average` |
+| link | `am_filter`, `casting`, `symmetry` / `extrusion` / `pattern` (tying: first link, `embed` is put after it), `group_average`, `helmholtz_filter` (PDE filter, rmin in elements) |
 | interpolation | `two_range_simp` |
 | physics | `modal` (n_modes, mass linear / two_range, added_mass + added_mass_at; load_cases optional), `elasticity_gmg` (GMG-PCG, 3-D, axis-aligned fixed DOFs and one support set only; never a `solver`) |
-| response | `robust_compliance`, `dilated_volume`, `local_volume` (`t_max` in length → radius and bound), `grey_level`, `conduction_connectivity`, `coupling_compliance`, `frequency`, `eigenvalue`, `min_eigenvalue_ks`, `maximize` (negates a nested response), `min_frequency` |
-| schedule | `robust_continuation` |
-| post | `connectivity_gate`, `measure_lengthscale`, `finalize` (PostParams fields + `preserve`), `manufacturing_checks` (CheckThresholds fields), `reverify` (gmsh; bc selectors as callables), `export` |
+| response | `robust_compliance`, `dilated_volume`, `local_volume` (`t_max` in length → radius and bound), `grey_level`, `conduction_connectivity`, `coupling_compliance`, `frequency`, `eigenvalue`, `min_eigenvalue_ks`, `maximize` (negates a nested response), `min_frequency`, `stress` (aggregated relaxed von Mises / sigma_lim; upper default 1; `exclude` shapes), `stress_augmented_lagrangian` (objective + local stress constraints), `buckling` (KS of 1/λ; `load_factor` sets the bound), `displacement` (selector + direction), `weighted_sum` |
+| optimizer | `gcmma` (conservative inner iterations; any number of constraints), `simpl` (mirror descent; one volume-type constraint) |
+| schedule | `robust_continuation`, `multiplier_update` (augmented-Lagrangian multipliers; optional β continuation alongside) |
+| post | `connectivity_gate`, `measure_lengthscale`, `finalize` (PostParams fields + `preserve`), `manufacturing_checks` (CheckThresholds fields), `reverify` (gmsh; bc selectors as callables), `export`, `discrete_check` (objective and constraints of the thresholded design) |
 
 Top-level blocks handled by `config.py`: `robust` (min_solid / min_void in length → rmin written into the chain,
 thresholds; a `heaviside_projection` is added when missing), `connectivity` (one body via
@@ -123,4 +124,5 @@ supports:
 Register it, build a small config with `toporlogy.configuration.build.build_setup(raw)`, and check the built object
 (`tests/toporlogy/test_config.py::test_register_new_components_one_line` is a template). Remove test-only components with
 `REGISTRY.unregister(kind, name)`. Links and responses also need the finite-difference check
-(`toporlogy.optimization.diagnostics.gradcheck`).
+(`toporlogy.optimization.diagnostics.gradcheck`). [`deriving_methods.md`](deriving_methods.md) walks through a new
+local criterion, a new response, a new link and a new optimizer.

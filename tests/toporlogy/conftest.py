@@ -61,6 +61,15 @@ def pytest_terminal_summary(terminalreporter: pytest.TerminalReporter) -> None:
         terminalreporter.write_line(f"{b:8s} {s['status']:13s} {detail}")
     if V.BASELINE:
         terminalreporter.write_line(f"baseline {V.BASELINE['mode']:13s} {V.BASELINE['note']}")
+        tol = V.BASELINE.get("rel_tol")
+        for name, row in V.BASELINE.get("examples", {}).items():
+            line = f"max relative difference {row['max_rel']:.2e}" + (f" (tolerance {tol:g})" if tol else "")
+            if row["differs"]:
+                line += f"; differs: {', '.join(row['differs'])}"
+            terminalreporter.write_line(f"  {name:22s} {line}")
+            if os.environ.get("GITHUB_ACTIONS") == "true":        # public annotation: readable without logs access
+                level = "error" if row["differs"] else "notice"
+                terminalreporter.write_line(f"::{level} title=baseline {name}::{line}")
     path = os.environ.get("TOPORLOGY_ENV_REPORT")
     if path:
         stats = {k: len(v) for k, v in terminalreporter.stats.items() if k in ("passed", "failed", "skipped", "error")}

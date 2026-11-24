@@ -1,0 +1,26 @@
+# Compliant force inverter (upper half by symmetry, 60 x 30): the input force pushes the left end to the right, the
+# output point on the right end should move to the LEFT. Objective: the output displacement along +x (minimised,
+# so it becomes negative). Input and output stiffness are springs on a two-element patch of the
+# end faces (springs act on surface area); without the output spring the optimum is a
+# disconnected mechanism. Known weakness of this formulation: one-node hinges; the robust formulation
+# (robust block) removes them and is the next step for a real design.
+name: inverter2d
+domain: {type: box, shape: [60, 30], h: 1.0}
+material: {E0: 1.0, nu: 0.3}
+supports:
+  - {type: fixed, where: {type: in_box, lo: [0, 26], hi: [0, 30]}}                 # anchor at the top left
+  - {type: symmetry, axis: y, at: min}                                             # symmetry line y = 0
+  - {type: elastic, where: {type: in_box, lo: [0, 0], hi: [0, 2]}, total: 0.1, direction: [1, 0]}     # input spring
+  - {type: elastic, where: {type: in_box, lo: [60, 0], hi: [60, 2]}, total: 0.1, direction: [1, 0]}   # output spring
+load_cases:
+  - name: input
+    loads:
+      - {type: force, where: {type: in_box, lo: [0, 0], hi: [0, 2]}, force: [1, 0]}
+chain:
+  - {type: density_filter, rmin: 1.5}
+interpolation: {type: simp, penal: 3.0, emin_ratio: 1.0e-6}
+objective: {type: displacement, where: {type: in_box, lo: [60, 0], hi: [60, 2]}, direction: x}
+constraints:
+  - {response: volume, upper: 0.3}
+optimizer: {type: mma, move: 0.1}
+run: {max_iter: 100, tol: 0.002}

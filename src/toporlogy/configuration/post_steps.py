@@ -312,6 +312,28 @@ def register_post_steps() -> None:
             return out
         return step
 
+    def discrete_check(ctx: BuildContext, volume: Any = "constraint", threshold: float = 0.5,
+                       max_ratio: float | None = None) -> Any:
+        """Objective and constraints of the thresholded (0/1) design, re-evaluated on the same mesh
+        (optimization.benchmark). volume: number, "constraint" (bound of the volume constraint) or null (fixed
+        threshold). Fails when a constraint that could be evaluated is violated, or objective_binary / objective
+        exceeds max_ratio (null = no limit)."""
+        from toporlogy.optimization.benchmark import discrete_report
+
+        def step(res: Any, study: Any, folder: Any) -> dict[str, Any]:
+            out = discrete_report(study, res, volume, threshold)
+            sat = [c["satisfied"] for c in out["constraints"].values()]
+            ok = not any(s is False for s in sat)
+            if max_ratio is not None and out["ratio"] is not None:
+                ok = ok and out["ratio"] <= float(max_ratio)
+            out["passed"] = bool(ok)
+            ratio = "not evaluated" if out["ratio"] is None else f"{out['ratio']:.4f} x the grey value"
+            out["summary"] = (f"0/1 design ({out['threshold_rule']}): objective {ratio}, M_nd {out['m_nd']:.3f}"
+                              + ("" if not out["not_evaluated"] else
+                                 f"; not evaluated: {', '.join(out['not_evaluated'])}"))
+            return out
+        return step
+
     register("post", "connectivity_gate", connectivity_gate, types={"connectivity": None})
     register("post", "measure_lengthscale", lengthscale_step, types={"outside": None},
              units={"margin": length, "radii": length, "smooth": "elements"})
@@ -322,3 +344,4 @@ def register_post_steps() -> None:
     register("post", "reverify", "toporlogy.configuration.post_steps:reverify_step", units={"E": "force/length^2",
                                                                                 "size": length})
     register("post", "export", "toporlogy.configuration.post_steps:export_step")
+    register("post", "discrete_check", discrete_check, types={"volume": None})

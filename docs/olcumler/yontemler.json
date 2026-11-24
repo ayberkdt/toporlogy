@@ -1,0 +1,232 @@
+{
+ "environment": {
+  "python": "3.13.18",
+  "numpy": "2.5.3",
+  "scipy": "1.18.1",
+  "torch": "2.15.0+cu132",
+  "machine": "x86_64",
+  "system": "Linux"
+ },
+ "mbb_90x30": [
+  {
+   "name": "OC",
+   "objective": 222.0457505809417,
+   "objective_binary": 197.16375171977765,
+   "ratio": 0.8879420173722538,
+   "m_nd": 0.2880117200778088,
+   "volume_binary": 0.5,
+   "evaluations": 201,
+   "iterations": 200,
+   "inner_evaluations": null,
+   "threshold_rule": "volume 0.5",
+   "seconds": 8.966408852999848,
+   "termination": "max_iter",
+   "kkt": 0.01557391269247009
+  },
+  {
+   "name": "MMA",
+   "objective": 215.5764469105655,
+   "objective_binary": 190.68076220277692,
+   "ratio": 0.8845157480579645,
+   "m_nd": 0.22358669847409204,
+   "volume_binary": 0.5,
+   "evaluations": 201,
+   "iterations": 200,
+   "inner_evaluations": null,
+   "threshold_rule": "volume 0.5",
+   "seconds": 21.605205350999768,
+   "termination": "max_iter",
+   "kkt": 0.0014897546801314265
+  },
+  {
+   "name": "GCMMA",
+   "objective": 215.61855662208336,
+   "objective_binary": 190.5791850041703,
+   "ratio": 0.883871907825634,
+   "m_nd": 0.22256306182602328,
+   "volume_binary": 0.5,
+   "evaluations": 411,
+   "iterations": 200,
+   "inner_evaluations": 210,
+   "threshold_rule": "volume 0.5",
+   "seconds": 26.39340988799995,
+   "termination": "max_iter",
+   "kkt": 0.0004871599668634596
+  },
+  {
+   "name": "GCMMA move 0.2",
+   "objective": 215.60223240108584,
+   "objective_binary": 190.60623447177682,
+   "ratio": 0.8840642898223389,
+   "m_nd": 0.22323709717536763,
+   "volume_binary": 0.5,
+   "evaluations": 407,
+   "iterations": 200,
+   "inner_evaluations": 206,
+   "threshold_rule": "volume 0.5",
+   "seconds": 31.56690177099972,
+   "termination": "max_iter",
+   "kkt": 0.0014998277093065887
+  },
+  {
+   "name": "SiMPL armijo",
+   "objective": 216.6964351343069,
+   "objective_binary": 190.54289926235057,
+   "ratio": 0.879307955132042,
+   "m_nd": 0.23448554201550437,
+   "volume_binary": 0.5,
+   "evaluations": 420,
+   "iterations": 200,
+   "inner_evaluations": 219,
+   "threshold_rule": "volume 0.5",
+   "seconds": 16.44057267800008,
+   "termination": "max_iter",
+   "kkt": null
+  },
+  {
+   "name": "SiMPL bregman",
+   "objective": 216.44586892860033,
+   "objective_binary": 190.45460120684496,
+   "ratio": 0.8799179312111094,
+   "m_nd": 0.2316262261086677,
+   "volume_binary": 0.5,
+   "evaluations": 513,
+   "iterations": 200,
+   "inner_evaluations": 312,
+   "threshold_rule": "volume 0.5",
+   "seconds": 19.525484018000043,
+   "termination": "max_iter",
+   "kkt": null
+  },
+  {
+   "name": "SiMPL no search",
+   "objective": 215.8381218181099,
+   "objective_binary": 190.51133889741018,
+   "ratio": 0.882658435371102,
+   "m_nd": 0.2261877407445284,
+   "volume_binary": 0.5,
+   "evaluations": 201,
+   "iterations": 200,
+   "inner_evaluations": 0,
+   "threshold_rule": "volume 0.5",
+   "seconds": 8.77335986900016,
+   "termination": "max_iter",
+   "kkt": null
+  },
+  {
+   "name": "OC + Helmholtz",
+   "objective": 219.12939921874087,
+   "objective_binary": 189.16994876964247,
+   "ratio": 0.8632796395375864,
+   "m_nd": 0.2772844294548231,
+   "volume_binary": 0.5,
+   "evaluations": 201,
+   "iterations": 200,
+   "inner_evaluations": null,
+   "threshold_rule": "volume 0.5",
+   "seconds": 7.20852792200003,
+   "termination": "max_iter",
+   "kkt": 0.006766313043290424
+  }
+ ],
+ "euler_column_2d": [
+  {
+   "elements_across": 2,
+   "dof": 486,
+   "ratio": 1.124602602546892,
+   "mode_ratios": [
+    8.9746616634844,
+    24.790370005312887
+   ],
+   "seconds": 0.011356468000030873
+  },
+  {
+   "elements_across": 4,
+   "dof": 1610,
+   "ratio": 1.0308246388143831,
+   "mode_ratios": [
+    8.970425155271318,
+    24.755520458438006
+   ],
+   "seconds": 0.017576333000306477
+  },
+  {
+   "elements_across": 8,
+   "dof": 5778,
+   "ratio": 1.0073784329154836,
+   "mode_ratios": [
+    8.969121433348462,
+    24.74480134992253
+   ],
+   "seconds": 0.09038189400007468
+  },
+  {
+   "elements_across": 16,
+   "dof": 21794,
+   "ratio": 1.001516733276234,
+   "mode_ratios": [
+    8.968775562025344,
+    24.74195756271471
+   ],
+   "seconds": 0.8690158570002495
+  }
+ ],
+ "stress_lbracket": [
+  {
+   "example": "stress_lbracket2d",
+   "iterations": 120,
+   "evaluations": 743,
+   "seconds": 46.09575675099995,
+   "volume_grey": 0.19519965902635497,
+   "max_solid_ratio_grey": 1.1312726884293967,
+   "relaxed_max_value": 0.9993041273950525,
+   "relaxed_max_last20": [
+    0.9621228573488602,
+    1.0140709194340722
+   ],
+   "volume_binary": 0.1953125,
+   "max_ratio_binary": 1.714584938651169,
+   "m_nd": 0.2292065828609587
+  },
+  {
+   "example": "stress_al_lbracket2d",
+   "iterations": 600,
+   "evaluations": 601,
+   "seconds": 16.859249924000324,
+   "volume_grey": 0.1814739629326127,
+   "max_solid_ratio_grey": 1.102588229750093,
+   "relaxed_max_value": 1.0009223690109703,
+   "relaxed_max_last20": [
+    0.9997864601467701,
+    1.6691797873854568
+   ],
+   "volume_binary": 0.203125,
+   "max_ratio_binary": 1.0252308738444114,
+   "m_nd": 0.18177066570806633
+  }
+ ],
+ "buckling_column": [
+  {
+   "buckling_constraint": false,
+   "compliance": 10.628943055085761,
+   "lambda": [
+    0.014925548057923625,
+    0.09391129664759153,
+    0.2411030764253121
+   ],
+   "iterations": 28,
+   "feasible": true
+  },
+  {
+   "buckling_constraint": true,
+   "compliance": 12.871942163171727,
+   "lambda": [
+    0.0218296431678462,
+    0.07337381713573925,
+    0.07487277363014398
+   ],
+   "iterations": 80,
+   "feasible": true
+  }
+ ]
+}
