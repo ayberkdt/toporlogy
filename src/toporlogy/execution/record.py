@@ -67,5 +67,6 @@ class Recorder:
                "constraints": res.constraint_values, "termination": getattr(res, "termination", ""),
                "feasible": getattr(res, "feasible", None), "max_violation": getattr(res, "max_violation", None),
                "feasibility_tol": getattr(res, "feasibility_tol", None),
-               "kkt_residual": getattr(res, "kkt_residual", None), "settings": res.settings}
+               "kkt_residual": getattr(res, "kkt_residual", None),
+               "stationarity": getattr(res, "stationarity", None), "settings": res.settings}
         (self.folder / "result.json").write_text(json.dumps(out, indent=1, default=str), encoding="utf-8")

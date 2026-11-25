@@ -24,6 +24,7 @@ from toporlogy.core.domain import Domain
 from toporlogy.optimizers.base import Optimizer
 from toporlogy.optimizers.schedule import Schedule
 from toporlogy.optimization.responses import EvalContext, Response, Volume
+from toporlogy.optimization.diagnostics import kkt_estimate
 
 __all__ = ["Constraint", "Study", "Result", "Evaluation", "DensityEvaluation"]
 
@@ -103,6 +104,10 @@ class Result:
     # relative projected stationarity |s grad f0 + mu^T grad g| (box 0..1) and the complementarity |mu_j g_j|, with
     # the multipliers of the last step (an estimate: they belong to the previous iterate). None without multipliers.
     kkt_residual: float | None = None
+    # Optimizer-independent first-order optimality of the returned design (any optimizer, with constraints):
+    # ``diagnostics.kkt_estimate`` residual, multipliers fitted to the returned design itself (NNLS over the active
+    # constraints). None without constraints.
+    stationarity: float | None = None
 
     @property
     def objective(self) -> float:
@@ -399,16 +404,19 @@ class Study:
             mult = self.optimizer.kkt_multipliers() if hasattr(self.optimizer, "kkt_multipliers") else None
             lam = np.zeros(0) if mult is None else np.asarray(mult, float).reshape(-1)
             with_kkt = len(self.constraints) > 0 and lam.size == len(self.constraints)
-            final = self.evaluate(x, gradients=with_kkt)
+            final = self.evaluate(x, gradients=len(self.constraints) > 0)
             feasible, worst = True, 0.0
             for c in self.constraints:
                 v, scale = final.values[c.key], max(abs(c.upper), 1e-12)
                 worst = max(worst, (v - c.upper) / scale)
                 feasible = feasible and bool(v <= c.upper + feasibility_tol * scale)
             kkt = self._kkt_residual(x, final, lam) if with_kkt else None
+            stat = (kkt_estimate(x, final.df0, final.g, final.dg)["residual"] if len(self.constraints) > 0
+                    else None)
             res = Result(x, final.xphys, hist, it, termination == "design_change", time.perf_counter() - t0,
                          final.U, self.settings(), final, termination=termination, feasible=feasible,
-                         max_violation=max(worst, 0.0), feasibility_tol=float(feasibility_tol), kkt_residual=kkt)
+                         max_violation=max(worst, 0.0), feasibility_tol=float(feasibility_tol), kkt_residual=kkt,
+                         stationarity=stat)
         finally:
             if getattr(self.optimizer, "needs_value_fn", False):
                 self.optimizer.value_fn = None

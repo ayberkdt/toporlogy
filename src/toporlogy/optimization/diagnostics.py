@@ -1,5 +1,6 @@
 """Checks every new link and response must pass (docs/mimari_plan.md §2): finite-difference gradients, grey level;
-mirror-symmetry error of element fields (docs/yol_haritasi_2026-11-18.md §2.3)."""
+mirror-symmetry error of element fields (docs/yol_haritasi_2026-11-18.md §2.3); an optimizer-independent first-order
+optimality measure of a returned design (docs/olcumler/dogrulama_turu.md §4)."""
 from __future__ import annotations
 
 from collections.abc import Callable, Mapping
@@ -8,7 +9,7 @@ from typing import Any
 import numpy as np
 import torch
 
-__all__ = ["gradcheck", "study_gradcheck", "grey_fraction", "field_symmetry"]
+__all__ = ["gradcheck", "study_gradcheck", "grey_fraction", "field_symmetry", "kkt_estimate"]
 
 
 def gradcheck(fn: Callable[[torch.Tensor], torch.Tensor], x: np.ndarray, n_dirs: int = 4, h: float = 1e-6,
@@ -92,3 +93,38 @@ def field_symmetry(domain: Any, fields: Mapping[str, np.ndarray], axis: Any, coo
         out["fields"][name] = {"e_sym": float(np.linalg.norm(v - rv)) / nf if nf > 0 else 0.0,
                                "mismatch_cells": int(((v > threshold) != (rv > threshold)).sum())}
     return out
+
+
+def kkt_estimate(x: np.ndarray, df0: np.ndarray, g: np.ndarray, dg: np.ndarray, active_tol: float = 1e-3,
+                 bound_tol: float = 1e-9) -> dict[str, Any]:
+    """First-order optimality of ``x`` for min f0 s.t. g ≤ 0, 0 ≤ x ≤ 1, with multipliers found here.
+
+    Constraints with g_j ≥ −``active_tol`` are treated as active and get λ_j ≥ 0 minimising
+    ‖(∇f0 + Σ_j λ_j ∇g_j)_I‖₂ over the variables I strictly inside the box (non-negative least squares); the others
+    get λ_j = 0. The residual is the larger of the projected stationarity max|r| / max|∇f0| (r = ∇f0 + Σ λ_j ∇g_j,
+    with only its infeasible sign kept at a bound: r_i < 0 at x_i = 0 and r_i > 0 at x_i = 1 count) and the
+    constraint violation max(g, 0). Unlike ``Result.kkt_residual`` it needs no optimizer multipliers and belongs to
+    ``x`` itself; it is a lower estimate of the KKT residual with the optimizer's own multipliers.
+
+    Returns {"residual", "stationarity", "violation", "multipliers" (m,), "active" (m,) bool}.
+    """
+    from scipy.optimize import nnls
+    x = np.asarray(x, float).reshape(-1)
+    df0 = np.asarray(df0, float).reshape(-1)
+    g = np.atleast_1d(np.asarray(g, float)).reshape(-1)
+    dg = np.asarray(dg, float).reshape(len(g), -1)
+    if dg.shape[1] != x.size or df0.size != x.size:
+        raise ValueError("kkt_estimate: x, df0 and the rows of dg must have the same length")
+    lo, hi = x <= bound_tol, x >= 1.0 - bound_tol
+    inner = ~(lo | hi)
+    active = g >= -float(active_tol)
+    lam = np.zeros(len(g))
+    if active.any() and inner.any():
+        lam[active], _ = nnls(dg[active][:, inner].T, -df0[inner])
+    r = df0 + lam @ dg
+    r = np.where(lo, np.minimum(r, 0.0), np.where(hi, np.maximum(r, 0.0), r))
+    scale = max(float(np.max(np.abs(df0))), 1e-300) if df0.size else 1.0
+    stat = float(np.max(np.abs(r))) / scale if r.size else 0.0
+    viol = float(max(np.max(g), 0.0)) if g.size else 0.0
+    return {"residual": max(stat, viol), "stationarity": stat, "violation": viol, "multipliers": lam,
+            "active": active}

@@ -504,6 +504,7 @@
     "kkt_residual",
     "max_violation",
     "objective",
+    "stationarity",
     "termination"
    ],
    "class": "Result"
@@ -4101,6 +4102,7 @@
   "field_symmetry": "field_symmetry(domain,fields,axis,coordinate,threshold)",
   "gradcheck": "gradcheck(fn,x,n_dirs,h,seed)",
   "grey_fraction": "grey_fraction(xphys,mask,lo,hi)",
+  "kkt_estimate": "kkt_estimate(x,df0,g,dg,active_tol,bound_tol)",
   "study_gradcheck": "study_gradcheck(study,x,which,kw)"
  },
  "toporlogy.optimization.dynamics": {
@@ -4677,6 +4679,7 @@
     "kkt_residual",
     "max_violation",
     "objective",
+    "stationarity",
     "termination"
    ],
    "class": "Result"
