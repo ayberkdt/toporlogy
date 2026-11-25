@@ -357,7 +357,10 @@ def elasticity_from_config(material: dict[str, Any], dim: int,
     (as for the STL domain)."""
     spec = material.get("orthotropic")
     if spec is None:
-        return Orthotropic.isotropic(float(material["E0"]), float(material["nu"])), None
+        E0 = float(material["E0"])
+        if not (np.isfinite(E0) and E0 > 0):
+            raise ValueError(f"E0 must be a finite number > 0, got {material['E0']!r}")
+        return Orthotropic.isotropic(E0, float(material["nu"])), None
     if not isinstance(spec, dict):
         raise ValueError("material.orthotropic must be a mapping")
     orient = ("angle", "axes", "angle_field", "axis_field")

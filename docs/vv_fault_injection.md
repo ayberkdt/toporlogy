@@ -67,3 +67,20 @@ yakalanmaması) bundan etkilenmiyor ama ön kayıtlı durumun kendisi ilgisiz bi
 Çözüm koşulu (her biri için): ilgili girdi denetimi eklendiğinde strict xfail XPASS olur ve test kırmızıya döner;
 o zaman `FAILED_FIRST_RUN` girdisi silinir. Düzeltmeler bu dilimin kapsamında değil (malzeme denetimi
 `core/material.py`, tensor-core oturumunun dosyası).
+
+## 2. Düzeltmeler (2026-11-26, `integrate/research-round-1`) [Ö]
+
+Ön kayıtlı beklentiler değişmedi; yedi durum kendi beklentisini artık tutuyor ve strict xfail'den çıktı (kütükten
+de silindi). Komut: `python -m pytest tests/toporlogy/test_fault_injection.py -q -p no:randomly` → 31 passed, 2 xfailed.
+
+| Durum | Düzeltme | Yer |
+|:---|:---|:---|
+| `nan_force_config` | her yük durumunun yük vektörü sonlu olmalı: `ConfigError` "load case has a load that is not finite (NaN or Inf)" | `configuration/build.py` |
+| `inf_E0_config`, `negative_E0_config`, `zero_E0_config` | izotrop yolda E0 sonlu ve > 0: "E0 must be a finite number > 0" | `core/material.py` `elasticity_from_config` |
+| `negative_thickness_domain` | `Domain`: "thickness > 0 is required (finite)" | `core/domain.py` |
+| `volume_upper_above_one` | `volume` kısıtının üst sınırı (0, 1] (parçanın hacim oranı) | `configuration/build.py` |
+| `yaml_duplicate_key` | YAML yükleyicisi (SafeLoader alt sınıfı) ve JSON okuyucu yinelenen anahtarı reddeder: "cannot parse …: duplicate key" | `configuration/resolve.py` |
+
+Kalan iki strict xfail (`inf_load_solve`, `load_wrong_rows_solve`) `fem/elastic.py`'nin girdi denetimini ister; bu
+dosya o sırada hızlandırma oturumunda olduğundan sonraya bırakıldı. `yaml_duplicate_key` durumunun YAML'ındaki
+eksik kısıt artık önemsiz: hata okuma aşamasında, kısıt denetiminden önce geliyor.

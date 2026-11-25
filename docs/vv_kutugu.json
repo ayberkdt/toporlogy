@@ -188,82 +188,12 @@
    "slow": false
   },
   {
-   "nodeid": "tests/toporlogy/test_fault_injection.py::test_fails_closed_with_a_clear_message[nan_force_config]",
-   "kind": "pre-registered fault injection failed",
-   "model_backend": "config yükleri",
-   "reason": "force [nan, -1] sessizce kabul ediliyor",
-   "risk": "high",
-   "resolution": "yük bileşenlerinde sonluluk denetimi",
-   "record": "docs/vv_fault_injection.md",
-   "slow": false
-  },
-  {
-   "nodeid": "tests/toporlogy/test_fault_injection.py::test_fails_closed_with_a_clear_message[inf_E0_config]",
-   "kind": "pre-registered fault injection failed",
-   "model_backend": "config malzeme (core/material.py)",
-   "reason": "E0 = inf: mesaj ν'ye yönlendiriyor, E0'ı adlandırmıyor",
-   "risk": "low",
-   "resolution": "E0 sonluluk denetimi (tensor-core oturumunun dosyası)",
-   "record": "docs/vv_fault_injection.md",
-   "slow": false
-  },
-  {
-   "nodeid": "tests/toporlogy/test_fault_injection.py::test_fails_closed_with_a_clear_message[negative_E0_config]",
-   "kind": "pre-registered fault injection failed",
-   "model_backend": "config malzeme (core/material.py)",
-   "reason": "E0 = -1: mesaj E1 diyor",
-   "risk": "low",
-   "resolution": "izotrop yolda E0 adıyla mesaj",
-   "record": "docs/vv_fault_injection.md",
-   "slow": false
-  },
-  {
-   "nodeid": "tests/toporlogy/test_fault_injection.py::test_fails_closed_with_a_clear_message[zero_E0_config]",
-   "kind": "pre-registered fault injection failed",
-   "model_backend": "config malzeme (core/material.py)",
-   "reason": "E0 = 0: mesaj E1 diyor",
-   "risk": "low",
-   "resolution": "izotrop yolda E0 adıyla mesaj",
-   "record": "docs/vv_fault_injection.md",
-   "slow": false
-  },
-  {
-   "nodeid": "tests/toporlogy/test_fault_injection.py::test_fails_closed_with_a_clear_message[negative_thickness_domain]",
-   "kind": "pre-registered fault injection failed",
-   "model_backend": "Domain / Elasticity",
-   "reason": "thickness = -1 sessizce kabul (negatif rijitlik)",
-   "risk": "high",
-   "resolution": "Domain'de thickness > 0 denetimi",
-   "record": "docs/vv_fault_injection.md",
-   "slow": false
-  },
-  {
    "nodeid": "tests/toporlogy/test_fault_injection.py::test_fails_closed_with_a_clear_message[load_wrong_rows_solve]",
    "kind": "pre-registered fault injection failed",
    "model_backend": "Elasticity.solve_numpy",
    "reason": "yanlış satır sayılı F: IndexError",
    "risk": "medium",
    "resolution": "F şekil denetimi",
-   "record": "docs/vv_fault_injection.md",
-   "slow": false
-  },
-  {
-   "nodeid": "tests/toporlogy/test_fault_injection.py::test_fails_closed_with_a_clear_message[volume_upper_above_one]",
-   "kind": "pre-registered fault injection failed",
-   "model_backend": "config kısıtlar",
-   "reason": "hacim oranı üst sınırı 50 sessizce kabul",
-   "risk": "medium",
-   "resolution": "oran yanıtlarında 0 < upper <= 1 denetimi",
-   "record": "docs/vv_fault_injection.md",
-   "slow": false
-  },
-  {
-   "nodeid": "tests/toporlogy/test_fault_injection.py::test_fails_closed_with_a_clear_message[yaml_duplicate_key]",
-   "kind": "pre-registered fault injection failed",
-   "model_backend": "config okuma (PyYAML)",
-   "reason": "yinelenen anahtar sessizce sonuncuyla kullanılıyor",
-   "risk": "high",
-   "resolution": "yinelenen anahtarı reddeden YAML yükleyici; test YAML'ı ayrıca düzeltilmeli (kısıt eksik)",
    "record": "docs/vv_fault_injection.md",
    "slow": false
   },
