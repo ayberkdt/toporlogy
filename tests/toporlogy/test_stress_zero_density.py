@@ -1,4 +1,4 @@
-"""The derivative of the stress relaxation at zero density (docs/olcumler/gerilme_onkayit.md §6, F1-F4,
+"""The derivative of the stress relaxation at zero density (docs/olcumler/gerilme_onkayit.md §6, Z1-Z4 (Z5 is the example run in gerilme.md §3.5),
 pre-registered 2026-11-26 01:32 +0300 before ``optimization/stress.py`` changed).
 
 For 0 < a < 1 the one-sided derivative of x̄^a at x̄ = 0 is +∞; torch turned the zero incoming gradient of a p-norm
@@ -37,7 +37,7 @@ def _fields(d, form, a):
 
 
 def _old(field, ctx, x):
-    """The formula of ``VonMises.__call__`` before the change (gerilme_onkayit.md §6, F2)."""
+    """The formula of ``VonMises.__call__`` before the change (gerilme_onkayit.md §6, Z2)."""
     r = field.solid_ratio(ctx)
     xe = x.reshape(-1)[torch.as_tensor(field.elements)][:, None]
     if field.form == "polynomial":
@@ -47,7 +47,7 @@ def _old(field, ctx, x):
     return v if field.form == "ratio" else v - 1.0
 
 
-def test_f1_aggregated_gradient_is_finite_at_zero_density():
+def test_z1_aggregated_gradient_is_finite_at_zero_density():
     d, fixed, F, _ = _problem()
     x = torch.full(d.shape, 0.6, dtype=torch.float64)
     x[2, 3] = 0.0
@@ -63,7 +63,7 @@ CASES = [(form, a) for form in ("ratio", "margin") for a in (0.5, 0.25)] + [("po
 
 
 @pytest.mark.parametrize(("form", "a"), CASES)
-def test_f2_f3_values_unchanged_derivative_zero_only_at_zero_density(form, a):
+def test_z2_z3_values_unchanged_derivative_zero_only_at_zero_density(form, a):
     d, fixed, F, x0 = _problem()
     E = 1e-6 + x0 ** 3
     U = Elasticity(d, fixed, 0.3).solve(E.reshape(-1), F).detach()    # the state does not depend on x here
@@ -73,16 +73,16 @@ def test_f2_f3_values_unchanged_derivative_zero_only_at_zero_density(form, a):
         x_old = x0.clone().requires_grad_(True)
         new = field(EvalContext(d, x_new, E, U, F))
         old = _old(field, EvalContext(d, x_old, E, U, F), x_old)
-        assert torch.equal(new, old), f"F2 {type(field).__name__} {form} a={a}"
+        assert torch.equal(new, old), f"Z2 {type(field).__name__} {form} a={a}"
         (g_new,) = torch.autograd.grad((w[field.elements] * new).sum(), x_new)
         (g_old,) = torch.autograd.grad((w[field.elements] * old).sum(), x_old)
         zero = x0 == 0
-        assert torch.equal(g_new[~zero], g_old[~zero]), f"F3 {type(field).__name__} {form} a={a}"
-        assert bool((g_new[zero] == 0).all()), f"F3 zero {type(field).__name__} {form} a={a}"
+        assert torch.equal(g_new[~zero], g_old[~zero]), f"Z3 {type(field).__name__} {form} a={a}"
+        assert bool((g_new[zero] == 0).all()), f"Z3 zero {type(field).__name__} {form} a={a}"
 
 
 @pytest.mark.parametrize(("form", "a"), [("ratio", 1.0), ("polynomial", 3.0)])
-def test_f4_exponents_with_a_finite_derivative_are_unchanged(form, a):
+def test_z4_exponents_with_a_finite_derivative_are_unchanged(form, a):
     d, fixed, F, x0 = _problem()
     E = 1e-6 + x0 ** 3
     U = Elasticity(d, fixed, 0.3).solve(E.reshape(-1), F).detach()

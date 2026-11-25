@@ -33,10 +33,13 @@ torch 2.5.1+cu121 (hesaplar CPU'da), SuperLU (PARDISO ve gmsh yok). Aynı sayıl
 | F1, F2 | kırılma ölçütü; kapalı başarısızlık | PASS |
 | C1–C6 | saf eğilme yakınsama mertebesi | PASS (aşağıdaki tablo) |
 | S1–S7 | tekillik tanısı ve negatif kontroller | PASS |
-| K1 | tarihsel dört oranın yeniden üretimi | **FAIL** (koşu tamamlanmıyor; strict xfail) |
+| K1 | tarihsel dört oranın yeniden üretimi | **FAIL**: önce koşu tamamlanmıyordu; §3.5 düzeltmesinden sonra gri farklar 0,098 / 0,066 > 0,05. Örnekler §3.6'da değişince test kaldırıldı |
 | K2 | döndürülen 0/1 tasarımda bağımsız karşılaştırma | ön kayıtlı koşulda NOT VERIFIED; post-hoc ≤ 5e-16 |
 | K3 | dolu L-bracket tepe oranı 0,49 ± 0,005 | PASS (0,4918) |
 | K4 | sabit geometri inceltmede tekil | dolu: PASS; iki 0/1 tasarım: yalnız post-hoc |
+| Z1–Z5 | x̄ = 0'da gevşetme türevi (kütüphane düzeltmesi, §3.5) | PASS |
+| Y1, Y3–Y5 | yük yolu: yük bölgesi ve tek parça koruması (§3.6) | PASS |
+| Y2 | tek parça kapısı | toplulaştırılmış PASS; AL **FAIL** (iki kopuk ada; strict xfail) |
 | — | gmsh T10, gövdeye uyumlu pürüzsüz yuvarlatma, 3-B tekillik, düzlem şekil değiştirme von Mises | NOT VERIFIED |
 
 ## 1. Recovery çıktı türleri
@@ -180,18 +183,18 @@ Dolu parça bile k = 8'de σ_lim'i aşıyor: örneğin "dolu parça uygulanabili
 tasarımların uyumu da inceltmeyle büyür, çünkü yük boş elemana etkiyen noktasal yüktür; bu satırlar geçerli bir
 parçanın gerilmesi değildir.
 
-### 3.5 Kütüphane düzeltmesi (F1–F5, ön kayıt §6)
+### 3.5 Kütüphane düzeltmesi (Z1–Z5, ön kayıt §6)
 
 `optimization/stress.py`: 0 < a < 1 için x̄^a'nın x̄ = 0'daki türevi artık 0 (değer değişmedi). Entegrasyon dalı
 `integrate/research-round-1`, ön kayıt `3e10309`. Testler `tests/toporlogy/test_stress_zero_density.py`.
 
 | # | Sonuç | Ölçülen |
 |:---|:---|:---|
-| F1 | PASS | toplulaştırılmış gradyan sonlu |
-| F2 | PASS | `VonMises` ve `FailureIndex`, üç biçim, a ∈ {0,5; 0,25}: değerler eski formülle bit düzeyinde aynı |
-| F3 | PASS | x̄ > 0 girdilerinde gradyan bit düzeyinde aynı, x̄ = 0'da tam 0 |
-| F4 | PASS | q = 1 ve penal = 3: gradyan bit düzeyinde aynı |
-| F5 | PASS | iki örnek değiştirilmeden koşuyor; 120 / 752 ve 600 / 601 iterasyon / durum çözümü; dört ham oran §3.2 ile göreli fark 0 (bit düzeyinde aynı); süre 19,9 s / 19,8 s |
+| Z1 | PASS | toplulaştırılmış gradyan sonlu |
+| Z2 | PASS | `VonMises` ve `FailureIndex`, üç biçim, a ∈ {0,5; 0,25}: değerler eski formülle bit düzeyinde aynı |
+| Z3 | PASS | x̄ > 0 girdilerinde gradyan bit düzeyinde aynı, x̄ = 0'da tam 0 |
+| Z4 | PASS | q = 1 ve penal = 3: gradyan bit düzeyinde aynı |
+| Z5 | PASS | iki örnek değiştirilmeden koşuyor; 120 / 752 ve 600 / 601 iterasyon / durum çözümü; dört ham oran §3.2 ile göreli fark 0 (bit düzeyinde aynı); süre 19,9 s / 19,8 s |
 
 Sonuç: K1, öngörüldüğü gibi kendi eşiğinde FAIL (gri farklar 0,098 ve 0,066 > 0,05); strict xfail, neden artık
 ölçülen fark. Deney koduna özgü `ZeroSafeVonMises` kaldırıldı (kütüphane aynı şeyi yapıyor). Yük yolu bulgusu
