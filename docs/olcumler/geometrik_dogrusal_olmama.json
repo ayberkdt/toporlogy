@@ -23,7 +23,8 @@
  ],
  "seconds": {
   "locking": 0.2965262000034272,
-  "cantilever": 354.7254872000012
+  "cantilever": 354.7254872000012,
+  "benchmark": 495.3834689999967
  },
  "cantilever": [
   {
@@ -213,6 +214,46 @@
   "scipy": "1.14.1",
   "torch": "2.5.1+cu121",
   "platform": "Windows-11-10.0.26200-SP0",
-  "date": "2026-11-25T18:50:42+0300"
+  "date": "2026-11-25T19:35:11+0300"
+ },
+ "benchmark": {
+  "P": 0.14919769823028328,
+  "delta_linear_at_P1": 64.34415620261525,
+  "seconds_linear_opt": 3.0374012000029325,
+  "seconds_nonlinear_opt": 486.2188462999984,
+  "linear_run": {
+   "iterations": 150,
+   "termination": "max_iter",
+   "feasible": true
+  },
+  "nonlinear_run": {
+   "iterations": 150,
+   "termination": "max_iter",
+   "feasible": true
+  },
+  "x_L": {
+   "C_NL": 4.124498259218178,
+   "C_L": 1.4322979030107195,
+   "volume": 0.39999969451615075,
+   "mid_deflection_NL": 27.644516692557193,
+   "mid_deflection_L": 9.6,
+   "grey": 0.3300150956965126,
+   "cutoffs": [
+    0.1
+   ]
+  },
+  "x_NL": {
+   "C_NL": 1.0668038604435308,
+   "C_L": 1.5630570386707139,
+   "volume": 0.3999997600404575,
+   "mid_deflection_NL": 7.1502702327011995,
+   "mid_deflection_L": 10.476415234356836,
+   "grey": 0.3158114476820124,
+   "cutoffs": [
+    0.1
+   ]
+  },
+  "V7a_ratio_C_NL": 0.2586505784210828,
+  "V7b_ratio_C_L": 0.9163439769471259
  }
 }
