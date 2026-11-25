@@ -284,3 +284,24 @@ izdüşürülmüş durağanlık (göreli, max \|∇f\|'e bölünmüş) ile kıs�
 
 Bir iterasyonluk tasarımda ölçünün tam 1 çıkması: hacim kısıtı henüz etkin değil (g < −1e-3), λ = 0 ve iç
 noktalarda izdüşürülmüş gradyan gradyanın kendisi.
+
+## 5. Ek ön kayıt (2026-11-25 22:58 +0300, yeni testlerin ve ölçümlerin ilk koşusundan önce)
+
+### 5.1 T3 — eşiğe göre adımlanan negatif kontrol, T4 — burkulma KS'de işaret iptali
+
+T2 sabit h aralığı kullanıyordu; %1'lik hata h · 0,01 · \|g\| (g = ∇f·d), doğru kalıntı c h² (c = r₃ / h₃², T1'in
+asimptotik bölgesinden). İkisi h* = 0,01 \|g\| / c'de eşitlenir. T3 adımları h*'a göre seçer: h_j = h* · 2⁻ʲ,
+j = 3 … 6.
+
+| # | Kontrol | Eşik |
+|:---|:---|:---|
+| T3a | Her yanıt: %1 bozuk gradyanla ardışık üç mertebe | hepsi ∈ [0,8, 1,2] |
+| T3b | Aynı adımlarda doğru kalıntı / bozuk kalıntı | ≤ 0,2 |
+| T4 | Burkulma KS: işaretli kalıntı s(h) = f(x + hd) − f − h g'nin eğriliği c_s = s(h₃) / h₃² ile 0,01 g aynı işaretli ve iptal noktası h_c = 0,01 g / c_s, T2'deki sıçramanın bulunduğu [h₆, h₄] = [7,8e-4, 3,1e-3] aralığında | geçer |
+
+### 5.2 O11, O12 — PDE filtresi ve GMG kaba ızgarası (karar kuralı)
+
+İkisi de SPD (I + r² L; kaba ızgara K). Ölçüm: aynı matris, MMD (bugünkü) ve iç içe bölme sırası, çarpanlara ayırma
+süresi. **Karar kuralı:** temsilî boyutta (PDE filtresi 3-B 60 × 30 × 30; GMG kaba ızgarası `direct_below` = 4000
+elemana karşılık gelen en büyük kaba ızgara) hızlanma ≥ 1,3× ise sıra uygulanır ve sonuç eski yolla ≤ 1e-12 göreli
+aynı olmalı; değilse değişmez ve ölçüm kayda geçer.
