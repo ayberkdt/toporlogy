@@ -402,3 +402,17 @@ koordinatlardan; düzlem gerilme λ* = Eν/(1 − ν²).
 | X4 | Konsol çözümü (sol yüz ankastre, uç yükü), scikit-fem'in `condense` + `solve`'u ile | ‖ΔU‖∞ ≤ 1e-10 · ‖U‖∞ |
 
 scikit-fem kurulu değilse testler NOT VERIFIED olarak atlanır.
+
+### 8.1 Sonuçlar (ilk koşu) [Ö]
+
+| # | 2-B (Q4) | 3-B (H8) | Eşik | Sonuç |
+|:---|---:|---:|---:|:---|
+| X1 rijitlik | 4,6e-16 | 2,6e-16 | 1e-12 | PASS |
+| X2 kütle | 3,0e-16 | 5,8e-16 | 1e-12 | PASS |
+| X3 iletim | 2,9e-16 | 2,3e-16 | 1e-12 | PASS |
+| X4 konsol çözümü | 2,5e-15 | 7,0e-15 | 1e-10 | PASS |
+
+Kütüphanenin Q4 ve H8 rijitlik, kütle ve iletim matrisleri ile doğrusal çözümü, başka bir ekibin yazdığı scikit-fem ile
+yuvarlama düzeyinde aynı. scikit-fem `dev` ekstralarına eklendi; CI'da da koşar. Uyumsuz modlu elemanlar (Q4IM,
+H8IM), yön alanları, gerilme ve burkulma scikit-fem'le karşılaştırılmadı (bunlar §1 ve §3'te yalnız bağımsız ikinci
+uygulamayla karşılaştırıldı).

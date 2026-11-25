@@ -17,7 +17,8 @@ plot = ["matplotlib>=3.8"]
 post = ["pyvista>=0.43", "vtk>=9.2", "numba>=0.59"]   # numba: post/sdf.py, post/checks.py (module-level import)
 fast = ["pypardiso>=0.4"]
 mesh = ["gmsh>=4.11"]
-dev = ["pytest>=8", "pytest-timeout", "hypothesis>=6", "mypy>=1.10", "ruff>=0.5"]
+dev = ["pytest>=8", "pytest-timeout", "hypothesis>=6", "mypy>=1.10", "ruff>=0.5",
+       "scikit-fem>=12"]   # scikit-fem: independent cross-check (tests/toporlogy/test_skfem_crosscheck.py)
 
 [project.scripts]
 toporlogy = "toporlogy.execution.cli:main"
