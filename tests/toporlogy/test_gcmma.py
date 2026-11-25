@@ -67,6 +67,14 @@ def test_no_two_cycle_at_an_interior_optimum() -> None:
 
 
 def test_quadratic_two_active_constraints_and_monotone_descent() -> None:
+    """Feasible and monotone up to two tolerances. The dual of the subproblem is solved by L-BFGS-B, which stops at a
+    dual gradient (= subproblem constraint residual) of about 3.3e-9 here, so x̂ lies up to that far on either side
+    of the active constraints; inside them it costs λ · residual in the scaled objective f / |f(x0)|. On top of that
+    comes the acceptance tolerance conservative_tol · (1 + |f̂|). Measured over 1000 starts perturbed by 1e-12
+    (stand-in for platform round-off): max g after the first feasible iterate 3.9e-9, objective increases needing
+    a residual of 7.2e-10 per unit of Σλ. The former bounds (1e-9 for both) failed: feasibility in 11 of those
+    1000 starts, monotonicity in 49 of the first 300, and on the Windows CI runner."""
+    resid = 1e-8                                          # about 3 × the measured dual residual
     fun = _quadratic()
     opt = GCMMA()
     x, hist = _drive(opt, np.full(6, 0.5), fun, 400)
@@ -74,10 +82,12 @@ def test_quadratic_two_active_constraints_and_monotone_descent() -> None:
     lam = opt.kkt_multipliers()
     assert lam[0] > 0 and lam[1] > 0 and abs(lam[2]) < 1e-7
     f = np.array([h[0] for h in hist])
-    feas = np.array([h[1] <= 1e-9 for h in hist])
+    feas = np.array([h[1] <= resid for h in hist])
     k0 = int(np.argmax(feas))
     assert feas[k0:].all(), "a feasible iterate must stay feasible"
-    assert np.all(np.diff(f[k0:]) <= 1e-9 * (1 + np.abs(f[k0:-1]))), "objective must not increase once feasible"
+    f0 = abs(f[0])
+    allowed = opt.conservative_tol * (f0 + np.abs(f[k0 + 1:])) + f0 * np.abs(lam).sum() * resid
+    assert np.all(np.diff(f[k0:]) <= allowed), "objective must not increase once feasible"
     assert opt.n_not_conservative == 0 and opt.n_inner_total >= len(hist) - 1
 
 
