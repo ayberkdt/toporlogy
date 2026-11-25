@@ -173,3 +173,115 @@ def test_orthotropic_column_buckles_with_its_axial_modulus():
         err.append(abs(lam[1] / lam[0] - 1))
     print(f"\n  orthotropic / isotropic E/4 column, 4 / 8 / 16 across: {np.round(err, 5)}")
     assert err[2] <= 5e-3 and err[0] / err[1] >= 2.5 and err[1] / err[2] >= 2.5
+
+
+# ================================================================================ singular stresses
+def _wall(n: int, exclude_r: float | None = None):
+    """The solid wall of Ferrari, Sigmund & Guest (2021) §5.2 on an n × n mesh (n = 40 k; supported node columns of
+    the 320 mesh in units of n/40), opening void, x-load 1e-2 on the left edge. Returns λ1, its localisation and
+    the energy share of mode 1 within 0.02 of a clamped-patch end."""
+    h = 1.0 / n
+    d = T.Domain((n, n), h)
+    t = n // 40
+    ix, iy = np.indices((n, n))
+    row, col = n - 1 - iy, ix
+    void = (row >= 2 * n // 5 - 1) & (col >= 2 * n // 5 - 1) & (col <= n - n // 5 - 1)
+    x = np.where(void, 0.0, 1.0).ravel()
+    X = d.node_coords()
+    xi = np.rint(X[:, 0] / h).astype(int)
+    cols = np.r_[0:t + 1, 2 * n // 5 - t - 1:2 * n // 5, 4 * n // 5:4 * n // 5 + t + 1, n - t:n + 1]
+    fixed = d.dofs(np.flatnonzero(np.isclose(X[:, 1], 0) & np.isin(xi, cols)))
+    left = np.flatnonzero(np.isclose(X[:, 0], 0))
+    F = d.load_vector()
+    w = np.ones(len(left))
+    w[[0, -1]] = 0.5
+    F[2 * left, 0] = 1e-2 * w / w.sum()
+    m = T.Elasticity(d, fixed, 0.3)
+    E = 1e-6 + x ** 3 * (1 - 1e-6)
+    U = m.solve_numpy(E, F)[:, 0]
+    c = d.element_centers()
+    ends = np.array([t, 2 * n // 5 - t - 1, 2 * n // 5 - 1, 4 * n // 5, 4 * n // 5 + t, n - t]) * h
+    dist = np.min(np.hypot(c[:, 0][:, None] - ends[None, :], c[:, 1][:, None]), axis=1)
+    EG = x ** 3 if exclude_r is None else x ** 3 * (dist >= exclude_r)
+    lb = LinearBuckling(m)
+    mu, modes = lb.modes(E, EG, U, 2)
+    _, kE = lb.mode_forms(modes)
+    en = E * kE[:, 0]
+    return 1 / mu[0], lb.localization(E, modes)[0], float(en[dist < 0.02].sum() / en.sum())
+
+
+def test_singular_stress_mode_does_not_converge_and_is_flagged():
+    """The solid wall's first mode sits at the end of a clamped patch (singular stress): under refinement λ1 keeps
+    falling (no mesh limit) and the mode's energy concentrates (localisation rising). A global mode (Euler column)
+    keeps its energy spread. Measured 2026-11-25: λ1 2.852, 2.106, 1.602; localisation 0.881, 0.921, 0.954."""
+    lam, loc, near = zip(*(_wall(n) for n in (40, 80, 160)))
+    print(f"\n  wall lambda1 {np.round(lam, 4)}, localisation {np.round(loc, 3)}, energy near a clamp end "
+          f"{np.round(near, 3)}")
+    assert lam[0] / lam[1] > 1.2 and lam[1] / lam[2] > 1.2
+    assert loc[0] < loc[1] < loc[2] and loc[2] > 0.9 and near[2] > 0.7
+    d, m, F = _column((4, 60))
+    E = np.full(d.n_active, 1000.0)
+    lb = LinearBuckling(m)
+    _, modes = lb.modes(E, E, m.solve_numpy(E, F)[:, 0], 1)
+    print(f"  Euler column localisation {lb.localization(E, modes)[0]:.3f}")
+    assert lb.localization(E, modes)[0] < 0.1
+
+
+def test_excluding_stress_stiffness_moves_the_singular_mode():
+    """With no stress stiffness within 0.05 of the clamped-patch ends the clamp-end mode disappears (its energy
+    there drops) and λ1 rises; the mode then localises at the opening corner (moved, not removed: module notes)."""
+    lam0, _, near0 = _wall(80)
+    lam1, loc1, near1 = _wall(80, exclude_r=0.05)
+    print(f"\n  wall 80²: lambda1 {lam0:.4f} -> {lam1:.4f} with exclusion; energy near clamp ends {near0:.3f} -> "
+          f"{near1:.3f}; localisation {loc1:.3f}")
+    assert lam1 > 1.5 * lam0 and near1 < 0.01 and near0 > 0.5
+
+
+# ================================================================================ incompatible modes in K_G
+def _fs_column_error(nx: int, element: str, modes_in_kg: bool = True) -> float:
+    """Ferrari & Sigmund (2019) column (Lx 10, Ly 1, t 0.005, E 2e11, ν 0, f0 2.5e5): (λ1 f0 − Pc) / Pc."""
+    ny = nx // 10
+    d = T.Domain((nx, ny), 10.0 / nx, thickness=0.005)
+    X = d.node_coords()
+    tip = np.flatnonzero(np.isclose(X[:, 0], 10.0))
+    w = np.ones(len(tip))
+    w[np.isclose(X[tip, 1], 0) | np.isclose(X[tip, 1], 1)] = 0.5
+    F = d.load_vector()
+    F[2 * tip, 0] = -2.5e5 * w / w.sum()
+    m = T.Elasticity(d, d.dofs(np.flatnonzero(X[:, 0] == 0)), 0.0, element=element)
+    E = np.full(d.n_active, 2e11)
+    mu, _ = LinearBuckling(m, modes_in_kg=modes_in_kg).modes(E, E, m.solve_numpy(E, F)[:, 0], 2)
+    return (2.5e5 / mu[0] - 2.05617e6) / 2.05617e6
+
+
+def test_modes_in_kg_improve_coarse_meshes():
+    """Q4IM with the condensed modes in K_G is closer to the converged 2-D value (Richardson from 80×8 and 160×16)
+    than with the compatible field only, on 20×2 and 40×4. Measured 2026-11-25: −0.00561 / −0.00511 (20×2); the
+    scratch code with rectangular elements gave −0.005614 for the same formulation."""
+    e80, e160 = _fs_column_error(80, "Q4IM"), _fs_column_error(160, "Q4IM")
+    limit = e160 + (e160 - e80) / 3
+    for nx in (20, 40):
+        new, old = _fs_column_error(nx, "Q4IM"), _fs_column_error(nx, "Q4IM", modes_in_kg=False)
+        print(f"\n  column {nx}x{nx // 10}: modes in K_G {new:.5f}, compatible only {old:.5f}, limit {limit:.5f}")
+        assert abs(new - limit) < abs(old - limit)
+    assert abs(_fs_column_error(20, "Q4IM") - (-0.005614)) <= 1e-5
+
+
+def test_gradient_q4im_with_modes_in_kg():
+    d = T.Domain((6, 18), 1.0, thickness=0.8)
+    X = d.node_coords()
+    top = np.flatnonzero(np.isclose(X[:, 1], 18))
+    F = d.load_vector()
+    F[2 * top + 1, 0] = -1.0 / len(top)
+    F[2 * top[:1], 0] = 0.02
+    resp = BucklingKS(n_modes=4, rho=20.0, scale=1.0)
+    st = T.Study(d, T.Elasticity(d, d.dofs(np.flatnonzero(X[:, 1] == 0)), 0.3, element="Q4IM"), F,
+                 T.standard_chain(d, 1.5, beta=2.0), T.SIMP(d, E0=50.0), T.Compliance(),
+                 [T.Constraint(T.Volume(), 0.6), T.Constraint(resp, 1.0, scale=1.0)], T.MMA())
+    x0 = 0.45 + 0.4 * np.random.default_rng(12).random(d.n_design)
+    r1 = study_gradcheck(st, x0, 1, n_dirs=4, h=2e-4, seed=2)
+    r2 = study_gradcheck(st, x0, 1, n_dirs=4, h=4e-4, seed=2)
+    err = max(abs((4 * a["fd"] - b["fd"]) / 3 - a["ad"]) / max(abs(a["ad"]), 1e-300)
+              for a, b in zip(r1["directions"], r2["directions"], strict=True))
+    print(f"\n  Q4IM buckling KS gradient: {err:.2e}")
+    assert err <= 1e-6

@@ -185,3 +185,59 @@ koşulup 1. döngüdeki λ1'in okunması. Bu oturumda denenemedi: bu makinedeki 
 `matlab -batch` ile "Licensing error: -10,32" verdi, Octave kurulu değil. 1,303 çıkarsa fark makaledeki sayıda ya
 da basılmamış kurulumdadır; 3,15 çıkarsa aktarımda bulunamamış bir fark vardır. (2) Bağımsız bir burkulma sayısı
 için tam kurulumu basılı başka bir kaynak (ör. Ferrari & Sigmund 2019, arXiv:1809.05300; okunmadı).
+
+## 6. İkinci tur (25 Kasım 2026, dal `feat/material-models`)
+
+Soru: yeni fizik (`malzeme_modelleri.md`) referanslarla olan farkı kapattı mı; kapatmadıysa neden? Ek olarak yeni
+referanslar. Ön kayıt: oturum notlarındaki `pr09b_published_values_preregistration.md`, "Round 2" bölümleri; R1
+16:58'de, R2 17:11'de, ilgili koşulardan önce yazıldı.
+
+**Duvar (topBuck250, 3,15): yeni fizik farkı kapatmadı; kapatamaz da [Ö].** Yeni dalda yeniden koşuldu: toporlogy
+1,201863, aktarım 1,303072; değişiklik yok. Neden ölçüldü: katı duvarın ağa göre yakınsayan bir λ1'i yok.
+
+| Ağ | λ1 (Q4) | λ1 (Q4IM) | Mod 1 enerjisinin tutulu bölge kenarına 0,02 içindeki payı |
+|---:|---:|---:|---:|
+| 40² | 2,852 | — | 0,49 |
+| 80² | 2,106 | 1,946 | 0,66 |
+| 160² | 1,602 | 1,492 | 0,79 |
+| 320² | 1,202 | 1,117 | 0,93 |
+
+Satırlar ağ incelme sırasıyla. Birinci mod, sol kapı çerçevesinin tutulu bölgesinin bittiği noktada (x ≈ 0,37,
+alt kenar) toplanıyor. Orada doğrusal elastik gerilme tekil, ağ inceldikçe λ1 → 0. O bölgede gerilme rijitliği
+kaldırılınca mod önce kapı boşluğunun içe dönük köşesine, sonra kaldırılan bölgenin kenarına kayıyor. Sonuç:
+basılı tek bir λ1, kullanılan ağın bir özelliği; bu referans bir burkulma kodunu doğrulayamaz. Bu, yazarların
+kendi kodu için de geçerli.
+
+**Gerilme (Deng vd.): okuma örneklem dışında doğrulandı [Ö].** "initial = ilk MMA adımından sonraki değer"
+okuması iki 2-B vakadan türetilmişti. 3-B L-braket (100 × 100 × 30, yayımlanan 46,12) için ön kayda alındı
+(sınır %2) ve sonra koşuldu: x0'da 94,115, tek MMA adımından sonra 45,806, fark −%0,68 → **PASS**. Çözücü:
+`ElasticityGMG`, CUDA, 948 693 DOF, 17 s. Test: `test_deng_3d_lbracket_out_of_sample` (yavaş; CUDA yoksa atlanır).
+
+**Yeni referans: Ferrari & Sigmund (2019), arXiv:1809.05300v2 (tam metin okundu).** Ucundan basılan konsol kolon
+(Lx = 10, Ly = 1, t = 0,005, E = 2e11, ν = 0, Pc = 2,05617e6, f0 = 2,5e5). Şekil 1, yedi ağda Q4 ve Q6 hatalarını
+veriyor. toporlogy'nin ızgarası kare elemanlı; bu ağlardan yalnız 20 × 2 kare.
+
+| Ölçüt (ön kayıtlı) | toporlogy | Yayımlanan | Sınır | Karar |
+|:---|---:|---:|---:|:---|
+| R1a Q4, 20 × 2 | 0,118684 | 0,119 | ±5e-4 | PASS |
+| R1b Q4IM (Q6), 20 × 2 | −0,005107 | −0,0066 | ±5e-5 | FAIL |
+| R1c Q4IM, 20 × 2 … 160 × 16, \|e\| | ≤ 6,9e-3 | — | ≤ 1e-2 | PASS |
+
+Ölçütler ön kayıttaki sırayla. R1b'nin ön kayıt dışı incelemesi dikdörtgen elemanlı ayrı bir küçük kodla yapıldı
+(bütün ağlar hesaplanabilsin diye). Bu kod beş kaba Q4 satırını basılı basamaklarda veriyor (0,4939; 0,4933;
+0,1187; 0,1181; 0,0243). İki ince satırı ve Q6 sütununu ise hiçbir varyantla vermiyor. Benim Q4 ve Q6 dizilerim
+aynı limite (≈ −0,0070) ikinci mertebeden yakınsıyor; makalede en ince ağda Q4 ile Q6 hâlâ 3e-3 farklı. Bu
+kaynaktan kullanılabilir kısım kaba Q4 satırları.
+
+Bu inceleme bir fizik iyileştirmesi verdi: uyumsuz mod elemanlarında modlar K_G'ye de giriyor
+(`LinearBuckling(modes_in_kg=True)`, varsayılan). 20 × 2'de Q4IM −0,005107 → −0,00561, yakınsak değere göre hata
+1,9e-3 → 1,4e-3. Q4IM 2-B'ye yeni eklendi; Q4 ise saf eğilmede %11 kilitleniyor.
+
+**Denenmeyen adaylar (kurulum metinde tam değil):** FS2019 çerçeve örneği (J0 = 4,714e-3, λ1,0 = 0,662) ve FS2020,
+arXiv:1909.13585 (J(0) = 2,501e-3, λ1(0) = 0,597). Mafsal ve yük düğümleri, düzgün tasarımın yoğunluğu ve
+geometri yalnız şekillerde; ikincisinde ayrıca kaba seviyeden yaklaşık modlar kullanılıyor. Birden çok yorumu
+deneyip tutanı seçmek sonuç avcılığı olacağından koşulmadı (UNVERIFIED).
+
+**Durum özeti.** Gerilmede iki 2-B ve bir 3-B yayımlanmış sayı açıklandı; sonuncusu örneklem dışında, ön kayıtla.
+Burkulmada bir yayımlanmış FE sayısı (FS2019, Q4, 20 × 2) ön kayıtla tuttu. Duvar sayısının ise doğrulama
+referansı olamayacağı ölçüldü.

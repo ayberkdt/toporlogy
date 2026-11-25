@@ -180,13 +180,16 @@ def register_responses() -> None:
 
     def buckling(ctx: BuildContext, load_factor: float | None = None, n_modes: int = 6, rho: float = 50.0,
                  case: int = 0, penal_g: float = 3.0, scale: float | None = None,
-                 preload_case: int | None = None) -> Any:
+                 preload_case: int | None = None, exclude: Any = None) -> Any:
         """KS upper bound of 1 / lambda_1 (linear buckling of load case `case`; preload_case: a case whose load
         stays fixed while `case` is scaled); with load_factor the constraint lambda_1 >= load_factor is this
-        response <= 1 / load_factor (default upper and scale). Plain elasticity physics with the direct solver
-        only."""
+        response <= 1 / load_factor (default upper and scale). exclude: shapes whose elements carry no stress
+        stiffness (ends of clamped patches, re-entrant corners, point loads: singular stresses localise the mode
+        there). Plain elasticity physics with the direct solver only."""
         from toporlogy.optimization.buckling import BucklingKS
-        r = BucklingKS(n_modes, rho, case, penal_g, scale, E0=ctx.material["E0"], preload_case=preload_case)
+        mask = None if not exclude else _region_mask(exclude, ctx.domain)
+        r = BucklingKS(n_modes, rho, case, penal_g, scale, E0=ctx.material["E0"], preload_case=preload_case,
+                       exclude=mask)
         if load_factor is not None:
             if not load_factor > 0:
                 raise ValueError("load_factor > 0 is required")

@@ -5,7 +5,11 @@
 * ``H8IM``: the same brick with the nine Wilson incompatible modes ``1 − ξ², 1 − η², 1 − ζ²`` per displacement
   component, statically condensed (Taylor, Beresford & Wilson 1976; Cook et al. 2002 §6.7). All elements are the
   same cube, so the Jacobian is constant and the element passes the patch test without Taylor's correction.
-* ``Q4``: bilinear plane-stress square, closed form of top88 (Andreassen et al. 2011, lines 8-12).
+* ``Q4``: bilinear plane-stress square, closed form of top88 (Andreassen et al. 2011, lines 8-12). Locks in
+  bending like H8 (Ferrari & Sigmund 2019, Fig. 1, report +49 % on the Euler load of a column 4 elements thick).
+* ``Q4IM``: the bilinear square with Wilson's two incompatible modes ``1 − ξ², 1 − η²`` per component ("Q6",
+  Wilson et al. 1973), statically condensed exactly as H8IM; constant Jacobian, so the patch test holds. It
+  represents pure bending of the square exactly (``tests/toporlogy/test_material.py``).
 
 Any other elasticity (orthotropic, rotated, plane strain; :mod:`toporlogy.core.material`) goes through
 :func:`element_matrix_from_D`: the same 2×2(×2) Gauss rule with the given unit-modulus D (H8IM condensed as above).
@@ -28,7 +32,11 @@ import numpy as np
 from toporlogy.references import cite
 
 __all__ = ["H8_CORNER", "Q4_CORNER", "D_iso", "D_plane_stress", "D_plane_strain", "ke_h8", "ke_h8_from_D", "ke_q4",
-           "ke_q4_from_D", "element_matrix", "element_matrix_from_D", "b_centroid_h8", "b_centroid_q4"]
+           "ke_q4_from_D", "ke_q4im_from_D", "element_matrix", "element_matrix_from_D", "b_centroid_h8",
+           "b_centroid_q4", "ELEMENTS_2D", "ELEMENTS_3D"]
+
+ELEMENTS_2D = ("Q4", "Q4IM")
+ELEMENTS_3D = ("H8", "H8IM")
 
 H8_CORNER = np.array([[-1, -1, -1], [1, -1, -1], [1, 1, -1], [-1, 1, -1],
                       [-1, -1, 1], [1, -1, 1], [1, 1, 1], [-1, 1, 1]], dtype=float)
@@ -157,6 +165,41 @@ def ke_q4_from_D(D: np.ndarray) -> np.ndarray:
     return 0.5 * (K + K.T)
 
 
+def _B_unit_q4(p: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    """(B_u (3, 8), B_α (3, 4)) of the unit square at natural point p; α = [a1_u, a1_v, a2_u, a2_v] are the
+    amplitudes of the modes 1 − ξ², 1 − η² (∂/∂x = 2 ∂/∂ξ)."""
+    s = Q4_CORNER
+    a = 1 + s * p
+    dN = 0.25 * np.vstack([s[:, 0] * a[:, 1], s[:, 1] * a[:, 0]]) * 2.0
+    dP = np.diag(-2.0 * p * 2.0)                          # ∂(1 − ξ²)/∂x, ∂(1 − η²)/∂y; cross terms are 0
+
+    def bmat(g: np.ndarray) -> np.ndarray:
+        n = g.shape[1]
+        B = np.zeros((3, 2 * n))
+        B[0, 0::2] = g[0]
+        B[1, 1::2] = g[1]
+        B[2, 0::2] = g[1]
+        B[2, 1::2] = g[0]
+        return B
+    return bmat(dN), bmat(dP)
+
+
+@cite("wilson_1973", note="Q6: bilinear square with two incompatible modes per component, condensed")
+def ke_q4im_from_D(D: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    """Unit-square Q4 with incompatible modes (``Q4IM``), t = 1, for a unit-modulus 3 × 3 D: (K (8, 8), R (4, 8))
+    with the mode amplitudes α = R u."""
+    D = _check_D(D, 3)
+    Kuu, Kua, Kaa = np.zeros((8, 8)), np.zeros((8, 4)), np.zeros((4, 4))
+    for p in ((-_G, -_G), (_G, -_G), (_G, _G), (-_G, _G)):
+        Bu, Ba = _B_unit_q4(np.asarray(p))
+        Kuu += Bu.T @ D @ Bu * 0.25
+        Kua += Bu.T @ D @ Ba * 0.25
+        Kaa += Ba.T @ D @ Ba * 0.25
+    R = -np.linalg.solve(Kaa, Kua.T)
+    K = Kuu + Kua @ R
+    return 0.5 * (K + K.T), R
+
+
 def b_centroid_h8() -> np.ndarray:
     """Strain matrix (6, 24) at the unit-cube centroid (exact for H8 and H8IM: the mode derivatives vanish there)."""
     return _B_unit_h8(np.zeros(3))[0]
@@ -177,20 +220,20 @@ def b_centroid_q4() -> np.ndarray:
 def element_matrix_from_D(dim: int, element: str, D: np.ndarray) -> np.ndarray:
     """Unit-modulus element stiffness for a given elasticity matrix D (6 × 6 in 3-D, 3 × 3 in 2-D)."""
     if dim == 3:
-        if element not in ("H8", "H8IM"):
+        if element not in ELEMENTS_3D:
             raise ValueError("3-D element: H8 | H8IM")
         return np.asarray(ke_h8_from_D(D, element)[0], float)
-    if element != "Q4":
-        raise ValueError("2-D element: Q4")
-    return ke_q4_from_D(D)
+    if element not in ELEMENTS_2D:
+        raise ValueError("2-D element: Q4 | Q4IM")
+    return ke_q4_from_D(D) if element == "Q4" else ke_q4im_from_D(D)[0]
 
 
 def element_matrix(dim: int, element: str, nu: float) -> np.ndarray:
     """Unit-modulus element stiffness: 3-D "H8" | "H8IM" (24×24); 2-D "Q4" (8×8)."""
     if dim == 3:
-        if element not in ("H8", "H8IM"):
+        if element not in ELEMENTS_3D:
             raise ValueError("3-D element: H8 | H8IM")
         return np.asarray(ke_h8(nu, element)[0], float)
-    if element != "Q4":
-        raise ValueError("2-D element: Q4")
-    return np.asarray(ke_q4(nu), float)
+    if element not in ELEMENTS_2D:
+        raise ValueError("2-D element: Q4 | Q4IM")
+    return np.asarray(ke_q4(nu), float) if element == "Q4" else ke_q4im_from_D(D_plane_stress(nu))[0]

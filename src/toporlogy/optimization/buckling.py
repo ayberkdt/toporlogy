@@ -69,12 +69,15 @@ def _analysis(physics: Any) -> LinearBuckling:
 
 def inverse_load_factors(ctx: EvalContext, n_modes: int = 6, case: int = 0, penal_g: float = 3.0,
                          E0: float | None = None, preload_case: int | None = None,
-                         cluster_tol: float = 1e-3, density_threshold: float = 0.5) -> torch.Tensor:
+                         cluster_tol: float = 1e-3, density_threshold: float = 0.5,
+                         exclude: np.ndarray | None = None) -> torch.Tensor:
     """μ_1 ≥ … ≥ μ_n (differentiable, module notes) of load case ``case`` (with ``preload_case`` held fixed);
-    cached in the context per setting. Diagnostics go to ``ctx.extra[<key> + ":diag"]``."""
+    cached in the context per setting. Diagnostics go to ``ctx.extra[<key> + ":diag"]``. ``exclude``: bool mask
+    (domain shape) of elements without stress stiffness (singular points; see :mod:`toporlogy.fem.buckling`)."""
     if ctx.U is None:
         raise ValueError("buckling needs U")
-    key = f"buckling_mu:{int(n_modes)}:{int(case)}:{float(penal_g)!r}:{E0!r}:{preload_case!r}"
+    key = (f"buckling_mu:{int(n_modes)}:{int(case)}:{float(penal_g)!r}:{E0!r}:{preload_case!r}:"
+           f"{None if exclude is None else id(exclude)}")
     hit = ctx.extra.get(key)
     if hit is not None:
         return hit
@@ -91,6 +94,11 @@ def inverse_load_factors(ctx: EvalContext, n_modes: int = 6, case: int = 0, pena
     E = ctx.E.reshape(-1)[act]
     frac = torch.as_tensor(m.domain.frac.ravel()[m.elements], dtype=ctx.xphys.dtype)
     EG = float(e0) * ctx.xphys.reshape(-1)[act].clamp_min(0.0) ** float(penal_g) * frac
+    if exclude is not None:
+        ex = np.asarray(exclude, bool)
+        if ex.shape != tuple(m.domain.shape):
+            raise ValueError(f"exclude has shape {ex.shape}, the domain {tuple(m.domain.shape)}")
+        EG = EG * torch.as_tensor(~ex.ravel()[m.elements], dtype=EG.dtype)
     u = ctx.U[:, case]
     En, EGn = E.detach().numpy(), EG.detach().numpy()
     KG0 = None
@@ -108,7 +116,8 @@ def inverse_load_factors(ctx: EvalContext, n_modes: int = 6, case: int = 0, pena
                           stacklevel=3)
     xa = ctx.xphys.reshape(-1)[act].detach().numpy()
     ctx.extra[key + ":diag"] = {"cluster_cut": cut, "mu_next": float(mu_all[-1]),
-                                "low_density_share": lb.low_density_share(En, modes, xa, density_threshold)}
+                                "low_density_share": lb.low_density_share(En, modes, xa, density_threshold),
+                                "localization": lb.localization(En, modes)}
     C, kE = lb.mode_forms(modes)
     edof = torch.as_tensor(m.edof, dtype=torch.long)
     ue = u[edof]                                                                   # (na, nloc)
@@ -191,6 +200,9 @@ class BucklingKS(Response):
         Fixed KS scale s; None = the largest μ of the first evaluation.
     preload_case : int, optional
         Load case held fixed while ``case`` is scaled (module notes); None = no preload.
+    exclude : bool array of the domain shape, optional
+        Elements without stress stiffness (around supports ends, re-entrant corners, point loads; module notes of
+        :mod:`toporlogy.fem.buckling`: this moves a singular localisation, it does not remove it).
 
     Attributes
     ----------
@@ -200,33 +212,40 @@ class BucklingKS(Response):
         Share of each mode's strain energy in elements with x̄ < 0.5 (near 1: spurious mode in grey material).
     last_cluster_cut : bool
         The last aggregated mode and the next one form a cluster (a BucklingClusterWarning was issued).
+    last_localization : numpy.ndarray
+        Share of each mode's strain energy in the 1 % most loaded elements (rising with mesh refinement: the mode is
+        driven by a stress singularity, λ is then a mesh property).
     """
 
     needs = frozenset({"u"})
 
     def __init__(self, n_modes: int = 6, rho: float = 50.0, case: int = 0, penal_g: float = 3.0,
                  scale: float | None = None, E0: float | None = None, name: str = "buckling",
-                 preload_case: int | None = None) -> None:
+                 preload_case: int | None = None, exclude: np.ndarray | None = None) -> None:
         if n_modes < 1 or not rho > 0 or penal_g <= 0:
             raise ValueError("need n_modes >= 1, rho > 0 and penal_g > 0")
         self.n_modes, self.rho, self.case, self.penal_g = int(n_modes), float(rho), int(case), float(penal_g)
         self.E0, self.name = E0, name
         self.preload_case = None if preload_case is None else int(preload_case)
+        self.exclude = None if exclude is None else np.asarray(exclude, bool)
         self.fixed_scale = scale
         self.scale: float | None = scale
         self.last_load_factors: np.ndarray = np.zeros(0)
         self.last_low_density_share: np.ndarray = np.zeros(0)
         self.last_cluster_cut = False
+        self.last_localization: np.ndarray = np.zeros(0)
 
     def reset_scale(self) -> None:
         self.scale = self.fixed_scale
 
     def __call__(self, ctx: EvalContext) -> torch.Tensor:
-        mu = inverse_load_factors(ctx, self.n_modes, self.case, self.penal_g, self.E0, self.preload_case)
+        mu = inverse_load_factors(ctx, self.n_modes, self.case, self.penal_g, self.E0, self.preload_case,
+                                  exclude=self.exclude)
         diag = ctx.extra[f"buckling_mu:{self.n_modes}:{self.case}:{self.penal_g!r}:{self.E0!r}:"
-                         f"{self.preload_case!r}:diag"]
+                         f"{self.preload_case!r}:{None if self.exclude is None else id(self.exclude)}:diag"]
         self.last_low_density_share = np.asarray(diag["low_density_share"])
         self.last_cluster_cut = bool(diag["cluster_cut"])
+        self.last_localization = np.asarray(diag["localization"])
         md = mu.detach().numpy()
         with np.errstate(divide="ignore"):
             self.last_load_factors = np.where(md > 0, 1.0 / np.where(md > 0, md, 1.0), np.inf)

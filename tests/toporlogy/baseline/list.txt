@@ -97,7 +97,7 @@ physics  - physics model (state solve) (3)
 
 response  - objective or constraint response (18)
   buckling                     load_factor=null  n_modes=6  rho=50.0  case=0  penal_g=3.0
-                               scale=null  preload_case=null
+                               scale=null  preload_case=null  exclude=null
   compliance                   weights=null
   conduction_connectivity      sink=null  kmin_ratio=0.001  penal=3.0  aggregate=pnorm  p=8.0
                                eta=0.7  reference=solid

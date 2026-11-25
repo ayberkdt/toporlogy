@@ -22,13 +22,26 @@ gradients, 2-point Gauss rule per axis):
 with ``s_G = 1`` in 3-D (h³ · h⁻² · h⁻¹) and ``thickness / h`` in 2-D. ``E_G,e`` is the modulus used for the stress
 of element e; it is a separate argument because the standard remedy against spurious buckling modes in void regions
 is to interpolate it WITHOUT the lower bound E_min of the stiffness (void elements then carry no stress stiffness).
-The element matrix is linear in u_e. For H8IM the incompatible modes are condensed in K only; K_G uses the compatible
-trilinear field (the same choice as for the mass matrix in :mod:`toporlogy.fem.modal`).
+The element matrix is linear in u_e. Incompatible-mode elements (H8IM, Q4IM): by default (``modes_in_kg``) the
+recovered modes α = R u_e enter K_G consistently, in the stress σ = D (B_u + B_α R) u_e and in the displacement
+gradient of the mode, K_G,e = Tᵀ K_G,ext T with T = [I; R]. Measured on the column of Ferrari & Sigmund (2019)
+with a scratch code: the error of λ1 against the converged 2-D value falls by about a quarter on coarse meshes
+(20 × 2: 1.9e-3 → 1.4e-3; ``docs/olcumler/malzeme_modelleri.md``). ``modes_in_kg=False`` uses the compatible
+field only (the behaviour before 25 Nov 2026, as the mass matrix in :mod:`toporlogy.fem.modal`).
 
 Preload. With a load P0 that stays fixed and a load P1 that is scaled, buckling is
 ``(K + K_G(u0) + λ K_G(u1)) φ = 0``; :meth:`LinearBuckling.modes` takes ``KG0 = K_G(u0)`` and solves
 ``(−K_G(u1)) φ = μ (K + K_G(u0)) φ``. It requires K + K_G(u0) positive definite, i.e. the preload alone must not
 buckle (λ0 > 1), and checks that first (one extra eigenvalue).
+
+Singular stresses. At the end of a partly clamped edge, at a re-entrant corner or at a point load the linear
+elastic stress is unbounded; its compressive part gives K_G an unbounded local term, and the first buckling mode
+then localises there with λ → 0 as the mesh is refined: such a λ is a property of the mesh, not of the structure
+(measured on the wall of Ferrari, Sigmund & Guest 2021: λ1 2.85, 2.11, 1.60, 1.20 at 40², 80², 160², 320²;
+``docs/olcumler/malzeme_modelleri.md``). :meth:`LinearBuckling.localization` measures it (energy share of the most
+loaded elements; rising under refinement = singular), and the responses accept ``exclude``, elements whose stress
+stiffness is dropped (E_G = 0) around such points. Excluding moves the localisation to the edge of the excluded
+zone rather than removing it (measured on the same wall), so λ then depends on the zone size: report it.
 
 Diagnostics. :meth:`LinearBuckling.low_density_share` is the share of each mode's strain energy φᵀKφ held by
 elements below a density threshold; a share near 1 flags a spurious mode localised in grey or void material (the
@@ -113,9 +126,11 @@ class LinearBuckling:
     ----------
     model : Elasticity
         Plain elasticity with axis-aligned fixed DOFs (the direct-solver model).
+    modes_in_kg : bool
+        Incompatible-mode elements: include the condensed modes in K_G (module notes). Ignored for H8 / Q4.
     """
 
-    def __init__(self, model: Elasticity) -> None:
+    def __init__(self, model: Elasticity, modes_in_kg: bool = True) -> None:
         if not isinstance(model, Elasticity):
             raise TypeError("LinearBuckling needs an Elasticity model (direct solver, axis-aligned fixed DOFs)")
         self.model = model
@@ -123,6 +138,26 @@ class LinearBuckling:
         self.dim = d.dim
         self.dN, self.B, self.w = gauss_operators(d.dim)
         self.D = np.asarray(model.D, float)                                # unit-modulus D of the model
+        self.modes_in_kg = bool(modes_in_kg) and model.element in ("H8IM", "Q4IM")
+        nloc = self.B.shape[2]
+        if self.modes_in_kg:
+            from toporlogy.fem.elements import ke_h8_from_D, ke_q4im_from_D
+            R = ke_h8_from_D(self.D, "H8IM")[1] if d.dim == 3 else ke_q4im_from_D(self.D)[1]
+            assert R is not None
+            dP = np.array([np.diag(-4.0 * np.asarray(p)) for p in product((-_G, _G), repeat=d.dim)])
+            Ba = np.zeros((len(dP), self.B.shape[1], R.shape[0]))
+            for g, P in enumerate(dP):                                       # strain of the modes, node-major
+                for v, (i, j) in enumerate(voigt_pairs(d.dim)):
+                    if i == j:
+                        Ba[g, v, i::d.dim] = P[i]
+                    else:
+                        Ba[g, v, i::d.dim] = P[j]
+                        Ba[g, v, j::d.dim] = P[i]
+            self.dN = np.concatenate([self.dN, dP], axis=2)                  # (ngp, dim, nn + n_modes)
+            self.B = self.B + np.einsum("gvm,mk->gvk", Ba, R)                # enhanced strain per unit u_e
+            self.T = np.vstack([np.eye(nloc), R])                            # u_e -> [u_e; α]
+        else:
+            self.T = np.eye(nloc)
         self.DB = np.einsum("vw,gwk->gvk", self.D, self.B)                 # (ngp, nvoigt, nloc): σ per unit u_e
         self.scale = 1.0 if d.dim == 3 else d.thickness / d.h
         self.h = d.h
@@ -154,7 +189,7 @@ class LinearBuckling:
         out = np.zeros((len(kn), dim * nn, dim * nn))
         for c in range(dim):
             out[:, c::dim, c::dim] = kn
-        return out
+        return out if not self.modes_in_kg else np.einsum("ai,eab,bj->eij", self.T, out, self.T)
 
     def geometric_matrix(self, EG_active: np.ndarray, u: np.ndarray) -> sp.csr_matrix:
         """K_G on the free DOFs (symmetric, full storage) for the reference displacements ``u`` (ndof,)."""
@@ -221,6 +256,19 @@ class LinearBuckling:
         tot = w.sum(axis=0)
         return np.where(tot > 0, w[low].sum(axis=0) / np.where(tot > 0, tot, 1.0), 0.0)
 
+    def localization(self, E_active: np.ndarray, modes: np.ndarray, fraction: float = 0.01) -> np.ndarray:
+        """(k,) share of each mode's strain energy φᵀKφ held by the ``fraction`` of active elements that carry the
+        most (at least one element). A global mode spreads its energy (share ≈ a few × fraction); a mode driven by a
+        stress singularity concentrates it, and the share grows as the mesh is refined (module notes)."""
+        if not 0 < fraction <= 1:
+            raise ValueError("0 < fraction <= 1 is required")
+        _, kE = self.mode_forms(modes)
+        w = np.abs(np.asarray(E_active, float)[:, None] * kE)
+        n_top = max(1, int(np.ceil(fraction * w.shape[0])))
+        top = np.sort(w, axis=0)[-n_top:].sum(axis=0)
+        tot = w.sum(axis=0)
+        return np.where(tot > 0, top / np.where(tot > 0, tot, 1.0), 0.0)
+
     # ------------------------------------------------------------------ pieces of the Rayleigh quotient
     def mode_forms(self, modes: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         """Per element and mode, the two quadratic forms of the Rayleigh quotient as functions of the design:
@@ -231,7 +279,8 @@ class LinearBuckling:
         m = self.model
         pe = modes[m.edof]                                                   # (na, nloc, k)
         dim, nn = self.dim, self.dN.shape[2]
-        pc = pe.reshape(len(pe), nn, dim, -1)                                # (na, node, comp, k)
+        pg = np.einsum("ai,eik->eak", self.T, pe) if self.modes_in_kg else pe    # with the recovered modes
+        pc = pg.reshape(len(pe), nn, dim, -1)                                # (na, node, comp, k)
         G = np.einsum("gia,eack->egick", self.dN, pc)                        # ∂φ_c/∂x_i at the Gauss points
         M = np.einsum("egick,egjck->egijk", G, G)                            # Σ_c ∂_i φ_c ∂_j φ_c
         pairs = voigt_pairs(dim)

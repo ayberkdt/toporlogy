@@ -91,6 +91,20 @@ API kaydı yeniden yazıldı (`tests/toporlogy/test_api_surface.py --write`). Hi
 parametreler. Bileşen listesine `hashin_shtrikman` eklendi; `stress` ve `stress_augmented_lagrangian`'a
 `criterion`, `buckling`'e `preload_case` eklendi; `sigma_lim` artık isteğe bağlı.
 
+## 4b. İkinci tur (aynı gün): referans karşılaştırmasından çıkan fizik [Ö]
+
+| Ekleme | Neden | Doğrulama |
+|:---|:---|:---|
+| `Q4IM`: 2-B'de Wilson'un uyumsuz modlu dörtgeni (Q6), yoğuşturulmuş | Q4 eğilmede kilitleniyor | saf eğilmede uç çökmesi 48,000000000018 (kesin 48; Q4 42,67); yama özdeşlikleri |
+| K_G'de uyumsuz modlar (`LinearBuckling(modes_in_kg=True)`, varsayılan) | kaba ağlarda λ hatası | FS2019 kolonu 20 × 2: hata 1,9e-3 → 1,4e-3; ayrı küçük kodla aynı değer (−0,005614); gradyan 5,0e-8 |
+| Yerelleşme tanısı (`LinearBuckling.localization`, `BucklingKS.last_localization`) | tekil gerilmenin ürettiği modlar | duvarda %1'lik pay 0,88 → 0,92 → 0,95 (40² → 160²); Euler kolonunda 0,043 |
+| `exclude` (burkulma yanıtı ve YAML `buckling.exclude`) | tekil noktalarda gerilme rijitliğini kaldırmak | duvarda tutulu kenar modu kayboluyor (enerji payı 0,66 → 0), λ1 2,11 → 3,56 (80²); mod köşeye kayıyor |
+
+Satırlar eklenme sırasıyla. Bulgu: duvarın λ1'i tekil gerilme yüzünden ağa göre yakınsamıyor; ayrıntı
+`yayimlanmis_degerler.md` §6'da. `exclude` bu sorunu yalnız taşıyor, çözmüyor; λ dışarıda bırakılan bölgenin
+boyutuna bağlı kalıyor. Ferrari & Sigmund (2023)'ün önerdiği gerilme alanı düzenlemesi kayıttan biliniyor
+(metin okunmadı) ve eklenmedi.
+
 ## 5. Yapılmayanlar
 
 - 2-B düzlem dışı (plaka) burkulma: kabuk ya da plaka elemanı gerektiriyor.

@@ -15,6 +15,10 @@ REFERENCES: tuple[Reference, ...] = (
     Reference("taylor_beresford_wilson_1976", "R. L. Taylor, P. J. Beresford, E. L. Wilson", 1976,
               "A non-conforming element for stress analysis", "Int. J. Numer. Methods Eng. 10(6):1211-1219",
               doi="10.1002/nme.1620100602", note="QM6 incompatible modes that pass the patch test"),
+    Reference("wilson_1973", "E. L. Wilson, R. L. Taylor, W. P. Doherty, J. Ghaboussi", 1973,
+              "Incompatible displacement models", "in Numerical and Computer Methods in Structural Mechanics, "
+              "Academic Press", note="the Q6 element; cited as 'Wilson et al, 1973' by Ferrari & Sigmund 2019 "
+              "(arXiv:1809.05300, read); title and venue from memory, not checked"),
     Reference("hinton_rock_zienkiewicz_1976", "E. Hinton, T. Rock, O. C. Zienkiewicz", 1976,
               "A note on mass lumping and related processes in the finite element method",
               "Earthquake Eng. Struct. Dyn. 4(3):245-249", doi="10.1002/eqe.4290040305",

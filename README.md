@@ -203,6 +203,8 @@ constraints:
 | Orthotropic, rotated and plane-strain elasticity (`core.material`, `fem.elements.element_matrix_from_D`, `elasticity=` on `Elasticity`, `Modal`, `ElasticityGMG`) | isotropic case = the closed forms to 1e-14; rotation invariance and 1/E(n) = n n n n S; patch identities for any D; 2-D plane strain = 3-D slab with w = 0 to 1e-10; orthotropic strip gives E1, E2 exactly |
 | Failure criteria von Mises, Tresca, Drucker–Prager, Raghava, Tsai–Wu (`optimization.strength`), field `FailureIndex` | index 1 at the uniaxial / shear / material-axis reference states; degree-1 homogeneous; rotation invariant (isotropic); von Mises field reproduced to 1e-12; gradients ≤ 3e-8 |
 | Buckling: preload, cluster-cut warning, low-density mode share, first-failure load factor | preload c on the same pattern lowers λ by exactly c (1e-8); preload gradient 1.5e-8; square column double eigenvalue flagged; uniaxial first failure exact; orthotropic column → isotropic E_axial column, error 2.1 %, 0.59 %, 0.21 % at 4, 8, 16 elements across |
+| 2-D incompatible-mode element `Q4IM` (Wilson's Q6); condensed modes in K_G (`LinearBuckling(modes_in_kg=True)`) | pure bending exact (Q4 −11 %); column of Ferrari & Sigmund 2019: Q4 20 × 2 reproduces their published error 0.119 (0.1187), Q4IM λ error 1.4e-3 against the converged 2-D value; gradient 5e-8 |
+| Buckling localisation measure and `exclude` (no stress stiffness at singular points) | the published wall's λ1 does not converge (2.85 → 1.20 from 40² to 320²) because its mode sits at a singular stress; the measure rises with refinement there (0.88 → 0.95), 0.04 for an Euler column |
 | Hashin–Shtrikman upper bound of a porous solid (`interpolation: hashin_shtrikman`), `simp_admissible_penal` | bulk bound = Lamé solution of a hollow sphere / disk to 1e-12; SIMP below both bounds exactly from p*(ν) on |
 
 For ν = 0.3 the HS-admissible SIMP exponent is 3.08 in 2-D and 2.63 in 3-D; p = 3 is not admissible in 2-D at
@@ -276,8 +278,10 @@ they show that the implementation did not change, not that it is independently c
 - **Buckling:** linear bifurcation only (no geometric non-linearity, imperfections or post-buckling); in 2-D the
   plane model cannot buckle out of its plane, so a thin plate's usually critical mode is not found; plain
   `Elasticity` only (direct solver, axis-aligned supports, one support set); no regularisation of the stress field
-  against localised modes (the low-density share only flags them); the number of aggregated modes is fixed by the
-  user (a cut cluster is now warned about, not fixed).
+  against localised modes (the low-density share and the localisation measure only flag them; `exclude` moves a
+  singular localisation rather than removing it); the number of aggregated modes is fixed by the user (a cut
+  cluster is now warned about, not fixed). A λ governed by a stress singularity (end of a partly clamped edge,
+  re-entrant corner, point load) has no mesh limit.
 - **Material:** one orientation for the whole domain (no per-element fibre angle); failure criteria at the element
   centroid like the von Mises field; the Tsai–Wu interaction f12 = −0.5 is a common choice, not a measured value;
   the connectivity coupling physics and the T10 verification (`post.verify`) stay isotropic (ν); the
