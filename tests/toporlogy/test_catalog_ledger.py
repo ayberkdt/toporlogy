@@ -141,3 +141,19 @@ if __name__ == "__main__":
         sys.exit(f"usage: python {Path(__file__).name} --write")
     RENDERED.write_text(render(ledger()), encoding="utf-8", newline="\n")
     print(f"wrote {RENDERED}")
+
+
+# ---------------------------------------------------------------------------------------------- risk coverage matrix
+def test_every_test_file_is_classified() -> None:
+    import _vv_layers as R
+    files = {p.name for p in HERE.glob("test_*.py")}
+    assert not files - set(R.FILE_LAYERS), f"add these test files to _vv_layers.FILE_LAYERS: {sorted(files - set(R.FILE_LAYERS))}"
+    assert not set(R.FILE_LAYERS) - files, f"stale entries in _vv_layers.FILE_LAYERS: {sorted(set(R.FILE_LAYERS) - files)}"
+    for f, layers in R.FILE_LAYERS.items():
+        assert layers and set(layers) <= set(R.LAYERS), f
+
+
+def test_rendered_risk_matrix_is_current() -> None:
+    import _vv_layers as R
+    assert R.OUT.read_text(encoding="utf-8") == R.render(), \
+        "docs/vv_risk_kapsam.md is stale: python tests/toporlogy/_vv_layers.py --write"
