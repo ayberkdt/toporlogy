@@ -154,6 +154,12 @@ mertebesi 2,0; çift ve üçlü tekrarlı özdeğerler tam bulundu. Yapılmadı:
 karşılaştırılması, NAFEMS (eğri sınır düzgün ızgarada kurulamıyor). Q4 karşılaştırması bağımsız değil (`ke_q4`
 top88'den alınmış).
 
+PR-09 devamı (25 Kasım 2026, [`olcumler/yayimlanmis_degerler.md`](olcumler/yayimlanmis_degerler.md)): burkulma ve
+gerilme, makalelerde basılı sayılara ve kodlara karşı. topBuck250 ve Deng vd. (146 satır) kodlarının aktarımıyla
+toporlogy aynı sonucu veriyor (λ 1e-13 / 8,9e-11; p-norm 6,6e-6); toporlogy'de hata bulunmadı. Gerilmede basılı
+33,17 ve 56,23, "initial" ilk MMA adımından sonraki değer okununca %0,1–0,8 içinde üretiliyor (ön kayıt dışı).
+Burkulmadaki 3,15 (topBuck250 duvarı) üretilemedi, nedeni bulunamadı; MATLAB'de koşmak açık iş.
+
 PR-10 yapıldı: yeni `symmetry_check` post adımı (düzlemler simetri bağlantısıyla aynı biçimde: `{x: 500}` ya da
 `[[x, 500], [y, mid]]`). `summary.json["post"]["symmetry_check"]` her düzlem için frac, keep (bağlar dahil) ve x̄'nin
 e_sym = ‖f − R(f)‖₂ / ‖f‖₂ değerini, uyuşmayan hücre sayısını ve ızgara kaymasını yazıyor; `finalize`'dan sonra son
