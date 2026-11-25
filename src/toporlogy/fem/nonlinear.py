@@ -76,7 +76,9 @@ import numpy as np
 import scipy.sparse as sp
 import torch
 
+from toporlogy.core import tensor as T
 from toporlogy.core.domain import Domain
+from toporlogy.core.linear_elastic import isotropic_moduli
 from toporlogy.fem.elastic import checked_residual, matrix_norm1
 from toporlogy.core.material import unique_matrices
 from toporlogy.fem.elements import H8_CORNER, Q4_CORNER, D_iso, D_plane_strain, D_plane_stress, indexed_matmul
@@ -90,8 +92,6 @@ __all__ = ["NonlinearElasticity", "NonlinearConvergenceError", "EnergyInterpolat
 MATERIALS = ("svk", "neo_hooke")
 ETA_TOL = 1e-13            # backward error of the residual accepted as converged (rounding floor)
 _G = 1.0 / math.sqrt(3.0)
-_PAIRS = {2: ((0, 0), (1, 1), (0, 1)), 3: ((0, 0), (1, 1), (2, 2), (1, 2), (0, 2), (0, 1))}
-_P3 = _PAIRS[3]
 
 
 class NonlinearConvergenceError(RuntimeError):
@@ -164,30 +164,12 @@ class CaseReport:
 
 
 # ----------------------------------------------------------------------------------------------- materials
-# Every strain measure is formed from the displacement gradient H = F − I without subtracting I: E = ½(H + Hᵀ + HᵀH),
-# J − 1 from the invariants of H. Forming ½(FᵀF − I) loses about log10(1/|H|) digits (measured: relative error of
-# f_int 1.4e-6 at |H| = 1e-8 in 3-D), which leaves a residual floor no convergence test can pass at small loads.
-def _green(H: np.ndarray) -> np.ndarray:
-    """Green–Lagrange strain ½(H + Hᵀ + HᵀH) (n, d, d)."""
-    return 0.5 * (H + np.swapaxes(H, 1, 2) + np.einsum("nki,nkj->nij", H, H))
-
-
-def _voigt(E: np.ndarray, dim: int) -> np.ndarray:
-    """Symmetric tensor → Voigt vector with engineering shear (n, nv)."""
-    return np.stack([E[:, j, k] * (1.0 if j == k else 2.0) for j, k in _PAIRS[dim]], axis=1)
-
-
-def _det_minus_one(H: np.ndarray) -> np.ndarray:
-    """det(I + H) − 1 = I₁(H) + I₂(H) [+ I₃(H)] without cancellation, (n,)."""
-    tr = np.trace(H, axis1=1, axis2=2)
-    if H.shape[1] == 2:
-        return tr + (H[:, 0, 0] * H[:, 1, 1] - H[:, 0, 1] * H[:, 1, 0])
-    i2 = 0.5 * (tr ** 2 - np.einsum("nij,nji->n", H, H))
-    return tr + i2 + np.linalg.det(H)
-
-
-_VA = np.array([p[0] for p in _P3])
-_VB = np.array([p[1] for p in _P3])
+# Every strain measure is formed from the displacement gradient H = F − I without subtracting I: E = ½(H + Hᵀ + HᵀH)
+# (core.tensor.green_lagrange), J − 1 from the invariants of H (core.tensor.jacobian_minus_one). Forming ½(FᵀF − I)
+# loses about log10(1/|H|) digits (measured: relative error of f_int 1.4e-6 at |H| = 1e-8 in 3-D), which leaves a
+# residual floor no convergence test can pass at small loads.
+_VA = np.array([p[0] for p in T.VOIGT_3D])
+_VB = np.array([p[1] for p in T.VOIGT_3D])
 _VDELTA = (_VA == _VB).astype(float)
 
 
@@ -239,15 +221,15 @@ class _Material:
         self.kind, self.dim, self.D, self.plane = kind, dim, D, plane
         if kind == "neo_hooke":
             assert nu is not None
-            self.kappa = 1.0 / (3.0 * (1.0 - 2.0 * nu))
-            self.mu = 1.0 / (2.0 * (1.0 + nu))
+            m = isotropic_moduli(E=1.0, nu=nu)                          # unit-modulus K and G
+            self.kappa, self.mu = m.K, m.G
 
     def __call__(self, H: np.ndarray, energy: bool = False,
                  which: np.ndarray | None = None) -> tuple[np.ndarray, np.ndarray, np.ndarray | None]:
         dim = self.dim
-        Eg = _green(H)
+        Eg = T.green_lagrange(H)
         if self.kind == "svk":
-            Ev = _voigt(Eg, dim)
+            Ev = T.strain_to_voigt(Eg, rtol=None)                   # symmetric by construction
             if self.D.ndim == 2:
                 S = Ev @ self.D
                 C = np.broadcast_to(self.D, (len(H),) + self.D.shape)
@@ -257,7 +239,7 @@ class _Material:
                 S = (C @ Ev[:, :, None])[:, :, 0]                      # D symmetric: S = D E
             psi = 0.5 * np.einsum("nv,nv->n", Ev, S) if energy else None
             return S, C, psi
-        a = _det_minus_one(H)
+        a = T.jacobian_minus_one(H)
         if dim == 3:
             S3, C6, psi = neo_hooke_response(Eg, a, self.kappa, self.mu, energy)
             return S3[:, _VA, _VB], C6, psi
@@ -462,7 +444,7 @@ class NonlinearElasticity:
         K = np.zeros((n, nl, nl)) if need_K else None
         psi = np.zeros(n) if energy else None
         eye = np.eye(dim)
-        pairs = _PAIRS[dim]
+        pairs = T.voigt_pairs(dim)
         Ut = np.swapaxes(U3, 1, 2)                                     # (n, dim, nn)
         for dN in self._dN:                                            # (dim, nn)
             Hg = Ut @ dN.T

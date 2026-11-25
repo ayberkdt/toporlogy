@@ -74,12 +74,13 @@ import numpy as np
 import scipy.sparse as sp
 import scipy.sparse.linalg as spla
 
+from toporlogy.core.tensor import voigt_pairs
 from toporlogy.fem.elastic import Elasticity
 from toporlogy.fem.elements import H8_CORNER, Q4_CORNER
 from toporlogy.references import cite
 from toporlogy.solvers.direct import DirectSolver
 
-__all__ = ["gauss_operators", "LinearBuckling", "voigt_pairs", "BucklingClusterWarning"]
+__all__ = ["gauss_operators", "LinearBuckling", "BucklingClusterWarning"]
 
 
 class BucklingClusterWarning(UserWarning):
@@ -91,11 +92,6 @@ _CHUNK = 2048                      # elements per gathered block of per-element 
 
 def _chunks(n: int) -> list[slice]:
     return [slice(s, min(s + _CHUNK, n)) for s in range(0, n, _CHUNK)]
-
-
-def voigt_pairs(dim: int) -> list[tuple[int, int]]:
-    """Tensor index (i, j) of each Voigt component in the order of :mod:`toporlogy.fem.elements`."""
-    return [(0, 0), (1, 1), (0, 1)] if dim == 2 else [(0, 0), (1, 1), (2, 2), (1, 2), (0, 2), (0, 1)]
 
 
 def gauss_operators(dim: int) -> tuple[np.ndarray, np.ndarray, np.ndarray]:

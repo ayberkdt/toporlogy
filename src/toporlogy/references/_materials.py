@@ -24,4 +24,11 @@ REFERENCES: tuple[Reference, ...] = (
               url="https://polybags.co.uk/environmentally-friendly/useful-numbers-for-environmental-studies.pdf",
               note="read 2026-11-01 (PDF text, pp. 1-11): family embodied energy / CO2 / recycle fraction; shaping "
                    "energies (Ashby p. 133). Secondary reproduction: Ashby 2013 itself was not read"),
+    # Details as shown on the publisher's article page (academic.oup.com, read 2026-11-26); full text paywalled.
+    Reference("ting_chen_2005", "T. C. T. Ting, T. Chen", 2005,
+              "Poisson's ratio for anisotropic elastic materials can have no bounds",
+              "The Quarterly Journal of Mechanics and Applied Mathematics 58(1):73-82", doi="10.1093/qjmamj/hbh021",
+              note="abstract read 2026-11-26: with positive definite strain energy the anisotropic Poisson ratio can "
+                   "be arbitrarily large positive or negative (physically realistic for cubic materials, strains "
+                   "bounded); the conditions on the constants and the directions are in the text, NOT read"),
 )
