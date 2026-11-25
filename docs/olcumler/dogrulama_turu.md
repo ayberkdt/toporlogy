@@ -385,3 +385,20 @@ büyüyor (n = 4 … 32: 4,1e-3 → 1,0e-3, oranlar 0,42 · 0,71 · 0,85). Yaln�
 kütüphanenin Q4IM sonucunu dört ağda da aynı basamaklarla veriyor (1,850e-4 · 7,321e-5 · 2,547e-5 · 8,212e-6).
 Kütüphanenin seçimi (modlara yük yok) bu problemde doğru olan; köşe etkisinin nedeni, yeri dışında, açıklanmadı. Tanı `test_h5_..._post_hoc` olarak testte
 (ön kayıtlı değil, bu ölçümden sonra yazıldı; eşik H2'nin aralığı).
+
+## 8. Ek ön kayıt: başka bir ekibin koduyla karşılaştırma, scikit-fem 12.0.2 (2026-11-25 23:50 +0300, ilk koşudan önce)
+
+scikit-fem (Gustafsson & McBain, açık kaynak) kullanıcının onayıyla kuruldu. Aynı ızgara scikit-fem'in kendi ağıyla
+(`MeshQuad`, `MeshHex`, `init_tensor`), kendi elemanlarıyla (`ElementQuad1`, `ElementHex1`, vektör
+`ElementVector`), kendi biçimleriyle (`linear_elasticity`, kütle ve Laplace için `BilinearForm`) ve 2 noktalı Gauss
+ile kurulur; eleman başına E, eleman merkezleri eşlenerek sabit (P0) bir alanla verilir. Düğüm ve DOF eşlemesi
+koordinatlardan; düzlem gerilme λ* = Eν/(1 − ν²).
+
+| # | Kontrol | Eşik |
+|:---|:---|:---|
+| X1 | Rijitlik K, Q4 (düzlem gerilme, kalınlık ≠ 1) ve H8, rastgele eleman E, h ≠ 1 | max fark ≤ 1e-12 · max \|K\| |
+| X2 | Tutarlı kütle, Q4 ve H8, rastgele ρ | X1 |
+| X3 | İletim (Laplace) matrisi, 2-B ve 3-B, rastgele k | X1 |
+| X4 | Konsol çözümü (sol yüz ankastre, uç yükü), scikit-fem'in `condense` + `solve`'u ile | ‖ΔU‖∞ ≤ 1e-10 · ‖U‖∞ |
+
+scikit-fem kurulu değilse testler NOT VERIFIED olarak atlanır.
