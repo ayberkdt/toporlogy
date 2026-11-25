@@ -357,7 +357,7 @@ The current roadmap, the status of every item and the open decisions are in
 ## Development
 
 ```bash
-python -m pytest tests/toporlogy -m "not slow"                  # main suite (594 tests on 25 Nov 2026)
+python -m pytest tests/toporlogy -m "not slow"                  # main suite (871 pass, 9 strict xfail on 25 Nov 2026)
 python -m pytest tests/toporlogy/test_baseline.py -m baseline   # bitwise baseline of the examples (~3.5 min)
 python -m pytest tests/toporlogy -m slow                        # pre-registered sweeps (hours; gmsh for T10)
 ```
