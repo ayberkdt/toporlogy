@@ -59,8 +59,10 @@ def _compliance_3d(tp):
 
 
 def _displacement_2d(tp):
-    cfg = _cantilever(objective={"type": "displacement", "where": {"type": "point", "at": ["max", "min"]},
-                                 "direction": [0, -1]})
+    # measured away from the load and across it (at the load point along the unit load it would equal the
+    # compliance, a self-adjoint response; the first version of this case did that)
+    cfg = _cantilever(objective={"type": "displacement", "where": {"type": "point", "at": ["max", "max"]},
+                                 "direction": [1, 0]})
     return cfg, "f0", 0
 
 
@@ -170,7 +172,8 @@ _T2_NOTE = ("pre-registered T2 FAILED (the control, not the gradient: T1 passes)
 T2_CASES = [
     pytest.param(_compliance_2d, id="compliance_2d"),
     pytest.param(_compliance_3d, id="compliance_3d"),
-    pytest.param(_displacement_2d, id="displacement_2d"),
+    pytest.param(_displacement_2d, id="displacement_2d", marks=_t2_xfail(
+        _T2_NOTE + "; measured p* = [1.91, 1.85, 1.74, 1.59, 1.42, 1.27]")),
     pytest.param(_stress_pnorm_2d, id="stress_pnorm_2d", marks=_t2_xfail(
         _T2_NOTE + "; measured p* = [1.83, 1.78, 1.68, 1.53, 1.36, 1.22]")),
     pytest.param(_tsai_wu_angle_field, id="tsai_wu_angle_field"),
