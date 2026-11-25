@@ -39,14 +39,14 @@ def ledger() -> dict[str, Any]:
     return json.loads(LEDGER.read_text(encoding="utf-8"))
 
 
-def test_files() -> set[str]:
+def _test_files() -> set[str]:
     return {p.relative_to(REPO).as_posix() for p in HERE.glob("test_*.py")}
 
 
 def collected() -> list[dict[str, Any]]:
     """Collected items of the whole suite with their markers (this session's, or a collect-only subprocess)."""
     have = {r["nodeid"].split("::")[0] for r in V.COLLECTED}
-    if test_files() <= have:
+    if _test_files() <= have:
         return list(V.COLLECTED)
     with tempfile.TemporaryDirectory() as d:
         dump = Path(d) / "collected.json"
