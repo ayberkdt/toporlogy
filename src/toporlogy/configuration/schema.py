@@ -16,6 +16,8 @@ unit, e.g. m; ``E0`` is force/length² (Pa with N and m); forces are force units
     material: {E0: 1.0, nu: 0.3, rho: 1.0}                          # [1.0, 0.3, 1.0]; also plane, orthotropic,
                                                                     # strength (see below)
     physics: {type: elasticity, element: null, solver: direct}      # element null = H8 (3-D) / Q4 (2-D); or modal
+                                                                    # or nonlinear_elasticity (large displacements,
+                                                                    # objective end_compliance)
     supports:                                                       # *required*, >= 1 (bc supports)
       - {type: fixed, where: {type: plane, axis: x, at: min}, dofs: x}
     load_cases:                                                     # *required* (optional for physics modal)
