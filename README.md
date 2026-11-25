@@ -292,7 +292,7 @@ they show that the implementation did not change, not that it is independently c
 | Stress, buckling, GCMMA, SiMPL, PDE filter | closed forms, invariants, finite differences | table above | `tests/toporlogy/test_stress.py`, `test_buckling.py`, `test_gcmma.py`, `test_simpl.py`, `test_pde_filter.py`, `test_aggregates.py` |
 | Stiffness (Q4, H8, Q4IM, H8IM, orientation fields), mass, modal, conduction, centroid stress, von Mises and Tsai–Wu, buckling with and without preload | separately written dense implementation in the tests | matrices ≤ 4.6e-16, stresses and indices ≤ 1.1e-15, eigenvalues ≤ 3.2e-14, load factors ≤ 4e-13 | `test_independent_matrices.py`, `test_independent_stress.py`, `test_independent_buckling.py` |
 | Manufactured solutions beyond isotropic elasticity | Q4IM; smoothly varying orthotropic axes (Q4, Q4IM, H8); heat conduction; SVK and neo-Hooke at max \|∇u\| = 0.2 | second order on three grids (rates 1.97–2.05); constant axes, wrong conductivity and a linear solve of the non-linear loads stall | `test_fem_mms_extended.py` |
-| Gradients by the Taylor remainder | eleven responses incl. buckling, frequency, multi-phase, non-linear end compliance, multigrid | remainder order 2.00; the pre-registered 1 % negative control did not reach order 1 within the step range for five (strict xfail) | `test_taylor_remainder.py` |
+| Gradients by the Taylor remainder | eleven responses incl. buckling, frequency, multi-phase, non-linear end compliance, multigrid | remainder order 2.00; a 1 % wrong gradient gives order 0.90–1.08 below the crossover step (the first, fixed-step version of that control failed for five responses: strict xfail) | `test_taylor_remainder.py` |
 | Frame invariance and objectivity | 90° rotation and mirror with orientation fields; rigid rotation of large deformations | ≤ 7e-15 | `test_frame_invariance.py` |
 | First-order optimality of the result | closed-form constrained problem; MBB with MMA, OC, GCMMA, SiMPL | 1.4e-16 at the closed-form solution; falls by 46–27 600× at convergence | `test_kkt_estimate.py` |
 
@@ -357,7 +357,7 @@ The current roadmap, the status of every item and the open decisions are in
 ## Development
 
 ```bash
-python -m pytest tests/toporlogy -m "not slow"                  # main suite (871 pass, 9 strict xfail on 25 Nov 2026)
+python -m pytest tests/toporlogy -m "not slow"                  # main suite (884 pass, 9 strict xfail on 25 Nov 2026)
 python -m pytest tests/toporlogy/test_baseline.py -m baseline   # bitwise baseline of the examples (~3.5 min)
 python -m pytest tests/toporlogy -m slow                        # pre-registered sweeps (hours; gmsh for T10)
 ```
