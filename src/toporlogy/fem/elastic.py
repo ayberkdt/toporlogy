@@ -9,7 +9,12 @@ solves the adjoint system with the same factorisation, ``K λ = ∂J/∂U``, and
 ``∂J/∂E_e = −s · λ_eᵀ KE u_e``. When ``∂J/∂U`` is a multiple of ``F`` (compliance), ``λ = a·U`` is used without a
 solve (self-adjoint shortcut, exact).
 
-Element matrices: :mod:`toporlogy.fem.elements` (H8, H8IM statically condensed, Q4).
+Element matrices: :mod:`toporlogy.fem.elements` (H8, H8IM statically condensed, Q4, Q4IM).
+
+Per-element material (fibre orientation): ``elasticity`` may be (n_active, k, k), one unit-modulus D per active
+element (order of ``domain.active_elements``). The element matrices are then ``KE[ke_index[e]]``, built once per
+distinct D (:func:`toporlogy.fem.elements.element_matrix_field`), and ``K = Σ_e E_e · s · KE_e``. With a single D
+(k, k) or none the original path is used unchanged (one ``KE``).
 """
 from __future__ import annotations
 
@@ -24,13 +29,15 @@ import torch
 from toporlogy.core.domain import Domain
 from toporlogy.fem.mechanisms import SolveResidualError, check_moduli, check_supports, fixed_dof_rows
 from toporlogy.solvers.direct import DirectSolver
+from toporlogy.solvers.ordering import nested_dissection_dofs
 
-__all__ = ["Elasticity", "element_matrix", "RESIDUAL_TOL", "BACKWARD_TOL", "ResidualReport", "checked_residual",
-           "matrix_norm1"]
+__all__ = ["Elasticity", "element_matrix", "ORDERINGS", "GROUPED_MAX", "RESIDUAL_TOL", "BACKWARD_TOL", "ResidualReport",
+           "checked_residual", "matrix_norm1"]
 
 
 from toporlogy.fem.elements import element_matrix  # noqa: E402  (re-exported)
-from toporlogy.fem.elements import D_iso, D_plane_stress, element_matrix_from_D  # noqa: E402
+from toporlogy.fem.elements import (D_iso, D_plane_stress, element_matrix_field,  # noqa: E402
+                                    element_matrix_from_D, indexed_matmul)
 
 
 class Elasticity:
@@ -49,19 +56,35 @@ class Elasticity:
         Default :class:`DirectSolver` ("auto").
     elasticity : array, optional
         Unit-modulus elasticity matrix D (6 × 6 in 3-D, 3 × 3 in 2-D; :func:`toporlogy.core.material.unit_elasticity`)
-        for orthotropic, rotated or plane-strain material. None = isotropic plane stress / 3-D from ``nu``; when it is
-        given, ``nu`` is not used and :attr:`nu` is None.
+        for orthotropic, rotated or plane-strain material, or one per active element (n_active, k, k;
+        :func:`toporlogy.core.material.unit_elasticity_field`). None = isotropic plane stress / 3-D from ``nu``; when
+        it is given, ``nu`` is not used and :attr:`nu` is None.
+    ordering : {"nested_dissection", "solver"}
+        Elimination order handed to a :class:`DirectSolver` (SuperLU): a geometric nested dissection of the node grid
+        (default; :mod:`toporlogy.solvers.ordering`) or the solver's own (``MMD_AT_PLUS_A``, the order before
+        25 Nov 2026). PARDISO and other solvers ignore it. Settable attribute.
 
     Attributes
     ----------
     D : numpy.ndarray
-        The unit-modulus elasticity matrix the element matrix was built from (stress and buckling use it).
+        The unit-modulus elasticity the element matrices were built from, (k, k) or (n_active, k, k) (stress and
+        buckling use it).
+    KE : numpy.ndarray
+        Unit element stiffness (nloc, nloc); per-element material: the distinct matrices (m, nloc, nloc).
+    ke_index : numpy.ndarray or None
+        Per-element material: (n_active,) index of each element's matrix in ``KE`` (and of its D in ``D_distinct``);
+        None for one material.
     """
 
     def __init__(self, domain: Domain, fixed: Sequence[int] | np.ndarray, nu: float = 0.3, element: str | None = None,
-                 solver: Any = None, elasticity: np.ndarray | None = None) -> None:
+                 solver: Any = None, elasticity: np.ndarray | None = None,
+                 ordering: str = "nested_dissection") -> None:
+        self.ordering = ordering
         self.domain = domain
         self.element = element or ("H8" if domain.dim == 3 else "Q4")
+        self.ke_index: np.ndarray | None = None
+        self.D_distinct: np.ndarray | None = None
+        self._group_cache: list[tuple[int, np.ndarray]] | None = None
         if elasticity is None:
             self.nu: float | None = float(nu)
             self.D = D_iso(nu) if domain.dim == 3 else D_plane_stress(nu)
@@ -69,7 +92,14 @@ class Elasticity:
         else:
             self.nu = None
             self.D = np.asarray(elasticity, float).copy()
-            self.KE = element_matrix_from_D(domain.dim, self.element, self.D)
+            if self.D.ndim == 3:
+                if len(self.D) != domain.n_active:
+                    raise ValueError(f"per-element elasticity has {len(self.D)} matrices, the domain "
+                                     f"{domain.n_active} active elements")
+                self.KE, self.ke_index = element_matrix_field(domain.dim, self.element, self.D)
+                self.D_distinct = self.D[np.unique(self.ke_index, return_index=True)[1]]
+            else:
+                self.KE = element_matrix_from_D(domain.dim, self.element, self.D)
         self.geom = domain.h if domain.dim == 3 else domain.thickness
         self.elements = domain.active_elements
         self.edof = domain.edof[self.elements]                      # (na, nloc)
@@ -83,7 +113,7 @@ class Elasticity:
         self.free.setflags(write=False)
         if self.free.size == 0:
             raise ValueError("no free DOF")
-        nd, nf, nl = domain.ndof, len(self.free), self.KE.shape[0]
+        nd, nf, nl = domain.ndof, len(self.free), self.KE.shape[-1]
         gmap = np.full(nd, -1, np.int64)
         gmap[self.free] = np.arange(nf)
         r = gmap[np.repeat(self.edof, nl, axis=1).ravel()]
@@ -95,6 +125,7 @@ class Elasticity:
         self._inv = inv.astype(np.int64)
         self._P = sp.csr_matrix((np.zeros(len(ukey)), (ukey // nf, ukey % nf)), shape=(nf, nf))
         self.solver = solver if solver is not None else DirectSolver()
+        self._order: np.ndarray | None = None                      # nested dissection of the reduced system, lazy
         self._token = 0                                            # increments with every factorisation
         self._factored_E: np.ndarray | None = None
         self.n_solves = 0
@@ -110,13 +141,63 @@ class Elasticity:
     def n_elements(self) -> int:
         return len(self.elements)
 
+    @property
+    def per_element(self) -> bool:
+        """True when every element has its own unit elasticity (``ke_index`` set)."""
+        return self.ke_index is not None
+
+    def element_stiffness(self) -> np.ndarray:
+        """(na, nloc, nloc) unit element matrices (one material: ``KE`` repeated)."""
+        if self.ke_index is None:
+            return np.broadcast_to(self.KE, (self.n_elements,) + self.KE.shape).copy()
+        return self.KE[self.ke_index]
+
+    def element_forces(self, Ue: np.ndarray) -> np.ndarray:
+        """(na, nloc, nc) ``KE_e u_e`` for element displacements ``Ue`` (na, nloc, nc) (unit modulus, no geom)."""
+        if self.ke_index is None:
+            return np.einsum("ab,ebc->eac", self.KE, Ue)
+        if len(self.KE) <= GROUPED_MAX:
+            out = np.empty(Ue.shape[:1] + (self.KE.shape[1],) + Ue.shape[2:])
+            for j, sel in self._groups():
+                out[sel] = np.einsum("ab,ebc->eac", self.KE[j], Ue[sel])
+            return out
+        return indexed_matmul(self.KE, self.ke_index, Ue)
+
+    def _groups(self) -> list[tuple[int, np.ndarray]]:
+        """(matrix number, its elements) of a per-element model."""
+        if self._group_cache is None:
+            idx = self.ke_index
+            assert idx is not None
+            self._group_cache = [(j, np.flatnonzero(idx == j)) for j in range(len(self.KE))]
+        return self._group_cache
+
     def matrix(self, E_active: np.ndarray) -> sp.csr_matrix:
         """Upper triangle of the reduced stiffness for element moduli ``E_active`` (na,)."""
         s = np.broadcast_to(np.asarray(E_active, float) * self.geom, (self.n_elements,))
-        w = (s[:, None] * self.KE.ravel()[None, :]).ravel()[self._sel]
+        if self.ke_index is None:
+            w = (s[:, None] * self.KE.ravel()[None, :]).ravel()[self._sel]
+        else:
+            w = (s[:, None, None] * self.KE[self.ke_index]).ravel()[self._sel]
         A = self._P.copy()
         A.data = np.bincount(self._inv, weights=w, minlength=self._P.nnz)
         return A
+
+    @property
+    def ordering(self) -> str:
+        return self._ordering
+
+    @ordering.setter
+    def ordering(self, value: str) -> None:
+        if value not in ORDERINGS:
+            raise ValueError(f"ordering: {' | '.join(ORDERINGS)}, got {value!r}")
+        self._ordering = value
+
+    def elimination_order(self) -> np.ndarray:
+        """Nested dissection order of the reduced system (index into :attr:`free`), computed once."""
+        if self._order is None:
+            d = self.domain
+            self._order = nested_dissection_dofs(tuple(n + 1 for n in d.shape), d.dim, self.free)
+        return self._order
 
     def _kinematic_rows(self) -> dict[int, np.ndarray]:
         """Support rows per node acting on its displacement (fixed DOFs: unit rows); see :mod:`.mechanisms`."""
@@ -136,7 +217,10 @@ class Elasticity:
             self.check_kinematics()
         self._A = self.matrix(E_active)
         self._A_norm1 = matrix_norm1(self._A)
-        self.solver.factor(self._A)
+        if isinstance(self.solver, DirectSolver) and self.ordering == "nested_dissection":
+            self.solver.factor(self._A, order=self.elimination_order())
+        else:
+            self.solver.factor(self._A)
         self._factored_E = E_active.copy()
         self._token += 1
 
@@ -165,7 +249,14 @@ class Elasticity:
         U = U[:, None] if U.ndim == 1 else U
         V = U if V is None else (V[:, None] if V.ndim == 1 else V)
         Ue, Ve = U[self.edof], V[self.edof]                         # (na, nloc, nc)
-        return np.einsum("eac,ab,ebc->ec", Ve, self.KE, Ue)
+        if self.ke_index is None:
+            return np.einsum("eac,ab,ebc->ec", Ve, self.KE, Ue)
+        if len(self.KE) <= GROUPED_MAX:                             # same arithmetic as one KE, element by element
+            out = np.empty((len(Ue), Ue.shape[2]))
+            for j, sel in self._groups():
+                out[sel] = np.einsum("eac,ab,ebc->ec", Ve[sel], self.KE[j], Ue[sel])
+            return out
+        return np.einsum("eac,eac->ec", Ve, indexed_matmul(self.KE, self.ke_index, Ue))
 
     # ------------------------------------------------------------------ autograd
     def solve(self, E_active: torch.Tensor, F: np.ndarray) -> torch.Tensor:
@@ -174,6 +265,13 @@ class Elasticity:
         F2 = F2[:, None] if F2.ndim == 1 else F2
         return _LinearSolve.apply(E_active, self, F2)
 
+
+ORDERINGS = ("nested_dissection", "solver")
+
+GROUPED_MAX = 32
+"""Per-element material with at most this many distinct element matrices: element-level products run group by group
+with the single-matrix arithmetic (a uniform or layered field then gives the single-D results bit for bit); above it
+the gathered matrices are multiplied in chunks (:func:`toporlogy.fem.elements.indexed_matmul`)."""
 
 RESIDUAL_TOL = 1e-6        # relative residual ‖Kx − b‖ / ‖b‖ accepted outright
 BACKWARD_TOL = 1e-14       # backward error accepted outright (~45 eps); see checked_residual

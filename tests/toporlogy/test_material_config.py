@@ -120,3 +120,41 @@ def test_plane_strain_is_refused_in_3d():
     cfg["load_cases"][0]["loads"][0]["where"]["at"] = ["max", "min", "min"]
     with pytest.raises((ConfigError, ValueError), match="2-D domains only"):
         study_from_dict(cfg)
+
+
+def test_reverify_step_passes_the_orthotropic_elasticity(monkeypatch):
+    """Coordinator fix at the merge of the parallel physics branches (2026-11-25): the YAML ``reverify`` step passed
+    the isotropic E0, ν even for an orthotropic material (A's record, eleman_yonu.md §5). The step now hands the
+    unit elasticity of ``material_model`` to :func:`toporlogy.post.reverify`; gmsh and the T10 solve are replaced by
+    a recorder here (gmsh is not installed in every environment), so this checks the wiring only."""
+    import importlib.util
+    import inspect
+    from types import SimpleNamespace
+
+    import toporlogy.post as post
+    from toporlogy.configuration.build import build_setup
+
+    real = importlib.util.find_spec
+    monkeypatch.setattr(importlib.util, "find_spec", lambda n, *a: object() if n == "gmsh" else real(n, *a))
+    seen: dict = {}
+
+    def recorder(pr, supports, cases, E, nu, **kw):
+        seen.update(E=E, nu=nu, **kw)
+        return {"t10": {"cases": [], "elements": 0}}
+
+    monkeypatch.setattr(post, "reverify", recorder)
+    raw = {"name": "r", "domain": {"type": "box", "shape": [6, 3, 3]},
+           "material": {"E0": 40.0, "nu": 0.3, "orthotropic": {**ORTHO, "angle": 30.0}},
+           "supports": [{"type": "fixed", "where": {"type": "on_plane", "axis": "x", "at": "min"}}],
+           "load_cases": [{"loads": [{"type": "point", "at": ["max", "mid", "mid"], "force": [0, 0, -1]}]}],
+           "constraints": [{"response": "volume", "upper": 0.5}], "post": ["finalize", "reverify"]}
+    s = build_setup(raw)
+    step = dict(s.post)["reverify"]
+    inspect.getclosurevars(step).nonlocals["state"]["result"] = object()
+    step(SimpleNamespace(xphys=np.ones(s.study.domain.shape)), s.study, None)
+    mat = Orthotropic(*(ORTHO[k] for k in ("E1", "E2", "E3", "G12", "G13", "G23", "nu12", "nu13", "nu23")))
+    assert seen["E"] == 40.0
+    assert np.allclose(seen["elasticity"], unit_elasticity(mat, 3, "stress", rotation_about_z(30.0)), rtol=1e-14)
+    raw["post"] = ["finalize", {"type": "reverify", "nu": 0.25}]
+    with pytest.raises(ConfigError, match="orthotropic"):
+        build_setup(raw)

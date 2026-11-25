@@ -1,0 +1,177 @@
+{
+ "date": "2026-11-25",
+ "record": "docs/olcumler/cozucu_siralama.md",
+ "baseline_direct_solve": [
+  {
+   "grid": [
+    24,
+    12,
+    12
+   ],
+   "dof": 12168,
+   "emin": 1e-06,
+   "factor_s": 1.35,
+   "fill": 12.5,
+   "relres": 2e-11,
+   "eta": 4.9e-17,
+   "cond1": 160000000.0,
+   "cond1_jacobi": 1400000.0,
+   "refine_dc": 9.6e-13
+  },
+  {
+   "grid": [
+    24,
+    12,
+    12
+   ],
+   "dof": 12168,
+   "emin": 1e-09,
+   "factor_s": 1.31,
+   "fill": 12.5,
+   "relres": 1.9e-11,
+   "eta": 4.5e-17,
+   "cond1": 86000000000.0,
+   "cond1_jacobi": 1500000.0,
+   "refine_dc": 3.3e-14
+  },
+  {
+   "grid": [
+    40,
+    20,
+    20
+   ],
+   "dof": 52920,
+   "emin": 1e-06,
+   "factor_s": 29.2,
+   "fill": 24.3,
+   "relres": 4e-11,
+   "eta": 2.9e-18,
+   "cond1": 130000000.0,
+   "cond1_jacobi": 3200000.0,
+   "refine_dc": 2.8e-14
+  },
+  {
+   "grid": [
+    40,
+    20,
+    20
+   ],
+   "dof": 52920,
+   "emin": 1e-09,
+   "factor_s": 26.1,
+   "fill": 24.3,
+   "relres": 4e-11,
+   "eta": 6.4e-21,
+   "cond1": 67000000000.0,
+   "cond1_jacobi": 3800000.0,
+   "refine_dc": 0.0
+  }
+ ],
+ "ordering_comparison_under_load": [
+  {
+   "grid": [
+    24,
+    12,
+    12
+   ],
+   "dof": 12168,
+   "mmd_s": 1.41,
+   "nd_s": 1.18,
+   "fill_mmd": 12.5,
+   "fill_nd": 10.5
+  },
+  {
+   "grid": [
+    40,
+    20,
+    20
+   ],
+   "dof": 52920,
+   "mmd_s": 33.2,
+   "nd_s": 15.5,
+   "fill_mmd": 24.3,
+   "fill_nd": 18.0
+  },
+  {
+   "grid": [
+    48,
+    24,
+    24
+   ],
+   "dof": 90000,
+   "mmd_s": 154.0,
+   "nd_s": 54.0,
+   "fill_mmd": 31.1,
+   "fill_nd": 22.2
+  },
+  {
+   "grid": [
+    300,
+    100
+   ],
+   "dof": 60600,
+   "mmd_s": 0.7,
+   "nd_s": 0.64,
+   "fill_mmd": 9.9,
+   "fill_nd": 8.6
+  },
+  {
+   "grid": [
+    600,
+    200
+   ],
+   "dof": 241200,
+   "mmd_s": 8.13,
+   "nd_s": 3.2,
+   "fill_mmd": 15.2,
+   "fill_nd": 10.2
+  }
+ ],
+ "leaf_size": {
+  "chosen": 64,
+  "300x100_s": {
+   "16": 0.69,
+   "64": 0.64,
+   "256": 0.91
+  },
+  "40x20x20_s": {
+   "16": 16.0,
+   "64": 15.5,
+   "256": 19.8
+  }
+ },
+ "preregistered": {
+  "O1": "PASS",
+  "O2": "PASS",
+  "O3_2d": {
+   "fill_mmd": 12.84,
+   "fill_nd": 9.03,
+   "verdict": "PASS"
+  },
+  "O4": {
+   "16x8x8": {
+    "compliance": 7.8e-12,
+    "U": 8.1e-12
+   },
+   "120x40": {
+    "compliance": 5.2e-11,
+    "U": 9.7e-11
+   },
+   "verdict": "PASS"
+  },
+  "O5": {
+   "compliance": 2.4e-16,
+   "U": 7.7e-16,
+   "verdict": "PASS"
+  },
+  "O6": {
+   "gradient": 7.7e-14,
+   "verdict": "PASS"
+  },
+  "O7": {
+   "max_rel": 1.7e-10,
+   "worst": "multiload3d",
+   "verdict": "PASS"
+  }
+ }
+}

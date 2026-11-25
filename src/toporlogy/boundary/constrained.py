@@ -168,6 +168,17 @@ class ConstrainedElasticity(Elasticity):
         self.S = S
         self.constraints = constraints
 
+    def elimination_order(self) -> np.ndarray:
+        """The parent's nested dissection restricted to the kept unknowns of the local system (the frames are
+        node-local, so a node's unknowns stay together)."""
+        if self._order is None:
+            base = super().elimination_order()
+            pos = np.full(len(self.free), -1, np.int64)
+            pos[self.keep] = np.arange(len(self.keep))
+            o = pos[base]
+            self._order = o[o >= 0]
+        return self._order
+
     def _kinematic_rows(self) -> dict[int, np.ndarray]:
         """Fixed DOFs, plus the constrained directions of every local frame (u ⊥ them) and the rows of every spring
         (a spring stores energy unless K_s u = 0)."""
@@ -214,6 +225,9 @@ class PerCaseSupports:
         self._inv = torch.as_tensor(np.argsort(cols), dtype=torch.long)
         first = self.groups[0][0]
         self.domain, self.elements, self.geom, self.KE = first.domain, first.elements, first.geom, first.KE
+        self.ke_index = getattr(first, "ke_index", None)
+        if hasattr(first, "element_forces"):
+            self.element_forces = first.element_forces
         self.n_cases = len(cols)
 
     def solve(self, E_active: torch.Tensor, F: np.ndarray) -> torch.Tensor:
@@ -232,7 +246,9 @@ def reaction_forces(physics: Elasticity, E_active: np.ndarray, U: np.ndarray, F:
     U2 = U[:, None] if U.ndim == 1 else U
     F2 = F[:, None] if F.ndim == 1 else F
     Ue = U2[physics.edof]                                           # (na, nloc, nc)
-    fe = np.einsum("ab,ebc->eac", physics.KE, Ue) * (np.asarray(E_active, float) * physics.geom)[:, None, None]
+    forces = getattr(physics, "element_forces", None)              # per-element material: indexed matrices
+    ku = forces(Ue) if forces is not None else np.einsum("ab,ebc->eac", physics.KE, Ue)
+    fe = ku * (np.asarray(E_active, float) * physics.geom)[:, None, None]
     R = np.zeros_like(U2)
     np.add.at(R, physics.edof.ravel(), fe.reshape(-1, U2.shape[1]))
     R -= F2

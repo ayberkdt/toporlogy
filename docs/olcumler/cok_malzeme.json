@@ -1,0 +1,96 @@
+{
+ "created": "2026-11-25T18:05:09+0300",
+ "git_base": "d56629028ae31c0fc28c05cf3d91a442b5cec1d1",
+ "python": "3.12.1",
+ "torch": "2.5.1+cu121",
+ "status": {
+  "test_phase_start_and_labels": "PASS (0.0 s)",
+  "test_v1a_one_phase_modulus_is_simp_bitwise": "PASS (0.0 s)",
+  "test_v1b_one_phase_oc_run_is_simp_bitwise": "PASS (0.9 s)",
+  "test_v1c_one_phase_yaml_is_default_bitwise": "PASS (0.9 s)",
+  "test_v2a_same_e_reduces_to_simp": "PASS (0.0 s)",
+  "test_v2b_same_e_phase_swap_keeps_compliance": "PASS (0.0 s)",
+  "test_v2c_same_e_two_phase_optimum_matches_single_material": "PASS (7.3 s)",
+  "test_v3_two_material_bar_closed_form[parallel-0.3]": "PASS (0.0 s)",
+  "test_v3_two_material_bar_closed_form[series-0.0]": "PASS (0.0 s)",
+  "test_v4_gradients_finite_difference": "PASS (0.3 s)",
+  "test_v5_gangl_2026_sec61_reduced_runs": "PASS (19.7 s)",
+  "test_v6_rejections": "PASS (0.1 s)",
+  "test_v7_phase_surfaces_closed_and_exact_volume": "PASS (0.0 s)",
+  "test_v7_yaml_end_to_end": "PASS (0.7 s)"
+ },
+ "results": {
+  "V1a": {
+   "result": "bit-identical (torch.equal), 2 designs x 2 parameter sets"
+  },
+  "V1b": {
+   "result": "bit-identical f0 history (20) and final xphys",
+   "f_final": 270.92027306826986
+  },
+  "V1c": {
+   "result": "bit-identical final xphys and objective (YAML, OC, 15 iterations)",
+   "f_final": 290.68618536090634
+  },
+  "V2a": {
+   "max_rel_error": "0.0e+00"
+  },
+  "V2b": {
+   "compliance": 2454169540.29909,
+   "rel_difference": "0.0e+00"
+  },
+  "V2c": {
+   "single": 210.65800167120258,
+   "two_phase": 214.66215319778175,
+   "rel_difference": "1.90e-02",
+   "solid_two_phase": 0.4999992495622981,
+   "feasible": [
+    true,
+    true
+   ]
+  },
+  "V3_parallel": {
+   "fe": 63.9999999999998,
+   "closed_form": 64.0,
+   "rel_error": "3.1e-15",
+   "nu": 0.3
+  },
+  "V3_series": {
+   "fe": 21.333333333333314,
+   "closed_form": 21.333333333333332,
+   "rel_error": "8.3e-16",
+   "nu": 0.0
+  },
+  "V4": {
+   "compliance": "3.2e-09",
+   "volume_b": "2.2e-08",
+   "solid_volume": "6.1e-08",
+   "mass": "6.3e-08",
+   "cost": "1.6e-07",
+   "volume_a+c": "7.1e-09"
+  },
+  "V5": {
+   "compliance": 0.0068054593852060336,
+   "iterations": 200,
+   "termination": "max_iter",
+   "max_violation": 0.0,
+   "volumes": {
+    "E1": 0.05999129959595683,
+    "E3": 0.11999057902020477,
+    "E5": 0.11999975087565506
+   },
+   "grey": 0.3268229166666667,
+   "comparison": "NOT VERIFIED (no value in the source)"
+  },
+  "V6": {
+   "result": "OC, SiMPL, Volume, field-count mismatch, AM filter, decreasing E, missing multiphase_simp and a single-field post step raise; GCMMA accepted"
+  },
+  "V7_surface": {
+   "closed": true,
+   "max_rel_volume_error": "0.0e+00"
+  },
+  "V7_yaml": {
+   "max_rel_error": "1.4e-16",
+   "summary": "soft 0.1983, stiff 0.1987 (volume fraction); mass 178.726, cost 357.592, grey 0.793"
+  }
+ }
+}

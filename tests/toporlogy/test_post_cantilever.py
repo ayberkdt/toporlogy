@@ -21,6 +21,7 @@ from toporlogy.post import BoxPrimitive, Keep, finalize, manufacturing_checks, r
 @pytest.mark.slow
 @pytest.mark.gmsh
 def test_cantilever_full_chain(tmp_path) -> None:
+    pytest.importorskip("gmsh")                      # T10 re-analysis below; conftest: skip without gmsh
     nx, ny, nz = 30, 10, 10
     keep = np.zeros((nx, ny, nz), bool)
     keep[0] = True

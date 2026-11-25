@@ -24,6 +24,21 @@ REFERENCES: tuple[Reference, ...] = (
               "Zeitschrift des Vereines Deutscher Ingenieure 40", note="closed thin-walled section, q = T/(2A)"),
     Reference("sutherland_hodgman_1974", "I. E. Sutherland, G. W. Hodgman", 1974, "Reentrant polygon clipping",
               "Communications of the ACM 17(1):32-42", note="half-plane clipping for the plastic modulus"),
+    # --- geometrically non-linear elasticity and topology optimisation ---------------------------------
+    Reference("feng_zhang_khandelwal_2025", "N. Feng, G. Zhang, K. Khandelwal", 2025,
+              "Finite Strain Robust Topology Optimization Considering Multiple Uncertainties", "arXiv:2501.15337",
+              note="regularised neo-Hooke energy, Eqs. (9)-(10); linear energy interpolation, Eqs. (11)-(14), "
+                   "beta0 = 120, c0 = 0.1, delta c = 0.02 (read 25 Nov 2026)"),
+    Reference("wang_lazarov_sigmund_jensen_2014", "F. Wang, B. S. Lazarov, O. Sigmund, J. S. Jensen", 2014,
+              "Interpolation scheme for fictitious domain techniques and topology optimization of finite strain "
+              "elastic problems", "Computer Methods in Applied Mechanics and Engineering 276:453-472",
+              note="energy interpolation for low-density elements; not read, details from the reference list of "
+                   "feng_zhang_khandelwal_2025"),
+    Reference("zhang_alberdi_khandelwal_2018", "G. Zhang, R. Alberdi, K. Khandelwal", 2018,
+              "Topology optimization with incompressible materials under small and finite deformations using mixed "
+              "u/p elements", "International Journal for Numerical Methods in Engineering 115:1015-1052",
+              note="adaptive cutoff of the energy interpolation; not read, details from the reference list of "
+                   "feng_zhang_khandelwal_2025"),
     # --- contact ---------------------------------------------------------------------------------
     Reference("hertz_1882", "H. Hertz", 1882, "Über die Berührung fester elastischer Körper",
               "Journal für die reine und angewandte Mathematik 92:156-171"),

@@ -68,6 +68,7 @@ class ElasticityGMG:
         Torch device of the solver (default CUDA when available).
     elasticity : array, optional
         Unit-modulus 6 × 6 elasticity matrix (as for :class:`~toporlogy.fem.elastic.Elasticity`); None = isotropic.
+        One matrix only: a per-element field (n_active, 6, 6) is refused (the kernels assume one element matrix).
     **gmg : keyword arguments of :class:`GMGSolver` (coarse, n_geometric, smoother_degree, pin_rel, …).
     """
 
@@ -80,6 +81,10 @@ class ElasticityGMG:
         self.domain = domain
         self.element = element or "H8"
         self.elasticity = None if elasticity is None else np.asarray(elasticity, float).copy()
+        if self.elasticity is not None and self.elasticity.ndim != 2:
+            raise ValueError("ElasticityGMG: per-element elasticity (n_active, 6, 6) is not supported (the "
+                             "matrix-free multigrid kernels assume one element matrix); use Elasticity (direct "
+                             "solver)")
         if self.elasticity is None:
             self.nu: float | None = float(nu)
             self.D = D_iso(nu)

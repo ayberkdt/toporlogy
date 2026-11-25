@@ -213,6 +213,16 @@ def register_responses() -> None:
         from toporlogy.optimization.compose import WeightedSum
         return WeightedSum(responses, weights, references)
 
+    def end_compliance(ctx: BuildContext, weights: list | None = None) -> Any:
+        """Weighted end compliance sum_c w_c F_c.u_c at the converged large-displacement equilibrium (physics
+        nonlinear_elasticity); weights null = the load-case weights."""
+        from toporlogy.fem.nonlinear import NonlinearElasticity
+        from toporlogy.optimization.nonlinear import EndCompliance
+        if not isinstance(ctx.physics, NonlinearElasticity):
+            raise ValueError("end_compliance needs physics nonlinear_elasticity (use compliance for linear physics)")
+        return EndCompliance(_case_weights(ctx, weights))
+
+    register("response", "end_compliance", end_compliance)
     register("response", "stress", stress, nested={"exclude": "shape[]"}, units={"sigma_lim": "force/length^2"})
     register("response", "stress_augmented_lagrangian", stress_augmented_lagrangian,
              nested={"objective": "response", "exclude": "shape[]"}, types={"reference": None},

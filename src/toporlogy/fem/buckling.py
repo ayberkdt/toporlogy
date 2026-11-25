@@ -29,6 +29,10 @@ with a scratch code: the error of λ1 against the converged 2-D value falls by a
 (20 × 2: 1.9e-3 → 1.4e-3; ``docs/olcumler/malzeme_modelleri.md``). ``modes_in_kg=False`` uses the compatible
 field only (the behaviour before 25 Nov 2026, as the mass matrix in :mod:`toporlogy.fem.modal`).
 
+Per-element material (fibre orientation; ``model.ke_index`` set): σ = D_e B u_e with the element's own D and, for
+incompatible-mode elements, its own mode recovery R_e (T_e = [I; R_e]); the quantities are built once per distinct
+D and gathered per element in chunks. With one material the original arrays and code path are used unchanged.
+
 Preload. With a load P0 that stays fixed and a load P1 that is scaled, buckling is
 ``(K + K_G(u0) + λ K_G(u1)) φ = 0``; :meth:`LinearBuckling.modes` takes ``KG0 = K_G(u0)`` and solves
 ``(−K_G(u1)) φ = μ (K + K_G(u0)) φ``. It requires K + K_G(u0) positive definite, i.e. the preload alone must not
@@ -81,6 +85,11 @@ class BucklingClusterWarning(UserWarning):
     """The aggregated buckling modes end inside a (near-)repeated cluster: compute more modes."""
 
 _G = 1.0 / np.sqrt(3.0)
+_CHUNK = 2048                      # elements per gathered block of per-element arrays
+
+
+def _chunks(n: int) -> list[slice]:
+    return [slice(s, min(s + _CHUNK, n)) for s in range(0, n, _CHUNK)]
 
 
 def voigt_pairs(dim: int) -> list[tuple[int, int]]:
@@ -137,15 +146,16 @@ class LinearBuckling:
         d = model.domain
         self.dim = d.dim
         self.dN, self.B, self.w = gauss_operators(d.dim)
-        self.D = np.asarray(model.D, float)                                # unit-modulus D of the model
+        self.D = np.asarray(model.D, float)                                # unit-modulus D: (k, k) or (na, k, k)
         self.modes_in_kg = bool(modes_in_kg) and model.element in ("H8IM", "Q4IM")
+        self.ke_index = model.ke_index
+        self._DBd: np.ndarray | None = None                                  # per-element material (module notes)
+        self._Td: np.ndarray | None = None
         nloc = self.B.shape[2]
         if self.modes_in_kg:
-            from toporlogy.fem.elements import ke_h8_from_D, ke_q4im_from_D
-            R = ke_h8_from_D(self.D, "H8IM")[1] if d.dim == 3 else ke_q4im_from_D(self.D)[1]
-            assert R is not None
+            nm = d.dim * d.dim                                               # dim modes per displacement component
             dP = np.array([np.diag(-4.0 * np.asarray(p)) for p in product((-_G, _G), repeat=d.dim)])
-            Ba = np.zeros((len(dP), self.B.shape[1], R.shape[0]))
+            Ba = np.zeros((len(dP), self.B.shape[1], nm))
             for g, P in enumerate(dP):                                       # strain of the modes, node-major
                 for v, (i, j) in enumerate(voigt_pairs(d.dim)):
                     if i == j:
@@ -154,11 +164,29 @@ class LinearBuckling:
                         Ba[g, v, i::d.dim] = P[j]
                         Ba[g, v, j::d.dim] = P[i]
             self.dN = np.concatenate([self.dN, dP], axis=2)                  # (ngp, dim, nn + n_modes)
-            self.B = self.B + np.einsum("gvm,mk->gvk", Ba, R)                # enhanced strain per unit u_e
-            self.T = np.vstack([np.eye(nloc), R])                            # u_e -> [u_e; α]
-        else:
-            self.T = np.eye(nloc)
-        self.DB = np.einsum("vw,gwk->gvk", self.D, self.B)                 # (ngp, nvoigt, nloc): σ per unit u_e
+        if self.ke_index is None:                                            # one material: the original path
+            if self.modes_in_kg:
+                from toporlogy.fem.elements import ke_h8_from_D, ke_q4im_from_D
+                R = ke_h8_from_D(self.D, "H8IM")[1] if d.dim == 3 else ke_q4im_from_D(self.D)[1]
+                assert R is not None
+                self.B = self.B + np.einsum("gvm,mk->gvk", Ba, R)            # enhanced strain per unit u_e
+                self.T = np.vstack([np.eye(nloc), R])                        # u_e -> [u_e; α]
+            else:
+                self.T = np.eye(nloc)
+            self.DB = np.einsum("vw,gwk->gvk", self.D, self.B)             # (ngp, nvoigt, nloc): σ per unit u_e
+        else:                                                                # per distinct D, gathered per element
+            from toporlogy.fem.elements import mode_recovery_from_D
+            Dd = model.D_distinct
+            assert Dd is not None
+            if self.modes_in_kg:
+                Rd = np.array([mode_recovery_from_D(d.dim, Dk) for Dk in Dd])           # (m, n_modes, nloc)
+                Bd = self.B[None] + np.einsum("gvm,jmk->jgvk", Ba, Rd)                 # (m, ngp, nvoigt, nloc)
+                self._Td = np.concatenate([np.broadcast_to(np.eye(nloc), (len(Rd), nloc, nloc)), Rd], axis=1)
+            else:
+                Bd = np.broadcast_to(self.B, (len(Dd),) + self.B.shape)
+            self._DBd = np.einsum("jvw,jgwk->jgvk", Dd, Bd)                  # σ per unit u_e, per distinct D
+            self.T = np.eye(nloc) if not self.modes_in_kg else np.zeros((0, nloc))   # per element: _Td
+            self.DB = np.zeros((0, 0, nloc))                                 # per element: _DBd
         self.scale = 1.0 if d.dim == 3 else d.thickness / d.h
         self.h = d.h
         nf = len(model.free)
@@ -175,7 +203,14 @@ class LinearBuckling:
         """Gauss-point stresses (na, ngp, nvoigt) of the active elements for displacements ``u`` (ndof,), with the
         stress modulus ``EG_active`` (na,)."""
         ue = np.asarray(u, float)[self.model.edof]                           # (na, nloc)
-        return np.einsum("gvk,ek->egv", self.DB, ue) * (np.asarray(EG_active, float)[:, None, None] / self.h)
+        if self._DBd is None:
+            return np.einsum("gvk,ek->egv", self.DB, ue) * (np.asarray(EG_active, float)[:, None, None] / self.h)
+        idx = self.ke_index
+        assert idx is not None
+        out = np.empty((len(ue),) + self._DBd.shape[1:3])
+        for c in _chunks(len(ue)):
+            out[c] = np.einsum("egvk,ek->egv", self._DBd[idx[c]], ue[c])
+        return out * (np.asarray(EG_active, float)[:, None, None] / self.h)
 
     def element_matrices(self, EG_active: np.ndarray, u: np.ndarray) -> np.ndarray:
         """(na, nloc, nloc) stress stiffness of every active element (physical scale)."""
@@ -189,7 +224,18 @@ class LinearBuckling:
         out = np.zeros((len(kn), dim * nn, dim * nn))
         for c in range(dim):
             out[:, c::dim, c::dim] = kn
-        return out if not self.modes_in_kg else np.einsum("ai,eab,bj->eij", self.T, out, self.T)
+        if not self.modes_in_kg:
+            return out
+        if self._Td is None:
+            return np.einsum("ai,eab,bj->eij", self.T, out, self.T)
+        idx = self.ke_index
+        assert idx is not None
+        nloc = self._Td.shape[2]
+        res = np.empty((len(out), nloc, nloc))
+        for ch in _chunks(len(out)):
+            Tc = self._Td[idx[ch]]
+            res[ch] = np.einsum("eai,eab,ebj->eij", Tc, out[ch], Tc)
+        return res
 
     def geometric_matrix(self, EG_active: np.ndarray, u: np.ndarray) -> sp.csr_matrix:
         """K_G on the free DOFs (symmetric, full storage) for the reference displacements ``u`` (ndof,)."""
@@ -279,13 +325,28 @@ class LinearBuckling:
         m = self.model
         pe = modes[m.edof]                                                   # (na, nloc, k)
         dim, nn = self.dim, self.dN.shape[2]
-        pg = np.einsum("ai,eik->eak", self.T, pe) if self.modes_in_kg else pe    # with the recovered modes
+        idx = self.ke_index
+        if not self.modes_in_kg:
+            pg = pe
+        elif self._Td is None:
+            pg = np.einsum("ai,eik->eak", self.T, pe)                        # with the recovered modes
+        else:
+            assert idx is not None
+            pg = np.empty((len(pe), self._Td.shape[1], pe.shape[2]))
+            for c in _chunks(len(pe)):
+                pg[c] = np.einsum("eai,eik->eak", self._Td[idx[c]], pe[c])
         pc = pg.reshape(len(pe), nn, dim, -1)                                # (na, node, comp, k)
         G = np.einsum("gia,eack->egick", self.dN, pc)                        # ∂φ_c/∂x_i at the Gauss points
         M = np.einsum("egick,egjck->egijk", G, G)                            # Σ_c ∂_i φ_c ∂_j φ_c
         pairs = voigt_pairs(dim)
         mv = np.stack([M[:, :, i, j] if i == j else 2.0 * M[:, :, i, j] for i, j in pairs], axis=2)   # (na,g,v,k)
-        C = np.einsum("g,egvk,gvl->ekl", self.w, mv, self.DB) * self.scale
-        kE = np.einsum("eak,ab,ebk->ek", pe, m.KE, pe) * m.geom
-        return C, kE
+        if self._DBd is None:
+            C = np.einsum("g,egvk,gvl->ekl", self.w, mv, self.DB) * self.scale
+            kE = np.einsum("eak,ab,ebk->ek", pe, m.KE, pe) * m.geom
+            return C, kE
+        assert idx is not None
+        C = np.empty((len(pe), pe.shape[2], self._DBd.shape[3]))
+        for c in _chunks(len(pe)):
+            C[c] = np.einsum("g,egvk,egvl->ekl", self.w, mv[c], self._DBd[idx[c]])
+        return C * self.scale, m.element_energy(modes) * m.geom
 

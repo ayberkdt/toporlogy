@@ -74,6 +74,7 @@ def test_t10_stiffness_matches_old_tetfem() -> None:
 @pytest.mark.slow
 @pytest.mark.gmsh
 def test_gmsh_tet_mesh_of_sphere() -> None:
+    pytest.importorskip("gmsh")
     pytest.importorskip("pyvista")
     import pyvista as pv
     s = pv.Sphere(radius=5.0, theta_resolution=48, phi_resolution=48).triangulate().clean()

@@ -30,21 +30,41 @@ def _t(a: np.ndarray, dtype: torch.dtype = torch.float64) -> torch.Tensor:
 
 
 class Embed(torch.nn.Module):
-    """Design vector (n_design,) → element grid of ``domain.shape``: keep 1, void 0, outside 0."""
+    """Design vector (n_design,) → element grid of ``domain.shape``: keep 1, void 0, outside 0.
+
+    ``n_fields`` > 1 (several design fields per element, :mod:`toporlogy.design.phases`): the design vector has
+    ``n_fields · n_design`` entries, field-major (field k is ``x[k·n_design:(k+1)·n_design]``), and the output is
+    ``(n_fields, *domain.shape)``; every field gets the same keep / void / outside values. The later links act on
+    each field alone. The instance then declares ``n_in`` (the length :class:`~toporlogy.optimization.study.Study`
+    reads from the first link).
+    """
 
     idx: torch.Tensor
     base: torch.Tensor
 
-    def __init__(self, domain: Domain) -> None:
+    def __init__(self, domain: Domain, n_fields: int = 1) -> None:
         super().__init__()
+        if int(n_fields) < 1:
+            raise ValueError("n_fields >= 1 is required")
         self.shape = domain.shape
+        self.n_fields = int(n_fields)
+        if self.n_fields > 1:
+            self.n_in = self.n_fields * domain.n_design
         self.register_buffer("idx", torch.as_tensor(domain.design_elements, dtype=torch.long))
         self.register_buffer("base", _t(domain.keep.astype(float)).reshape(-1))
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
+    def _one(self, x: torch.Tensor) -> torch.Tensor:
         g = self.base.clone().to(x.dtype)
         g = g.index_put((self.idx,), x)
         return g.reshape(self.shape)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        if self.n_fields == 1:
+            return self._one(x)
+        if x.numel() != self.n_fields * self.idx.numel():
+            raise ValueError(f"design vector has {x.numel()} entries, {self.n_fields} fields need "
+                             f"{self.n_fields * self.idx.numel()}")
+        return torch.stack([self._one(xk) for xk in x.reshape(self.n_fields, -1)])
 
 
 @cite("bourdin_2001", note="linear cone weights max(0, r_min − dist), normalised by the weight sum")
@@ -113,6 +133,8 @@ class DensityFilter(torch.nn.Module):
         return self._H
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
+        if x.dim() == self.dim + 1:                 # several design fields (Embed n_fields > 1): each alone
+            return torch.stack([self.forward(xk) for xk in x])
         use_sparse = self.backend == "sparse" or (self.backend == "auto" and x.device.type == "cpu")
         if use_sparse:
             self.matrix()
@@ -139,7 +161,9 @@ class _SparseApply(torch.autograd.Function):
 
 @cite("ferrari_sigmund_2020", note="Eq. (1) tanh projection")
 class HeavisideProjection(torch.nn.Module):
-    """x̂ = (tanh(βη) + tanh(β(x̃ − η))) / (tanh(βη) + tanh(β(1 − η))); β and η are plain attributes."""
+    """x̂ = (tanh(βη) + tanh(β(x̃ − η))) / (tanh(βη) + tanh(β(1 − η))); β and η are plain attributes.
+
+    Element-wise, so several design fields ``(n_fields, *shape)`` are projected with the same β and η."""
 
     def __init__(self, beta: float = 1.0, eta: float = 0.5) -> None:
         super().__init__()
@@ -152,7 +176,10 @@ class HeavisideProjection(torch.nn.Module):
 
 
 class Passive(torch.nn.Module):
-    """Force keep = 1, void = 0, outside the part = 0 (gradient through those elements is zero)."""
+    """Force keep = 1, void = 0, outside the part = 0 (gradient through those elements is zero).
+
+    Several design fields ``(n_fields, *shape)`` broadcast: every field is set; with
+    :class:`~toporlogy.design.phases.MultiPhaseSIMP` keep elements are then the last (stiffest) phase."""
 
     keep: torch.Tensor
     off: torch.Tensor

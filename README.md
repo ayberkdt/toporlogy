@@ -152,8 +152,8 @@ module, class and config component has one name; there are no alias modules or s
 | Geometry | `geometry` | CSG primitives, STL voxelisation with partial volumes, bore detection |
 | Boundary conditions | `boundary` | 18 geometric selectors; 5 support types (fixed, roller, symmetry, pinned bore, springs); nodal and 9 distributed load types incl. bearing and remote loads; load cases and combinations; resultant and rigid-body checks |
 | Design chain | `design` (`chain`, `pde_filter`, `interp`, `manufacturing`) | cone density filter, Helmholtz (PDE) filter, tanh projection, keep/void regions; AM overhang filter, symmetry, extrusion and pattern tying, casting/milling pull direction |
-| Physics | `fem`, `solvers` | H8, H8IM and Q4 elasticity, heat conduction, modal analysis, linear buckling; PARDISO/SuperLU, or matrix-free multigrid on CUDA with a direct fallback |
-| Responses | `optimization` (`responses`, `robust`, `lengthscale`, `connectivity`, `dynamics`, `stress`, `buckling`, `compose`) | compliance, volume; robust minimum solid/void size; maximum thickness; one-body constraints; eigenfrequencies; von Mises stress; buckling load factor; displacement; sums and ratios of responses |
+| Physics | `fem`, `solvers` | H8, H8IM, Q4 and Q4IM elasticity (any material D, per element if needed), geometrically non-linear elasticity (Total Lagrangian), heat conduction, modal analysis, linear buckling; PARDISO/SuperLU (nested dissection order on the grid), or matrix-free multigrid on CUDA with a direct fallback |
+| Responses | `optimization` (`responses`, `robust`, `lengthscale`, `connectivity`, `dynamics`, `stress`, `buckling`, `compose`, `nonlinear`) | compliance, end compliance (large displacements), volume, phase volume, mass, cost; robust minimum solid/void size; maximum thickness; one-body constraints; eigenfrequencies; von Mises stress; buckling load factor; displacement; sums and ratios of responses |
 | Method toolkit | `optimization` (`aggregates`, `local`, `benchmark`) | six smooth aggregates with proven bounds; any local criterion as one aggregated constraint or as an augmented Lagrangian; evaluation of the thresholded design and comparison tables |
 | Optimisation | `optimizers`, `optimization.study` | OC (one constraint), MMA and GCMMA (any number), SiMPL (one volume-type constraint), β continuation, multiplier updates, move-limit control; run folders with git revision |
 | Post-processing | `post` | density → signed distance → topology-preserving opening/closing → exact functional faces → smooth surface (optionally clipped to the exact CAD envelope, `envelope: cad`) → manufacturing checks → T10 re-analysis with a mesh-convergence verdict → STL/PLY/OBJ; symmetry report of the design and the surface (`symmetry_check`) |
@@ -209,6 +209,38 @@ constraints:
 
 For ν = 0.3 the HS-admissible SIMP exponent is 3.08 in 2-D and 2.63 in 3-D; p = 3 is not admissible in 2-D at
 ν = 0.3 (only at ν = 1/3). The HS interpolation does not penalise grey material: use it to judge a grey design.
+
+## Physics added on 25 Nov 2026 (second round)
+
+Four additions, each with its own pre-registered record. Three were developed in parallel on separate branches and
+merged; the combinations the branches could not test alone have their own tests (`tests/toporlogy/test_merged_physics.py`,
+`test_nonlinear_orientation.py`).
+
+```yaml
+material:
+  E0: 40.0
+  orthotropic: {E1: 40, E2: 9, E3: 9, G12: 4, G13: 4, G23: 3.2, nu12: 0.28, nu13: 0.28, nu23: 0.4,
+                angle_field: fibre_angle.npy}          # degrees per element (2-D); axis_field in 3-D
+  phases: [{name: soft, E: 10, density: 0.6, cost: 1}, {name: stiff, E: 40, density: 1.0, cost: 4}]
+interpolation: multiphase_simp
+physics: {type: nonlinear_elasticity, material: svk}   # or neo_hooke (isotropic)
+objective: end_compliance
+constraints:
+  - {response: {type: phase_volume, phases: stiff}, upper: 0.2}
+```
+
+| Addition | Verified by | Record |
+|:---|:---|:---|
+| Per-element material orientation (`angle_field`, `axis_field`; `core.material.unit_elasticity_field`), accepted by `Elasticity`, `Modal`, `LinearBuckling`, `FailureIndex` and the T10 re-analysis | a uniform field reproduces the single-D path bit for bit; two-orientation strip in parallel / series = Voigt / Reuss closed forms to 1e-14; T10 and H8 off-axis bar E(θ) to 4e-15; gradients ≤ 2e-7 | [`eleman_yonu.md`](docs/olcumler/eleman_yonu.md) |
+| Several solid phases + void sharing one unit D (`material.phases`, `interpolation: multiphase_simp`, the recursive SIMP of Gangl et al. 2026 §6.1); responses `phase_volume`, `mass`, `cost`; post step `phase_report` | one phase = SIMP bit for bit; two phases with the same E = one material; two-material bar in series / parallel to 1e-14; gradients ≤ 1.6e-7; no published compliance value to compare with (NOT VERIFIED) | [`cok_malzeme.md`](docs/olcumler/cok_malzeme.md) |
+| Geometrically non-linear static analysis (`physics: nonlinear_elasticity`: Total Lagrangian, Q4 / H8, St. Venant–Kirchhoff with any D — also per element — or compressible neo-Hooke; energy interpolation for void elements) and `end_compliance` | uniaxial tension closed form 2e-14; linear solver at small load 1.4e-9; cantilever elastica −0.13 % (Richardson 0.04 %); tangent 1.9e-10; design gradient 1.2e-9; one pre-registered Newton-order check (neo-Hooke) failed, quadratic error contraction shown post hoc | [`geometrik_dogrusal_olmama.md`](docs/olcumler/geometrik_dogrusal_olmama.md) |
+| Nested dissection elimination order for SuperLU on SPD grid systems (`solvers.ordering`; `Elasticity(ordering=...)`, heat conduction) | same solution as the previous MMD order (compliance ≤ 6e-11, U ≤ 1e-10), also with partial volumes, keep/void and oblique supports; same gradient (8e-14); the seven examples within 1.7e-10 of the old baseline | [`cozucu_siralama.md`](docs/olcumler/cozucu_siralama.md) |
+
+The direct solve was measured before the solver change: backward error ≤ 5e-17, one step of iterative refinement
+changes the compliance by at most 1e-12, and the condition number (1e8–1e11 with Emin = 1e-6 … 1e-9) drops to 1e6
+under Jacobi scaling, so its size is scale, not instability. The time is in the factorisation; the nested dissection
+order cuts the fill by 26–33 % on the larger grids and the factorisation time by 2.1× at 53 k DOF (3-D), 2.8× at 90
+k DOF and 2.5× at 241 k DOF (2-D).
 
 ## Keeping the part in one body
 
@@ -282,10 +314,19 @@ they show that the implementation did not change, not that it is independently c
   singular localisation rather than removing it); the number of aggregated modes is fixed by the user (a cut
   cluster is now warned about, not fixed). A λ governed by a stress singularity (end of a partly clamped edge,
   re-entrant corner, point load) has no mesh limit.
-- **Material:** one orientation for the whole domain (no per-element fibre angle); failure criteria at the element
-  centroid like the von Mises field; the Tsai–Wu interaction f12 = −0.5 is a common choice, not a measured value;
-  the connectivity coupling physics and the T10 verification (`post.verify`) stay isotropic (ν); the
-  Hashin–Shtrikman interpolation scales E and keeps the solid's ν (its ν_HS(x) differs, 0.33 at x = 0.25 in 2-D).
+- **Material:** the fibre angle is data, not a design variable; no laminate theory, no damage progression after
+  first failure; failure criteria at the element centroid like the von Mises field; the Tsai–Wu interaction
+  f12 = −0.5 is a common choice, not a measured value; the connectivity coupling physics stays isotropic (ν); the
+  multigrid solver takes one D only; the Hashin–Shtrikman interpolation scales E and keeps the solid's ν (its
+  ν_HS(x) differs, 0.33 at x = 0.25 in 2-D).
+- **Several phases:** the phases share ν and the material axes (one unit D scaled by E); OC and SiMPL, stress,
+  buckling, modal, robust, connectivity, manufacturing ties and the geometry post steps (finalize, export,
+  reverify) refuse several phases; no published multi-material value was reproduced.
+- **Geometric non-linearity:** load control only (no arc-length: a limit point ends the solve with
+  `NonlinearConvergenceError`); dead loads; homogeneous supports along x / y / z and one support set; direct
+  solver only; no plasticity, contact, follower loads, incompatible-mode elements, or non-linear stress and
+  buckling responses. The energy interpolation follows Wang et al. (2014) as written by a later paper (original
+  not read); its adaptive cutoff can make the objective jump between designs.
 - **MMA** is plain MMA: no global convergence guarantee; a two-cycle has been seen without an active constraint.
   GCMMA removes it at the cost of extra solves.
 - **OC and SiMPL** handle exactly one constraint, and only one that needs no state solve (rejected at build
@@ -293,7 +334,7 @@ they show that the implementation did not change, not that it is independently c
   when the scale is a power of 2, 1.9e-3 at 1/0.3).
 - **Multigrid** is 3-D only, H8/H8IM only, and a separate physics class (`ElasticityGMG`), not a pluggable solver.
 - **Geometry:** bore detection is axis-aligned only; CSG Booleans give a distance bound, not the exact distance.
-- **Not provided:** thermoelasticity, nonlinear analysis, multi-material, de-homogenisation, neural
+- **Not provided:** thermoelasticity, plasticity, contact, post-buckling, de-homogenisation, neural
   parameterisations; STEP or other B-rep output (STL/PLY/OBJ only).
 - **RAMP** interpolation is experimental and used by no default.
 

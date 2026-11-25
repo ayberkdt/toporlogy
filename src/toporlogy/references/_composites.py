@@ -15,6 +15,15 @@ REFERENCES: tuple[Reference, ...] = (
               "Thermal expansion coefficients of composite materials based on energy principles",
               "J. Composite Materials 2(3):380-404", doi="10.1177/002199836800200308",
               note="longitudinal and transverse CTE of a UD ply"),
+    # --- effective stiffness bounds (per-element orientation tests) -------------------------
+    Reference("voigt_1889", "W. Voigt", 1889, "Über die Beziehung zwischen den beiden Elasticitätsconstanten "
+              "isotroper Körper", "Annalen der Physik 274(12):573-587", doi="10.1002/andp.18892741206",
+              note="uniform-strain (parallel) average; entered from memory, not read; the closed form used in "
+                   "tests/toporlogy/test_element_orientation.py is derived there from the exact layered solution"),
+    Reference("reuss_1929", "A. Reuss", 1929, "Berechnung der Fließgrenze von Mischkristallen auf Grund der "
+              "Plastizitätsbedingung für Einkristalle", "Z. Angew. Math. Mech. 9(1):49-58",
+              doi="10.1002/zamm.19290090104",
+              note="uniform-stress (series) average; entered from memory, not read; closed form derived in the test"),
     # --- failure criteria -------------------------------------------------------------------
     Reference("hill_1948", "R. Hill", 1948, "A theory of the yielding and plastic flow of anisotropic metals",
               "Proc. Royal Society of London A 193(1033):281-297", doi="10.1098/rspa.1948.0045",
