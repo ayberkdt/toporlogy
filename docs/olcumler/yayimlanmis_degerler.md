@@ -9,29 +9,40 @@ aynı (**[Ö]** ölçüldü, **[O]** kaynaktan okundu).
 ## 0. Özet
 
 PR-09 Top88 ve Top3D'yi kodlarına karşı doğruladı; gerilme ve burkulma açık kalmıştı. Bu çalışma ikisini de,
-tam metni okunan iki makalenin basılı sayısına ve basılı koduna karşı sınadı.
+tam metni okunan iki makalenin basılı sayısına ve basılı koduna karşı sınadı. İlk koşudan sonra "neden üretilemiyor,
+kodumuzda hata mı var" sorusu ayrıca araştırıldı (§3b).
 
-| Vaka | Aktarım / yayımlanan | log10 bağıl fark, toporlogy – aktarım | Karar |
-|:---|---:|---:|:---|
-| B-duvar: λ1, katı tasarım (yayımlanan 3,15) | 0,41 | −10,0 | FAIL |
-| S-konsol: p-norm, x = 0,3 (yayımlanan 33,17) | 2,06 | −5,2 | FAIL |
-| B-kolon: λ1, katı tasarım (kod–kod) | — | −12,4 | PASS |
-| B-kolon: λ1, rastgele tasarım (kod–kod) | — | −12,8 | PASS |
+| Vaka | x0'da aktarım / yayımlanan | Bir MMA adımı sonrası / yayımlanan | log10 fark, toporlogy – aktarım | Karar |
+|:---|---:|---:|---:|:---|
+| B-duvar: λ1, katı tasarım (3,15) | 0,41 | — | −10,0 | FAIL, açıklanamadı |
+| S-konsol: p-norm (33,17) | 2,06 | 0,999 | −5,2 | FAIL, açıklandı (post hoc) |
+| S-L-braket: p-norm (56,23), post hoc | 2,10 | 1,008 | — | ön kayıtta yok |
+| B-kolon: λ1, katı (kod–kod) | — | — | −12,4 | PASS |
+| B-kolon: λ1, rastgele (kod–kod) | — | — | −12,8 | PASS |
 
 Satırlar önce yayımlanmış sayılı vakalar, sonra kod–kod vakaları olarak sıralı. "Aktarım", makalenin kendi basılı
-kodunun NumPy aktarımıdır.
+kodunun NumPy aktarımıdır. "Bir MMA adımı sonrası" sütunu ön kayıtta yoktu (§3b).
 
-- **toporlogy basılı kodlarla aynı sonucu veriyor [Ö].** Burkulmada aynı formülasyonda (Gauss noktası gerilmesi)
-  λ1 farkı 8,9e-11 (duvar) ve ≤ 4,4e-13 (kolon); uyum, gerilme ve K_G ≤ 2e-13. Gerilmede p-norm farkı 6,6e-6; bu
-  fark basılı B matrisinin 5 anlamlı basamağından geliyor.
-- **Basılı iki sayı, makalelerin kendi basılı koduyla da üretilemedi [Ö].** Duvarda aktarım 1,303 veriyor, makale
-  3,15 diyor. Konsolda aktarım 68,45 veriyor, makale 33,17 diyor. toporlogy aktarıma uyduğu için fark toporlogy'de
-  değil. Üç olası yer var ve aralarında ayrım yapılamadı: makalenin basmadığı kurulum (sürücü, çağrı), basılı
-  sayının kendisi, ya da benim aktarımımda kalan bir hata (kod MATLAB'de koşulamadı, §5). Bu yüzden iki sayı da
-  toporlogy'yi **doğrulamıyor**. Karar önceden kayıtlı ölçüte göre FAIL.
+- **toporlogy'de hata bulunmadı [Ö].** toporlogy iki basılı kodun aktarımıyla yuvarlama düzeyinde aynı sonucu
+  veriyor. Burkulmada aynı formülasyonda (Gauss noktası gerilmesi) λ1 farkı 8,9e-11 (duvar) ve ≤ 4,4e-13 (kolon);
+  uyum, gerilme ve K_G ≤ 2e-13. Gerilmede p-norm farkı 6,6e-6; bu fark basılı B matrisinin 5 anlamlı basamağından
+  geliyor. Aktarımın kendisini bağımsız bir okuma (ayrı bir ajan, makale metnine karşı satır satır) denetledi ve
+  sayıları değiştiren bir çeviri hatası bulmadı.
+- **Gerilme (Deng vd.): fark açıklandı, kod hatası değil, okuma hatası [Ö, post hoc].** Makalenin "initial"
+  dediği değer x0'daki değil, ilk MMA güncellemesinden sonraki değer. x0 = 0,3'ten makalede yazan move = 0,1 ile
+  tek bir MMA adımı atılınca konsolda 33,130 (yayımlanan 33,17, %−0,12), L-brakette 56,70 (yayımlanan 56,23,
+  %+0,84) çıkıyor. Ön kayıttaki varsayım ("initial" = x0 = 0,3) yanlıştı; ön kayıtlı karar FAIL olarak kalıyor.
+  Kalan %0,1–0,8'lik farkın olası kaynağı yazarların MMA'sının basılmamış ayrıntıları (alt problem çözücüsü, c, d);
+  bu sınanmadı.
+- **Burkulma (topBuck250 duvarı): fark açıklanamadı [Ö].** Basılı kod ve çağrıyla λ1 = 1,303 çıkıyor, makale 3,15
+  diyor. Yazarların DTU sayfasındaki dosyası (`topbuck250_finalsamo.m`, okundu, çalıştırılmadı) analiz satırlarında
+  basılı listeyle aynı; demek ki aktarılan kod yazarların kodu. Duvar kurulumu yalnız makale metninde var. Denenen
+  varyantların hiçbiri 3,15'i vermedi (§3b). Fark toporlogy'de değil; basılmamış bir kurulum farkında ya da basılı
+  sayıda. Bu sayı toporlogy'yi doğrulamıyor.
 - **toporlogy'nin burkulma formülasyonu topBuck250'ninkinden farklı [Ö, O].** topBuck250 K_G'yi eleman merkezindeki
   gerilmeyle kuruyor (satır 124), toporlogy her Gauss noktasındaki gerilmeyle (`fem/buckling.py`). Fark kolonda
-  %0,01–0,5, duvarda %7,8 (merkez gerilmesi λ1'i büyütüyor). Duvardaki farkın neden büyük olduğu araştırılmadı.
+  %0,01–0,5, duvarda %7,8 (merkez gerilmesi λ1'i büyütüyor). Bu bir hata değil, bir seçim; duvarda neden büyük
+  olduğu araştırılmadı.
 - **Deng vd. kodu gerilmeyi merkezde değil, tek bir Gauss noktasında hesaplıyor [Ö].** Basılı B, birim
   altıyüzlünün (+g, +g, +g) noktasındaki şekil fonksiyonu türevleri (3,3e-6 içinde; diğer yedi nokta ≥ 0,455 uzak).
   toporlogy'nin `VonMises` yanıtı merkezde değerlendirdiği için aynı p-norm 52,71 çıkıyor. Bu bir hata değil;
@@ -108,6 +119,48 @@ düşer; o zaman bu not da güncellenmelidir.
 Betikler oturumun geçici klasöründe (`deng_probe.py`, `wall_probe.py`) kaldı, depoya alınmadı. Sayıları
 JSON'da `post_hoc_probe` alanında.
 
+## 3b. Neden üretilemedi: araştırma (25 Kasım 2026, ön kayıt dışı)
+
+**Aktarımın denetimi.** Ayrı bir ajan iki aktarımı makale metnine karşı satır satır okudu: numaralama, cMat, Ke0,
+dN/B0, merkez gerilmesi, G'nin 10 katsayılı sıkıştırması ve G + G' − diag, özdeğer problemi, duvarın a1…a6
+aralıkları, mesnet ve yük, başlangıç tasarımı; Deng'de yük, mesnet, edofMat, lk_H8, B, D, von Mises ve p-norm.
+Sayıları değiştiren bir çeviri hatası bulmadı. Makale metninin kendi içinde iki tutarsızlık buldu; ikisini DTU
+dosyasında ben doğruladım: imzada `maxit` `ocPar`'dan önce geliyor (DTU dosyasında tersi), `ocUpdate` 10 argümanla
+tanımlı ama 11 argümanla çağrılıyor (DTU dosyasında 11). İkisi de 1. döngüdeki λ'yı değiştirmiyor; ama basılı
+listenin, koşulan kodun birebir kopyası olmadığını gösteriyorlar.
+
+**Gerilme, Deng vd.** Önce L-braket (§6.3, yayımlanan 56,23) aynı okumayla hesaplandı: x0 = 0,3'te oran 2,10,
+konsoldakine (2,06) yakın, yani sistematik bir fark. İkisi de düzgün x ≈ 0,40'a denk geliyordu; bu da 0,3 + move
+0,1 eder. Sınama: toporlogy'nin MMA'sı (Svanberg 2007 katsayıları, `normalise=None`, move 0,1) ile, stress_minimize'ın
+kurduğu problemde (filtre, p-norm amaç, ortalama x̄ − 0,3 ≤ 0) tek adım atıldı ve yeni tasarım aktarımla
+değerlendirildi:
+
+| Vaka | x0 = 0,3'te | Bir MMA adımı sonrası | Yayımlanan | Fark |
+|:---|---:|---:|---:|---:|
+| Konsol 200 × 60 × 1 | 68,45 | 33,13 | 33,17 | %−0,12 |
+| L-braket 200 × 200 × 1 | 117,91 | 56,70 | 56,23 | %+0,84 |
+
+Satırlar makaledeki sırada. Move 0,2 ile konsolda 39,15 çıkıyor (%+18); sonuç hareket sınırına duyarlı, makalede
+yazan 0,1 ile tutuyor. L-brakette pasif bölgenin nerede uygulandığı basılmamış; filtreden sonra 1e-4 ve x0 = 0,3
+alındı. Başka bir okuma (x0'da da pasif 1e-4) ilk adımdan sonra 101,47 verdi. Testler: `test_deng_cantilever_
+published_value_is_after_the_first_mma_step` (hızlı, sınır %0,5) ve `test_deng_lbracket_..._mma_step` (yavaş, sınır
+%2). İki sınır da değerler görüldükten sonra kondu.
+
+**Burkulma, topBuck250 duvarı.** Denenen varyantların ilk λ'ları (λ1 ∝ 1/|q|, sabit toplam yükte ∝ Lx; 3,15 için
+|q| ≈ 4,1e-3 ya da Lx ≈ 2,42 gerekirdi, makale ikisini de basmıyor):
+
+| Varyant | λ1 |
+|:---|---:|
+| Basıldığı gibi | 1,303 |
+| Yük ters (−x) | 0,863 |
+| Alt kenarın bütün düğümleri tutulu | 2,329 |
+
+Basıldığı gibi kurulumda ilk 40 λ 1,303 ile 3,196 arasında; 39.'su 3,156. Onu seçmek için bir gerekçe yok.
+Betikler (`wall_variants.py`, `deng_mma_step.py`, `deng_lbracket.py`) oturumun geçici klasöründe.
+
+**Sonuç.** Kodumuzda hata bulunmadı. Gerilmede fark okuma farkıydı ve kapandı. Burkulmadaki fark kaynak tarafında
+kalıyor; DTU dosyasını MATLAB'de duvar çağrısıyla koşmak bunu çözer, ama bu makinede MATLAB lisans hatası veriyor.
+
 ## 4. Denenmeyenler (gerekçe ilk koşudan önce yazıldı)
 
 | Aday | Durum | Neden |
@@ -120,15 +173,15 @@ JSON'da `post_hoc_probe` alanında.
 
 ## 5. Sonuç ve açık iş
 
-Yayımlanmış sayılara karşı bağımsız doğrulama hedefi **bu çalışmayla kapanmadı**. Seçilen iki sayı, kendi
-makalelerinin basılı koduyla tekrar üretilemedi. Kazanılan şey kod düzeyinde bağımsız iki karşılaştırma:
+Yayımlanmış sayılara karşı bağımsız doğrulama hedefi **yarı yarıya kapandı**. Gerilmede yayımlanan iki
+sayı (33,17 ve 56,23), "initial" ilk MMA adımı sonrası diye okununca %0,1–0,8 içinde üretiliyor (post hoc; ön
+kayıtlı karar FAIL). Burkulmadaki sayı (3,15) üretilemedi ve nedeni bulunamadı. Kazanılan şey kod düzeyinde bağımsız iki karşılaştırma:
 toporlogy'nin burkulma ve gerilme hesabı topBuck250 ve Deng vd. kodlarıyla yuvarlama düzeyinde aynı. Ayrıca iki
 formülasyon farkı ölçüldü: K_G'de merkez ya da Gauss noktası gerilmesi (%0,01–7,8) ve gerilmenin değerlendirildiği
 nokta (p-norm 68,45 ↔ 52,71).
 
-Açık iş: (1) yazarların yayımladığı `.m` dosyalarının (makale ekindeki metin değil) MATLAB/Octave'da koşulup
-3,15 ve 33,17'nin tekrar üretilmesi. Bu oturumda denenemedi: bu makinedeki MATLAB R2022b
-(`D:\MatlabDosyam`) `matlab -batch` ile "Licensing error: -10,32" verdi, Octave kurulu değil. Böyle bir koşu NumPy
-aktarımındaki olası bir indeks çevirisi hatasını da dışlar; bu hata olasılığını bu notta yalnız kolon ve duvar
-kurulum denetimleri sınırlıyor (§2, `test_topbuck250_element_matrix_and_wall_setup`). (2) Bağımsız bir gerilme
-ya da burkulma sayısı için tam kurulumu basılı başka bir kaynak.
+Açık iş: (1) DTU'daki `topbuck250_finalsamo.m` dosyasının duvar çağrısıyla (§5.2) MATLAB ya da Octave'da
+koşulup 1. döngüdeki λ1'in okunması. Bu oturumda denenemedi: bu makinedeki MATLAB R2022b (`D:\MatlabDosyam`)
+`matlab -batch` ile "Licensing error: -10,32" verdi, Octave kurulu değil. 1,303 çıkarsa fark makaledeki sayıda ya
+da basılmamış kurulumdadır; 3,15 çıkarsa aktarımda bulunamamış bir fark vardır. (2) Bağımsız bir burkulma sayısı
+için tam kurulumu basılı başka bir kaynak (ör. Ferrari & Sigmund 2019, arXiv:1809.05300; okunmadı).

@@ -24,7 +24,7 @@ import scipy.sparse as sp
 import torch
 
 from published_codes import DENG_B, Top3D, TopBuck250, deng_D, deng_pnorm, lk_H8
-from toporlogy import OC, SIMP, Constraint, Domain, Elasticity, Study, Volume, standard_chain
+from toporlogy import MMA, OC, SIMP, Constraint, Domain, Elasticity, Study, Volume, standard_chain
 from toporlogy.fem.buckling import LinearBuckling, gauss_operators
 from toporlogy.fem.elements import D_iso, element_matrix
 from toporlogy.optimization.aggregates import pnorm
@@ -197,8 +197,11 @@ def test_topbuck250_wall_solid_blf_against_published_value(wall):
     paper's number by a factor 2.42 under the printed call. The gap is not in toporlogy; it lies in the unprinted
     setup, the printed value, or an error left in the transcription (it could not be run in MATLAB: licence error),
     and these were not told apart. The value does NOT verify toporlogy's buckling. The column checks above (code to code, 1e-13)
-    do not depend on this. Post-hoc probe, not adopted: the load reversed
-    (−x) gives 0.863.
+    do not depend on this. Post-hoc probes, none adopted: the load reversed (−x) 0.863; every bottom node clamped
+    2.33; the first 40 λ of the printed setup run 1.303 … 3.196 (λ39 = 3.156, no reason to take it). An independent
+    re-read of the transcription against the paper found no translation error, and the authors' downloadable file
+    (topopt.mek.dtu.dk, topbuck250_finalsamo.m, read, not run) has the same analysis lines; it differs from the
+    printed listing only elsewhere (argument order ocPar/maxit, ocUpdate's restartAs argument). Unexplained.
     """
     assert abs(wall["centroid"] - BLF_WALL_PUBLISHED) <= 0.0051
     assert abs(wall["toporlogy"] / BLF_WALL_PUBLISHED - 1.0) <= 1e-2
@@ -323,6 +326,107 @@ def test_deng_initial_pnorm_against_published_value(deng):
     code to 6.6e-6, the gap is not in toporlogy; it lies in a setup the paper does not print (its MMA driver and
     initial design), the printed value, or an error left in the transcription; these were not told apart. Hypotheses tried afterwards (post hoc, scratch probe; none adopted): load on one node only → 17.26;
     uniform x = 0.4 → 33.34, 0.5 → 19.09, 1 → 3.374. The published value therefore does NOT verify toporlogy's stress.
+
+    Explained afterwards (2026-11-25, post hoc): 33.17 is the value after the FIRST MMA step (move 0.1), not at x0;
+    one step from x0 = 0.3 gives 33.130 (−0.12 %), and the L-bracket's 56.23 is matched the same way (+0.84 %), see
+    :func:`test_deng_cantilever_published_value_is_after_the_first_mma_step`. The pre-registered reading ("initial" =
+    x0) was wrong, so this test stays a strict xfail; toporlogy's code is not at fault.
     """
     assert abs(deng["pn_R"] - PNORM_CANTILEVER_PUBLISHED) <= 0.01
     assert abs(deng["pn_T"] - PNORM_CANTILEVER_PUBLISHED) <= 0.006
+
+
+# ================================================================================ 3. Deng et al.: what "initial" means
+PNORM_LBRACKET_PUBLISHED = 56.23    # Deng, Vulimiri & To 2021, §6.3, 2-D L-bracket 200 × 200 × 1
+
+
+def _lbracket(ref: Top3D) -> np.ndarray:
+    """§6.3 / §6.4 L-bracket (2-D: nelz = 1) on the transcription: top face clamped (``fixed_node`` code of §6.4),
+    −1 in y on the 3 × (nelz + 1) nodes x = nelx, y = nely/2 … nely/2 − 2 (``loaddof1..3``), passive set
+    ``x_t(1:nelx/2, nely/2:end, :) = 1e-4``. Returns the passive mask in MATLAB element order."""
+    nelx, nely, nelz = ref.nelx, ref.nely, ref.nelz
+    layer = (nely + 1) * (nelx + 1)
+    fn = np.array([n + j * layer for j in range(nelz + 1) for n in range(1, layer - nely + 1, nely + 1)])
+    il, jl, kl = np.meshgrid(nelx, 0, np.arange(nelz + 1))
+    loadnid = (kl * layer + il * (nely + 1) + (nely + 1 - jl)).reshape(-1, order="F")
+    b = 3 * loadnid - 1 - nelx // 2 * 3
+    F = np.zeros(3 * layer * (nelz + 1))
+    np.add.at(F, np.union1d(np.union1d(b, b + 3), b + 6) - 1, -1.0)
+    ref.F = F
+    ref.fixeddofs = np.unique(np.concatenate([3 * fn - 2, 3 * fn - 1, 3 * fn]) - 1)
+    ref.freedofs = np.setdiff1d(np.arange(F.size), ref.fixeddofs)
+    passive = np.zeros(ref.shape_f, bool)
+    passive[: nelx // 2, nely // 2 - 1:, :] = True
+    return ref._col(passive)
+
+
+def _after_one_mma_step(ref: Top3D, passive: np.ndarray) -> tuple[float, float]:
+    """p-norm of the transcription (printed B) at x0 = 0.3 and after ONE MMA step with move 0.1 (§6.2: "the moving
+    limit of MMA optimizer is set as 0.1"), the way stress_minimize presents the problem: filter, passive elements
+    set to 1e-4 after the filter, objective = p-norm, constraint mean(x̄) − 0.3 ≤ 0, filtered sensitivities.
+
+    The step is toporlogy's MMA (Svanberg's 2007 coefficients; dual by L-BFGS-B, not Svanberg's subsolv), the
+    sensitivity toporlogy's autograd of its own Gauss-point stress (equal to the transcription to 6.6e-6)."""
+    nelx, nely, nelz = ref.nelx, ref.nely, ref.nelz
+    d = Domain((nelx, nely, nelz))
+    tn = d.node_number(ref.node_xyz(np.arange(ref.F.size // 3)))
+    dof = (3 * tn[:, None] + np.arange(3)).ravel()
+    F = d.load_vector()
+    F[dof, 0] = ref.F
+    m = Elasticity(d, dof[ref.fixeddofs], nu=0.3, element="H8")
+    e = np.arange(ref.nele)
+    el = ((e // nely) % nelx * nely + (nely - 1 - e % nely)) * nelz + e // (nely * nelx)   # MATLAB -> toporlogy
+    _, B, _ = gauss_operators(3)
+    S = torch.as_tensor(D_iso(0.3) @ B[7])                                      # the printed point (+g, +g, +g)
+    V = torch.as_tensor(von_mises_matrix(3))
+    edof = torch.as_tensor(d.edof[el])
+    idx = (torch.as_tensor(el),)
+
+    def phys(x: np.ndarray) -> np.ndarray:
+        xp = ref.H @ x / ref.Hs
+        xp[passive] = 1e-4
+        return xp
+
+    def f_df(x: np.ndarray) -> tuple[float, np.ndarray]:
+        xp = torch.as_tensor(phys(x)).requires_grad_(True)
+        E = torch.zeros(ref.nele, dtype=torch.float64).index_put(idx, 1e-9 + xp ** 3 * (1 - 1e-9))
+        U = m.solve(E, F)[:, 0]
+        sig = xp[:, None] ** 0.5 * (U[edof] @ S.T)
+        f = pnorm(torch.sqrt(torch.einsum("ev,vw,ew->e", sig, V, sig)), p=10.0)
+        (gt,) = torch.autograd.grad(f, xp)
+        gx = gt.numpy().copy()
+        gx[passive] = 0.0
+        return float(f), ref.H @ (gx / ref.Hs)
+
+    x0 = np.full(ref.nele, 0.3)
+    f0, df0 = f_df(x0)
+    dv = ref.H @ (np.full(ref.nele, 1.0 / ref.nele) / ref.Hs)
+    x1 = MMA(move=0.1, normalise=None).step(x0, f0, df0, np.array([np.mean(phys(x0)) - 0.3]), dv[None, :])
+    pn = [float(deng_pnorm(ref, ref._field(phys(x)), 0.5, 10.0)["pnorm"]) for x in (x0, x1)]
+    return pn[0], pn[1]
+
+
+def test_deng_cantilever_published_value_is_after_the_first_mma_step():
+    """POST HOC (written after S1 failed; not pre-registered, the bound below was set after seeing 0.12 %).
+
+    Hypothesis from the failed S1: the paper's "initial" p-norm is the value recorded after the first MMA update,
+    not at x0. The transcription at x0 = 0.3 gives 68.45 (S1); after one MMA step with the printed move 0.1 it
+    gives 33.130 against the printed 33.17 (−0.12 %). The same reading explains the 2-D L-bracket (slow test below,
+    +0.84 %). Bound: 0.5 % — the MMA here is not the authors' (subproblem solver, c, d not printed)."""
+    ref = Top3D(200, 60, 1, 0.3, 3.0, 2.5)
+    pn0, pn1 = _after_one_mma_step(ref, np.zeros(ref.nele, bool))
+    print(f"\n  Deng cantilever: x0 {pn0:.4f}; after one MMA step {pn1:.4f}; published {PNORM_CANTILEVER_PUBLISHED} "
+          f"({pn1 / PNORM_CANTILEVER_PUBLISHED - 1:+.2%})")
+    assert abs(pn1 / PNORM_CANTILEVER_PUBLISHED - 1) <= 5e-3
+
+
+@pytest.mark.slow
+def test_deng_lbracket_published_value_is_after_the_first_mma_step():
+    """POST HOC, same hypothesis on the 2-D L-bracket (§6.3: "decreases from the initial 56.23"); setup read from
+    §6.4 (see :func:`_lbracket`; where the passive set is applied is not printed: here after the filter, x0 = 0.3
+    everywhere). Measured: x0 117.91, after one MMA step 56.70 (+0.84 %). Bound 2 %, set after seeing the value."""
+    ref = Top3D(200, 200, 1, 0.3, 3.0, 2.5)
+    pn0, pn1 = _after_one_mma_step(ref, _lbracket(ref))
+    print(f"\n  Deng L-bracket: x0 {pn0:.4f}; after one MMA step {pn1:.4f}; published {PNORM_LBRACKET_PUBLISHED} "
+          f"({pn1 / PNORM_LBRACKET_PUBLISHED - 1:+.2%})")
+    assert abs(pn1 / PNORM_LBRACKET_PUBLISHED - 1) <= 2e-2
