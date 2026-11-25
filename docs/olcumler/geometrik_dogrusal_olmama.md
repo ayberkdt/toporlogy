@@ -112,8 +112,8 @@ düzlem gerinim, H8) en kötüsü verilir.
 | V5b | Richardson (8, 16), v / u | %0,1 / %0,2 | %0,040 / %0,067 | PASS |
 | V5c | hata n = 4 → 8 → 16 azalır | monoton | dört durumda da monoton | PASS |
 | V6 | son uyum ve yer değiştirme gradyanı (sonlu fark) | 1e-5 | 1,2e-9 | PASS |
-| V7a | C_NL(x_NL) ≤ 0,99 · C_NL(x_L) | sağlanmalı | §5 | §5 |
-| V7b | C_L(x_L) ≤ 1,005 · C_L(x_NL) | sağlanmalı | §5 | §5 |
+| V7a | C_NL(x_NL) / C_NL(x_L) | ≤ 0,99 | 0,259 | PASS |
+| V7b | C_L(x_L) / C_L(x_NL) | ≤ 1,005 | 0,916 | PASS |
 | V7c | Buhl, Pedersen & Sigmund (2000) sayıları | — | kaynak okunamadı | NOT VERIFIED |
 
 Ayrıntılar (ölçülen değerler, yapılandırma başına; sıra SVK ps, SVK pe, SVK 3-B, NH ps, NH pe, NH 3-B):
@@ -207,3 +207,69 @@ satır), `references/_structures.py` (üç kaynak). `fem/*`, `design/*`, `optimi
 dosyalarına ekleme yapılmadı (içe aktarma `toporlogy.fem.nonlinear` ve `toporlogy.optimization.nonlinear` üzerinden).
 `tests/toporlogy/baseline/*` yerelde yeniden üretildi ve testten sonra geri alındı; birleştirmede `list.txt`'ye
 `nonlinear_elasticity` ve `end_compliance` satırları, `api_surface.json`'a iki yeni modül girecek.
+
+## 5. Kıyas: doğrusal ve doğrusal olmayan tasarım (V7) [Ö]
+
+Kaynak: `PYTHONPATH=src python docs/olcumler/geometrik_dogrusal_olmama.py benchmark` (25 Kasım 2026, 489 s;
+`geometrik_dogrusal_olmama.json` → `benchmark`). Problem (`BENCH`): iki ucu ankastre kiriş 96 × 16 eleman (h = 1),
+açıklık ortasında üst kenarda üç düğüme yayılmış düşey yük, hacim ≤ 0,4, yoğunluk filtresi r = 3 eleman, SIMP p = 3,
+E_min = 1e-6 E0, MMA (move 0,2), 150 iterasyon, ν = 0,3, neo-Hooke düzlem gerilme, enerji interpolasyonu açık. Yük:
+önce doğrusal tasarım P = 1 ile bulunur (orta sehim 64,34); P = 0,1 · 96 / 64,34 = 0,1492 ile doğrusal orta sehim
+açıklığın %10'u olur. Doğrusal olmayan tasarım aynı P ile `end_compliance` en küçüklenerek bulunur.
+
+| Tasarım | C_NL | C_L | orta sehim, doğrusal olmayan | orta sehim, doğrusal | gri ölçüsü |
+|:---|---:|---:|---:|---:|---:|
+| x_L (doğrusal) | 4,12 | 1,43 | 27,6 | 9,6 | 0,33 |
+| x_NL (doğrusal olmayan) | 1,07 | 1,56 | 7,2 | 10,5 | 0,32 |
+
+Doğrusal olmayan tasarımın son uyumu, doğrusal tasarımınkinin dörtte biri (V7a: 0,259 ≤ 0,99, PASS); doğrusal
+modelde ise doğrusal tasarım %8 daha iyi (V7b: 0,916 ≤ 1,005, PASS). Doğrusal tasarım büyük yükte doğrusal tahminin
+2,9 katı sehim yapıyor (27,6'ya karşı 9,6; açıklığın %29'u): doğrusal modelin görmediği bir yumuşama. Her iki
+koşuda hacim kısıtı sağlanıyor (0,39999…).
+
+Sınırlamalar: iki koşu da 150 iterasyonda durdu (`max_iter`; son tasarım değişimi 0,015 > tol 0,01; doğrusal
+olmayan amaç son 10 iterasyonda 1,0668'de sabit). Tasarımlar gri (gri ölçüsü ortalama 4x(1 − x) = 0,32–0,33; izdüşüm
+yok), karşılaştırma bu gri tasarımlar arasında. İlk iterasyonda (düzgün x = 0,4) Newton enerji interpolasyonunun
+kesmesini 0,10'dan 0,40'a çıkararak yakınsadı (3 yeniden başlatma, 30 adım küçültme); son tasarımların
+değerlendirilmesinde kesme 0,10'da kaldı. Malzeme neo-Hooke seçildi: SVK ile düzgün gri başlangıç tasarımı (karalama koşusu, 48 × 8 ağ, P = 0,05)
+λ ≈ 0,51'de durdu; en olası neden SVK'nın güçlü basmada kararlılığını yitirmesi (doğrulanmadı). Ön kayıt malzemeyi
+belirtmiyordu.
+
+Buhl, Pedersen & Sigmund (2000) ile sayısal karşılaştırma yapılmadı: makale okunamadı; problem onların problemi
+değil, yalnız aynı türden (iki ucu ankastre kiriş, ortada yük). **NOT VERIFIED.** Onların doğrusal ve doğrusal
+olmayan tasarımların farklılaştığını gösterdiği bilgisi hafızadan [H].
+
+Test yolu: `pytest tests/toporlogy/test_nonlinear.py -m slow` (V5 dört durum + V7) 5 passed, 716 s (V7 tek başına
+584 s; aynı `benchmark()` işlevi, aynı sayılar).
+
+Paket düzeyinde (25 Kasım 2026): `pytest -m "not slow" tests/toporlogy` 688 passed, 4 skipped, 4 xfailed (üçü bu
+daldan önce vardı); `pytest -m baseline` 8 passed, bit düzeyi fark 0; `ruff check src tests` ve `mypy` temiz.
+
+## 6. Kapsam dışı ve açık işler
+
+- Yay uzunluğu (arc-length) ve limit noktası ötesi (snap-through, post-buckling): yük kontrolü limit noktasında
+  `NonlinearConvergenceError` verir.
+- Plastisite, temas, takipçi yük, sıfırdan farklı zorlanmış yer değiştirme.
+- GMG / yinelemeli çözücü: her Newton iterasyonu doğrudan çözücüyle faktörleşir (2-B 1 536 eleman: tasarım
+  iterasyonu başına 2–9 s).
+- H8IM / Q4IM'in doğrusal olmayan sürümü (Q4 eğilmede kilitlenir: L/H = 50 konsolda kalınlıkta 4 eleman ile %2,5).
+- Ortotrop neo-Hooke; doğrusal olmayan gerilme ve burkulma yanıtları (yalnız U'ya bağlı yanıtlar çalışır).
+- Wang ve ark. (2014) ve Zhang ve ark. (2018) asıl makaleleri okunmadı; şema ikincil kaynaktan [O: Feng ve ark.].
+
+## 7. README için önerilen metin
+
+"Not provided" satırından `nonlinear analysis` çıkar; "Buckling" satırındaki "(no geometric non-linearity, …)"
+ifadesi doğrusal burkulma için doğru kalır. Önerilen yeni madde (Limitations listesine):
+
+> - **Geometric non-linearity:** large-displacement static analysis (`physics: nonlinear_elasticity`; Total
+>   Lagrangian, Q4 plane stress/strain and H8, St. Venant–Kirchhoff with any material D or compressible
+>   neo-Hooke) and end-compliance design (`objective: end_compliance`). Load control only: no arc-length, so a
+>   limit point (snap-through) ends the solve with `NonlinearConvergenceError`; dead loads, homogeneous supports
+>   along x / y / z, one support set; direct solver only. Low-density elements use the energy interpolation of
+>   Wang et al. (2014) as written by Feng, Zhang & Khandelwal (2025) (original paper not read); with its adaptive
+>   cutoff the objective can jump between designs. Verified against closed-form uniaxial tension (2e-14), the
+>   linear solver at small load (1.4e-9), the elastica of a cantilever (n = 16 through the thickness: deflection
+>   −0.13 %, Richardson 0.04 %) and finite differences (tangent 1.9e-10, design gradient 1.2e-9); one
+>   pre-registered check (three-point Newton order, neo-Hooke) failed and is recorded
+>   ([`docs/olcumler/geometrik_dogrusal_olmama.md`](docs/olcumler/geometrik_dogrusal_olmama.md)). No plasticity,
+>   contact, follower loads, incompatible-mode elements or non-linear stress/buckling responses.
