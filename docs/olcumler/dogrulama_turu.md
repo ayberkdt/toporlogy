@@ -253,3 +253,19 @@ karşılaştırması ise depo dışındaki eleman kitaplığına (aerokit) bağl
 
 Uyumsuz modlu elemanlar (Wilson'ın Q6'sı ve dokuz modlu H8IM) bağımsız statik yoğunlaştırmayla aynı; kütle
 matrisi, depo dışı eleman kitaplığı olmadan da doğrulanıyor.
+
+## 4. Ek ön kayıt: optimizer'dan bağımsız KKT ölçüsü (2026-11-25 22:35 +0300, kod yazılmadan önce)
+
+`Result.kkt_residual` bugün optimizer'ın son adımının çarpanlarını kullanıyor [O: `study.py` `_kkt_residual`]: bir
+önceki iterasyona ait bir tahmin, çarpan vermeyen optimizer'da (SiMPL) yok. Ek: `optimization.diagnostics.kkt_estimate`
+dönen tasarımda çarpanları kendisi bulur. Etkin kısıtlar (g_j ≥ −`active_tol`) için λ ≥ 0, sınırda olmayan
+değişkenlerde ‖∇f + Σ λ_j ∇g_j‖ en küçük olacak şekilde NNLS ile; etkin olmayanlara λ = 0. Ölçü, sınırlarda
+izdüşürülmüş durağanlık (göreli, max \|∇f\|'e bölünmüş) ile kısıt ihlalinin (max(g, 0)) büyüğüdür. `Study.run` bunu
+`Result.stationarity` olarak her optimizer için verir (kısıt varsa).
+
+| # | Kontrol | Eşik |
+|:---|:---|:---|
+| P1 | Kapalı çözümlü problem: min Σ (x_i − a_i)², Σ x_i ≤ V, 0 ≤ x ≤ 1 (bazı a_i > 1, bazıları < 0): çözümde | ölçü ≤ 1e-12; λ = λ* ≤ 1e-10 göreli |
+| P2 | Aynı problem, çözümden 1e-3 uzak bir nokta | ölçü ≥ 1e-4 |
+| P3 | Etkin olmayan kısıt: λ = 0, ölçü = izdüşürülmüş gradyanın göreli büyüklüğü | tam (1e-14) |
+| P4 | MBB (`test_result_contract.py`'deki 30 × 10) MMA, OC, GCMMA, SiMPL ile yakınsamış tasarım | ölçü < 0,1 × bir iterasyonluk tasarımınki |
