@@ -243,6 +243,27 @@ order cuts the fill by 26–33 % on the larger grids and the factorisation time 
 k DOF and 2.5× at 241 k DOF (2-D). The same order makes the modal factorisation 2.6× faster at 53 k DOF (3-D) and the whole
 preloaded buckling solve 1.3–1.5× faster.
 
+## Tensor core and linear elastic family (26 Nov 2026)
+
+One implementation of the tensor algebra for NumPy and Torch (`core.tensor`: Voigt stress / strain maps kept
+separate, Mandel form, rotations, invariants, kinematics F … Hencky with explicit errors for J ≤ 0, PK1 / PK2 /
+Kirchhoff / Cauchy), the linear elastic family (`core.linear_elastic`: isotropic to general anisotropic, positive
+definiteness by Cholesky and scaled Mandel eigenvalue, no silent symmetrisation, sampled strong ellipticity,
+canonical `ElasticTensor`) and directional / Poisson-ratio analysis (`core.anisotropy`). The copies of this
+mathematics in `core.material`, `fem.elements`, `fem.buckling`, `fem.nonlinear`, `optimization.strength`,
+`design.interp` and `post.verify` now call the core; 62 of 63 recorded outputs are bit-for-bit unchanged.
+`VOIGT_3D` and `voigt_pairs` moved to `core.tensor`.
+
+| What | Checked against | Record |
+|:--|:--|:--|
+| Voigt / Mandel / tensor conversions, rotations, invariants, kinematics, stress measures | exact roundtrips; energy equivalence ≤ 1e-13; spectral and energy derivatives by central differences ≤ 1e-6; exact-rational Green–Lagrange at \|H\| = 1e-10 ≤ 1e-14 | [`tensor_elastisite.md`](docs/olcumler/tensor_elastisite.md) |
+| Plane stress (σzz = σyz = σxz = 0) and plane strain | 3-D elimination ≤ 1e-12; eliminating σzz alone is 26 % off after a general rotation | same |
+| E(n), ν(n, m), G(n, m), β(n); ν extrema over m (2 × 2 eigenproblem); sampled / refined extrema over n | rotated-compliance route ≤ 1e-11; 3600-point sweep ≤ 1e-5; two sample sizes agree to 1e-8 | same |
+| SIMP / HS admissible exponent per plane convention (`hs_admissible_exponents`) | old closed forms ≤ 1e-14; plane strain gives 3.5 at ν = 0.3 (plane stress 3.08) | same |
+
+Two pre-registered checks failed and stay strict xfail (a rotation-invariance tolerance that ignored the condition
+number of the inverse; the Cholesky chart in float64 beyond cond ≈ 1e16).
+
 ## Keeping the part in one body
 
 A compliance optimum often splits into separate load paths joined by nothing, or by a grey film that disappears at

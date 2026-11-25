@@ -2280,6 +2280,25 @@
   "annotations": "<_Feature>"
  },
  "toporlogy.core": {},
+ "toporlogy.core.anisotropy": {
+  "QUANTITIES": "<tuple>",
+  "cholesky_parameters": "cholesky_parameters(C6)",
+  "compliance_derivative": "compliance_derivative(S6,dC6)",
+  "directional_extrema": "directional_extrema(S6,quantity,n_samples,n_starts,refine)",
+  "isotropic_stiffness_derivatives": "isotropic_stiffness_derivatives(E,nu)",
+  "isotropic_sweep": "isotropic_sweep(nus,fixed,value,rho)",
+  "linear_compressibility": "linear_compressibility(S6,n)",
+  "plane_basis": "plane_basis(n)",
+  "poisson_extrema": "poisson_extrema(S6,n)",
+  "poisson_ratio": "poisson_ratio(S6,n,m)",
+  "rotated_stiffness_derivative": "rotated_stiffness_derivative(C6,R,dR)",
+  "shear_extrema": "shear_extrema(S6,n)",
+  "shear_modulus": "shear_modulus(S6,n,m)",
+  "stiffness_from_cholesky": "stiffness_from_cholesky(theta)",
+  "volumetric_compressibility": "volumetric_compressibility(S6)",
+  "young_modulus": "young_modulus(S6,n)",
+  "young_modulus_derivative": "young_modulus_derivative(S6,n,dS6)"
+ },
  "toporlogy.core.bodies": {
   "label_bodies": "label_bodies(solid,connectivity)",
   "neighbourhood": "neighbourhood(dim,connectivity)"
@@ -2310,6 +2329,62 @@
    ],
    "class": "Domain"
   }
+ },
+ "toporlogy.core.linear_elastic": {
+  "ElasticTensor": {
+   "attrs": [
+    "R",
+    "compliance",
+    "compliance_material",
+    "condition_number",
+    "cubic",
+    "eigenvalues",
+    "engineering_constants",
+    "from_compliance",
+    "from_stiffness",
+    "isotropic",
+    "mandel",
+    "orthotropic",
+    "rotated",
+    "stiffness",
+    "strong_ellipticity",
+    "symmetry_class",
+    "tensor",
+    "transversely_isotropic"
+   ],
+   "class": "ElasticTensor"
+  },
+  "IsotropicModuli": {
+   "attrs": [
+    "mu"
+   ],
+   "class": "IsotropicModuli"
+  },
+  "NotPositiveDefiniteError": {
+   "attrs": [
+    "add_note",
+    "args",
+    "with_traceback"
+   ],
+   "class": "NotPositiveDefiniteError"
+  },
+  "SINGULAR_RCOND": "<float64>",
+  "acoustic_tensor": "acoustic_tensor(C6,n)",
+  "check_positive_definite": "check_positive_definite(A6,kind,what)",
+  "cubic_stiffness": "cubic_stiffness(C11,C12,C44)",
+  "engineering_constants": "engineering_constants(S6)",
+  "fibonacci_sphere": "fibonacci_sphere(n)",
+  "isotropic_compliance": "isotropic_compliance(E,nu)",
+  "isotropic_moduli": "isotropic_moduli(two)",
+  "isotropic_plane_strain": "isotropic_plane_strain(E,nu)",
+  "isotropic_plane_stress": "isotropic_plane_stress(E,nu)",
+  "isotropic_stiffness": "isotropic_stiffness(E,nu)",
+  "orthotropic_compliance": "orthotropic_compliance(E1,E2,E3,G12,G13,G23,nu12,nu13,nu23)",
+  "plane_bulk_modulus": "plane_bulk_modulus(E,nu,plane)",
+  "strong_ellipticity": "strong_ellipticity(C6,n_directions,refine)",
+  "symmetry_class": "symmetry_class(C6,rtol)",
+  "transversely_isotropic_compliance": "transversely_isotropic_compliance(E_p,E_t,nu_p,nu_pt,G_t,axis)",
+  "wave_speeds": "wave_speeds(C6,n,rho)"
  },
  "toporlogy.core.material": {
   "Orthotropic": {
@@ -2344,12 +2419,14 @@
    ],
    "class": "Strength"
   },
-  "VOIGT_3D": "<tuple>",
   "elasticity_from_config": "elasticity_from_config(material,dim,domain)",
   "out_of_plane_row": "out_of_plane_row(C6)",
   "out_of_plane_rows": "out_of_plane_rows(material,R)",
   "plane_strain": "plane_strain(C6)",
+  "plane_strain_recovery": "plane_strain_recovery(C6)",
   "plane_stress": "plane_stress(C6)",
+  "plane_stress_derivative": "plane_stress_derivative(C6,dC6)",
+  "plane_stress_recovery": "plane_stress_recovery(C6)",
   "rotate_stiffness": "rotate_stiffness(C6,R)",
   "rotation_about_z": "rotation_about_z(angle_deg)",
   "rotation_from_axes": "rotation_from_axes(axis1,axis2)",
@@ -2359,6 +2436,98 @@
   "unique_matrices": "unique_matrices(A)",
   "unit_elasticity": "unit_elasticity(material,dim,plane,R)",
   "unit_elasticity_field": "unit_elasticity_field(material,dim,plane,R)"
+ },
+ "toporlogy.core.tensor": {
+  "DeformationError": {
+   "attrs": [
+    "add_note",
+    "args",
+    "with_traceback"
+   ],
+   "class": "DeformationError"
+  },
+  "InvertedDeformationError": {
+   "attrs": [
+    "add_note",
+    "args",
+    "with_traceback"
+   ],
+   "class": "InvertedDeformationError"
+  },
+  "SYMMETRY_RTOL": "<float>",
+  "SingularDeformationError": {
+   "attrs": [
+    "add_note",
+    "args",
+    "with_traceback"
+   ],
+   "class": "SingularDeformationError"
+  },
+  "VOIGT_2D": "<tuple>",
+  "VOIGT_3D": "<tuple>",
+  "cauchy_from_pk2": "cauchy_from_pk2(F,S)",
+  "check_rotation": "check_rotation(R,proper,atol)",
+  "check_symmetric": "check_symmetric(A,rtol,what)",
+  "compliance_to_mandel": "compliance_to_mandel(S6)",
+  "compliance_to_tensor": "compliance_to_tensor(S6)",
+  "ddot": "ddot(A,B)",
+  "ddot42": "ddot42(C,A)",
+  "ddot44": "ddot44(C,D)",
+  "deformation_gradient": "deformation_gradient(H)",
+  "deformation_state": "deformation_state(F,cond_max)",
+  "deviator": "deviator(A)",
+  "deviatoric_projector": "deviatoric_projector(dim)",
+  "euler_almansi": "euler_almansi(F)",
+  "green_lagrange": "green_lagrange(H)",
+  "hencky_strain": "hencky_strain(F,frame)",
+  "identity4_sym": "identity4_sym(dim)",
+  "infinitesimal_strain": "infinitesimal_strain(H)",
+  "j2": "j2(A)",
+  "j3": "j3(A)",
+  "jacobian": "jacobian(F,check)",
+  "jacobian_minus_one": "jacobian_minus_one(H)",
+  "kirchhoff_from_pk2": "kirchhoff_from_pk2(F,S)",
+  "left_cauchy_green": "left_cauchy_green(F)",
+  "lode_angle": "lode_angle(A,rtol)",
+  "mandel_condition_number": "mandel_condition_number(A6,kind)",
+  "mandel_eigenvalues": "mandel_eigenvalues(A6,kind)",
+  "mandel_to_compliance": "mandel_to_compliance(M)",
+  "mandel_to_stiffness": "mandel_to_stiffness(M)",
+  "mandel_to_tensor": "mandel_to_tensor(v)",
+  "outer": "outer(A,B)",
+  "pk1_from_pk2": "pk1_from_pk2(F,S)",
+  "pk2_from_cauchy": "pk2_from_cauchy(F,sigma)",
+  "pk2_from_pk1": "pk2_from_pk1(F,P)",
+  "polar_decomposition": "polar_decomposition(F)",
+  "principal_directions": "principal_directions(A)",
+  "principal_invariants": "principal_invariants(A)",
+  "principal_value_gradients": "principal_value_gradients(A,gap_rtol)",
+  "principal_values": "principal_values(A)",
+  "random_rotations": "random_rotations(n,rng)",
+  "rate_of_deformation": "rate_of_deformation(F,Fdot)",
+  "right_cauchy_green": "right_cauchy_green(F)",
+  "rotate2": "rotate2(A,R,inverse)",
+  "rotate4": "rotate4(C,R,inverse)",
+  "rotation_from_rotvec": "rotation_from_rotvec(w)",
+  "rotvec_from_rotation": "rotvec_from_rotation(R)",
+  "skew": "skew(A)",
+  "stiffness_to_mandel": "stiffness_to_mandel(C6)",
+  "stiffness_to_tensor": "stiffness_to_tensor(C6)",
+  "strain_to_voigt": "strain_to_voigt(eps,rtol)",
+  "stress_to_voigt": "stress_to_voigt(sigma,rtol)",
+  "sym": "sym(A)",
+  "symmetry_errors4": "symmetry_errors4(C)",
+  "tensor_norm": "tensor_norm(A)",
+  "tensor_to_compliance": "tensor_to_compliance(S4)",
+  "tensor_to_mandel": "tensor_to_mandel(A,rtol)",
+  "tensor_to_stiffness": "tensor_to_stiffness(C4)",
+  "trace": "trace(A)",
+  "tresca": "tresca(A)",
+  "voigt_pairs": "voigt_pairs(dim)",
+  "voigt_to_strain": "voigt_to_strain(v)",
+  "voigt_to_stress": "voigt_to_stress(v)",
+  "volumetric_projector": "volumetric_projector(dim)",
+  "von_mises_squared": "von_mises_squared(s)"
  },
  "toporlogy.core.verdict": {
   "BINARY_DESIGN": "<str>",
@@ -2848,7 +3017,9 @@
    ],
    "class": "SIMP"
   },
+  "hashin_shtrikman_bounds": "hashin_shtrikman_bounds(x,bulk,shear,dim)",
   "hashin_shtrikman_moduli": "hashin_shtrikman_moduli(x,E,nu,dim)",
+  "hs_admissible_exponents": "hs_admissible_exponents(nu,dim,plane)",
   "simp_admissible_penal": "simp_admissible_penal(nu,dim)"
  },
  "toporlogy.design.manufacturing": {
@@ -3533,8 +3704,7 @@
    ],
    "class": "LinearBuckling"
   },
-  "gauss_operators": "gauss_operators(dim)",
-  "voigt_pairs": "voigt_pairs(dim)"
+  "gauss_operators": "gauss_operators(dim)"
  },
  "toporlogy.fem.elastic": {
   "BACKWARD_TOL": "<float>",
