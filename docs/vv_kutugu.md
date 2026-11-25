@@ -2,7 +2,7 @@
 
 `tests/toporlogy/test_catalog_ledger.py` bu kütüğü toplanan testlerle karşılaştırır: her xfail strict (XPASS koşuyu kırar), kütük toplanan strict xfail listesiyle ve test kaynaklarındaki atlama noktalarıyla birebir aynı. Beklenen başarısızlık PASS sayılmaz; atlanan bir arka ucun testi NOT VERIFIED'dır. Yeniden üretim: `python tests/toporlogy/test_catalog_ledger.py --write`.
 
-Toplam 22 strict xfail (7 tanesi yavaş pakette), 14 atlama noktası.
+Toplam 22 strict xfail (7 tanesi yavaş pakette), 15 atlama noktası.
 
 Risk düzeyleri: **low** ölçüt ya da kontrolün kendisi; kod sonucu başka testle doğrulanmış; **medium** açıklanmamış sayısal fark ya da referans yeniden üretilemiyor; **high** kullanıcıya görünen sessiz kabul (yanlış sonuç üretebilir).
 
@@ -51,3 +51,4 @@ Risk düzeyleri: **low** ölçüt ya da kontrolün kendisi; kod sonucu başka te
 | test_skfem_crosscheck.py | `skfem = pytest.importorskip("skfem")` | scikit-fem (dev extra) | X1-X4 dış çözücü çapraz denetimi | NOT VERIFIED |
 | test_symmetry.py | `pytest.importorskip("pyvista")` | pyvista | simetri son işlem denetimi | NOT VERIFIED |
 | test_t10_convergence.py | `pytest.importorskip("gmsh")` | gmsh | T10 ağ yakınsaması | NOT VERIFIED |
+| test_vtu.py | `vtk = pytest.importorskip("vtk")` | vtk (post extra) | VTU dosyasının bağımsız okuyucuyla okunması ve hücre boyutları (W2, W3) | NOT VERIFIED |

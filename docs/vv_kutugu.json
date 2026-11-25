@@ -326,6 +326,13 @@
    "backend": "gmsh",
    "covers": "T10 ağ yakınsaması",
    "status_when_skipped": "NOT VERIFIED"
+  },
+  {
+   "file": "tests/toporlogy/test_vtu.py",
+   "site": "vtk = pytest.importorskip(\"vtk\")",
+   "backend": "vtk (post extra)",
+   "covers": "VTU dosyasının bağımsız okuyucuyla okunması ve hücre boyutları (W2, W3)",
+   "status_when_skipped": "NOT VERIFIED"
   }
  ]
 }

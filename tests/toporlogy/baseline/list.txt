@@ -150,7 +150,7 @@ schedule  - continuation schedule (3)
   robust_continuation  beta0=1.0  beta_max=32.0  every=50  tol=null  volume_every=20  target=null
                        update_volume=true
 
-post  - post-processing step after the run (9)
+post  - post-processing step after the run (10)
   connectivity_gate     threshold=0.5  connectivity=face  robust_thresholds=[0.3, 0.7]
                         erosion=true  voids=fail  repair=none  section=2
   discrete_check        volume=constraint  threshold=0.5  max_ratio=null
@@ -173,6 +173,7 @@ post  - post-processing step after the run (9)
   reverify              E=null [force/length^2]  nu=null  size=null [length]  surface_edge=null
                         timeout=600.0  compare_voxel=true
   symmetry_check        planes=? [length]  threshold=0.5  mesh=true
+  vtu                   name=result
 
 ? = required.  Units: lengths in the unit of h, forces in force units, E0 in force/length^2.
 NEXT          python -m toporlogy validate <config>

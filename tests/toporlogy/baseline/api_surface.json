@@ -1854,6 +1854,70 @@
   "resolve": "resolve(raw)",
   "study_from_dict": "study_from_dict(d,overrides)"
  },
+ "toporlogy.configuration.catalog": {
+  "BENCHMARKS": "<tuple>",
+  "Benchmark": {
+   "attrs": [
+    "note",
+    "validation"
+   ],
+   "class": "Benchmark"
+  },
+  "COMPOSITE_RESPONSES": "<tuple>",
+  "Cell": {
+   "attrs": [
+    "enforced",
+    "evidence",
+    "reason"
+   ],
+   "class": "Cell"
+  },
+  "ELEMENTS": "<tuple>",
+  "EXPERIMENTAL": "<str>",
+  "Element": {
+   "attrs": [],
+   "class": "Element"
+  },
+  "MATERIALS": "<tuple>",
+  "MaterialRecord": {
+   "attrs": [
+    "note",
+    "used_by"
+   ],
+   "class": "MaterialRecord"
+  },
+  "NOT_VERIFIED": "<str>",
+  "PHYSICS": "<tuple>",
+  "PHYSICS_INDEPENDENT": "<dict>",
+  "Physics": {
+   "attrs": [],
+   "class": "Physics"
+  },
+  "RESPONSE_MATRIX": "<dict>",
+  "RULES": "<tuple>",
+  "Rule": {
+   "attrs": [
+    "enforced",
+    "evidence",
+    "reason"
+   ],
+   "class": "Rule"
+  },
+  "SCHEMA_VERSION": "<str>",
+  "SOLVERS": "<tuple>",
+  "STATUSES": "<tuple>",
+  "SUPPORTED": "<str>",
+  "Solver": {
+   "attrs": [],
+   "class": "Solver"
+  },
+  "UNSUPPORTED": "<str>",
+  "as_dict": "as_dict()",
+  "check_build": "check_build(resolved,physics,responses)",
+  "render_markdown": "render_markdown(data)",
+  "status": "status(physics,response)",
+  "write": "write(folder)"
+ },
  "toporlogy.configuration.components": {
   "annotations": "<_Feature>",
   "register_all": "register_all()"
@@ -2543,6 +2607,17 @@
   "combine": "combine(verdicts)",
   "constraint_entry": "constraint_entry(name,value,upper,tol,source)",
   "constraint_verdict": "constraint_verdict(value,upper,tol,source)"
+ },
+ "toporlogy.core.vtu": {
+  "VOIGT_CONVENTION": "<str>",
+  "VTK_HEXAHEDRON": "<int>",
+  "VTK_QUAD": "<int>",
+  "VtuData": {
+   "attrs": [],
+   "class": "VtuData"
+  },
+  "read_vtu": "read_vtu(path)",
+  "write_vtu": "write_vtu(path,domain,point_data,cell_data,meta)"
  },
  "toporlogy.design": {},
  "toporlogy.design.chain": {
@@ -4821,6 +4896,74 @@
   },
   "centroid_stress": "centroid_stress(domain,U,nu,E0,elements)",
   "von_mises_matrix": "von_mises_matrix(dim)"
+ },
+ "toporlogy.optimization.stress_recovery": {
+  "CornerField": {
+   "attrs": [
+    "kind",
+    "measure",
+    "von_mises"
+   ],
+   "class": "CornerField"
+  },
+  "ElementField": {
+   "attrs": [
+    "kind",
+    "measure",
+    "von_mises"
+   ],
+   "class": "ElementField"
+  },
+  "ElementMaximum": {
+   "attrs": [
+    "kind"
+   ],
+   "class": "ElementMaximum"
+  },
+  "NodalField": {
+   "attrs": [
+    "kind",
+    "measure",
+    "von_mises"
+   ],
+   "class": "NodalField"
+  },
+  "PointField": {
+   "attrs": [
+    "energy_density",
+    "kind",
+    "measure",
+    "von_mises"
+   ],
+   "class": "PointField"
+  },
+  "StressRecovery": {
+   "attrs": [
+    "centroids",
+    "extrapolated",
+    "integration_points",
+    "ip_maximum",
+    "nodal_averaged",
+    "patch_recovered"
+   ],
+   "class": "StressRecovery"
+  }
+ },
+ "toporlogy.optimization.stress_singularity": {
+  "CONVERGED": "<str>",
+  "NOT_CONVERGED": "<str>",
+  "NOT_VERIFIED": "<str>",
+  "PeakAssessment": {
+   "attrs": [],
+   "class": "PeakAssessment"
+  },
+  "RegionStress": {
+   "attrs": [],
+   "class": "RegionStress"
+  },
+  "SINGULAR": "<str>",
+  "assess_peak": "assess_peak(h,peak,rel_tol,ratio_min,noise)",
+  "region_stress": "region_stress(values,points,lo,hi,weights)"
  },
  "toporlogy.optimization.study": {
   "Constraint": {
