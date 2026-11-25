@@ -1,7 +1,7 @@
 {
  "meta": {
-  "created": "2026-11-24T16:23:46",
-  "git": "5f97b86",
+  "created": "2026-11-25T20:05:40",
+  "git": "6c4318d",
   "max_iter": 10,
   "solver": "SuperLU (torch imported first)",
   "python": "3.12.1",
@@ -17,12 +17,12 @@
    "returncode": 1,
    "status": "not converged",
    "iterations": 10,
-   "objective": 934.6315106023299,
+   "objective": 934.6315105964551,
    "constraints": {
-    "volume": 0.3000013744324767
+    "volume": 0.3000013744320021
    },
-   "x": "3afb33c50d45dfcfb59d6c909aaec1bfd503d64abc296c3b4de8efa4fb05b4f5",
-   "xphys": "cbb19d16c58b2f705f5e7c87f2ae14f59926d87b843eb0ac059b61993625eb66",
+   "x": "835de3a75cb01b3656fd6f7cd3ce213cfcbeec658075040ac4c888d44b129979",
+   "xphys": "79c85b6780d256da6db8a391d48bc9ce21ea924629e45c592766e1264971dc78",
    "post_steps": [],
    "post_errors": [],
    "geometry_files": {}
@@ -45,14 +45,14 @@
    "returncode": 1,
    "status": "not converged",
    "iterations": 10,
-   "objective": 296.07128672461727,
+   "objective": 296.0712867221517,
    "constraints": {
-    "volume_dilated": 0.39799818890606325,
-    "local_volume": 0.3014582538331579,
-    "connectivity": 9.569717186954152
+    "volume_dilated": 0.3979981889062425,
+    "local_volume": 0.3014582538256233,
+    "connectivity": 9.569717187269749
    },
-   "x": "10c94708eeb09c7a6b6d0fe3b11f74358a4d209aa5e85b143de83f95b9438756",
-   "xphys": "f3cc20bf81b264d8750def378d98618d38e080c88a976c8e8c1d893a6c6a4043",
+   "x": "f3f58fc4e63c04c88d4dd2ed31e446d1c7dd77a9a7c94f36be1a48028af3e39a",
+   "xphys": "02477cf6dbb2f1a7c00abe1eef0ff77d38fccece93ed0b3f9a99b5e4809edd99",
    "post_steps": [
     "connectivity_gate",
     "export",
@@ -62,21 +62,21 @@
    ],
    "post_errors": [],
    "geometry_files": {
-    "part.ply": "6df229690c1a8e5e5c7ec3718258b60438616bcfbb7d7cef35d91a51943f36e9",
-    "part.stl": "e7106f1e89964b11ed72a85ffda696307803cdfc2444109e987e8ee8fddaa537",
-    "part_print_stock.stl": "dd6709ffcc84ca2ad905d3c5865641f200dffa960f58ca3f955a4ddaf063de9b"
+    "part.ply": "6a56f52dbcd00842a3d4bd3f2ae6bea801237568309b736ff7b1ed1a38385dcb",
+    "part.stl": "3063b5606c7cd26c36441118be1264c377ac75dda0a044c369b0910e14cb6fd1",
+    "part_print_stock.stl": "e570b099a17ea421d17f59704838e4fc5ae3fa25a79b14598fcbf87a9c5604b3"
    }
   },
   "mbb2d": {
    "returncode": 1,
    "status": "not converged",
    "iterations": 10,
-   "objective": 286.35382321673757,
+   "objective": 286.35382321678446,
    "constraints": {
-    "volume": 0.4999302124524384
+    "volume": 0.4999302124519701
    },
-   "x": "2eb73f4305dfa28471e1439a2f8dd7c356b0ad0a01c45abb3678ec2920527add",
-   "xphys": "551c38229edb210a6745713645d38ac379616dee8df295819ee7193c6d45e430",
+   "x": "5e33d9a613e4e871755fdaec3a233d73c830d76597192823c3153f3b2aa43b6d",
+   "xphys": "29c9d3e3e018cb739658aa095269e7e96ddab6d37a4553a188d0d132dd6360a1",
    "post_steps": [],
    "post_errors": [],
    "geometry_files": {}
@@ -85,12 +85,12 @@
    "returncode": 1,
    "status": "not converged",
    "iterations": 10,
-   "objective": 259.89521614379606,
+   "objective": 259.89521618750365,
    "constraints": {
-    "volume": 0.24745268410436452
+    "volume": 0.24745268410423626
    },
-   "x": "a73677314636acc21de4b04f6b063b194cc2b7209c4c3493cbfad0c527d7fdda",
-   "xphys": "c9c6be463e78b2892d211c0f8d6ff1be545cc7e27b30bfcba89385c5d25740bf",
+   "x": "535dc59a9c8433a41c8c8d3ef3f2e26c01dfba82fa231a852f088126a0dda2c0",
+   "xphys": "a8bc11b12afc03a38b1570ca7c149823403290410e63f1672c5adb63ff65a87c",
    "post_steps": [],
    "post_errors": [],
    "geometry_files": {}
@@ -99,13 +99,13 @@
    "returncode": 1,
    "status": "not converged",
    "iterations": 10,
-   "objective": 9.36385699436977,
+   "objective": 9.363856992914357,
    "constraints": {
-    "volume": 0.14968757096164517,
-    "connectivity": 18.791536456525535
+    "volume": 0.14968757096170637,
+    "connectivity": 18.791536456672052
    },
-   "x": "e283d58845a5fa309524f0caa3a3266f59add5d3caf7b37dd6166985a8d88e4c",
-   "xphys": "77695ababf1cb1c1a89d3975732560a3068da060f053e285b82f3c28d1002f3b",
+   "x": "4fd0aa0e9258d91babfb926ab7fc940851906225671c5650d061ee377819b4c2",
+   "xphys": "a75c86580b6561642ebc8aaa3c296e31c13211ec52c2e80e6bf4796be22e26b1",
    "post_steps": [
     "connectivity_gate"
    ],
@@ -116,12 +116,12 @@
    "returncode": 1,
    "status": "not converged",
    "iterations": 10,
-   "objective": 1.6465969807339553,
+   "objective": 1.6465969807339167,
    "constraints": {
-    "volume": 0.20000043377451499
+    "volume": 0.20000043377451865
    },
-   "x": "27f09958a9458c10ce132f2da2d99d8f8b357d40ec387c05c403cf2ecb208c23",
-   "xphys": "d35a5f265793ea068894a7a28a413313672fd079d8f5f3d2b1944edb8860c77c",
+   "x": "65ec870b4c0bdd535feb75980b81c582dd315dd7aa26adaff42d2ef88a56e9df",
+   "xphys": "6c390e26814bf8509a67b400ddfbdbcd357dd20096886d8cd5c9fc28148608ca",
    "post_steps": [],
    "post_errors": [],
    "geometry_files": {}

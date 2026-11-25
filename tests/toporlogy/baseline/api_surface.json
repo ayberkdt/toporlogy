@@ -176,9 +176,11 @@
     "element_energy",
     "element_forces",
     "element_stiffness",
+    "elimination_order",
     "factor",
     "matrix",
     "n_elements",
+    "ordering",
     "per_element",
     "solve",
     "solve_numpy"
@@ -684,9 +686,11 @@
     "element_energy",
     "element_forces",
     "element_stiffness",
+    "elimination_order",
     "factor",
     "matrix",
     "n_elements",
+    "ordering",
     "per_element",
     "solve",
     "solve_numpy"
@@ -999,9 +1003,11 @@
     "element_energy",
     "element_forces",
     "element_stiffness",
+    "elimination_order",
     "factor",
     "matrix",
     "n_elements",
+    "ordering",
     "per_element",
     "solve",
     "solve_numpy"
@@ -1046,9 +1052,11 @@
     "element_energy",
     "element_forces",
     "element_stiffness",
+    "elimination_order",
     "factor",
     "matrix",
     "n_elements",
+    "ordering",
     "per_element",
     "solve",
     "solve_numpy"
@@ -1118,9 +1126,11 @@
     "element_energy",
     "element_forces",
     "element_stiffness",
+    "elimination_order",
     "factor",
     "matrix",
     "n_elements",
+    "ordering",
     "per_element",
     "solve",
     "solve_numpy"
@@ -1165,9 +1175,11 @@
     "element_energy",
     "element_forces",
     "element_stiffness",
+    "elimination_order",
     "factor",
     "matrix",
     "n_elements",
+    "ordering",
     "per_element",
     "solve",
     "solve_numpy"
@@ -1279,9 +1291,11 @@
     "element_energy",
     "element_forces",
     "element_stiffness",
+    "elimination_order",
     "factor",
     "matrix",
     "n_elements",
+    "ordering",
     "per_element",
     "solve",
     "solve_numpy"
@@ -3470,9 +3484,11 @@
     "element_energy",
     "element_forces",
     "element_stiffness",
+    "elimination_order",
     "factor",
     "matrix",
     "n_elements",
+    "ordering",
     "per_element",
     "solve",
     "solve_numpy"
@@ -3527,9 +3543,11 @@
     "element_energy",
     "element_forces",
     "element_stiffness",
+    "elimination_order",
     "factor",
     "matrix",
     "n_elements",
+    "ordering",
     "per_element",
     "solve",
     "solve_numpy"
@@ -3537,6 +3555,7 @@
    "class": "Elasticity"
   },
   "GROUPED_MAX": "<int>",
+  "ORDERINGS": "<tuple>",
   "RESIDUAL_TOL": "<float>",
   "ResidualReport": {
    "attrs": [],
@@ -5627,6 +5646,11 @@
    ],
    "class": "BlackBoxTransfer"
   }
+ },
+ "toporlogy.solvers.ordering": {
+  "LEAF_NODES": "<int>",
+  "nested_dissection_dofs": "nested_dissection_dofs(node_shape,dofs_per_node,free,leaf)",
+  "nested_dissection_nodes": "nested_dissection_nodes(node_shape,leaf)"
  },
  "toporlogy.solvers.pardiso": {
   "available": "available()",
