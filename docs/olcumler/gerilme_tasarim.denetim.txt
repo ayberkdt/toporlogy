@@ -1,0 +1,5 @@
+figür denetimi: 0 HATA · 2 UYARI · 0 BİLGİ · TESLİM EDİLEBİLİR
+  [UYARI] etiket-hizasi      x eksen adları 22.2 pt kaymış (aynı satır)
+          → fig.align_labels() — dw.kaydet bunu çok panelli figürde kendisi yapar  [06 T15: Wilke2019Ch21 §21.2 (paneller hizalı); tolerans datawiz-secimi]
+  [UYARI] kenar-nefes        1 yazı figür kenarına bir harf boşluğundan yakın: ['Gerilme / sınır (–)']
+          → yazıyı bir harf boşluğu (≈ 0,3 em) uzağa al; yığılmış etiketlerde satır aralığını büyüt  [Franconeri2021]
