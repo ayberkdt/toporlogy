@@ -34,7 +34,7 @@ import scipy.sparse as sp
 from toporlogy.references import cite
 
 __all__ = ["TetMesh", "tet_mesh", "stiffness_t10", "solve_t10", "voxel_reference", "reverify", "d_iso",
-           "von_mises"]
+           "von_mises", "tet_quality", "assess_convergence", "mesh_convergence", "CONVERGED", "NOT_CONVERGED"]
 
 _EDGES = [(0, 1), (1, 2), (2, 0), (3, 0), (3, 2), (3, 1)]
 _a, _b = 0.5854101966249685, 0.1381966011250105
@@ -359,3 +359,159 @@ def reverify(res: Any, supports: Sequence[Any], load_cases: Any, E: float, nu: f
                          for a, b in zip(out["t10"]["cases"], vx["cases"], strict=True)]
         out["volume_ratio"] = out["t10"]["volume"] / vx["volume"]
     return out
+
+
+# ================================================================================================ mesh convergence
+CONVERGED, NOT_CONVERGED = "CONVERGED", "NOT CONVERGED"
+MIN_REFINEMENT = 1.3        # grid refinement factor h_coarse / h_fine per step (Celik et al. 2008 recommend > 1.3)
+GCI_TOL = 0.05              # fine-grid GCI; the 5 % of the T10 criterion in docs/olcumler/robustness.md §2.2
+ORDER_RANGE = (0.5, 6.0)    # apparent order accepted as asymptotic: the T10 energy (compliance) error is O(h^4) for
+#                             a smooth solution and singular edges lower it; below 0.5 or above 1.5 x 4 the three
+#                             values are not in the asymptotic range (a choice, not a measured bound)
+ORDER_SPREAD = 0.3          # with 4+ meshes: |p(coarser triplet) - p(finest triplet)| <= 0.3 p (a choice)
+
+
+def tet_quality(m: TetMesh) -> dict[str, float]:
+    """Corner-node shape quality of the tetrahedra, mean ratio q = 12 (3|V|)^(2/3) / sum l_i^2 (1 for the regular
+    tetrahedron, -> 0 for a sliver), and the corner edge lengths: min, 1st percentile and median of q; min, mean and
+    max edge."""
+    P = m.X[m.T[:, :4]]
+    vol = np.abs(np.einsum("ij,ij->i", P[:, 1] - P[:, 0], np.cross(P[:, 2] - P[:, 0], P[:, 3] - P[:, 0]))) / 6.0
+    L = np.stack([np.linalg.norm(P[:, j] - P[:, i], axis=1) for i, j in _EDGES], axis=1)
+    q = 12.0 * (3.0 * vol) ** (2.0 / 3.0) / (L ** 2).sum(axis=1)
+    return {"q_min": float(q.min()), "q_p1": float(np.percentile(q, 1)), "q_median": float(np.median(q)),
+            "edge_min": float(L.min()), "edge_mean": float(L.mean()), "edge_max": float(L.max())}
+
+
+def _apparent_order(r21: float, r32: float, e21: float, e32: float, iterations: int = 200) -> float:
+    """Apparent order for monotone convergence (Celik et al. 2008): fixed point of
+    p = |ln|e32/e21| + q(p)| / ln r21 with q(p) = ln((r21^p - 1) / (r32^p - 1)) (q = 0 for a constant ratio)."""
+    lr = float(np.log(abs(e32 / e21)))
+    p = abs(lr) / float(np.log(r21))
+    for _ in range(iterations):
+        q = 0.0 if abs(r21 - r32) < 1e-12 else float(np.log((r21 ** p - 1.0) / (r32 ** p - 1.0)))
+        p_new = abs(lr + q) / float(np.log(r21))
+        if abs(p_new - p) < 1e-12 * max(1.0, p):
+            return p_new
+        p = p_new
+    return p
+
+
+@cite("celik_2008", "roache_1998", note="three-grid apparent order, Richardson extrapolation and fine-grid GCI "
+                                        "with safety factor 1.25 (procedure from memory, not read in this session)")
+def assess_convergence(h: Sequence[float], values: Sequence[float], min_refinement: float = MIN_REFINEMENT,
+                       gci_tol: float = GCI_TOL, order_range: tuple[float, float] = ORDER_RANGE,
+                       order_spread: float = ORDER_SPREAD) -> dict[str, Any]:
+    """Verdict on a quantity computed on several meshes: CONVERGED only if every check below holds.
+
+    ``h``: a representative element size per mesh (e.g. (volume / elements)^(1/3)); ``values``: the quantity.
+    Checks on the three finest meshes (h1 < h2 < h3): at least three meshes; refinement factors r21 = h2/h1 and
+    r32 = h3/h2 both >= ``min_refinement`` (else the meshes are not really different); monotone convergence
+    (e32/e21 > 0: oscillation is not convergence); apparent order p in ``order_range`` (else no asymptotic range);
+    fine-grid GCI = 1.25 |(f1 - f2)/f1| / (r21^p - 1) <= ``gci_tol``. With four or more meshes the order from the
+    next-coarser triplet must agree within ``order_spread`` (relative). Returns the verdict, the reasons for
+    NOT CONVERGED and the measured numbers (refinement factors, order, extrapolated value, fine-grid GCI)."""
+    hh = np.asarray(h, float)
+    ff = np.asarray(values, float)
+    if hh.shape != ff.shape or hh.ndim != 1:
+        raise ValueError("h and values: one number per mesh")
+    order = np.argsort(hh)                       # finest first
+    hh, ff = hh[order], ff[order]
+    reasons: list[str] = []
+    out: dict[str, Any] = {"meshes": int(len(hh)), "h": hh.tolist(), "values": ff.tolist(), "reasons": reasons}
+    if len(hh) < 3:
+        reasons.append(f"{len(hh)} mesh(es): at least 3 are needed to see an asymptotic range")
+        out["verdict"] = NOT_CONVERGED
+        return out
+    r = (hh[1:] / hh[:-1]).tolist()
+    out["refinement"] = r
+    r21, r32 = r[0], r[1]
+    if min(r21, r32) < min_refinement:
+        reasons.append(f"refinement factor {min(r21, r32):.3f} < {min_refinement:g}: the meshes are not really "
+                       "different")
+    if min(r21, r32) <= 1.0 + 1e-12:                 # equal sizes: no order can be computed
+        out["verdict"] = NOT_CONVERGED
+        return out
+    e21, e32 = float(ff[1] - ff[0]), float(ff[2] - ff[1])
+    if e21 == 0.0 or e32 / e21 <= 0.0:
+        reasons.append("oscillatory or stalled: the differences between successive meshes change sign or vanish")
+        out["verdict"] = NOT_CONVERGED
+        return out
+    p = _apparent_order(r21, r32, e21, e32)
+    out["order"] = p
+    out["extrapolated"] = float((r21 ** p * ff[0] - ff[1]) / (r21 ** p - 1.0))
+    gci = 1.25 * abs(e21 / ff[0]) / (r21 ** p - 1.0)
+    out["gci_fine"] = float(gci)
+    if not order_range[0] <= p <= order_range[1]:
+        reasons.append(f"apparent order {p:.2f} outside [{order_range[0]:g}, {order_range[1]:g}]: no asymptotic "
+                       "range")
+    if gci > gci_tol:
+        reasons.append(f"fine-grid GCI {100 * gci:.2f} % > {100 * gci_tol:g} %")
+    if len(hh) >= 4:
+        e43 = float(ff[3] - ff[2])
+        if e43 == 0.0 or e43 / e32 <= 0.0:
+            reasons.append("the coarser triplet oscillates")
+        else:
+            p2 = _apparent_order(r32, r[2], e32, e43)
+            out["order_coarse"] = p2
+            if abs(p2 - p) > order_spread * p:
+                reasons.append(f"apparent order not stable: {p2:.2f} (coarser triplet) vs {p:.2f}")
+    out["verdict"] = CONVERGED if not reasons else NOT_CONVERGED
+    return out
+
+
+def mesh_convergence(res: Any, supports: Sequence[Any], load_cases: Any, E: float, nu: float = 0.3,
+                     sizes: Sequence[float] = (), exclusions: Sequence[Select] = (), timeout: float = 1800.0,
+                     surface_edge: float | None = None, subdivide: bool = False, base_edge: float | None = None,
+                     **assess: Any) -> dict[str, Any]:
+    """T10 compliance of ONE finished geometry on several tet sizes, :func:`assess_convergence` per load case.
+
+    The geometry handed to gmsh is the same for every size: a surface (``res`` remeshed once at ``surface_edge``,
+    default half the smallest size, or a plain (V, F)), coarsened once to edge ``base_edge`` (default the largest
+    size) when ``subdivide`` is set, and then split into k² triangles per size (k = ceil(base edge / size),
+    :func:`toporlogy.post.mesh.subdivide`, the same piecewise-linear surface). gmsh keeps the surface triangles when
+    it cannot reparametrise the surface ("discrete" mode), so without subdivision only the interior would refine.
+    The relative spread of the tet-mesh volumes is reported. Per mesh: elements, nodes, gmsh mode,
+    h = (volume / elements)^(1/3), :func:`tet_quality` and the compliance per case (consistent nodal loads of
+    :func:`solve_t10` on every mesh).
+    ``verdict`` is CONVERGED only if every load case is."""
+    if len(sizes) < 3:
+        raise ValueError(f"mesh_convergence needs at least 3 tet sizes, got {len(sizes)}")
+    from toporlogy.post import mesh as M
+    V, F = (res.V, res.F) if hasattr(res, "V") else res
+    se = 0.5 * min(sizes) if surface_edge is None else float(surface_edge)
+    dec: dict[str, Any] = {"applied": False}
+    if hasattr(res, "implicit") and se > 0 and float(np.mean(M.quality(V, F)["edge_mean"])) < 0.7 * se:
+        from toporlogy.post.pipeline import remesh
+        V, F, dec = remesh(res, edge=se)
+        dec["applied"] = "edge" in dec
+    if subdivide:
+        be = float(max(sizes) if base_edge is None else base_edge)
+        target = int(4 * M.area(V, F) / (np.sqrt(3) * be ** 2))
+        if len(F) > 1.5 * target:
+            V, F, dec2 = M.decimate(V, F, target)
+            dec["coarsened"] = dec2
+        base = float(M.quality(V, F)["edge_mean"])
+    else:
+        base = 0.0
+    meshes = []
+    for size in sorted(sizes, reverse=True):
+        t0 = time.perf_counter()
+        k = max(1, int(np.ceil(base / float(size) - 1e-9))) if subdivide else 1
+        Vk, Fk = M.subdivide(V, F, k) if k > 1 else (V, F)
+        m = tet_mesh(Vk, Fk, float(size), timeout=timeout)
+        sol = solve_t10(m, supports, load_cases, E, nu, exclusions)
+        meshes.append({"size": float(size), "elements": sol["elements"], "nodes": sol["nodes"], "dofs": sol["dofs"],
+                       "mode": m.info.get("mode"), "volume": sol["volume"], "surface_split": k,
+                       "surface_triangles": int(len(Fk)),
+                       "h": (sol["volume"] / sol["elements"]) ** (1.0 / 3.0), "quality": tet_quality(m),
+                       "compliance": {c["name"]: c["compliance"] for c in sol["cases"]},
+                       "seconds": time.perf_counter() - t0})
+    vols = np.array([mm["volume"] for mm in meshes])
+    cases = {name: assess_convergence([mm["h"] for mm in meshes], [mm["compliance"][name] for mm in meshes],
+                                      **assess)
+             for name in meshes[0]["compliance"]}
+    verdict = CONVERGED if all(c["verdict"] == CONVERGED for c in cases.values()) else NOT_CONVERGED
+    return {"verdict": verdict, "cases": cases, "meshes": meshes,
+            "surface": {"vertices": int(len(V)), "triangles": int(len(F)), "remesh": dec},
+            "volume_spread": float(np.ptp(vols) / vols.mean())}

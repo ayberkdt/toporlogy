@@ -57,7 +57,9 @@ shared by ``robust_compliance``, ``dilated_volume``, ``local_volume(source: dila
 otherwise a void interface cell cuts the tie), ``constraint`` (conduction | coupling | none),
 ``eta``, ``bound`` (null = 20 / 2.5), ``sink``, ``options`` (extra response parameters), ``gate`` (adds the
 ``connectivity_gate`` post step: verdict in ``summary.json``, exit 1 on FAIL), ``repair`` (bridge | none),
-``repair_section``, ``threshold``.
+``repair_section``, ``threshold``, ``symmetry`` (mirror planes as in the ``symmetry`` link, {x: 500} or
+[[x, 500], [y, mid]]: the frozen ties are placed together with their mirror images; null = the planes of a
+``symmetry`` link in the chain, else none).
 
 Public functions: :func:`read_config`, :func:`resolve`, :func:`build`, :func:`study_from_dict`, :func:`load_config`,
 :func:`apply_overrides`, :func:`parse_sweep`, :func:`sweep_combinations`, :func:`run_setup`, :func:`read_run`.
@@ -112,7 +114,8 @@ _CONNECTIVITY = {"interfaces": Param("interfaces", None, None, nullable=True), "
                  "sink": Param("sink", None, str, nullable=True), "options": Param("options", None, None,
                                                                                    nullable=True),
                  "gate": Param("gate", True, bool), "repair": Param("repair", "none", str),
-                 "repair_section": Param("repair_section", 2, int), "threshold": Param("threshold", 0.5, float)}
+                 "repair_section": Param("repair_section", 2, int), "threshold": Param("threshold", 0.5, float),
+                 "symmetry": Param("symmetry", None, None, nullable=True)}
 
 
 _DEFAULTS: dict[str, Any] = {"physics": "elasticity", "chain": [{"type": "density_filter", "rmin": 1.5}],

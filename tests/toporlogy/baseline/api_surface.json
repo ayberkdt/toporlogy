@@ -3770,7 +3770,7 @@
   "bridge": "bridge(domain,xphys,interfaces,threshold,section,connectivity,void_cost,solid_cost,drop_islands,binary)",
   "elements_touching_nodes": "elements_touching_nodes(domain,nodes,active_only)",
   "min_cut_cells": "min_cut_cells(solid,a,b,connectivity,frozen)",
-  "one_body": "one_body(domain,interfaces,ties,constraint,eta,bound,sink,threshold,repair_section,response_kw)",
+  "one_body": "one_body(domain,interfaces,ties,constraint,eta,bound,sink,threshold,repair_section,symmetry,response_kw)",
   "split_benchmark": "split_benchmark(dim,n,coupling,h)",
   "tie_regions": "tie_regions(domain,groups,section,avoid,keep_cost)",
   "with_keep": "with_keep(domain,extra_keep)"
@@ -4829,6 +4829,7 @@
   "mesh_topology": "mesh_topology(V,F)",
   "mirror_distance": "mirror_distance(V,F,axis,coordinate)",
   "quality": "quality(V,F)",
+  "subdivide": "subdivide(V,F,k)",
   "to_polydata": "to_polydata(V,F)",
   "vertex_normals": "vertex_normals(V,F)"
  },
@@ -5114,6 +5115,8 @@
   "same_topology": "same_topology(a,b)"
  },
  "toporlogy.post.verify": {
+  "CONVERGED": "<str>",
+  "NOT_CONVERGED": "<str>",
   "TetMesh": {
    "attrs": [
     "boundary_nodes",
@@ -5122,11 +5125,14 @@
    ],
    "class": "TetMesh"
   },
+  "assess_convergence": "assess_convergence(h,values,min_refinement,gci_tol,order_range,order_spread)",
   "d_iso": "d_iso(E,nu)",
+  "mesh_convergence": "mesh_convergence(res,supports,load_cases,E,nu,sizes,exclusions,timeout,surface_edge,subdivide,base_edge,assess)",
   "reverify": "reverify(res,supports,load_cases,E,nu,size,exclusions,domain,xphys,timeout,penal,surface_edge)",
   "solve_t10": "solve_t10(m,supports,load_cases,E,nu,exclusions)",
   "stiffness_t10": "stiffness_t10(m,E,nu,chunk)",
   "tet_mesh": "tet_mesh(V,F,size,angle_deg,timeout,modes)",
+  "tet_quality": "tet_quality(m)",
   "von_mises": "von_mises(s)",
   "voxel_reference": "voxel_reference(domain,xphys,supports,load_cases,E,nu,penal,emin_ratio)"
  },

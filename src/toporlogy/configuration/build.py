@@ -178,6 +178,20 @@ def _check_bc(bcs: Any, cases: list[dict[str, Any]]) -> Any:
     return rep
 
 
+def _tie_planes(spec: Any, chain: list[Any], d: Any) -> list[tuple[int, float]]:
+    """Mirror planes for the connectivity ties: ``connectivity.symmetry`` if given, else those of a ``symmetry``
+    link in the chain (tied variables cannot keep a one-sided frozen tie), else none."""
+    from toporlogy.configuration.helpers import _axis, _coord
+    if spec is None:
+        link = next((lk for lk in chain if isinstance(lk, dict) and str(lk.get("type", "")).lower() == "symmetry"),
+                    None)
+        spec = None if link is None else link.get("planes")
+    if spec is None:
+        return []
+    items = list(spec.items()) if isinstance(spec, dict) else [tuple(p) for p in spec]
+    return [(_axis(a, d.dim), _coord(c, _axis(a, d.dim), d)) for a, c in items]
+
+
 def build(resolved: dict[str, Any]) -> Setup:
     """Construct every component of a resolved config (see :func:`resolve`) into a :class:`Setup`."""
     from toporlogy.boundary import AllNodes, Combination, LoadCase
@@ -252,9 +266,12 @@ def build(resolved: dict[str, Any]) -> Setup:
             info["frozen_interface_cells"] = int((pads & ~d.keep).sum())
             d0 = with_keep(d, pads)
         try:
+            planes = _tie_planes(cb.get("symmetry"), r.get("chain") or [], d)
+            if planes:
+                info["tie_symmetry"] = [["xyz"[k], c] for k, c in planes]
             plan = one_body(d0, ctx.interfaces, ties=cb["ties"], constraint=cb["constraint"], eta=cb["eta"],
                             bound=cb["bound"], sink=cb["sink"], threshold=cb["threshold"],
-                            repair_section=cb["repair_section"], **opts)
+                            repair_section=cb["repair_section"], symmetry=planes, **opts)
         except (ValueError, KeyError, TypeError, RuntimeError) as e:
             raise ConfigError(f"connectivity: {e}", "connectivity") from None
         ctx.interfaces = plan.interfaces
