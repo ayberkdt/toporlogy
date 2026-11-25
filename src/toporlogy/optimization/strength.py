@@ -54,14 +54,20 @@ def expand_plane(s3: torch.Tensor, szz: torch.Tensor | None = None) -> torch.Ten
     return torch.stack([s3[:, 0], s3[:, 1], z if szz is None else szz, z, z, s3[:, 2]], dim=1)
 
 
-def rotate_stress_to_material(s: torch.Tensor, R: np.ndarray) -> torch.Tensor:
-    """σ' = Rᵀ σ R for stresses (n, 6) in global axes; R's columns are the material axes."""
+def rotate_stress_to_material(s: torch.Tensor, R: Any) -> torch.Tensor:
+    """σ' = Rᵀ σ R for stresses (n, 6) in global axes; R's columns are the material axes. ``R`` (3, 3) for all
+    rows, or (n, 3, 3) one per row (per-element orientation)."""
     Rt = torch.as_tensor(np.asarray(R, float), dtype=s.dtype)
     T = torch.zeros(s.shape[0], 3, 3, dtype=s.dtype)
     for v, (i, j) in enumerate(VOIGT_3D):
         T[:, i, j] = s[:, v]
         T[:, j, i] = s[:, v]
-    Tm = torch.einsum("pi,npq,qj->nij", Rt, T, Rt)
+    if Rt.dim() == 3:
+        if Rt.shape[0] != s.shape[0]:
+            raise ValueError(f"per-row R has {Rt.shape[0]} rotations for {s.shape[0]} stresses")
+        Tm = torch.einsum("npi,npq,nqj->nij", Rt, T, Rt)
+    else:
+        Tm = torch.einsum("pi,npq,qj->nij", Rt, T, Rt)
     return torch.stack([Tm[:, i, j] for i, j in VOIGT_3D], dim=1)
 
 
@@ -98,7 +104,9 @@ class Criterion:
     strength : Strength | OrthotropicStrength
         Isotropic strengths for the first four, orthotropic for ``tsai_wu``.
     R : array, optional
-        Material axes (columns, global coordinates) for ``tsai_wu``; None = aligned with x, y, z.
+        Material axes (columns, global coordinates) for ``tsai_wu``; None = aligned with x, y, z. (n, 3, 3): one
+        frame per element (fibre orientation field); :class:`~toporlogy.optimization.stress.FailureIndex` then
+        expects n = active elements and passes each stress row its element's frame.
     eps : float
         Smoothing at zero stress, relative to the allowable tension (module notes).
     """
@@ -131,11 +139,18 @@ class Criterion:
             self.st, self.sc = strength.allowable_tension, strength.allowable_compression
             self.scale = self.st
 
-    def index(self, s: torch.Tensor) -> torch.Tensor:
-        """Failure index (n,) of stresses (n, 6); 1 at the allowable, degree-1 homogeneous."""
+    @property
+    def per_element(self) -> bool:
+        """True when ``R`` holds one frame per element."""
+        return self.R is not None and self.R.ndim == 3
+
+    def index(self, s: torch.Tensor, R: Any = None) -> torch.Tensor:
+        """Failure index (n,) of stresses (n, 6); 1 at the allowable, degree-1 homogeneous. ``R`` (n, 3, 3)
+        overrides the criterion's frames row by row (per-element orientation)."""
         e = self.eps
         if self.kind == "tsai_wu":
-            sm = s if self.R is None else rotate_stress_to_material(s, self.R)
+            Rr = self.R if R is None else R
+            sm = s if Rr is None else rotate_stress_to_material(s, Rr)
             F = torch.as_tensor(self.F, dtype=s.dtype)
             f = torch.as_tensor(self.f, dtype=s.dtype)
             a = torch.einsum("nv,vw,nw->n", sm, F, sm)

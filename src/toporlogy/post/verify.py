@@ -14,6 +14,12 @@ coordinates, so a separate BC module supplies them (:func:`toporlogy.configurati
 
 The voxel model on the optimisation grid (:func:`voxel_reference`) uses the same callables on the grid nodes (loads
 spread equally over the selected nodes) so the change from the voxel model to the finished part is reported.
+
+Material: isotropic E, ν by default (the original path, unchanged). ``elasticity`` gives a unit-modulus D instead
+(physical D = E · elasticity): one (6, 6) matrix for an orthotropic or rotated material, or one per element. In
+:func:`reverify` a per-voxel field (n_active, 6, 6) of the optimisation grid is carried to the tetrahedra: each tet
+takes the D of the voxel that contains its centroid (:func:`tet_voxel_rows`; a centroid outside the active voxels,
+which happens at the smoothed surface, takes the nearest active voxel centre, and their number is reported).
 Smoothing changes stiffness, stress and feasibility (Swierstra, Gupta & Langelaar 2020; Subedi, Verma & Suresh 2020;
 neither read in this session) — this module measures that change for the part at hand.
 """
@@ -35,7 +41,8 @@ import scipy.sparse as sp
 from toporlogy.references import cite
 
 __all__ = ["TetMesh", "tet_mesh", "stiffness_t10", "solve_t10", "voxel_reference", "reverify", "d_iso",
-           "von_mises", "tet_quality", "assess_convergence", "mesh_convergence", "CONVERGED", "NOT_CONVERGED"]
+           "von_mises", "tet_quality", "assess_convergence", "mesh_convergence", "tet_voxel_rows", "CONVERGED",
+           "NOT_CONVERGED"]
 
 _EDGES = [(0, 1), (1, 2), (2, 0), (3, 0), (3, 2), (3, 1)]
 _a, _b = 0.5854101966249685, 0.1381966011250105
@@ -123,10 +130,21 @@ def tet_mesh(V: np.ndarray, F: np.ndarray, size: float, angle_deg: float = 40.0,
     return m
 
 
+def _material(m: TetMesh, E: float, nu: float, elasticity: Any) -> np.ndarray:
+    """Physical D: d_iso(E, ν) (None), E · D (one unit-modulus (6, 6)) or E · D_e (ne, 6, 6)."""
+    if elasticity is None:
+        return d_iso(E, nu)
+    Du = np.asarray(elasticity, float)
+    if Du.shape not in ((6, 6), (len(m.T), 6, 6)):
+        raise ValueError(f"elasticity must be (6, 6) or ({len(m.T)}, 6, 6) (one per tet), got {Du.shape}")
+    return float(E) * Du
+
+
 @cite("zienkiewicz_taylor_2013", "cook_2002", "keast_1986", note="10-node tetrahedron, 4-point rule")
-def stiffness_t10(m: TetMesh, E: float, nu: float, chunk: int = 20000) -> sp.csr_matrix:
-    """Global stiffness (full, CSR) of the T10 mesh."""
-    D = d_iso(E, nu)
+def stiffness_t10(m: TetMesh, E: float, nu: float, chunk: int = 20000, elasticity: Any = None) -> sp.csr_matrix:
+    """Global stiffness (full, CSR) of the T10 mesh. ``elasticity``: unit-modulus D, (6, 6) or one per tet
+    (ne, 6, 6); None = isotropic E, ν (module notes)."""
+    D = _material(m, E, nu, elasticity)
     ne = len(m.T)
     edof = (3 * m.T[:, :, None] + np.arange(3)).reshape(ne, 30)
     rows, cols, vals = [], [], []
@@ -140,7 +158,8 @@ def stiffness_t10(m: TetMesh, E: float, nu: float, chunk: int = 20000) -> sp.csr
             w = _GW[g] * np.linalg.det(J)
             if (w <= 0).any():
                 raise ValueError(f"{int((w <= 0).sum())} inverted/degenerate T10 Jacobians")
-            Ke += w[:, None, None] * (B.transpose(0, 2, 1) @ (D @ B))      # batched BLAS, not einsum
+            Dc = D if D.ndim == 2 else D[s:s + chunk]
+            Ke += w[:, None, None] * (B.transpose(0, 2, 1) @ (Dc @ B))     # batched BLAS, not einsum
         ed = edof[s:s + chunk]
         rows.append(np.repeat(ed, 30, axis=1).ravel())
         cols.append(np.tile(ed, (1, 30)).ravel())
@@ -212,8 +231,9 @@ def _solve(K: sp.csr_matrix, F: np.ndarray, fixed: np.ndarray) -> tuple[np.ndarr
 
 
 def solve_t10(m: TetMesh, supports: Sequence[Any], load_cases: Any, E: float, nu: float = 0.3,
-              exclusions: Sequence[Select] = ()) -> dict[str, Any]:
-    """Linear static solve; per case compliance, max displacement, von Mises (max and outside the exclusions)."""
+              exclusions: Sequence[Select] = (), elasticity: Any = None) -> dict[str, Any]:
+    """Linear static solve; per case compliance, max displacement, von Mises (max and outside the exclusions).
+    ``elasticity``: unit-modulus D (6, 6) or one per tet (ne, 6, 6), scaled by E; None = isotropic E, ν."""
     t0 = time.perf_counter()
     bnd = m.boundary_nodes
     Xb = m.X[bnd]
@@ -243,10 +263,10 @@ def solve_t10(m: TetMesh, supports: Sequence[Any], load_cases: Any, E: float, nu
             n_load.append(int(len(nn)))
     F_applied = F.copy()
     F[fixed_d] = 0.0
-    K = stiffness_t10(m, E, nu)
+    K = stiffness_t10(m, E, nu, elasticity=elasticity)
     t1 = time.perf_counter()
     U, method, t_solve = _solve(K, F, fixed_d)
-    D = d_iso(E, nu)
+    D = _material(m, E, nu, elasticity)
     nc = len(cases)
     sn = np.zeros((nc, len(m.X), 6))
     cnt = np.bincount(m.T.ravel(), minlength=len(m.X)).astype(float)
@@ -262,7 +282,8 @@ def solve_t10(m: TetMesh, supports: Sequence[Any], load_cases: Any, E: float, nu
                 g = np.einsum("eni,enj->eij", ue, dNx)
                 eps = np.stack([g[:, 0, 0], g[:, 1, 1], g[:, 2, 2], g[:, 1, 2] + g[:, 2, 1], g[:, 0, 2] + g[:, 2, 0],
                                 g[:, 0, 1] + g[:, 1, 0]], axis=1)
-                np.add.at(sn[c], T[:, k], eps @ D.T)
+                sig = eps @ D.T if D.ndim == 2 else np.einsum("evw,ew->ev", D[s:s + 20000], eps)
+                np.add.at(sn[c], T[:, k], sig)
     sn /= cnt[None, :, None]
     excl = np.zeros(len(m.X), bool)
     for sel in exclusions:
@@ -280,17 +301,22 @@ def solve_t10(m: TetMesh, supports: Sequence[Any], load_cases: Any, E: float, nu
                     "vm_max_outside_exclusions": float(vo.max()), "vm_outside_at": m.X[int(np.argmax(vo))].tolist(),
                     "applied_force": F_applied[:, c].reshape(-1, 3).sum(0).tolist(),
                     "reaction_sum": R[np.unique(fixed_d // 3)].sum(0).tolist()})
-    return {"cases": out, "elements": int(len(m.T)), "nodes": int(len(m.X)), "dofs": int(m.ndof),
-            "volume": m.volume, "solver": method, "solve_s": t_solve, "assemble_s": t1 - t0,
-            "total_s": time.perf_counter() - t0, "support_nodes": n_sup, "load_nodes": n_load, "mesh": m.info}
+    res = {"cases": out, "elements": int(len(m.T)), "nodes": int(len(m.X)), "dofs": int(m.ndof),
+           "volume": m.volume, "solver": method, "solve_s": t_solve, "assemble_s": t1 - t0,
+           "total_s": time.perf_counter() - t0, "support_nodes": n_sup, "load_nodes": n_load, "mesh": m.info}
+    if elasticity is not None:
+        res["material"] = "per-element" if np.ndim(elasticity) == 3 else "general"
+    return res
 
 
 def voxel_reference(domain: Any, xphys: np.ndarray, supports: Sequence[Any], load_cases: Any, E: float,
-                    nu: float = 0.3, penal: float = 3.0, emin_ratio: float = 1e-9) -> dict[str, Any]:
+                    nu: float = 0.3, penal: float = 3.0, emin_ratio: float = 1e-9,
+                    elasticity: Any = None) -> dict[str, Any]:
     """Same callables on the optimisation grid (SIMP modulus E·x̄^p, H8): compliance and max displacement per case.
 
     Supports and loads select grid nodes of the part (all of them, not only the boundary); each total force is
-    spread equally over its selected nodes."""
+    spread equally over its selected nodes. ``elasticity``: unit-modulus D (6, 6) or one per active element
+    (n_active, 6, 6), as for :class:`~toporlogy.fem.Elasticity`; None = isotropic ν."""
     from toporlogy.fem import Elasticity
     fixed = []
     for sel, dirs in _supports(supports):
@@ -308,7 +334,7 @@ def voxel_reference(domain: Any, xphys: np.ndarray, supports: Sequence[Any], loa
             for k in range(3):
                 Fv[domain.dofs(nn, k), c] += f[k] / len(nn)
     fx = np.unique(np.concatenate(fixed))
-    phys = Elasticity(domain, fx, nu=nu, element="H8")
+    phys = Elasticity(domain, fx, nu=nu, element="H8", elasticity=elasticity)
     x = np.asarray(xphys, float).reshape(-1)[phys.elements]
     fr = np.asarray(domain.frac, float).reshape(-1)[phys.elements]
     Ee = (emin_ratio + x ** penal * (1 - emin_ratio)) * E * fr
@@ -325,12 +351,14 @@ def voxel_reference(domain: Any, xphys: np.ndarray, supports: Sequence[Any], loa
 def reverify(res: Any, supports: Sequence[Any], load_cases: Any, E: float, nu: float = 0.3,
              size: float | None = None, exclusions: Sequence[Select] = (), domain: Any = None,
              xphys: np.ndarray | None = None, timeout: float = 600.0, penal: float = 3.0,
-             surface_edge: float | None = None) -> dict[str, Any]:
+             surface_edge: float | None = None, elasticity: Any = None) -> dict[str, Any]:
     """Mesh the finished surface, solve, and (with ``domain``/``xphys``) compare with the voxel model.
 
     ``surface_edge``: edge length of the surface handed to gmsh (default size/2; 0 = use the finished surface as
     it is). A :class:`~toporlogy.post.pipeline.PostResult` is remeshed from its implicit shape
-    (:func:`~toporlogy.post.pipeline.remesh`); a plain (V, F) is decimated."""
+    (:func:`~toporlogy.post.pipeline.remesh`); a plain (V, F) is decimated. ``elasticity``: unit-modulus D (6, 6),
+    or one per active voxel of ``domain`` (n_active, 6, 6), carried to the tets by :func:`tet_voxel_rows` (module
+    notes); None = isotropic E, ν."""
     from toporlogy.post import mesh as M
     V, F = (res.V, res.F) if hasattr(res, "V") else res
     if size is None:
@@ -351,15 +379,44 @@ def reverify(res: Any, supports: Sequence[Any], load_cases: Any, E: float, nu: f
                 V, F, dec = M.decimate(V, F, target)
     m = tet_mesh(V, F, size, timeout=timeout)
     m.info["surface_decimation"] = dec
-    out: dict[str, Any] = {"t10": solve_t10(m, supports, load_cases, E, nu, exclusions)}
+    el_t10 = elasticity
+    if elasticity is not None and np.ndim(elasticity) == 3:
+        if domain is None:
+            raise ValueError("reverify: a per-voxel elasticity needs the domain")
+        rows, n_out = tet_voxel_rows(m, domain)
+        el_t10 = np.asarray(elasticity, float)[rows]
+        m.info["orientation_from_nearest_voxel"] = n_out
+    out: dict[str, Any] = {"t10": solve_t10(m, supports, load_cases, E, nu, exclusions, elasticity=el_t10)}
     if domain is not None and xphys is not None:
-        vx = voxel_reference(domain, xphys, supports, load_cases, E, nu, penal=penal)
+        vx = voxel_reference(domain, xphys, supports, load_cases, E, nu, penal=penal, elasticity=elasticity)
         out["voxel"] = vx
         out["change"] = [{"name": a["name"], "compliance_ratio": a["compliance"] / b["compliance"],
                           "max_displacement_ratio": a["max_displacement"] / b["max_displacement"]}
                          for a, b in zip(out["t10"]["cases"], vx["cases"], strict=True)]
         out["volume_ratio"] = out["t10"]["volume"] / vx["volume"]
     return out
+
+
+def tet_voxel_rows(m: TetMesh, domain: Any) -> tuple[np.ndarray, int]:
+    """(rows (ne,), n_outside): for every tet the row in ``domain.active_elements`` of the voxel containing its
+    centroid (mean of the four corners); a centroid outside the active voxels takes the voxel with the nearest
+    centre, and ``n_outside`` counts those tets."""
+    if domain.dim != 3:
+        raise ValueError("tet_voxel_rows needs a 3-D domain")
+    c = m.X[m.T[:, :4]].mean(axis=1)
+    ijk = np.floor((c - domain.origin) / domain.h).astype(np.int64)
+    shape = np.asarray(domain.shape, np.int64)
+    inside = np.all((ijk >= 0) & (ijk < shape), axis=1)
+    box = np.full(len(c), -1, np.int64)
+    box[inside] = np.ravel_multi_index(tuple(ijk[inside].T), tuple(domain.shape))
+    act = domain.active_elements
+    rows = np.searchsorted(act, np.maximum(box, 0))
+    hit = inside & (rows < len(act)) & (act[np.minimum(rows, len(act) - 1)] == box)
+    if not hit.all():
+        from scipy.spatial import cKDTree
+        _, nearest = cKDTree(domain.element_centers()[act]).query(c[~hit])
+        rows[~hit] = nearest
+    return rows.astype(np.int64), int((~hit).sum())
 
 
 # ================================================================================================ mesh convergence

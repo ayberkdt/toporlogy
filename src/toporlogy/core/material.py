@@ -27,6 +27,13 @@ row of C that gives σzz from the in-plane strains under plane strain (failure c
 Normalisation: the finite elements are built for a unit modulus and scaled by the interpolation's E0. A material's
 ``reference_modulus`` is that E0 (E for isotropic, E1 for orthotropic); :func:`unit_elasticity` returns D / E0.
 
+Orientation per element (fibre angle): :func:`rotations_about_z` (2-D angle field) and :func:`rotations_from_axes`
+(3-D axis field) give (n, 3, 3) rotations; :func:`unit_elasticity_field` the (n, k, k) unit-modulus D of every
+element, computed once per distinct rotation with :func:`unit_elasticity` (an element with the same R as another
+gets the same matrix bit for bit, so a uniform field reproduces the single-D path exactly). The physics accept the
+(n_active, k, k) array as ``elasticity`` (:class:`toporlogy.fem.Elasticity`). Not modelled: the fibre angle as a
+design variable (CFAO), laminate (ply stacking) theory, damage progression.
+
 Strength
 --------
 :class:`Strength` (isotropic: tension, compression, optional shear, safety factor) and :class:`OrthotropicStrength`
@@ -45,7 +52,8 @@ from typing import Any
 import numpy as np
 
 __all__ = ["VOIGT_3D", "Orthotropic", "Strength", "OrthotropicStrength", "rotation_from_axes", "rotation_about_z",
-           "rotate_stiffness", "plane_stress", "plane_strain", "out_of_plane_row", "unit_elasticity",
+           "rotations_from_axes", "rotations_about_z", "rotate_stiffness", "plane_stress", "plane_strain",
+           "out_of_plane_row", "out_of_plane_rows", "unit_elasticity", "unit_elasticity_field", "unique_matrices",
            "elasticity_from_config", "strength_from_config", "PLANE_MODES"]
 
 #: tensor index pairs of the 3-D Voigt components (toporlogy order)
@@ -132,6 +140,42 @@ def rotation_about_z(angle_deg: float) -> np.ndarray:
     return np.array([[c, -s, 0.0], [s, c, 0.0], [0.0, 0.0, 1.0]])
 
 
+def rotations_about_z(angles_deg: Any) -> np.ndarray:
+    """(n, 3, 3) rotations for material axis 1 at ``angles_deg[i]`` from global x (as :func:`rotation_about_z`)."""
+    a = np.asarray(angles_deg, float).reshape(-1)
+    if not np.isfinite(a).all():
+        raise ValueError("the angle field must be finite")
+    return np.array([rotation_about_z(float(t)) for t in a]).reshape(len(a), 3, 3)
+
+
+def rotations_from_axes(axis1: Any, axis2: Any) -> np.ndarray:
+    """(n, 3, 3) rotations from per-element axes ``axis1`` (n, 3) and ``axis2`` (n, 3) or one vector (3,), each as
+    :func:`rotation_from_axes`. Raises, naming the first element, when axis2 is parallel to axis1 there."""
+    a1 = np.asarray(axis1, float).reshape(-1, 3)
+    b = np.asarray(axis2, float)
+    a2 = np.broadcast_to(b.reshape(3), a1.shape) if b.ndim == 1 else b.reshape(-1, 3)
+    if a2.shape != a1.shape:
+        raise ValueError(f"axis2 must be (3,) or {a1.shape}, got {b.shape}")
+    if not (np.isfinite(a1).all() and np.isfinite(a2).all()):
+        raise ValueError("the axis field must be finite")
+    out = np.empty((len(a1), 3, 3))
+    for i in range(len(a1)):
+        try:
+            out[i] = rotation_from_axes(a1[i], a2[i])
+        except ValueError as e:
+            raise ValueError(f"element {i}: {e}") from None
+    return out
+
+
+def unique_matrices(A: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    """(distinct matrices (m, ...), index (n,)) with ``A == distinct[index]`` exactly."""
+    A = np.ascontiguousarray(np.asarray(A, float))
+    if A.ndim < 2:
+        raise ValueError("A must be (n, ...)")
+    u, idx = np.unique(A.reshape(len(A), -1), axis=0, return_inverse=True)
+    return u.reshape((len(u),) + A.shape[1:]), np.asarray(idx, np.int64).reshape(-1)
+
+
 def _tensor(C6: np.ndarray) -> np.ndarray:
     C = np.zeros((3, 3, 3, 3))
     for a, (i, j) in enumerate(VOIGT_3D):
@@ -180,6 +224,26 @@ def unit_elasticity(material: Orthotropic, dim: int, plane: str = "stress",
     if plane not in PLANE_MODES:
         raise ValueError(f"plane: one of {PLANE_MODES}")
     return plane_stress(C) if plane == "stress" else plane_strain(C)
+
+
+def unit_elasticity_field(material: Orthotropic, dim: int, plane: str = "stress",
+                          R: np.ndarray | None = None) -> np.ndarray:
+    """(n, k, k) unit-modulus D of every element for per-element material axes ``R`` (n, 3, 3), each computed with
+    :func:`unit_elasticity` once per distinct rotation (module notes). ``R`` None or (3, 3) returns (k, k)."""
+    if R is None or np.ndim(R) == 2:
+        return unit_elasticity(material, dim, plane, R)
+    Rs, idx = unique_matrices(np.asarray(R, float).reshape(-1, 3, 3))
+    Du = np.array([unit_elasticity(material, dim, plane, r) for r in Rs])
+    return Du[idx]
+
+
+def out_of_plane_rows(material: Orthotropic, R: np.ndarray | None = None) -> np.ndarray:
+    """Plane-strain σzz rows of the unit-modulus stiffness: (3,) for one R (or None), (n, 3) for R (n, 3, 3)."""
+    E0 = material.reference_modulus
+    if R is None or np.ndim(R) == 2:
+        return out_of_plane_row(material.stiffness(R) / E0)
+    Rs, idx = unique_matrices(np.asarray(R, float).reshape(-1, 3, 3))
+    return np.array([out_of_plane_row(material.stiffness(r) / E0) for r in Rs])[idx]
 
 
 @dataclass(frozen=True)
@@ -253,25 +317,37 @@ class OrthotropicStrength:
 _ORTHO_KEYS = ("E1", "E2", "E3", "G12", "G13", "G23", "nu12", "nu13", "nu23")
 
 
-def elasticity_from_config(material: dict[str, Any], dim: int) -> tuple[Orthotropic, np.ndarray | None]:
+def elasticity_from_config(material: dict[str, Any], dim: int,
+                           domain: Any = None) -> tuple[Orthotropic, np.ndarray | None]:
     """(material, R) of a resolved ``material`` section: isotropic from E0 / nu unless ``orthotropic`` is given
-    ({E1, E2, E3, G12, G13, G23, nu12, nu13, nu23} plus ``angle`` (degrees about z) or ``axes`` [axis1, axis2]).
-    2-D orthotropy is limited to rotations about z (out-of-plane shear would couple to the in-plane state)."""
+    ({E1, E2, E3, G12, G13, G23, nu12, nu13, nu23} plus at most one orientation: ``angle`` (degrees about z),
+    ``axes`` [axis1, axis2] (3-D), ``angle_field`` (2-D) or ``axis_field`` (3-D)). 2-D orthotropy is limited to
+    rotations about z (out-of-plane shear would couple to the in-plane state).
+
+    Fields (per element; need ``domain``): ``angle_field`` a ``.npy`` path or array of the element grid shape
+    (degrees about z); ``axis_field`` a ``.npy`` path or array (*shape, 3) of axis 1, with ``axis2`` (one vector)
+    for the second axis, or (*shape, 2, 3) with both. Values outside the part are ignored. R is then
+    (n_active, 3, 3) in the order of ``domain.active_elements``. A relative path is taken from the working directory
+    (as for the STL domain)."""
     spec = material.get("orthotropic")
     if spec is None:
         return Orthotropic.isotropic(float(material["E0"]), float(material["nu"])), None
     if not isinstance(spec, dict):
         raise ValueError("material.orthotropic must be a mapping")
-    unknown = set(spec) - set(_ORTHO_KEYS) - {"angle", "axes"}
+    orient = ("angle", "axes", "angle_field", "axis_field")
+    unknown = set(spec) - set(_ORTHO_KEYS) - set(orient) - {"axis2"}
     if unknown:
         raise ValueError(f"material.orthotropic: unknown keys {sorted(unknown)} (keys: {', '.join(_ORTHO_KEYS)}, "
-                         "angle, axes)")
+                         f"{', '.join(orient)}, axis2)")
     missing = [k for k in _ORTHO_KEYS if k not in spec]
     if missing:
         raise ValueError(f"material.orthotropic: missing {missing}")
     mat = Orthotropic(*(float(spec[k]) for k in _ORTHO_KEYS))
-    if "angle" in spec and "axes" in spec:
-        raise ValueError("material.orthotropic: give angle or axes, not both")
+    given = [k for k in orient if k in spec]
+    if len(given) > 1:
+        raise ValueError(f"material.orthotropic: give one of {', '.join(orient)}, not {' and '.join(given)}")
+    if "axis2" in spec and given != ["axis_field"]:
+        raise ValueError("material.orthotropic.axis2 belongs to axis_field")
     R = None
     if "angle" in spec:
         R = rotation_about_z(float(spec["angle"]))
@@ -282,7 +358,48 @@ def elasticity_from_config(material: dict[str, Any], dim: int) -> tuple[Orthotro
         if not (isinstance(ax, list | tuple) and len(ax) == 2):
             raise ValueError("material.orthotropic.axes: [axis1, axis2]")
         R = rotation_from_axes(ax[0], ax[1])
+    elif "angle_field" in spec:
+        if dim != 2:
+            raise ValueError("material.orthotropic.angle_field is 2-D (use axis_field in 3-D)")
+        R = rotations_about_z(_element_field(spec["angle_field"], domain, (), "angle_field"))
+    elif "axis_field" in spec:
+        if dim != 3:
+            raise ValueError("material.orthotropic.axis_field is 3-D (use angle_field in 2-D)")
+        raw = _load_field(spec["axis_field"], "axis_field")
+        if domain is not None and raw.shape == tuple(domain.shape) + (2, 3):
+            ax2 = _element_field(raw, domain, (2, 3), "axis_field")
+            R = rotations_from_axes(ax2[:, 0], ax2[:, 1])
+        else:
+            if "axis2" not in spec:
+                raise ValueError("material.orthotropic.axis_field of shape (*shape, 3) needs axis2 (the second "
+                                 "material axis, one vector); or give (*shape, 2, 3)")
+            ax1 = _element_field(raw, domain, (3,), "axis_field")
+            R = rotations_from_axes(ax1, np.asarray(spec["axis2"], float).reshape(3))
     return mat, R
+
+
+def _load_field(v: Any, what: str) -> np.ndarray:
+    if isinstance(v, str):
+        from pathlib import Path
+        p = Path(v)
+        if not p.is_file():
+            raise ValueError(f"material.orthotropic.{what}: file not found: {p.resolve()}")
+        return np.asarray(np.load(p, allow_pickle=False), float)
+    return np.asarray(v, float)
+
+
+def _element_field(v: Any, domain: Any, tail: tuple[int, ...], what: str) -> np.ndarray:
+    """(n_active, *tail) values of a field given on the element grid (*domain.shape, *tail)."""
+    if domain is None:
+        raise ValueError(f"material.orthotropic.{what} needs the domain")
+    a = _load_field(v, what)
+    want = tuple(domain.shape) + tail
+    if a.shape != want:
+        raise ValueError(f"material.orthotropic.{what}: shape {a.shape}, the element grid needs {want}")
+    out = a.reshape((-1,) + tail)[domain.active_elements]
+    if not np.isfinite(out).all():
+        raise ValueError(f"material.orthotropic.{what}: values inside the part must be finite")
+    return out
 
 
 def strength_from_config(material: dict[str, Any]) -> Strength | OrthotropicStrength | None:

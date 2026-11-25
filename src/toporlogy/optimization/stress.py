@@ -190,7 +190,9 @@ class FailureIndex(VonMises):
     (orthotropic, rotated, plane strain).
 
     The solid centroid stress is ``σ_e = E0 · D · (B_c / h) · u_e`` with the physics' unit-modulus ``D``; in 2-D it is
-    expanded to 3-D with σzz = E0 · ``szz_row`` · ε (plane strain; None = plane stress, σzz = 0). The local value is
+    expanded to 3-D with σzz = E0 · ``szz_row`` · ε (plane strain; None = plane stress, σzz = 0). Per-element
+    material: ``D`` (n_active, k, k), ``szz_row`` (n_active, 3) and the criterion's ``R`` (n_active, 3, 3) give
+    every element its own elasticity and material axes (the stress is rotated to the element's axes). The local value is
     the criterion's index I (1 at the allowable) relaxed exactly as :class:`VonMises` relaxes σ_vM / σ_lim
     (``form``, ``q``, ``penal``); with ``criterion`` von Mises, isotropic D and plane stress it equals
     :class:`VonMises` with σ_lim = the allowable tension (to rounding; ``tests/toporlogy/test_strength.py``).
@@ -201,11 +203,12 @@ class FailureIndex(VonMises):
     criterion : Criterion
         Failure criterion with its allowables.
     D : array, optional
-        Unit-modulus elasticity matrix (``physics.D``); None = isotropic from ``nu``.
+        Unit-modulus elasticity matrix (``physics.D``), (k, k) or (n_active, k, k); None = isotropic from ``nu``.
     nu : float
         Poisson's ratio when ``D`` is None.
-    szz_row : array (3,), optional
-        Plane-strain row of the unit-modulus 3-D stiffness (:func:`toporlogy.core.material.out_of_plane_row`).
+    szz_row : array (3,) or (n_active, 3), optional
+        Plane-strain row of the unit-modulus 3-D stiffness (:func:`toporlogy.core.material.out_of_plane_row`,
+        :func:`~toporlogy.core.material.out_of_plane_rows`).
     E0, form, q, penal, exclude, cases : as for :class:`VonMises`.
 
     :attr:`last_solid_ratio` is the largest unrelaxed index over the elements with x̄ > 0.5.
@@ -223,11 +226,22 @@ class FailureIndex(VonMises):
         if D is None:
             D = D_iso(nu) if dim == 3 else D_plane_stress(nu)
         self.D = np.asarray(D, float)
-        if self.D.shape != (nv, nv):
-            raise ValueError(f"D must be {nv} x {nv} for a {dim}-D domain")
+        na = domain.n_active
+        # rows of this field's elements inside the active-element arrays (per-element material)
+        self._rows = np.searchsorted(domain.active_elements, self.elements)
+        if self.D.shape not in ((nv, nv), (na, nv, nv)):
+            raise ValueError(f"D must be {nv} x {nv} or ({na}, {nv}, {nv}) for a {dim}-D domain, got {self.D.shape}")
         if szz_row is not None and dim == 3:
             raise ValueError("szz_row is for 2-D plane strain only")
-        self.szz_row = None if szz_row is None else np.asarray(szz_row, float).reshape(3)
+        self.szz_row: np.ndarray | None = None
+        if szz_row is not None:
+            row = np.asarray(szz_row, float)
+            if row.shape not in ((3,), (na, 3)):
+                raise ValueError(f"szz_row must be (3,) or ({na}, 3), got {row.shape}")
+            self.szz_row = row
+        Rc = getattr(criterion, "R", None)
+        if Rc is not None and np.ndim(Rc) == 3 and np.shape(Rc)[0] != na:
+            raise ValueError(f"the criterion has {np.shape(Rc)[0]} material frames, the domain {na} active elements")
         self._B = (b_centroid_h8() if dim == 3 else b_centroid_q4()) / domain.h
 
     def solid_ratio(self, ctx: EvalContext) -> torch.Tensor:
@@ -240,12 +254,21 @@ class FailureIndex(VonMises):
         ue = U2[torch.as_tensor(self.domain.edof[self.elements], dtype=torch.long)]       # (n, nloc, nc)
         Bt = torch.as_tensor(self._B, dtype=U2.dtype)
         eps_ = torch.einsum("vk,ekc->ecv", Bt, ue)                                       # strain (n, nc, nv)
-        sig = E0 * eps_ @ torch.as_tensor(self.D, dtype=U2.dtype).T
+        if self.D.ndim == 2:
+            sig = E0 * eps_ @ torch.as_tensor(self.D, dtype=U2.dtype).T
+        else:                                                                            # own D per element
+            sig = E0 * torch.einsum("ecw,evw->ecv", eps_, torch.as_tensor(self.D[self._rows], dtype=U2.dtype))
         n, nc = sig.shape[0], sig.shape[1]
         flat = sig.reshape(n * nc, -1)
         if self.domain.dim == 2:
             szz = None
-            if self.szz_row is not None:
+            if self.szz_row is not None and self.szz_row.ndim == 1:
                 szz = E0 * eps_.reshape(n * nc, 3) @ torch.as_tensor(self.szz_row, dtype=U2.dtype)
+            elif self.szz_row is not None:
+                rows = torch.as_tensor(self.szz_row[self._rows], dtype=U2.dtype)
+                szz = (E0 * torch.einsum("ecv,ev->ec", eps_, rows)).reshape(n * nc)
             flat = expand_plane(flat, szz)
+        if getattr(self.criterion, "per_element", False):                               # element frame per row
+            Rr = np.repeat(np.asarray(self.criterion.R)[self._rows], nc, axis=0)
+            return self.criterion.index(flat, R=Rr).reshape(n, nc)
         return self.criterion.index(flat).reshape(n, nc)
