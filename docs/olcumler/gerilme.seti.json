@@ -1,0 +1,122 @@
+{
+ "_aciklama": "datawiz figür seti: bütün figürler bu sözleşmeyle üretilir. Elle düzenlenebilir; renk/birim değiştirirsen bütün figürleri yeniden üret.",
+ "surum": 1,
+ "dergi": "web",
+ "hedef": "web-640",
+ "ortam": "web",
+ "palet": "okabe-ito",
+ "koyu": false,
+ "etiket_bicimi": "parantez",
+ "cift_kodlama": true,
+ "ondalik_ayirici": ",",
+ "varliklar": {
+  "merkez": {
+   "renk": "#0072b2",
+   "baglam": false,
+   "isaret": "o",
+   "cizgi": "-",
+   "sira": 0
+  },
+  "yama kurtarma": {
+   "renk": "#d55e00",
+   "baglam": false,
+   "isaret": "s",
+   "cizgi": "--",
+   "sira": 1
+  },
+  "noktasal yük": {
+   "renk": "#009e73",
+   "baglam": false,
+   "isaret": "^",
+   "cizgi": "-.",
+   "sira": 2
+  },
+  "içbükey köşe": {
+   "renk": "#cc79a7",
+   "baglam": false,
+   "isaret": "D",
+   "cizgi": ":",
+   "sira": 3
+  },
+  "ankastre kenar": {
+   "renk": "#e69f00",
+   "baglam": false,
+   "isaret": "v",
+   "cizgi": [
+    0,
+    [
+     5,
+     1
+    ]
+   ],
+   "sira": 4
+  },
+  "Toplulaştırılmış 0/1": {
+   "renk": "#56b4e9",
+   "baglam": false,
+   "isaret": "P",
+   "cizgi": [
+    0,
+    [
+     3,
+     1,
+     1,
+     1,
+     1,
+     1
+    ]
+   ],
+   "sira": 5
+  },
+  "Augmented Lagrangian 0/1": {
+   "renk": "#000000",
+   "baglam": false,
+   "isaret": "X",
+   "cizgi": [
+    0,
+    [
+     1,
+     1
+    ]
+   ],
+   "sira": 6
+  },
+  "Gauss noktası": {
+   "renk": "#919191",
+   "baglam": true,
+   "isaret": null,
+   "cizgi": ":",
+   "sira": 7
+  },
+  "köşe = düğüm ortalaması": {
+   "renk": "#919191",
+   "baglam": true,
+   "isaret": null,
+   "cizgi": "--",
+   "sira": 8
+  },
+  "yayılı yük, kontrol": {
+   "renk": "#919191",
+   "baglam": true,
+   "isaret": null,
+   "cizgi": "-",
+   "sira": 9
+  },
+  "dolu parça": {
+   "renk": "#919191",
+   "baglam": true,
+   "isaret": null,
+   "cizgi": "-",
+   "sira": 10
+  }
+ },
+ "nicelikler": {},
+ "siralar": {},
+ "haritalar": {},
+ "figurler": {
+  "gerilme_mertebe": "gerilme_mertebe.dw.json",
+  "gerilme_tekillik": "gerilme_tekillik.dw.json",
+  "gerilme_tasarim": "gerilme_tasarim.dw.json",
+  "gerilme_lbracket": "gerilme_lbracket.dw.json"
+ }
+}
