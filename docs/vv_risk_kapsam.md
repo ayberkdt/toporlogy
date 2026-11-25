@@ -4,14 +4,14 @@ Kaynak: `tests/toporlogy/_vv_layers.py` (dosya → katman sınıflaması elle, d
 
 | Katman | core | geometry | boundary | design | fem | solvers | optimization | optimizers | configuration | execution | post | references |
 |:---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| U unit / property | 3/37 | 3/30 | — | 5/52 | 3/35 | 3/43 | 8/75 | 2/30 | 1/10 | 1/10 | 3/27 | — |
-| MP material point | 8/70 | — | — | 5/50 | 7/67 | — | 8/73 | 3/32 | 5/57 | 1/13 | 3/38 | — |
-| EL element patch / quadrature | 4/35 | — | — | 1/10 | 7/64 | 1/14 | 3/39 | 1/14 | 1/17 | — | 2/20 | — |
+| U unit / property | 6/99 | 3/30 | — | 6/69 | 4/52 | 3/43 | 9/103 | 2/30 | 1/10 | 1/10 | 4/44 | — |
+| MP material point | 10/104 | — | — | 6/67 | 8/84 | — | 8/73 | 3/32 | 5/57 | 1/13 | 4/55 | — |
+| EL element patch / quadrature | 5/48 | — | — | 1/10 | 8/77 | 1/14 | 4/52 | 1/14 | 1/17 | — | 2/20 | — |
 | AS assembly / BC / reactions | 1/23 | 1/23 | 5/62 | — | 4/39 | 5/53 | 1/23 | — | — | — | — | — |
-| AN analytical / MMS | 4/39 | — | — | 3/35 | 11/106 | — | 8/89 | 3/41 | 3/41 | 1/13 | 2/20 | — |
+| AN analytical / MMS | 5/52 | — | — | 3/35 | 12/119 | — | 10/111 | 3/41 | 3/41 | 1/13 | 2/20 | — |
 | IS independent solver / implementation | 4/14 | — | — | — | 7/53 | 1/12 | 2/15 | — | 1/14 | — | — | — |
-| OG optimization / KKT / gradient | 5/68 | — | — | 5/56 | 9/109 | 4/48 | 17/153 | 13/137 | 6/70 | 2/30 | 2/30 | — |
-| E2E end-to-end geometry | 2/38 | 5/39 | — | 2/13 | 2/38 | — | 7/61 | 1/21 | 4/38 | 1/10 | 10/67 | — |
+| OG optimization / KKT / gradient | 6/76 | — | — | 5/56 | 10/117 | 4/48 | 18/161 | 13/137 | 6/70 | 2/30 | 2/30 | — |
+| E2E end-to-end geometry | 3/46 | 5/39 | — | 2/13 | 3/46 | — | 8/69 | 1/21 | 4/38 | 1/10 | 10/67 | — |
 | IC integration / compatibility | 3/14 | 2/34 | — | 3/31 | 4/25 | — | 5/50 | 2/23 | 11/105 | 7/77 | 1/8 | 1/11 |
 | PF performance | — | — | 1/11 | — | 2/23 | 2/23 | — | — | — | — | — | — |
 
@@ -31,6 +31,7 @@ Boş hücreler (açık risk adayı; her biri bir risk değildir, örn. `referenc
 Katman sınıflaması (dosya → katmanlar):
 
 - `test_aggregates.py`: U, OG
+- `test_anisotropy.py`: U, MP
 - `test_api_surface.py`: IC
 - `test_architecture.py`: IC
 - `test_baseline.py`: IC
@@ -68,6 +69,7 @@ Katman sınıflaması (dosya → katmanlar):
 - `test_kinematic_contract.py`: AS
 - `test_kkt_estimate.py`: OG
 - `test_lengthscale.py`: U, OG
+- `test_linear_elastic.py`: U, MP
 - `test_manufacturing.py`: U, OG
 - `test_material.py`: MP, EL
 - `test_material_config.py`: MP, IC
@@ -99,6 +101,9 @@ Katman sınıflaması (dosya → katmanlar):
 - `test_skfem_crosscheck.py`: IS, EL
 - `test_strength.py`: MP
 - `test_stress.py`: AN, OG
+- `test_stress_lbracket.py`: OG, E2E
+- `test_stress_recovery.py`: EL, AN
+- `test_stress_singularity.py`: AN
 - `test_study_options.py`: IC
 - `test_sweep_connectivity.py`: E2E
 - `test_sweep_post.py`: E2E
@@ -106,4 +111,5 @@ Katman sınıflaması (dosya → katmanlar):
 - `test_symmetry.py`: U, E2E
 - `test_t10_convergence.py`: AN, E2E
 - `test_taylor_remainder.py`: OG
+- `test_tensor.py`: U
 - `test_timoshenko_cantilever.py`: AN

@@ -61,7 +61,9 @@ FILE_LAYERS: dict[str, tuple[str, ...]] = {
     "test_strength.py": ("MP",), "test_stress.py": ("AN", "OG"), "test_study_options.py": ("IC",),
     "test_sweep_connectivity.py": ("E2E",), "test_sweep_post.py": ("E2E",), "test_symmetric_ties.py": ("E2E",),
     "test_symmetry.py": ("U", "E2E"), "test_t10_convergence.py": ("AN", "E2E"), "test_taylor_remainder.py": ("OG",),
-    "test_timoshenko_cantilever.py": ("AN",),
+    "test_timoshenko_cantilever.py": ("AN",), "test_anisotropy.py": ("U", "MP"), "test_linear_elastic.py": ("U", "MP"),
+    "test_tensor.py": ("U",), "test_stress_recovery.py": ("EL", "AN"), "test_stress_singularity.py": ("AN",),
+    "test_stress_lbracket.py": ("OG", "E2E"),
 }
 
 

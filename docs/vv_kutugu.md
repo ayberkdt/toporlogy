@@ -2,7 +2,7 @@
 
 `tests/toporlogy/test_catalog_ledger.py` bu kütüğü toplanan testlerle karşılaştırır: her xfail strict (XPASS koşuyu kırar), kütük toplanan strict xfail listesiyle ve test kaynaklarındaki atlama noktalarıyla birebir aynı. Beklenen başarısızlık PASS sayılmaz; atlanan bir arka ucun testi NOT VERIFIED'dır. Yeniden üretim: `python tests/toporlogy/test_catalog_ledger.py --write`.
 
-Toplam 26 strict xfail (6 tanesi yavaş pakette), 14 atlama noktası.
+Toplam 33 strict xfail (10 tanesi yavaş pakette), 14 atlama noktası.
 
 Risk düzeyleri: **low** ölçüt ya da kontrolün kendisi; kod sonucu başka testle doğrulanmış; **medium** açıklanmamış sayısal fark ya da referans yeniden üretilemiyor; **high** kullanıcıya görünen sessiz kabul (yanlış sonuç üretebilir).
 
@@ -36,6 +36,13 @@ Risk düzeyleri: **low** ölçüt ya da kontrolün kendisi; kod sonucu başka te
 | `test_fault_injection.py::test_fails_closed_with_a_clear_message[load_wrong_rows_solve]` | pre-registered fault injection failed | Elasticity.solve_numpy | yanlış satır sayılı F: IndexError | medium | F şekil denetimi | docs/vv_fault_injection.md | — |
 | `test_fault_injection.py::test_fails_closed_with_a_clear_message[volume_upper_above_one]` | pre-registered fault injection failed | config kısıtlar | hacim oranı üst sınırı 50 sessizce kabul | medium | oran yanıtlarında 0 < upper <= 1 denetimi | docs/vv_fault_injection.md | — |
 | `test_fault_injection.py::test_fails_closed_with_a_clear_message[yaml_duplicate_key]` | pre-registered fault injection failed | config okuma (PyYAML) | yinelenen anahtar sessizce sonuncuyla kullanılıyor | high | yinelenen anahtarı reddeden YAML yükleyici; test YAML'ı ayrıca düzeltilmeli (kısıt eksik) | docs/vv_fault_injection.md | — |
+| `test_anisotropy.py::test_p3_rotation_invariance` | pre-registered check failed | core.anisotropy, core.linear_elastic (NumPy float64) | P3 bağıl 1e-12 eşiği: lineer sıkışabilirlikte 1.21e-12; döndürülmüş C'nin tersi Mandel koşul sayısıyla (1e4'e kadar) yuvarlamayı büyütüyor, eşik bunu öngörmemiş | low | koşul sayısına ölçeklenen eşikle yeni ön kayıt; post hoc döndürülmüş S varyantı geçiyor | docs/olcumler/tensor_elastisite.md | — |
+| `test_anisotropy.py::test_p10_cholesky_parametrisation` | pre-registered check failed | core.anisotropy.stiffness_from_cholesky (NumPy float64) | P10: 1000 θ'nın 37'si float64'te Cholesky'den geçmiyor (κ 7.6e16–1e35); gidiş-dönüş en kötü 3.1e-8 > 1e-12 (κ 2.4e11'e kadar) | medium | θ dağılımının κ < 1/eps ile sınırlanması ya da κ'ya ölçekli eşikle yeni ön kayıt; post hoc ılımlı varyant geçiyor | docs/olcumler/tensor_elastisite.md | — |
+| `test_stress_lbracket.py::test_relaxed_stress_gradient_is_finite_at_zero_density` | known defect | VonMises qp relaxation + aggregate (CPU, torch 2.5.1) | x̄ = 0'da gevşetme türevi sonsuz, gradyan NaN | medium | optimization/stress.py'de x̄ = 0'da sonlu türev; torch yeniyse xfail koşulu kapalıdır | docs/olcumler/gerilme.md | — |
+| `test_stress_lbracket.py::test_k1_historical_ratios[aggregated]` | pre-registered check failed | stress_lbracket2d, GCMMA (CPU, torch 2.5.1) | değiştirilmemiş örnek InvalidModuliError ile duruyor | medium | NaN gradyan hatası giderilip yeniden koşulması | docs/olcumler/gerilme.md | evet |
+| `test_stress_lbracket.py::test_k1_historical_ratios[augmented_lagrangian]` | pre-registered check failed | stress_al_lbracket2d, MMA (CPU, torch 2.5.1) | değiştirilmemiş örnek InvalidModuliError ile duruyor | medium | NaN gradyan hatası giderilip yeniden koşulması | docs/olcumler/gerilme.md | evet |
+| `test_stress_lbracket.py::test_posthoc_returned_design_carries_its_load_through_solid_material[aggregated]` | post-hoc finding | stress_lbracket2d returned design | yük düğümleri boş elemanlarda; study feasible diyor | high | örneğe yük bölgesi keep ya da bağlantı/uyum kısıtı; yük yolu kontrolü | docs/olcumler/gerilme.md | evet |
+| `test_stress_lbracket.py::test_posthoc_returned_design_carries_its_load_through_solid_material[augmented_lagrangian]` | post-hoc finding | stress_al_lbracket2d returned design | yük düğümleri boş elemanlarda; study feasible diyor | high | örneğe yük bölgesi keep ya da bağlantı/uyum kısıtı; yük yolu kontrolü | docs/olcumler/gerilme.md | evet |
 
 ## 2. Atlama noktaları
 
