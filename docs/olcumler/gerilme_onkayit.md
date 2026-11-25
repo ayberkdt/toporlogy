@@ -143,3 +143,33 @@ gerçek türev +∞'dur ve 0 yalnız uzlaşımdır. a ≥ 1 ve a = 0 değişmez 
 **K1 için öngörü (eşik değişmez, ±0,05).** F5 tutarsa K1'in sonucu §3.2'deki farklarla aynıdır: 0,098 ve 0,066
 (gri) eşiği aşar, K1 FAIL kalır. Bu durumda K1 strict xfail olarak kalır; nedeni `InvalidModuliError` değil
 ölçülen fark olur. Yük yolu post-hoc bulgusu (§3.2) bu düzeltmeyle ilgisizdir ve strict xfail kalır.
+
+## 7. Yük yolu: L-bracket örneklerine yük bölgesi ve tek parça koruması (Y1–Y5)
+
+Ön kayıt 2026-11-26 01:56 +0300, değiştirilmiş örnekler hiç koşulmadan önce (yalnız kurulum denendi:
+`build_setup` hatasız, 76 dondurulmuş hücre: 16 yük bölgesi, 16 mesnet arayüzü, 44 bağ).
+
+**Sorun (§3.2, post-hoc).** Amaç yalnız hacim, kısıt yalnız dışlama kutusu dışındaki gevşetilmiş gerilme. Yük
+bölgesi dışlanmış ve katı tutulmuyor; x̄ → 0'da gevşetilmiş gerilme de 0'a gidiyor. Böylece yükü boşluğa bırakan
+tasarım kısıtları sağlıyor ve study `feasible` diyor (uyum 3e4–1,6e6; dolu parça 106).
+
+**Değişiklik (iki örnek de).** `domain.keep: box [36, 12]–[40, 16]` (yük düğümlerinin altındaki 4 × 4 eleman,
+dışlama kutusunun içinde) ve `connectivity: {ties: 1, constraint: conduction, gate: true}` (mesnet ve yük
+arayüzleri arasında dondurulmuş en az 1 eleman kesitli bağ, sanal iletim kısıtı, koşu sonunda tek parça kapısı).
+Bunlar kütüphanenin var olan araçları (`optimization/connectivity.py`); kütüphane değişmez.
+
+| # | Kontrol | Eşik |
+|:---|:---|:---|
+| Y1 | İki örnek de hatasız tamamlanır (`InvalidModuliError` ya da başka hata yok) | aynen |
+| Y2 | Döndürülen tasarımda tek parça kapısı | `PASS` ya da `FRAGILE` (FAIL değil) |
+| Y3 | `load_path` (§3.2 tanımı, x̄ > 0,5): yüke değen bir eleman, kenetli üst kenara yüz komşuluğuyla bağlı katı gövdede | `True` |
+| Y4 | 0/1 tasarımın uyumu, dolu parçanınkine oran (aynı ağ, aynı yük) | ≤ 10 |
+| Y5 | Negatif kontrol: §3.2 tasarımlarının (`gerilme_alanlar.json` `x_binary`) aynı kapıdan geçişi | `FAIL` |
+
+Y4 gerekçesi: yükü katı malzemeyle taşıyan, hacim oranı 0,2–0,4 bir eğilme parçasında uyum kabaca dolu parça / hacim
+oranı mertebesindedir (3–5 kat); 10 pay bırakır ve §3.2'deki başarısızlıkların en iyisinden (3e4 / 106 ≈ 280) iki
+mertebe uzaktır.
+
+Rapor (eşiksiz): ham ve gevşetilmiş tepe gerilme oranı (gri ve 0/1), hacim, iterasyon, durum çözümü, optimizerin
+gördüğü kısıt değerleri, `feasible` bayrağı. Gerilme açısından uygunluk bu kontrolün konusu değildir: L köşesi
+tekil olduğundan (§3.4) tepe gerilmesi ağla büyür; yalnız yük yolunun geri gelip gelmediği sınanır.
