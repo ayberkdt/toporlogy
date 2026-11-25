@@ -332,3 +332,23 @@ aynı olmalı; değilse değişmez ve ölçüm kayda geçer.
 T3 ile T2'nin beş xfail'i açıklanmış oldu: gradyanlar doğru (T1), negatif kontrol de h*'ın altında doğru çalışıyor
 (T3); T2'nin sabit adım aralığı bu yanıtlar için h*'a fazla yakın bitiyordu. T2'nin xfail'leri ön kaydın sonucu olarak
 yerinde kalıyor.
+
+## 7. Ek ön kayıt: Timoshenko konsolu (2026-11-25 23:05 +0300, ilk koşudan önce)
+
+Kapalı çözüm (Timoshenko & Goodier, *Theory of Elasticity*, konsol ucunda parabolik kesme; düzlem gerilme) [H:
+formül hafızadan; test önce kendi tutarlılığını sınar]. Uzunluk L = 4D, y ∈ [−D/2, D/2], I = D³/12:
+
+u_x = −P y / (6EI) · [(6L − 3x) x + (2 + ν)(y² − D²/4)],
+u_y = P / (6EI) · [3ν y² (L − x) + (4 + 5ν) D² x / 4 + (3L − x) x²],
+σ_xx = −P (L − x) y / I, σ_yy = 0, τ_xy = P (D²/4 − y²) / (2I).
+
+FE problemi: x = 0 ve x = L yüzlerinde tam çekiş kuvvetleri (tutarlı düğüm yükleri, 3 noktalı Gauss), üst ve alt
+yüz yüksüz, rijit hareket üç sıfır DOF ile tutulur; hata, FE − kapalı çözüm farkından en küçük kareler rijit hareketi
+çıkarıldıktan sonra, max düğüm hatası / max \|u\|. Izgara (4n, n), n = 4, 8, 16 eleman derinlikte.
+
+| # | Kontrol | Eşik |
+|:---|:---|:---|
+| H1 | Formülün tutarlılığı: u'dan gerilme = σ formülü, Div σ = 0, üst/alt yüz yüksüz, uçta ∫τ dy = P (merkezi farklar, δ = 1e-5) | ≤ 1e-7 göreli |
+| H2 | Q4: hata oranları | ∈ [1,8, 2,25] |
+| H3 | Q4IM: en ince hata ≤ 0,5 × Q4'ünki; oranlar ≥ 1,8 (hata < 1e-10 değilse) | geçer |
+| H4 | Uç çökmesi u_y(L, 0), en ince ağ | Q4 ≤ 2e-2, Q4IM ≤ 2e-3 göreli |
