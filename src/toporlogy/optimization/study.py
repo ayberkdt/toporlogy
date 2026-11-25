@@ -181,6 +181,34 @@ class Study:
         first = chain.links[0] if len(chain.links) else None
         self.n_var = int(getattr(first, "n_in", domain.n_design))
         self._reduce = getattr(first, "reduce", None)
+        self.n_fields = int(getattr(interp, "n_fields", 1))
+        if self.n_fields > 1 or int(getattr(first, "n_fields", 1)) > 1:
+            self._check_phases(first)
+
+    # Multi-phase designs (toporlogy.design.phases): what has been verified with several design fields.
+    _PHASE_LINKS = ("Embed", "DensityFilter", "HeavisideProjection", "Passive")
+    _PHASE_RESPONSES = ("Compliance", "PhaseVolume", "Mass", "Cost")
+
+    def _check_phases(self, first: Any) -> None:
+        nf = int(getattr(first, "n_fields", 1))
+        if nf != self.n_fields:
+            raise ValueError(f"the chain's embed link has {nf} design field(s), the interpolation "
+                             f"{type(self.interp).__name__} {self.n_fields}; build Embed(domain, n_fields=m) for m "
+                             "phases")
+        bad = [type(lk).__name__ for lk in self.chain.links if type(lk).__name__ not in self._PHASE_LINKS]
+        if bad or type(first).__name__ != "Embed":
+            raise ValueError(f"with several phases the chain may hold only {', '.join(self._PHASE_LINKS)} (embed "
+                             f"first); got {[type(lk).__name__ for lk in self.chain.links]}")
+        if getattr(self.optimizer, "needs_constraint_fn", False):
+            raise ValueError(f"{self.optimizer.name} does not handle several phases: its update assumes one "
+                             "constraint whose gradient is positive in every variable, while the mass and cost of a "
+                             "phase field may fall as it grows (OC), or a latent simplex variable (multi-material "
+                             "SiMPL, arXiv:2605.11994) that is not implemented; use MMA or GCMMA")
+        rs = [self.objective] + [c.response for c in self.constraints]
+        bad = [r.name for r in rs if type(r).__name__ not in self._PHASE_RESPONSES]
+        if bad:
+            raise ValueError(f"with several phases only {', '.join(self._PHASE_RESPONSES)} are verified as objective "
+                             f"or constraint; got {bad}")
 
     # ------------------------------------------------------------------ evaluation
     def _needs(self, responses: Sequence[Response]) -> set[str]:
@@ -270,6 +298,8 @@ class Study:
 
     def default_start(self) -> np.ndarray:
         """Uniform start from the first Volume constraint's bound (topo3d rule), else 0.5."""
+        if self.n_fields > 1:
+            return self._phase_start()
         x = None
         for c in self.constraints:
             if isinstance(c.response, Volume):
@@ -280,6 +310,27 @@ class Study:
         if self._reduce is not None:
             x = np.asarray(self._reduce(x), float)
         return x
+
+    def _phase_start(self) -> np.ndarray:
+        """Uniform start whose phase volume fractions are the bounds of the single-phase PhaseVolume constraints
+        (other fields 0.5); with only a solid-volume bound V every field starts at τ = 1 − (1 − V)^(1/m), which
+        gives solid fraction V (a field at 0 would stay there: d t^p / dt = 0 at t = 0)."""
+        from toporlogy.design.phases import phase_start
+        names = [p.name for p in getattr(self.interp, "phases", ())]
+        fr: list[float | None] = [None] * self.n_fields
+        solid = None
+        for c in self.constraints:
+            ph = getattr(c.response, "phases", "?")
+            if type(c.response).__name__ != "PhaseVolume" or getattr(c.response, "weighted", False):
+                continue
+            if ph is None:
+                solid = c.upper
+            elif isinstance(ph, list) and len(ph) == 1 and ph[0] in names:
+                fr[names.index(ph[0])] = c.upper
+        if solid is not None and all(f is None for f in fr):
+            tau = 1.0 - (1.0 - min(max(float(solid), 0.0), 1.0)) ** (1.0 / self.n_fields)
+            return np.full(self.n_var, tau)
+        return phase_start(self.n_fields, self.domain.n_design, fr)
 
     # ------------------------------------------------------------------ loop
     def run(self, x0: np.ndarray | None = None, max_iter: int = 100, tol: float = 0.01, feasibility_tol: float = 1e-3,
@@ -384,6 +435,8 @@ class Study:
                              "constraint_keys": [c.key for c in self.constraints],
                              "links": [type(m).__name__ for m in self.chain.links],
                              "interp": type(self.interp).__name__}
+        if self.n_fields > 1:
+            s["phases"] = [p.name for p in getattr(self.interp, "phases", ())]
         for k in ("element", "nu"):
             if hasattr(self.physics, k):
                 s[k] = getattr(self.physics, k)
