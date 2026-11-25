@@ -112,3 +112,161 @@ tanımlıyken Poisson oranının keyfi büyük pozitif ya da negatif olabileceğ
 olarak gerçekçi olduğu söyleniyor. Hangi sabit birleşiminin ve hangi (n, m) yönlerinin sınırsızlığı verdiği tam
 metinde ve okunamadı. Bu yüzden kübik aile ön kayıtlı bir geçti/kaldı ölçütü değil; geçti/kaldı ölçütü analitik
 olarak doğrulanabilen P7 ailesidir. P7 bir fiziksel malzeme kataloğu verisi değildir.
+
+## 1. Ne eklendi, ne birleştirildi [O]
+
+Yeni modüller (temel katman, yalnız `core` ve `references`'a bağımlı):
+
+- `core/tensor.py`: 2./4. mertebe işlemler (`sym`, `skew`, `trace`, `deviator`, `ddot`, `outer`, `ddot42`, `ddot44`,
+  `identity4_sym`, `volumetric_projector`, `deviatoric_projector`), Voigt (`stress_to_voigt` / `strain_to_voigt` ayrı;
+  rijitlik ve esneklik için ayrı tensör dönüşümleri), Mandel, `check_symmetric`, `check_rotation`, `rotate2` /
+  `rotate4`, dönme vektörü haritası, invariantlar, J2/J3/Lode, `principal_value_gradients` (tekrarlı özdeğerde NaN +
+  bayrak), Tresca, kinematik (F, J, J − 1, C, B, H'den Green–Lagrange, Euler–Almansi, polar, Hencky,
+  `deformation_state`; `InvertedDeformationError`, `SingularDeformationError`), gerilme ölçüleri (PK1, PK2,
+  Kirchhoff, Cauchy, d). NumPy ve Torch aynı kodla; Torch yalnız Torch girdisinde içe aktarılır.
+- `core/linear_elastic.py`: `check_positive_definite` (simetri + Mandel Cholesky + ölçekli özdeğer), izotropik
+  modül dönüşümleri (`isotropic_moduli`, dokuz çift), izotropik / kübik / transvers izotropik / ortotropik C ve S,
+  `engineering_constants` (altı ν_ij; reciprocity denetlenebilir), `symmetry_class`, akustik tensör ve örneklenmiş
+  strong ellipticity, dalga hızları, kanonik sınıf `ElasticTensor` (malzeme ekseninde C + çerçeve R).
+- `core/anisotropy.py`: E(n), ν(n, m), G(n, m), β(n), β_V; m üzerinde analitik ekstremumlar (2 × 2 özproblem);
+  n üzerinde örneklenmiş + rafine ekstremum (`directional_extrema`, etiketli); izotropik tarama; dC/dE, dC/dν,
+  dS = −S dC S, çerçeve dönme türevi, dE(n); Cholesky (SPD koruyan) parametrizasyonu.
+- `core/material.py`: `plane_stress_recovery`, `plane_strain_recovery`, `plane_stress_derivative`.
+- `design/interp.py`: `hs_admissible_exponents(nu, dim, plane)`, `hashin_shtrikman_bounds(x, bulk, shear, dim)`.
+- `references/_materials.py`: `ting_chen_2005` (yalnız abstract okundu).
+
+Birleştirilen kopyalar (aynı matematik artık tek yerde; takma ad yok):
+
+| Eski | Yeni | Davranış |
+|:--|:--|:--|
+| `core/material.py::VOIGT_3D`, `_tensor`, `rotate_stiffness` içindeki einsum | `core.tensor.VOIGT_3D`, `stiffness_to_tensor`, `rotate4` | bit düzeyinde aynı (R1) |
+| `fem/buckling.py::voigt_pairs` | `core.tensor.voigt_pairs` | aynı indeks tablosu |
+| `fem/elements.py::D_iso`, `D_plane_stress`, `D_plane_strain`, `_check_D` | `core.linear_elastic.isotropic_*`, `check_positive_definite` | bit düzeyinde aynı (R1) |
+| `optimization/strength.py`: Voigt→tensör, `rotate_stress_to_material`, `_invariants`, `tresca_equivalent` | `voigt_to_stress`, `rotate2`, `von_mises_squared`, `tresca` | bit düzeyinde aynı (R1) |
+| `fem/nonlinear.py::_green`, `_voigt`, `_det_minus_one`, `_PAIRS`, κ/μ | `green_lagrange`, `strain_to_voigt`, `jacobian_minus_one`, `voigt_pairs`, `isotropic_moduli` | bit düzeyinde aynı (R1) |
+| `design/interp.py::_bulk_shear`, `simp_admissible_penal` | `isotropic_moduli`, `plane_bulk_modulus`, `hs_admissible_exponents` | `simp_admissible_penal` 4.4e-17 göreli fark |
+| `post/verify.py::von_mises` | `core.tensor.von_mises_squared` | bit düzeyinde aynı (R1) |
+| `core/material.py::Orthotropic` PD denetimi, `Orthotropic.isotropic` | `check_positive_definite`, `isotropic_moduli` | ek olarak λ_min/λ_max ≤ 64 eps reddi |
+
+Kırıcı API değişikliği (anlık görüntü bilerek yeniden yazıldı): `toporlogy.core.material.VOIGT_3D` →
+`toporlogy.core.tensor.VOIGT_3D`; `toporlogy.fem.buckling.voigt_pairs` → `toporlogy.core.tensor.voigt_pairs`.
+Davranış değişiklikleri: `rotate_stiffness` artık simetrik olmayan C'yi reddediyor ve ortogonalliği 1e-12 mutlak
+toleransla denetliyor (önce `np.allclose`; köşegende fiilen 1e-5); `plane_stress` simetrik olmayan C'yi reddediyor.
+
+Bilerek bırakılan: `post/verify.py::d_iso` kesme terimini c(1 − 2ν)/2 biçiminde yazıyor; çekirdekteki
+E/(2(1 + ν)) ile aynı matris, yalnız yuvarlama farkı var. T10 regresyon kaydı P5 (`test_element_orientation.py`)
+rijitliği SHA-256 ile bit düzeyinde sabitlediği için değiştirilmedi; çekirdekle uyumu 1e-15 içinde (post hoc test
+`test_post_verify_d_iso_agrees_with_the_core`). `optimization/stress.py::von_mises_matrix` alan einsum'u için
+ikinci dereceden form matrisi olarak kaldı. İkisi §5'te.
+
+`fem/nonlinear.py`'deki neo-Hooke düzlem gerilme tanjantı yalnız σzz'yi yoğuşturuyor. Bu, izotropik malzeme ve
+düzlem içi şekil değiştirmede düzlem dışı kayma bağlaşımı tam sıfır olduğu için doğrudur; anizotropik bir
+hiperelastik model eklenirse L7c'deki gibi üç bileşen birden yoğuşturulmalıdır [O].
+
+## 2. Sonuçlar [Ö]
+
+Koşu: `pytest tests/toporlogy/test_tensor.py test_linear_elastic.py test_anisotropy.py` ve
+`python docs/olcumler/tensor_elastisite.py` (ham sonuç `tensor_elastisite.json`; ortam ve SHA içinde). Platform:
+Windows 11, Python 3.12.1, NumPy 2.2.6, SciPy 1.14.1, Torch 2.5.1+cu121.
+
+### 2.1 İlk koşuda tutmayanlar (ön kayıt gevşetilmedi)
+
+| # | İlk koşu | Neden | Ne yapıldı |
+|:--|:--|:--|:--|
+| T5d | 3.41e-11 > 1e-12 | `rotvec_from_rotation` θ'yı `arccos`'tan alıyordu; küçük açıda kötü koşullu (dθ ≈ eps/θ) | uygulama hatası: θ = atan2(\|v\|, c); yeniden koşu 7.8e-15, PASS |
+| T8b | bayrak hiç kalkmadı | `eye · inf` köşegen dışında 0 · ∞ = NaN üretti | uygulama hatası düzeltildi; PASS |
+| L3 | x ekseni "y" diye sınıflandı | x ve y için permütasyon matrisleri yer değiştirmişti | uygulama hatası düzeltildi; PASS |
+| P5 | rafine maksimum yanlış (E_max 39.70 / 39.99, doğrusu 40) | `directional_extrema` maksimumda rafine sonucunu ters işaretle karşılaştırıp hiç kabul etmiyordu | uygulama hatası düzeltildi; PASS (ortotropikte E_max = 40 = E1) |
+| **P3** | 1.21e-12 > 1e-12 (β(n)) | kontrol yolu döndürülmüş C'nin tersini alıyor; hata Mandel koşul sayısıyla (≤ 1e4) büyüyor, tolerans bunu öngörmemişti | **strict xfail**; post hoc: S tensör olarak döndürülünce (ters yok) aynı 1e-12 içinde PASS |
+| **P10** | (a) 37/1000 θ'da `cholesky` kalıyor; (b) gidiş-dönüş 3.1e-8 > 1e-12 | (a) N(0, 10) grubunda koşul sayısı 7.6e16–1e35: kesin aritmetikte SPD, float64'te değil; (b) N(0, 2) grubunda κ ≤ 2.4e11, tolerans κ'ya ölçeklenmemişti; 98 θ 64 eps kuralıyla tekil sayıldı | **strict xfail**; post hoc: ılımlı θ'da (köşegen U(−1, 1), dışı N(0, 0.5)) SPD ve gidiş-dönüş ≤ 1e-12 κ, PASS |
+
+Uygulama hatası düzeltmesi bir eşik değişikliği değildir; eşiklerin hiçbiri değişmedi. P3 ve P10'da ölçüt
+tasarımı (κ ölçeklemesi) eksikti; bu yüzden kontrolün kendisi başarısız sayıldı.
+
+### 2.2 Durum
+
+| Grup | Durum | Ölçülen (seçme) |
+|:--|:--|:--|
+| T1–T9 | PASS | T3b en kötü / tolerans 2.2e-4; T5d 7.8e-15 (düzeltme sonrası); T9 hata ∈ [0, e] |
+| K1–K2 | PASS | K1d: F biçimli ½(FᵀF − I) göreli hatası \|H\| = 1e-10'da 1.67e-6 (yalnız rapor; H biçimi ≤ 1e-14) |
+| S1 | PASS | P = ∂ψ/∂F merkezi farkla ≤ 1e-6; iş eşleniği ≤ 1e-12 |
+| L1–L7 | PASS | L7 (Schur = esneklik biçimi) en kötü / tolerans 2.5e-5; L7c yalnız σzz yoğuşturma: z etrafında 1.5e-16, genel döndürmede **0.26 göreli** fark |
+| P1, P2, P4–P7, P9, P11 | PASS | P2 en kötü 2.6e-12; P6 en kötü 1.9e-12 |
+| P3 | FAIL (strict xfail) | 1.21e-12; post hoc varyant PASS |
+| P10 | FAIL (strict xfail) | 37/1000, 3.1e-8; post hoc varyant PASS |
+| P6b, P8, P10b | ölçüm (eşiksiz) | §2.3 |
+| R1 | PASS | 63 diziden 62'si bit düzeyinde; `simp_penal` 4.4e-17 (sınır 1e-15) |
+| R2 | §2.4 | |
+
+### 2.3 Ölçümler
+
+**P6b, izotropik tarama** (E = 1 sabit; G = 1 sabitte koşul sayıları aynı, modüller ölçekli). Mandel κ(C) =
+max(3K, 2G)/min(3K, 2G): ν = −0.99'da 298, 0'da 1, 0.3'te 3.25, 0.49'da 74.5, 0.499'da 749.5, 0.4999'da 7499.5.
+‖S C − I‖_max: float64 0.4999'da 2.4e-13; float32 0.4999'da 8.7e-5, ν = −0.99'da 1.5e-6. dC/dν'nin en büyük girdisi
+0.4999'da 1.7e7 (κ ile birlikte büyüyor; P9c'de FD hatası yine ≤ 1e-6 κ). c_L = √(M/ρ) ν → 1/2'de sınırsız
+(0.4999'da 40.8), c_T sınırlı (0.577). Bu bir sıkıştırılamazlık modeli değildir: ν = 1/2 reddedilir.
+
+**P8, kübik aile** (C11 = 1; yalnız ölçüm). C11 − C12 = t → 0⁺: rafine ν aralığı t = 1e-1, 1e-2, 1e-3, 1e-4'te
+[−0.57, 1.41], [−2.16, 2.97], [−7.17, 7.97], [−23.0, 23.8]; E_max/E_min 8.6 → 8571; yaklaşık |ν| ∝ t^(−1/2).
+C11 + 2C12 → 0⁺: ν → −1'e yaklaşıyor ama sınırlı (−0.9998 … −0.9997). C44 → 0⁺: ν ∈ (0, 1) içinde kalıyor.
+Ting & Chen abstract'ındaki "kübikte sınırsız" ifadesiyle C11 − C12 → 0⁺ yönü uyumlu; makalenin koşulu
+okunmadığından bu bir doğrulama değil, gözlemdir.
+
+**P7.** ν12 = 0.5k, k ∈ {1, 10, 100, 1000}: hepsi SPD; ν12 = ±500'e kadar. Cauchy–Schwarz sınırı
+|ν| ≤ √(E(n)/E(m)) = k (Şekil c). a² = 0.5625 > 1/2 olan negatif kontrol reddedildi.
+
+**P10b, SPD dışına çıkma oranı** (sınıra yakın ortotropik, 2000 adım): mühendislik sabitlerinde adım
+0.01/0.03/0.1/0.3/1 için 0 / 0 / 2.6 % / 29 % / 68 %; Cholesky parametrizasyonunda her adımda 0 % (64 eps kuralına
+göre de).
+
+**Yönlü ekstremumlar** (`directional_extrema`, N = 2000, "refined"): ortotropik E ∈ [8.94, 40], ν ∈ [0.063, 0.402];
+kübik (1.7, 1.2, 0.75) ν ∈ [−0.109, 0.783]; transvers izotropik β ∈ [−0.20, 0.50] (**negatif lineer
+sıkışabilirlik**, SPD); k = 10 ailesi ν ∈ [−0.33, 5.0]. Ham değerler JSON'da, yön örnekleri
+`tensor_elastisite_yonler.csv`'de (6 malzeme × 600 yön; NPZ kopyası `runs/` altında, izlenmiyor).
+
+**P11, SIMP/HS.** Genel üs fonksiyonu eski kapalı formlara 1e-14 içinde eşit. Düzlem şekil değiştirmede κ = λ + μ,
+p* = max(2/(1 − ν'), 4/(1 + ν')), ν' = ν/(1 − ν): ν = 0.3'te 3.5 (düzlem gerilme 40/13 ≈ 3.08). ν → 1/2'de düzlem
+şekil değiştirme ve 3-B p* sınırsız büyüyor, düzlem gerilme sınırlı kalıyor (Şekil d). Mevcut
+`simp_admissible_penal` yalnız düzlem gerilme için doğru; düzlem şekil değiştirme analizinde
+`hs_admissible_exponents(nu, 2, "strain")` kullanılmalı. `HashinShtrikman` elemanda katının ν'sünü tutuyor:
+ν_HS(x) − ν, x = 0.1'de 2-B ν = 0.3 için +0.032, ν = −0.3 için +0.61; 3-B ν = 0.3 için −0.059 (JSON
+`hs_poisson_minus_solid`). Gri yoğunluk gerçek bir gözenekli malzeme değildir; bu sınırlar yalnız "gri eleman
+izotropik gözenekli katı olsaydı" varsayımında geçerlidir.
+
+![Şekil](tensor_elastisite_sekil.png)
+
+**Şekil.** Sınırlar konvansiyona bağlı. (a) İzotropik C'nin Mandel koşul sayısı, E = 1 (log ölçek); ν → 1/2 ve
+ν → −1'de büyür. (b) Ortotropik malzemede (E1 = 40, E2 = E3 = 9) x–y düzlemindeki yük yönü θ için m ⊥ n
+üzerinden en büyük ve en küçük ν (m düzlem dışına çıkabilir; analitik 2 × 2 özproblem). (c) SPD ortotropik aile
+E1 = k², E2 = E3 = 1, ν12 = 0.5k: ν12 sınırsız büyür; kesikli çizgi Cauchy–Schwarz sınırı k, noktalı çizgi
+izotropik üst sınır 1/2; log–log. (d) HS sınırlarının altında kalan en küçük SIMP üssü p*: 2-B düzlem gerilme,
+2-B düzlem şekil değiştirme, 3-B; noktalı çizgi p = 3. Bütün değerler sentetik, normalize. Denetim: datawiz
+0 HATA · 0 UYARI (`tensor_elastisite_sekil.denetim.txt`), renk körlüğü önizlemesi `tensor_elastisite_sekil.cvd.png`.
+
+Yeniden üretim: `python docs/olcumler/tensor_elastisite.py` (≈ 1 dk; `--figure-only` JSON'dan figürü yeniden
+çizer), `python docs/olcumler/tensor_elastisite_parmakizi.py` (R1).
+
+### 2.4 R2: paket, ruff, mypy
+
+- `pytest -m "not slow" tests` (kod commit'i `7fcbf8b` + anlık görüntü): **997 passed, 4 skipped, 55 deselected,
+  13 xfailed**, 0 failed (747 s). Taban `1d1f027` bu makinede: 896 passed, 4 skipped, 55 deselected, 11 xfailed
+  (773 s). Fark: +101 yeni test, +2 strict xfail (P3, P10); tabanda geçen hiçbir test kırılmadı.
+- `pytest -m baseline tests`: 8 passed (örnek kayıtları bit düzeyinde aynı).
+- `ruff check src tests` ve `python -m mypy`: temiz.
+- `test_api_surface.py`: anlık görüntü bilerek yeniden yazıldı (iki taşınan ad; geri kalanı ekleme), ayrı commit.
+
+## 3. Doğrulanmamış / kapsam dışı
+
+- Ting & Chen (2005) tam metni okunmadı (yalnız yayıncı sayfasındaki abstract); P8 bu yüzden eşiksiz bir ölçüm.
+- Bendsøe & Sigmund (1999) metni okunmadı; HS sınırları depodaki genel iki fazlı ifadeden türetilmiş (değişmedi).
+- FEM locking ve performans karşılaştırması bu kaydın konusu değil (03'e bağlı); C'nin SPD olması FEM'in
+  locking'siz olduğunu göstermez.
+- 3-B yön optimizasyonu için yalnız dönme vektörü haritası var; |w| = π'de bire bir değil, π yakınında log haritası
+  kötü koşullu (belgede yazılı, ölçülmedi).
+
+## 4. Açık işler
+
+- `post/verify.py::d_iso` çekirdekle birleştirilebilir; T10 P5 kaydının SHA'sı bilinçli güncellenmeli.
+- `optimization/stress.py::von_mises_matrix` çekirdeğin deviatorik projektöründen türetilebilir.
+- Düzlem şekil değiştirme kullanan bir yapılandırmada SIMP üssü için uyarı yok; `hs_admissible_exponents(..., "strain")`
+  yapılandırma denetimine bağlanabilir.
