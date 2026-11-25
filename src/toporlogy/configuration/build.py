@@ -292,7 +292,8 @@ def build(resolved: dict[str, Any]) -> Setup:
         for i, name in enumerate(bcs.names):
             if not np.isfinite(F[:, i]).all():
                 path = join("load_cases", i) if i < len(r["load_cases"]) else                     join("combinations", i - len(r["load_cases"]))
-                raise ConfigError("load case has a load that is not finite (NaN or Inf)", path)
+                raise ConfigError("load case has a load that is not finite (NaN or Inf)",
+                                  path)
             if not np.any(F[:, i]):
                 path = join("load_cases", i) if i < len(r["load_cases"]) else \
                     join("combinations", i - len(r["load_cases"]))

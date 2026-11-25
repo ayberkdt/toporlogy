@@ -27,7 +27,8 @@ class _UniqueKeyLoader(yaml.SafeLoader):
         for key_node, _ in node.value:
             key = self.construct_object(key_node, deep=deep)
             if key in seen:
-                raise yaml.constructor.ConstructorError(None, None, f"duplicate key {key!r}", key_node.start_mark)
+                raise yaml.constructor.ConstructorError(None, None, f"duplicate key {key!r}",
+                                                        key_node.start_mark)
             seen.add(key)
         return super().construct_mapping(node, deep=deep)
 
