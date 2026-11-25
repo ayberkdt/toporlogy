@@ -191,5 +191,99 @@
    "verdict": "unexplained; not in toporlogy"
   },
   "conclusion": "no bug found in toporlogy; stress gap was a reading of 'initial'; buckling gap remains on the source side"
+ },
+ "round2_2026-11-25": {
+  "branch": "feat/material-models",
+  "wall_rerun": {
+   "toporlogy": 1.201863,
+   "transcription_centroid": 1.303072,
+   "published": 3.15,
+   "changed": false
+  },
+  "wall_mesh_study": {
+   "n": [
+    40,
+    80,
+    160,
+    320
+   ],
+   "lambda1_Q4": [
+    2.852,
+    2.106,
+    1.602,
+    1.202
+   ],
+   "lambda1_Q4IM": [
+    null,
+    1.946,
+    1.492,
+    1.117
+   ],
+   "mode1_energy_share_within_0.02_of_clamp_end": [
+    0.49,
+    0.66,
+    0.79,
+    0.93
+   ],
+   "conclusion": "no mesh-converged lambda1: singular stress at the end of a clamped patch; not usable as a reference"
+  },
+  "R2_deng_3d_lbracket": {
+   "preregistered": "2026-11-25T17:11+03:00",
+   "x0": 94.1152,
+   "after_one_mma_step": 45.8057,
+   "published": 46.12,
+   "rel": -0.0068,
+   "bound": 0.02,
+   "verdict": "PASS",
+   "solver": "ElasticityGMG CUDA, 948693 DOF, 17 s"
+  },
+  "R1_fs2019_column": {
+   "source": "Ferrari & Sigmund 2019, arXiv:1809.05300v2, Fig. 1",
+   "preregistered": "2026-11-25T16:58+03:00",
+   "R1a_Q4_20x2": {
+    "toporlogy": 0.118684,
+    "published": 0.119,
+    "bound": 0.0005,
+    "verdict": "PASS"
+   },
+   "R1b_Q6_20x2": {
+    "toporlogy_compatible_kg": -0.005107,
+    "toporlogy_modes_in_kg": -0.00561,
+    "published": -0.0066,
+    "bound": 5e-05,
+    "verdict": "FAIL"
+   },
+   "R1c_Q4IM_square_meshes": {
+    "verdict": "PASS",
+    "errors_modes_in_kg": [
+     -0.00561,
+     -0.00658,
+     -0.00686,
+     -0.00694
+    ]
+   },
+   "post_hoc_rect_code_Q4": [
+    0.4939,
+    0.4933,
+    0.1187,
+    0.1181,
+    0.0243,
+    0.000854
+   ],
+   "published_Q4": [
+    0.494,
+    0.493,
+    0.119,
+    0.118,
+    0.024,
+    0.005,
+    0.00086
+   ],
+   "note": "five coarse Q4 rows reproduced to printed digits; fine rows and Q6 column not reproduced by any variant"
+  },
+  "not_run": {
+   "fs2019_frame": "J0 4.714e-3, lambda 0.662: setup only in figure",
+   "fs2020": "J 2.501e-3, lambda 0.597: geometry only in figure"
+  }
  }
 }

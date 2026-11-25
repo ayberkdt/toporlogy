@@ -152,26 +152,32 @@ class BoundaryConditions:
         """Globally fixed DOFs of a case (oblique constraints and springs are not included: see ``constraints``)."""
         return self.constraints(case).fixed
 
-    def _make(self, cs: ConstraintSet, nu: float, element: str | None, solver: Any) -> Elasticity:
+    def _make(self, cs: ConstraintSet, nu: float, element: str | None, solver: Any,
+              elasticity: np.ndarray | None = None) -> Elasticity:
         if cs.needs_extension:
-            return ConstrainedElasticity(self.domain, cs, nu=nu, element=element, solver=solver)
-        return Elasticity(self.domain, cs.fixed, nu=nu, element=element, solver=solver)
+            return ConstrainedElasticity(self.domain, cs, nu=nu, element=element, solver=solver,
+                                         elasticity=elasticity)
+        return Elasticity(self.domain, cs.fixed, nu=nu, element=element, solver=solver, elasticity=elasticity)
 
     def physics_per_support_set(self, nu: float = 0.3, element: str | None = None,
                                 solver_factory: Callable[[], Any] | None = None,
-                                which: str = "all") -> list[tuple[Elasticity, np.ndarray]]:
-        """One physics per distinct support set with the column indices of ``F(which)`` it solves."""
+                                which: str = "all", elasticity: np.ndarray | None = None,
+                                ) -> list[tuple[Elasticity, np.ndarray]]:
+        """One physics per distinct support set with the column indices of ``F(which)`` it solves; ``elasticity``
+        is the unit-modulus D of a non-isotropic material (see :class:`~toporlogy.fem.elastic.Elasticity`)."""
         sets = self._column_sets(which)
         out = []
         for k in sorted(set(sets)):
             cols = np.flatnonzero(np.asarray(sets) == k)
-            out.append((self._make(self._cs[k], nu, element, solver_factory() if solver_factory else None), cols))
+            out.append((self._make(self._cs[k], nu, element, solver_factory() if solver_factory else None,
+                                   elasticity), cols))
         return out
 
     def physics(self, nu: float = 0.3, element: str | None = None,
-                solver_factory: Callable[[], Any] | None = None, which: str = "all") -> Any:
+                solver_factory: Callable[[], Any] | None = None, which: str = "all",
+                elasticity: np.ndarray | None = None) -> Any:
         """Physics for ``Study``: Elasticity / ConstrainedElasticity, or PerCaseSupports for several support sets."""
-        groups = self.physics_per_support_set(nu, element, solver_factory, which)
+        groups = self.physics_per_support_set(nu, element, solver_factory, which, elasticity)
         return groups[0][0] if len(groups) == 1 else PerCaseSupports(groups)
 
     # ------------------------------------------------------------------ non-design regions

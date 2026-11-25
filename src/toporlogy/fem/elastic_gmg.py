@@ -33,7 +33,7 @@ import torch
 
 from toporlogy.core.domain import Domain
 from toporlogy.fem.elastic import ResidualReport
-from toporlogy.fem.elements import element_matrix
+from toporlogy.fem.elements import D_iso, element_matrix, element_matrix_from_D
 from toporlogy.fem.mechanisms import check_moduli, check_supports, fixed_dof_rows
 from toporlogy.solvers import gmg_kernels as gk
 from toporlogy.solvers.gmg import GMGConvergenceError, GMGSolver
@@ -66,19 +66,28 @@ class ElasticityGMG:
         :class:`GMGConvergenceError`. True keeps the unconverged result, marked in :attr:`n_inexact` / the log.
     device : optional
         Torch device of the solver (default CUDA when available).
+    elasticity : array, optional
+        Unit-modulus 6 × 6 elasticity matrix (as for :class:`~toporlogy.fem.elastic.Elasticity`); None = isotropic.
     **gmg : keyword arguments of :class:`GMGSolver` (coarse, n_geometric, smoother_degree, pin_rel, …).
     """
 
     def __init__(self, domain: Domain, fixed: Sequence[int], nu: float = 0.3, element: str | None = None,
                  tol: float = 1e-8, maxit: int = 300, direct_below: int = 4000,
                  fallback_max_elements: int = 120_000, warm_start: bool = True, device: Any = None,
-                 allow_inexact: bool = False, **gmg: Any) -> None:
+                 allow_inexact: bool = False, elasticity: np.ndarray | None = None, **gmg: Any) -> None:
         if domain.dim != 3:
             raise ValueError("ElasticityGMG is 3-D only (use Elasticity in 2-D)")
         self.domain = domain
-        self.nu = float(nu)
         self.element = element or "H8"
-        self.KE = element_matrix(3, self.element, nu)
+        self.elasticity = None if elasticity is None else np.asarray(elasticity, float).copy()
+        if self.elasticity is None:
+            self.nu: float | None = float(nu)
+            self.D = D_iso(nu)
+            self.KE = element_matrix(3, self.element, nu)
+        else:
+            self.nu = None
+            self.D = self.elasticity
+            self.KE = element_matrix_from_D(3, self.element, self.elasticity)
         self.geom = domain.h
         self.elements = domain.active_elements
         self._kinematics_checked = False
@@ -174,7 +183,8 @@ class ElasticityGMG:
     def _direct_model(self) -> Any:
         if self._direct is None:
             from toporlogy.fem.elastic import Elasticity
-            self._direct = Elasticity(self.domain, self.fixed, nu=self.nu, element=self.element)
+            self._direct = Elasticity(self.domain, self.fixed, nu=0.3 if self.nu is None else self.nu,
+                                      element=self.element, elasticity=self.elasticity)
         return self._direct
 
     def _set_operator(self, E_active: torch.Tensor) -> None:

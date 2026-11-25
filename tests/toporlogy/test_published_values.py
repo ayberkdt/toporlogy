@@ -201,7 +201,14 @@ def test_topbuck250_wall_solid_blf_against_published_value(wall):
     2.33; the first 40 λ of the printed setup run 1.303 … 3.196 (λ39 = 3.156, no reason to take it). An independent
     re-read of the transcription against the paper found no translation error, and the authors' downloadable file
     (topopt.mek.dtu.dk, topbuck250_finalsamo.m, read, not run) has the same analysis lines; it differs from the
-    printed listing only elsewhere (argument order ocPar/maxit, ocUpdate's restartAs argument). Unexplained.
+    printed listing only elsewhere (argument order ocPar/maxit, ocUpdate's restartAs argument).
+
+    Cause found afterwards (2026-11-25, post hoc; test_buckling_physics.py): the solid wall has NO mesh-converged
+    λ1. Its first mode sits at the end of a clamped patch, where the linear elastic stress is singular; λ1 = 2.85,
+    2.11, 1.60, 1.20 on 40², 80², 160², 320² (toporlogy Q4), with the mode's energy concentrating (share within 0.02
+    of the patch end 0.49 → 0.93). Removing the stress stiffness there moves the localisation to the opening's
+    re-entrant corner, then to the edge of the removed zone. A single printed λ1 of this problem is a property of
+    the discretisation used, so this reference cannot validate a buckling code; the gap is not missing physics.
     """
     assert abs(wall["centroid"] - BLF_WALL_PUBLISHED) <= 0.0051
     assert abs(wall["toporlogy"] / BLF_WALL_PUBLISHED - 1.0) <= 1e-2
@@ -330,7 +337,9 @@ def test_deng_initial_pnorm_against_published_value(deng):
     Explained afterwards (2026-11-25, post hoc): 33.17 is the value after the FIRST MMA step (move 0.1), not at x0;
     one step from x0 = 0.3 gives 33.130 (−0.12 %), and the L-bracket's 56.23 is matched the same way (+0.84 %), see
     :func:`test_deng_cantilever_published_value_is_after_the_first_mma_step`. The pre-registered reading ("initial" =
-    x0) was wrong, so this test stays a strict xfail; toporlogy's code is not at fault.
+    x0) was wrong, so this test stays a strict xfail; toporlogy's code is not at fault. The reading was then
+    pre-registered and confirmed out of sample on the 3-D L-bracket (46.12; −0.68 %,
+    :func:`test_deng_3d_lbracket_out_of_sample`).
     """
     assert abs(deng["pn_R"] - PNORM_CANTILEVER_PUBLISHED) <= 0.01
     assert abs(deng["pn_T"] - PNORM_CANTILEVER_PUBLISHED) <= 0.006
@@ -430,3 +439,58 @@ def test_deng_lbracket_published_value_is_after_the_first_mma_step():
     print(f"\n  Deng L-bracket: x0 {pn0:.4f}; after one MMA step {pn1:.4f}; published {PNORM_LBRACKET_PUBLISHED} "
           f"({pn1 / PNORM_LBRACKET_PUBLISHED - 1:+.2%})")
     assert abs(pn1 / PNORM_LBRACKET_PUBLISHED - 1) <= 2e-2
+
+
+@pytest.mark.slow
+def test_deng_3d_lbracket_out_of_sample():
+    """R2, PRE-REGISTERED (2026-11-25 17:11 +03:00) as an out-of-sample test of the reading found on the two 2-D
+    cases: §6.4's 3-D L-bracket 100 × 100 × 30 (passive x_t(1:nelx/2, nely/2:end, :) = 1e-4 after the filter, top face
+    clamped, −1 in y on the 3 × 31 nodes x = 100, y = 50…48), value after ONE MMA step (move 0.1) from x0 = 0.3,
+    p-norm with the printed B on toporlogy's displacements (ElasticityGMG, tol 1e-8 as the paper's pcg).
+    Bound |pn / 46.12 − 1| ≤ 2 %. First run: x0 94.115, after one step 45.806 (−0.68 %), PASS (17 s on a GTX 1660 Ti).
+    Skipped without CUDA (948 693 DOFs)."""
+    if not torch.cuda.is_available():
+        pytest.skip("needs CUDA for ElasticityGMG at 948 693 DOFs")
+    from toporlogy.fem.elastic_gmg import ElasticityGMG
+    nelx, nely, nelz = 100, 100, 30
+    ref = Top3D(nelx, nely, nelz, 0.3, 3.0, 2.5)
+    passive = _lbracket(ref)
+    d = Domain((nelx, nely, nelz))
+    tn = d.node_number(ref.node_xyz(np.arange(ref.F.size // 3)))
+    dof = (3 * tn[:, None] + np.arange(3)).ravel()
+    F = d.load_vector()
+    F[dof, 0] = ref.F
+    m = ElasticityGMG(d, dof[ref.fixeddofs], nu=0.3, element="H8", tol=1e-8, maxit=3000)
+    e = np.arange(ref.nele)
+    el = ((e // nely) % nelx * nely + (nely - 1 - e % nely)) * nelz + e // (nely * nelx)
+    _, B, _ = gauss_operators(3)
+    S = torch.as_tensor(D_iso(0.3) @ B[7])
+    V = torch.as_tensor(von_mises_matrix(3))
+    edof = torch.as_tensor(d.edof[el])
+    idx = (torch.as_tensor(el),)
+
+    def phys(x: np.ndarray) -> np.ndarray:
+        xp = ref.H @ x / ref.Hs
+        xp[passive] = 1e-4
+        return xp
+
+    def f(x: np.ndarray, grad: bool) -> tuple[float, np.ndarray | None]:
+        xp = torch.as_tensor(phys(x)).requires_grad_(grad)
+        E = torch.zeros(ref.nele, dtype=torch.float64).index_put(idx, 1e-9 + xp ** 3 * (1 - 1e-9))
+        U = m.solve(E, F)[:, 0].to("cpu")
+        sig = xp[:, None] ** 0.5 * (U[edof] @ S.T)
+        val = pnorm(torch.sqrt(torch.einsum("ev,vw,ew->e", sig, V, sig)), p=10.0)
+        if not grad:
+            return float(val), None
+        (gt,) = torch.autograd.grad(val, xp)
+        g = gt.numpy().copy()
+        g[passive] = 0.0
+        return float(val), ref.H @ (g / ref.Hs)
+
+    x0 = np.full(ref.nele, 0.3)
+    f0, df0 = f(x0, True)
+    dv = ref.H @ (np.full(ref.nele, 1.0 / ref.nele) / ref.Hs)
+    x1 = MMA(move=0.1, normalise=None).step(x0, f0, df0, np.array([np.mean(phys(x0)) - 0.3]), dv[None, :])
+    f1, _ = f(x1, False)
+    print(f"\n  Deng 3-D L-bracket: x0 {f0:.4f}; after one MMA step {f1:.4f}; published 46.12 ({f1 / 46.12 - 1:+.2%})")
+    assert abs(f1 / 46.12 - 1) <= 2e-2

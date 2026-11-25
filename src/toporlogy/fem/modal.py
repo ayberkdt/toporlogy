@@ -133,6 +133,8 @@ class Modal:
         What the backward pass does when the weights differ inside a cluster.
     solver : object with ``factor(A_upper)`` / ``solve(B)``, optional
         Default :class:`DirectSolver`: "splu" up to :data:`SPLU_MAX_DOF` free DOFs, else "auto" (PARDISO).
+    elasticity : array, optional
+        Unit-modulus elasticity matrix (as for :class:`Elasticity`); None = isotropic from ``nu``.
 
     Attributes
     ----------
@@ -145,12 +147,14 @@ class Modal:
 
     def __init__(self, domain: Domain, fixed: Sequence[int], nu: float = 0.3, element: str | None = None,
                  mass: Any = None, n_modes: int = 6, sigma: float = 0.0, tol: float = 0.0,
-                 cluster_tol: float = 1e-3, repeated: str = "warn", solver: Any = None) -> None:
+                 cluster_tol: float = 1e-3, repeated: str = "warn", solver: Any = None,
+                 elasticity: np.ndarray | None = None) -> None:
         if repeated not in ("warn", "raise", "ignore"):
             raise ValueError("repeated: warn | raise | ignore")
         if n_modes < 1:
             raise ValueError("n_modes ≥ 1 is required")
-        self.elastic = Elasticity(domain, fixed, nu=nu, element=element, solver=solver or _NoSolver())
+        self.elastic = Elasticity(domain, fixed, nu=nu, element=element, solver=solver or _NoSolver(),
+                                  elasticity=elasticity)
         if solver is None:
             # ARPACK applies (K − σM)⁻¹ to one vector at a time (≈ 20-140 solves per eigen solve). Measured on this
             # machine (13 Nov 2026, 2-D 56×8, 918 free DOFs): PARDISO 13 ms per single-RHS call (thread start-up),

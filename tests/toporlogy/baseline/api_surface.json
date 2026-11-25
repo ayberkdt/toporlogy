@@ -1879,6 +1879,7 @@
   "annotations": "<_Feature>",
   "checked_selector": "checked_selector(ctx,v,key)",
   "join": "join(path,key)",
+  "material_model": "material_model(ctx)",
   "register": "<method>",
   "register_core": "register_core()"
  },
@@ -1950,6 +1951,7 @@
   },
   "annotations": "<_Feature>",
   "checked_selector": "checked_selector(ctx,v,key)",
+  "material_model": "material_model(ctx)",
   "register": "<method>",
   "register_physics": "register_physics()"
  },
@@ -1974,6 +1976,7 @@
   },
   "annotations": "<_Feature>",
   "checked_selector": "checked_selector(ctx,v,key)",
+  "material_model": "material_model(ctx)",
   "register": "<method>",
   "register_responses": "register_responses()"
  },
@@ -2042,6 +2045,10 @@
    ],
    "class": "Load"
   },
+  "MaterialModel": {
+   "attrs": [],
+   "class": "MaterialModel"
+  },
   "SpreadForce": {
    "attrs": [
     "apply",
@@ -2054,7 +2061,8 @@
   "as_selector": "as_selector(v)",
   "checked_selector": "checked_selector(ctx,v,key)",
   "find_bore": "find_bore(ctx,index,near,min_diameter,max_roundness,min_length)",
-  "join": "join(path,key)"
+  "join": "join(path,key)",
+  "material_model": "material_model(ctx)"
  },
  "toporlogy.configuration.post_steps": {
   "BuildContext": {
@@ -2265,6 +2273,50 @@
    ],
    "class": "Domain"
   }
+ },
+ "toporlogy.core.material": {
+  "Orthotropic": {
+   "attrs": [
+    "compliance",
+    "isotropic",
+    "reference_modulus",
+    "stiffness"
+   ],
+   "class": "Orthotropic"
+  },
+  "OrthotropicStrength": {
+   "attrs": [
+    "S13",
+    "S23",
+    "Zc",
+    "Zt",
+    "allowables",
+    "f12",
+    "safety_factor"
+   ],
+   "class": "OrthotropicStrength"
+  },
+  "PLANE_MODES": "<tuple>",
+  "Strength": {
+   "attrs": [
+    "allowable_compression",
+    "allowable_tension",
+    "compression",
+    "safety_factor",
+    "shear"
+   ],
+   "class": "Strength"
+  },
+  "VOIGT_3D": "<tuple>",
+  "elasticity_from_config": "elasticity_from_config(material,dim)",
+  "out_of_plane_row": "out_of_plane_row(C6)",
+  "plane_strain": "plane_strain(C6)",
+  "plane_stress": "plane_stress(C6)",
+  "rotate_stiffness": "rotate_stiffness(C6,R)",
+  "rotation_about_z": "rotation_about_z(angle_deg)",
+  "rotation_from_axes": "rotation_from_axes(axis1,axis2)",
+  "strength_from_config": "strength_from_config(material)",
+  "unit_elasticity": "unit_elasticity(material,dim,plane,R)"
  },
  "toporlogy.core.verdict": {
   "BINARY_DESIGN": "<str>",
@@ -2578,6 +2630,66 @@
   "standard_chain": "standard_chain(domain,rmin,projection,beta,eta)"
  },
  "toporlogy.design.interp": {
+  "HashinShtrikman": {
+   "attrs": [
+    "T_destination",
+    "add_module",
+    "apply",
+    "bfloat16",
+    "buffers",
+    "call_super_init",
+    "children",
+    "compile",
+    "cpu",
+    "cuda",
+    "double",
+    "dump_patches",
+    "eval",
+    "extra_repr",
+    "float",
+    "forward",
+    "get_buffer",
+    "get_extra_state",
+    "get_parameter",
+    "get_submodule",
+    "half",
+    "ipu",
+    "load_state_dict",
+    "modules",
+    "mtia",
+    "named_buffers",
+    "named_children",
+    "named_modules",
+    "named_parameters",
+    "parameters",
+    "poisson",
+    "register_backward_hook",
+    "register_buffer",
+    "register_forward_hook",
+    "register_forward_pre_hook",
+    "register_full_backward_hook",
+    "register_full_backward_pre_hook",
+    "register_load_state_dict_post_hook",
+    "register_load_state_dict_pre_hook",
+    "register_module",
+    "register_parameter",
+    "register_state_dict_post_hook",
+    "register_state_dict_pre_hook",
+    "requires_grad_",
+    "set_extra_state",
+    "set_submodule",
+    "share_memory",
+    "state_dict",
+    "to",
+    "to_empty",
+    "train",
+    "type",
+    "xpu",
+    "young",
+    "zero_grad"
+   ],
+   "class": "HashinShtrikman"
+  },
   "RAMP": {
    "attrs": [
     "T_destination",
@@ -2693,7 +2805,9 @@
     "zero_grad"
    ],
    "class": "SIMP"
-  }
+  },
+  "hashin_shtrikman_moduli": "hashin_shtrikman_moduli(x,E,nu,dim)",
+  "simp_admissible_penal": "simp_admissible_penal(nu,dim)"
  },
  "toporlogy.design.manufacturing": {
   "AMFilter": {
@@ -3276,11 +3390,21 @@
   "element_matrix": "element_matrix(dim,element,nu)"
  },
  "toporlogy.fem.buckling": {
+  "BucklingClusterWarning": {
+   "attrs": [
+    "add_note",
+    "args",
+    "with_traceback"
+   ],
+   "class": "BucklingClusterWarning"
+  },
   "LinearBuckling": {
    "attrs": [
     "element_matrices",
     "element_stress",
     "geometric_matrix",
+    "localization",
+    "low_density_share",
     "mode_forms",
     "modes"
    ],
@@ -3330,14 +3454,21 @@
  },
  "toporlogy.fem.elements": {
   "D_iso": "D_iso(nu)",
+  "D_plane_strain": "D_plane_strain(nu)",
   "D_plane_stress": "D_plane_stress(nu)",
+  "ELEMENTS_2D": "<tuple>",
+  "ELEMENTS_3D": "<tuple>",
   "H8_CORNER": "<ndarray>",
   "Q4_CORNER": "<ndarray>",
   "b_centroid_h8": "b_centroid_h8()",
   "b_centroid_q4": "b_centroid_q4()",
   "element_matrix": "element_matrix(dim,element,nu)",
+  "element_matrix_from_D": "element_matrix_from_D(dim,element,D)",
   "ke_h8": "ke_h8(nu,element)",
-  "ke_q4": "ke_q4(nu)"
+  "ke_h8_from_D": "ke_h8_from_D(D,element)",
+  "ke_q4": "ke_q4(nu)",
+  "ke_q4_from_D": "ke_q4_from_D(D)",
+  "ke_q4im_from_D": "ke_q4im_from_D(D)"
  },
  "toporlogy.fem.heat": {
   "ConductivityInterp": {
@@ -3665,7 +3796,8 @@
    ],
    "class": "BucklingLoadFactor"
   },
-  "inverse_load_factors": "inverse_load_factors(ctx,n_modes,case,penal_g,E0)"
+  "first_failure_load_factor": "first_failure_load_factor(ctx,field,case,preload_case,threshold)",
+  "inverse_load_factors": "inverse_load_factors(ctx,n_modes,case,penal_g,E0,preload_case,cluster_tol,density_threshold,exclude)"
  },
  "toporlogy.optimization.compose": {
   "Displacement": {
@@ -4257,8 +4389,32 @@
   "project": "project(xt,beta,eta)",
   "robust_chain_settings": "robust_chain_settings(min_solid,min_void,h,dim,eta_max,kernel)"
  },
+ "toporlogy.optimization.strength": {
+  "CRITERIA": "<tuple>",
+  "Criterion": {
+   "attrs": [
+    "index"
+   ],
+   "class": "Criterion"
+  },
+  "expand_plane": "expand_plane(s3,szz)",
+  "make_criterion": "make_criterion(kind,strength,R,eps)",
+  "rotate_stress_to_material": "rotate_stress_to_material(s,R)",
+  "tresca_equivalent": "tresca_equivalent(s)",
+  "von_mises_equivalent": "von_mises_equivalent(s,eps)"
+ },
  "toporlogy.optimization.stress": {
   "FORMS": "<tuple>",
+  "FailureIndex": {
+   "attrs": [
+    "density",
+    "name",
+    "needs",
+    "solid_ratio",
+    "weights"
+   ],
+   "class": "FailureIndex"
+  },
   "VonMises": {
    "attrs": [
     "density",

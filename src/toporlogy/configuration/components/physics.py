@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from toporlogy.configuration.helpers import checked_selector
+from toporlogy.configuration.helpers import checked_selector, material_model
 from toporlogy.configuration.registry import BuildContext, register
 
 
@@ -47,7 +47,7 @@ def register_physics() -> None:
         else:
             raise ValueError(f'mass: linear | two_range, got "{mass}"')
         phys = Modal(d, cs.fixed, nu=ctx.material["nu"], element=element, mass=m, n_modes=n_modes, sigma=sigma,
-                     tol=tol, cluster_tol=cluster_tol, repeated=repeated)
+                     tol=tol, cluster_tol=cluster_tol, repeated=repeated, elasticity=material_model(ctx).elasticity)
         if added_mass:
             if added_mass_at is None:
                 raise ValueError("added_mass needs added_mass_at (a selector)")
@@ -72,7 +72,8 @@ def register_physics() -> None:
         from toporlogy.fem.elastic_gmg import ElasticityGMG
         return ElasticityGMG(d, bcs.constraints(0).fixed, nu=ctx.material["nu"], element=element, tol=tol,
                              maxit=maxit, direct_below=direct_below, fallback_max_elements=fallback_max_elements,
-                             warm_start=warm_start, allow_inexact=allow_inexact)
+                             warm_start=warm_start, allow_inexact=allow_inexact,
+                             elasticity=material_model(ctx).elasticity)
 
     register("physics", "elasticity_gmg", elasticity_gmg, units={"direct_below": "active elements",
                                                                  "fallback_max_elements": "active elements"})

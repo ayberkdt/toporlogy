@@ -180,6 +180,36 @@ from memory. The literature survey, the gaps it found and the verification statu
 The augmented Lagrangian did not work with its first settings (optimizer reset at every multiplier update) and its
 present defaults were tuned on one problem; neither stress strategy yields a stress-feasible 0/1 structure.
 
+## Material models (25 Nov 2026)
+
+The `material` section now describes more than E0 and ν. Measurements and the verification record:
+[`docs/olcumler/malzeme_modelleri.md`](docs/olcumler/malzeme_modelleri.md).
+
+```yaml
+material:
+  E0: 40000.0                       # with orthotropic: must equal E1 (the modulus the interpolation scales)
+  plane: stress                     # 2-D only: stress | strain
+  orthotropic: {E1: 40000, E2: 9000, E3: 9000, G12: 4000, G13: 4000, G23: 3200,
+                nu12: 0.28, nu13: 0.28, nu23: 0.4, angle: 30}        # or axes: [[1,0,0],[0,1,0]] in 3-D
+  strength: {Xt: 1500, Xc: 1200, Yt: 50, Yc: 200, S12: 70, safety_factor: 1.5}
+  # isotropic strength: {tension: 300, compression: 450, safety_factor: 1.5}
+constraints:
+  - {response: {type: stress, criterion: tsai_wu}}                   # limit from material.strength
+  - {response: {type: buckling, load_factor: 2.0, preload_case: 1}}  # case 1 held fixed, case 0 scaled
+```
+
+| Addition | Verified by |
+|:---|:---|
+| Orthotropic, rotated and plane-strain elasticity (`core.material`, `fem.elements.element_matrix_from_D`, `elasticity=` on `Elasticity`, `Modal`, `ElasticityGMG`) | isotropic case = the closed forms to 1e-14; rotation invariance and 1/E(n) = n n n n S; patch identities for any D; 2-D plane strain = 3-D slab with w = 0 to 1e-10; orthotropic strip gives E1, E2 exactly |
+| Failure criteria von Mises, Tresca, Drucker–Prager, Raghava, Tsai–Wu (`optimization.strength`), field `FailureIndex` | index 1 at the uniaxial / shear / material-axis reference states; degree-1 homogeneous; rotation invariant (isotropic); von Mises field reproduced to 1e-12; gradients ≤ 3e-8 |
+| Buckling: preload, cluster-cut warning, low-density mode share, first-failure load factor | preload c on the same pattern lowers λ by exactly c (1e-8); preload gradient 1.5e-8; square column double eigenvalue flagged; uniaxial first failure exact; orthotropic column → isotropic E_axial column, error 2.1 %, 0.59 %, 0.21 % at 4, 8, 16 elements across |
+| 2-D incompatible-mode element `Q4IM` (Wilson's Q6); condensed modes in K_G (`LinearBuckling(modes_in_kg=True)`) | pure bending exact (Q4 −11 %); column of Ferrari & Sigmund 2019: Q4 20 × 2 reproduces their published error 0.119 (0.1187), Q4IM λ error 1.4e-3 against the converged 2-D value; gradient 5e-8 |
+| Buckling localisation measure and `exclude` (no stress stiffness at singular points) | the published wall's λ1 does not converge (2.85 → 1.20 from 40² to 320²) because its mode sits at a singular stress; the measure rises with refinement there (0.88 → 0.95), 0.04 for an Euler column |
+| Hashin–Shtrikman upper bound of a porous solid (`interpolation: hashin_shtrikman`), `simp_admissible_penal` | bulk bound = Lamé solution of a hollow sphere / disk to 1e-12; SIMP below both bounds exactly from p*(ν) on |
+
+For ν = 0.3 the HS-admissible SIMP exponent is 3.08 in 2-D and 2.63 in 3-D; p = 3 is not admissible in 2-D at
+ν = 0.3 (only at ν = 1/3). The HS interpolation does not penalise grey material: use it to judge a grey design.
+
 ## Keeping the part in one body
 
 A compliance optimum often splits into separate load paths joined by nothing, or by a grey film that disappears at
@@ -245,8 +275,17 @@ they show that the implementation did not change, not that it is independently c
 - **Stress:** centroid stress of a voxel model (inaccurate at jagged boundaries, under-reported in grey elements);
   no regional aggregation, no robust (eroded/dilated) stress, no body-fitted check in the loop. Results satisfy the
   relaxed constraint on the grey design, not the stress limit on the thresholded one.
-- **Buckling:** plain `Elasticity` only (direct solver, axis-aligned supports, one support set); no regularisation
-  of the stress field against localised modes; the number of aggregated modes is fixed by the user.
+- **Buckling:** linear bifurcation only (no geometric non-linearity, imperfections or post-buckling); in 2-D the
+  plane model cannot buckle out of its plane, so a thin plate's usually critical mode is not found; plain
+  `Elasticity` only (direct solver, axis-aligned supports, one support set); no regularisation of the stress field
+  against localised modes (the low-density share and the localisation measure only flag them; `exclude` moves a
+  singular localisation rather than removing it); the number of aggregated modes is fixed by the user (a cut
+  cluster is now warned about, not fixed). A λ governed by a stress singularity (end of a partly clamped edge,
+  re-entrant corner, point load) has no mesh limit.
+- **Material:** one orientation for the whole domain (no per-element fibre angle); failure criteria at the element
+  centroid like the von Mises field; the Tsai–Wu interaction f12 = −0.5 is a common choice, not a measured value;
+  the connectivity coupling physics and the T10 verification (`post.verify`) stay isotropic (ν); the
+  Hashin–Shtrikman interpolation scales E and keeps the solid's ν (its ν_HS(x) differs, 0.33 at x = 0.25 in 2-D).
 - **MMA** is plain MMA: no global convergence guarantee; a two-cycle has been seen without an active constraint.
   GCMMA removes it at the cost of extra solves.
 - **OC and SiMPL** handle exactly one constraint, and only one that needs no state solve (rejected at build
