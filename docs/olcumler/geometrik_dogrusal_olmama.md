@@ -91,3 +91,119 @@ V7 — tasarımlar yerel optimum; yine de doğrusal olmayan tasarımın kendi mo
 Kapsam dışı (bu işte yapılmadı): post-buckling ve yay uzunluğu (arc-length) — yükleme yalnız yük kontrollü, limit
 noktası geçilmez; plastisite; temas; GMG çözücü; sıfırdan farklı zorlanmış yer değiştirme; takipçi (follower) yük;
 H8IM / Q4IM'in doğrusal olmayan sürümü; ortotrop neo-Hooke (SVK herhangi bir D ile çalışır).
+
+## 1. Sonuç özeti [Ö]
+
+Kaynak: `python -m pytest tests/toporlogy/test_nonlinear.py -m "not slow" -s -v -p no:randomly` (25 Kasım 2026,
+düzeltmelerden sonraki son koşu) ve `PYTHONPATH=src python docs/olcumler/geometrik_dogrusal_olmama.py`
+(`geometrik_dogrusal_olmama.json`). Her satırda altı yapılandırmanın (SVK / neo-Hooke × Q4 düzlem gerilme, Q4
+düzlem gerinim, H8) en kötüsü verilir.
+
+| # | Ölçüt | Eşik | Ölçülen (en kötü) | Karar |
+|:---|:---|---:|---:|:---|
+| V1 | küçük yük, ‖u_NL − u_L‖/‖u_L‖ | 1e-6 | 1,4e-9 | PASS |
+| V1b | küçük yük, uyum gradyanı | 1e-6 | 2,6e-9 | PASS |
+| V1c | u = 0'da tanjant = geom · `element_matrix_from_D` | 1e-12 | 3,5e-16 | PASS |
+| V2 | tek eksenli çekme, germe oranları (mutlak) | 1e-9 | 2,2e-14 | PASS |
+| V3 | tutarlı tanjant (merkezi fark) | 1e-6 | 1,9e-10 | PASS |
+| V3b | ∂f_e/∂E_e (merkezi fark) | 1e-6 | 8,5e-10 | PASS |
+| V4 | Newton, adım başına en büyük üç noktalı mertebe | ≥ 1,8 | SVK 2,3; neo-Hooke 0,77 | SVK PASS; neo-Hooke FAIL (strict xfail) |
+| V5a | konsol n = 16, v / u hatası | %0,5 / %1,0 | %0,13 / %0,31 | PASS |
+| V5b | Richardson (8, 16), v / u | %0,1 / %0,2 | %0,040 / %0,067 | PASS |
+| V5c | hata n = 4 → 8 → 16 azalır | monoton | dört durumda da monoton | PASS |
+| V6 | son uyum ve yer değiştirme gradyanı (sonlu fark) | 1e-5 | 1,2e-9 | PASS |
+| V7a | C_NL(x_NL) ≤ 0,99 · C_NL(x_L) | sağlanmalı | §5 | §5 |
+| V7b | C_L(x_L) ≤ 1,005 · C_L(x_NL) | sağlanmalı | §5 | §5 |
+| V7c | Buhl, Pedersen & Sigmund (2000) sayıları | — | kaynak okunamadı | NOT VERIFIED |
+
+Ayrıntılar (ölçülen değerler, yapılandırma başına; sıra SVK ps, SVK pe, SVK 3-B, NH ps, NH pe, NH 3-B):
+
+- V1: 9,6e-10; 9,5e-10; 1,4e-9; 7,2e-10; 7,3e-10; 1,1e-9. V1b: 6,5e-10; 6,0e-10; 1,1e-9; 1,7e-9; 1,3e-9; 2,6e-9.
+- V2 (P = 0,3 E, ν = 0,3): SVK λ₁ = 1,221196686181 (düzlem gerilme ve 3-B), 1,205390135714 (düzlem gerinim);
+  neo-Hooke λ₁ = 1,422861641171 (düzlem gerilme ve 3-B aynı, beklendiği gibi), 1,386363266269 (düzlem gerinim).
+  Hatalar ≤ 2,2e-14; serbest yüz düğümlerinin yer değiştirme farkı ≤ 2,2e-16 (homojen).
+- V3: 1,8e-10; 1,8e-10; 9,7e-11; 1,6e-10; 1,9e-10; 1,5e-10. V3b: 7,8e-10; 7,0e-10; 1,6e-10; 7,1e-10; 8,5e-10;
+  2,5e-10 (0,6 rad dönme, %20'ye varan germe ve gürültü; modüller enerji interpolasyonunun geçiş bölgesini kapsayacak
+  biçimde 2e-4 ile 1 arasında).
+- V6 (en büyük yer değiştirme açıklığın %34–43'ü): SVK 2-B 1,2e-9 / 1,2e-9 (son uyum / uç yer değiştirmesi),
+  neo-Hooke 2-B 1,1e-9 / 8,8e-10, SVK 3-B 1,2e-10 / 1,0e-10.
+
+Konsol (V5; L/H = 50, ν = 0, düzlem gerilme, uçta ölü düşey yük; elastikaya bağıl hata):
+
+| Malzeme | α | n | v hatası (%) | u hatası (%) | Newton it. |
+|:---|---:|---:|---:|---:|---:|
+| SVK | 1 | 4 | −2,49 | −5,08 | 49 |
+| SVK | 1 | 8 | −0,61 | −1,26 | 46 |
+| SVK | 1 | 16 | −0,13 | −0,28 | 40 |
+| SVK | 2 | 4 | −1,75 | −3,83 | 55 |
+| SVK | 2 | 8 | −0,41 | −0,93 | 53 |
+| SVK | 2 | 16 | −0,08 | −0,18 | 50 |
+| neo-Hooke | 1 | 4 | −2,49 | −5,12 | 40 |
+| neo-Hooke | 1 | 8 | −0,61 | −1,30 | 40 |
+| neo-Hooke | 1 | 16 | −0,13 | −0,31 | 40 |
+| neo-Hooke | 2 | 4 | −1,74 | −3,87 | 50 |
+| neo-Hooke | 2 | 8 | −0,41 | −0,96 | 50 |
+| neo-Hooke | 2 | 16 | −0,07 | −0,21 | 48 |
+
+Hata, n her ikilendiğinde yaklaşık dörtte birine iniyor (1/n²; doğrusal Q4 kilitlenmesiyle aynı davranış: n = 4'te
+doğrusal %−3,0, doğrusal olmayan v %−2,5). Richardson ekstrapolasyonu (p = 2): SVK α = 1 v %+0,028, u %+0,054;
+α = 2 v %+0,036, u %+0,067; neo-Hooke α = 1 v %+0,030, u %+0,018; α = 2 v %+0,040, u %+0,034. Her durumda 10 yük
+adımı, adım küçültme yok. Süre: n = 16 koşuları 30–94 s, bölüm toplam 355 s.
+
+## 2. İlk koşunun ve düzeltmelerin kaydı
+
+Ön kayıttan sonraki ilk koşu (`pytest ... -m "not slow"`, rastgele sıra) 900 s'lik pytest zaman aşımına takıldı;
+özet yazılmadı. Sıralı koşuda nedenler tek tek bulundu:
+
+1. **Kod hatası: Green şekil değiştirmesi ½(FᵀF − I) ile hesaplanıyordu.** |∇u| = 1e-8'de iç kuvvette 1,4e-6 bağıl
+   yuvarlama hatası (3-B). Newton hiçbir yakınsama ölçütünü geçemedi; uyarlamalı kesme her yeniden başlatmada en
+   küçük adıma kadar yarıladı, test asılı göründü. Düzeltme: E = ½(H + Hᵀ + HᵀH), J − 1 H'nin değişmezlerinden,
+   neo-Hooke'ta S = κJ(J − 1)C⁻¹ + 2μJ^(−2/3) C⁻¹ dev E (1'in çıkarıldığı terim yok). Aynı durumda Newton artık 2
+   iterasyonda 1,4e-14'e iniyor. V1'in 2-B satırları ilk koşuda da geçmişti (≤ 1,8e-9).
+2. **Ön kayıttan sapma (yakınsama ölçütü): η'nın tanımı değişti.** Ön kayıtta η = ‖R‖ / (‖Σ_e |f_e|‖ + ‖λF‖)
+   yazıyordu. İnce konsolda (L/H = 50) bağıl kalıntı 2,7e-9'da yuvarlama tabanına oturdu (‖K‖‖u‖ ≫ ‖F‖; eleman
+   kuvvetlerinin büyüklüğü bu tabanı göstermiyor), V4 ve V5 yakınsamadı. η, doğrusal çözücünün `checked_residual`
+   tanımına getirildi: η = ‖R‖ / (‖K_T‖₁ ‖u‖ + ‖λF‖); eşik 1e-13 değişmedi. Bunun bedeli: ölçüt ileri hatayı ancak
+   κ(K_T) · 1e-13 ile sınırlar (doğrudan doğrusal çözümle aynı tür sınır).
+3. **Test girdisi hatası (V3, neo-Hooke):** rastgele şekil değiştirmiş durum, 0,6 rad dönmeden sonra ankastre
+   serbestlikleri sıfırladığı için ankastre yanındaki elemanları ters çeviriyordu (J en az −0,81; neo-Hooke'un tanım
+   kümesi dışında, `det F <= 0`). Taban durumunun mesnetleri sağlaması gerekmez (yalnız δu serbest serbestliklerde
+   kalır); sıfırlama kaldırıldı, J en az 0,72. Eşik değişmedi.
+4. **V4, neo-Hooke: ön kayıt tutmadı → strict xfail.** Ölçüt (adım başına, 1e-11 üstündeki ardışık üç kalıntıdan en
+   büyük mertebe ≥ 1,8) SVK'da her adımda sağlanıyor (2,3–18); neo-Hooke'ta λ = 0,1'de 1,79, λ = 0,6–1,0'da
+   0,77–0,94. Ölçütün kendisi bu problem için uygun değil: ince kirişte her adımın ilk kalıntısı ‖λF‖'nin 1e2–5e3
+   katına sıçrıyor ve üç kalıntı asimptotik bölgeden önceki evreyi kapsıyor. Kanıt olarak **post hoc** test:
+   yakınsamış 0,9 F durumundan tam yükte Newton, iyi koşullu konsolda (16 × 6, cond(K_T) ≈ 1,2e4), hata
+   e_k = |u_k − u*|∞/|u*|∞: SVK 1,0e-1 → 6,3e-4 → 1,2e-6 → 2,7e-16; neo-Hooke 1,0e-1 → 5,5e-4 → 1,1e-6 → 4,0e-16;
+   C_k = e_{k+1}/e_k² ≤ 3,7 (post hoc eşik ≤ 10, en az iki iterasyon, üç basamak). Doğrusal yakınsayan bir yöntemde
+   C_k = r/e_k sınırsız büyür. V3 (tanjant ≤ 1,9e-10) ile birlikte ikinci mertebe yakınsamanın kanıtı budur.
+5. **Sağlamlık ve hız (ölçütleri değiştirmeyen):** Newton'da durgunluk (5 iterasyonda kalıntı yarıya inmiyor)
+   başarısız adım sayılıyor; uyarlamalı kesme, hiçbir elemanın γ'sını 1e-3'ten fazla değiştirmeyen değerleri
+   atlıyor (aynı başarısız çözümü tekrarlamamak için); eleman çekirdeğinde `einsum` yerine toplu `matmul`, neo-Hooke
+   tanjantı doğrudan Voigt biçiminde. V6'da sonlu fark bileşen sayısı 8'den 6'ya indi (süre).
+
+## 3. Uygulama notları [O: koddan]
+
+- Total Lagrangian, Q4 (2-B) ve H8 (3-B), tam 2 × 2(× 2) Gauss; `Elasticity` ile aynı ağ, düğüm ve serbestlik sırası,
+  aynı `E_active`. Küçük yer değiştirmede tanjant `Elasticity`'nin eleman matrisine 3,5e-16 ile eşit (V1c).
+- SVK herhangi bir birim modüllü D ile (ortotrop ve düzlem gerinim dahil); neo-Hooke izotrop, düzlem gerilmede C₃₃
+  her Gauss noktasında S₃₃ = 0'dan çözülür ve tanjant yoğunlaştırılır.
+- Newton–Raphson: eşit yük adımları (varsayılan 10), başarısız adım yarılanır (en küçük `min_step` = 1e-4), iki
+  başarılı adımdan sonra 1,5 kat büyür. Yakınsamazsa `NonlinearConvergenceError` (ulaşılan yük katsayısı ve kalıntı
+  geçmişiyle); sessiz kısmi sonuç yok. Her yük durumu ayrı çözülür (süperpozisyon yok); `last_reports` her durumun
+  adım, iterasyon, kalıntı, η, kesme ve yeniden başlatma kaydını tutar.
+- Duyarlılık: geri yayılımda yakınsamış durumda tanjant kurulur ve yük durumu başına TEK adjoint çözülür,
+  K_T λ = ∂J/∂U; ∂J/∂E_e = −λ_eᵀ ∂f_e/∂E_e (γ'nın E'ye bağlılığı dahil). `Study` değişmedi: fizik `solve(E, F)`
+  arayüzünü sağlıyor; U'ya bağlı her yanıt (`compliance`, `displacement`, `end_compliance`) çalışıyor.
+- YAML: `physics: {type: nonlinear_elasticity, material: svk | neo_hooke, energy_interpolation: true, ...}`,
+  `objective: end_compliance` (doğrusal fizikle `ConfigError`).
+
+## 4. Dokunulan paylaşılan dosyalar (koordinasyon notu)
+
+Yalnız eklemeli: `configuration/components/physics.py` (yeni `nonlinear_elasticity` kaydı),
+`configuration/components/responses.py` (yeni `end_compliance` kaydı), `configuration/schema.py` (docstring'de iki
+satır), `references/_structures.py` (üç kaynak). `fem/*`, `design/*`, `optimization/study.py`,
+`optimization/responses.py` değişmedi; `EndCompliance` yalnız `Compliance`'ın alt sınıfı. Paket `__init__.py`
+dosyalarına ekleme yapılmadı (içe aktarma `toporlogy.fem.nonlinear` ve `toporlogy.optimization.nonlinear` üzerinden).
+`tests/toporlogy/baseline/*` yerelde yeniden üretildi ve testten sonra geri alındı; birleştirmede `list.txt`'ye
+`nonlinear_elasticity` ve `end_compliance` satırları, `api_surface.json`'a iki yeni modül girecek.
