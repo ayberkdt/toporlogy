@@ -62,11 +62,13 @@ jobs:
           cache: pip
       - name: System libraries for gmsh and vtk
         run: sudo apt-get update && sudo apt-get install -y libgl1 libglu1-mesa libxrender1 libxcursor1 libxft2 libxinerama1
-      - name: Install (CPU torch, post, mesh and dev extras)
+      # fast = pypardiso: the T10 re-analysis factors up to ~210k DOFs. SuperLU took 394 s on the 62k-DOF mesh of
+      # test_t10_convergence and had not finished the 212k-DOF one after 45 min; PARDISO solves them in 1.3 s and 9.4 s.
+      - name: Install (CPU torch, post, mesh, fast = pypardiso, dev)
         run: |
           python -m pip install --upgrade pip
           python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
-          python -m pip install -e ".[post,mesh,dev]"
+          python -m pip install -e ".[post,mesh,fast,dev]"
       - name: gmsh tests (slow ones included)
         env:
           TOPORLOGY_ENV_REPORT: env-report-gmsh.json
