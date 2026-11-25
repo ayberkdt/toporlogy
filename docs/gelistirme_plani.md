@@ -23,6 +23,8 @@ bugünkü durumunu, bulunan açıkları ve sonraki işlerin sırasını tutar.
 | Adlandırma temizliği | tamam | eski yollar ve takma adlar kaldırıldı, karışan adlar düzeltildi (aşağıda) |
 | G7 sonuç sözleşmesi | kısmen | `termination`, `feasible`, `max_violation`, `kkt_residual`, özet `flags` (`a7a5631`); `DesignVariant`, `SOLVER_FAILURE` yok |
 | V1 bağımsız FEM doğrulaması | tamam | üretilmiş çözümler, Q4/H8/H8IM'de O(h²) (`fd4f4de`) |
+| V1 ek (25 Kasım 2026) | tamam | ayrı yazılmış ikinci uygulamaya karşı rijitlik (uyumsuz modlar dahil), kütle, iletim, gerilme, Tsai–Wu, burkulma; MMS Q4IM, yön alanı, ısı, SVK, neo-Hooke; Taylor kalıntısı; değişmezler (`docs/olcumler/dogrulama_turu.md`). NAFEMS ve başka bir ekibin kodu yok |
+| V4 sonlandırma ölçütleri | tamam | `termination`, `feasible`, `kkt_residual` (G7) ve optimizer'dan bağımsız `stationarity` (`dogrulama_turu.md` §4) |
 | mypy | tamam | 219 hata → 0; CI'ın en güncel sürümleriyle de 0 (43 hata sürüm farkındandı); CI adımı hata kabul etmiyor |
 | B-22, B-23 | kapandı | tekil sistem denetimi (`fem/mechanisms.py`), `read_run` nihai kısıtları |
 | G6, G8, G9 | başlamadı | G9'un ilk parçası (CI) eklendi |

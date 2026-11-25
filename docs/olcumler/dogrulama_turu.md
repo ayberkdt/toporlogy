@@ -254,7 +254,7 @@ karşılaştırması ise depo dışındaki eleman kitaplığına (aerokit) bağl
 Uyumsuz modlu elemanlar (Wilson'ın Q6'sı ve dokuz modlu H8IM) bağımsız statik yoğunlaştırmayla aynı; kütle
 matrisi, depo dışı eleman kitaplığı olmadan da doğrulanıyor.
 
-## 4. Ek ön kayıt: optimizer'dan bağımsız KKT ölçüsü (2026-11-25 22:35 +0300, kod yazılmadan önce)
+## 4. Ek ön kayıt: optimizer'dan bağımsız KKT ölçüsü (2026-11-25 22:22 +0300, kod yazılmadan önce; ilk yazımda saat yanlışlıkla 22:35 yazılmıştı, commit `cd66b09` 22:22)
 
 `Result.kkt_residual` bugün optimizer'ın son adımının çarpanlarını kullanıyor [O: `study.py` `_kkt_residual`]: bir
 önceki iterasyona ait bir tahmin, çarpan vermeyen optimizer'da (SiMPL) yok. Ek: `optimization.diagnostics.kkt_estimate`
@@ -269,3 +269,18 @@ izdüşürülmüş durağanlık (göreli, max \|∇f\|'e bölünmüş) ile kıs�
 | P2 | Aynı problem, çözümden 1e-3 uzak bir nokta | ölçü ≥ 1e-4 |
 | P3 | Etkin olmayan kısıt: λ = 0, ölçü = izdüşürülmüş gradyanın göreli büyüklüğü | tam (1e-14) |
 | P4 | MBB (`test_result_contract.py`'deki 30 × 10) MMA, OC, GCMMA, SiMPL ile yakınsamış tasarım | ölçü < 0,1 × bir iterasyonluk tasarımınki |
+
+### 4.1 Sonuçlar (ilk koşu; GCMMA ve SiMPL ilk koşuda test dosyasındaki içe aktarma hatasıyla düştü, düzeltilip koşuldu) [Ö]
+
+| # | Ölçülen | Eşik | Sonuç |
+|:---|:---|:---|:---|
+| P1 | ölçü 1,4e-16; λ = 1,875 (kapalı çözüm 1,875) | 1e-12 / 1e-10 | PASS |
+| P2 | 3,75e-3 | ≥ 1e-4 | PASS |
+| P3 | λ = 0, ölçü = 1 tam | 1e-14 | PASS |
+| P4 MMA | 1 iterasyon 1,000 → 57 iterasyon 1,94e-4 (optimizer çarpanlarıyla `kkt_residual` 1,81e-4) | < 0,1 × | PASS |
+| P4 OC | 0,791 → 179 iterasyon 1,71e-2 (`kkt_residual` 2,08e-2) | < 0,1 × | PASS |
+| P4 GCMMA | 1,000 → 52 iterasyon 3,62e-5 (`kkt_residual` 3,43e-5) | < 0,1 × | PASS |
+| P4 SiMPL | 0,808 → 41 iterasyon 1,17e-2 (`kkt_residual` yok: çarpan vermiyor) | < 0,1 × | PASS |
+
+Bir iterasyonluk tasarımda ölçünün tam 1 çıkması: hacim kısıtı henüz etkin değil (g < −1e-3), λ = 0 ve iç
+noktalarda izdüşürülmüş gradyan gradyanın kendisi.

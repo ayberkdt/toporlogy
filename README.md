@@ -234,13 +234,14 @@ constraints:
 | Per-element material orientation (`angle_field`, `axis_field`; `core.material.unit_elasticity_field`), accepted by `Elasticity`, `Modal`, `LinearBuckling`, `FailureIndex` and the T10 re-analysis | a uniform field reproduces the single-D path bit for bit; two-orientation strip in parallel / series = Voigt / Reuss closed forms to 1e-14; T10 and H8 off-axis bar E(θ) to 4e-15; gradients ≤ 2e-7 | [`eleman_yonu.md`](docs/olcumler/eleman_yonu.md) |
 | Several solid phases + void sharing one unit D (`material.phases`, `interpolation: multiphase_simp`, the recursive SIMP of Gangl et al. 2026 §6.1); responses `phase_volume`, `mass`, `cost`; post step `phase_report` | one phase = SIMP bit for bit; two phases with the same E = one material; two-material bar in series / parallel to 1e-14; gradients ≤ 1.6e-7; no published compliance value to compare with (NOT VERIFIED) | [`cok_malzeme.md`](docs/olcumler/cok_malzeme.md) |
 | Geometrically non-linear static analysis (`physics: nonlinear_elasticity`: Total Lagrangian, Q4 / H8, St. Venant–Kirchhoff with any D — also per element — or compressible neo-Hooke; energy interpolation for void elements) and `end_compliance` | uniaxial tension closed form 2e-14; linear solver at small load 1.4e-9; cantilever elastica −0.13 % (Richardson 0.04 %); tangent 1.9e-10; design gradient 1.2e-9; one pre-registered Newton-order check (neo-Hooke) failed, quadratic error contraction shown post hoc | [`geometrik_dogrusal_olmama.md`](docs/olcumler/geometrik_dogrusal_olmama.md) |
-| Nested dissection elimination order for SuperLU on SPD grid systems (`solvers.ordering`; `Elasticity(ordering=...)`, heat conduction) | same solution as the previous MMD order (compliance ≤ 6e-11, U ≤ 1e-10), also with partial volumes, keep/void and oblique supports; same gradient (8e-14); the seven examples within 1.7e-10 of the old baseline | [`cozucu_siralama.md`](docs/olcumler/cozucu_siralama.md) |
+| Nested dissection elimination order for SuperLU on SPD grid systems (`solvers.ordering`; `Elasticity(ordering=...)`, heat conduction, modal analysis with σ ≤ 0, the preloaded buckling matrix) | same solution as the previous MMD order (compliance ≤ 6e-11, U ≤ 1e-10), also with partial volumes, keep/void and oblique supports; same gradient (8e-14); the seven examples within 1.7e-10 of the old baseline; modal and preloaded buckling eigenvalues within 9e-15 of the old order (σ > 0 keeps it) | [`cozucu_siralama.md`](docs/olcumler/cozucu_siralama.md), [`dogrulama_turu.md`](docs/olcumler/dogrulama_turu.md) §1.6 |
 
 The direct solve was measured before the solver change: backward error ≤ 5e-17, one step of iterative refinement
 changes the compliance by at most 1e-12, and the condition number (1e8–1e11 with Emin = 1e-6 … 1e-9) drops to 1e6
 under Jacobi scaling, so its size is scale, not instability. The time is in the factorisation; the nested dissection
 order cuts the fill by 26–33 % on the larger grids and the factorisation time by 2.1× at 53 k DOF (3-D), 2.8× at 90
-k DOF and 2.5× at 241 k DOF (2-D).
+k DOF and 2.5× at 241 k DOF (2-D). The same order makes the modal factorisation 2.6× faster at 53 k DOF (3-D) and the whole
+preloaded buckling solve 1.3–1.5× faster.
 
 ## Keeping the part in one body
 
@@ -289,19 +290,28 @@ they show that the implementation did not change, not that it is independently c
 | Post-processing, 12 inputs | pre-registered criteria | 9/12 pass the geometric criteria, 7/12 all criteria incl. exact-solid volume and a T10 check at two tet sizes (an earlier criterion that the mesh-convergence test above replaces); 12/12 watertight with topology preserved | `docs/olcumler/robustness.json`, `tests/toporlogy/test_sweep_post.py` |
 | Reproducibility | stored baseline of the seven examples | bitwise in the recorded reference environment; elsewhere scalars to 1e-6 relative (Linux: largest difference 1.5e-10) | `tests/toporlogy/test_baseline.py` |
 | Stress, buckling, GCMMA, SiMPL, PDE filter | closed forms, invariants, finite differences | table above | `tests/toporlogy/test_stress.py`, `test_buckling.py`, `test_gcmma.py`, `test_simpl.py`, `test_pde_filter.py`, `test_aggregates.py` |
+| Stiffness (Q4, H8, Q4IM, H8IM, orientation fields), mass, modal, conduction, centroid stress, von Mises and Tsai–Wu, buckling with and without preload | separately written dense implementation in the tests | matrices ≤ 4.6e-16, stresses and indices ≤ 1.1e-15, eigenvalues ≤ 3.2e-14, load factors ≤ 4e-13 | `test_independent_matrices.py`, `test_independent_stress.py`, `test_independent_buckling.py` |
+| Manufactured solutions beyond isotropic elasticity | Q4IM; smoothly varying orthotropic axes (Q4, Q4IM, H8); heat conduction; SVK and neo-Hooke at max \|∇u\| = 0.2 | second order on three grids (rates 1.97–2.05); constant axes, wrong conductivity and a linear solve of the non-linear loads stall | `test_fem_mms_extended.py` |
+| Gradients by the Taylor remainder | eleven responses incl. buckling, frequency, multi-phase, non-linear end compliance, multigrid | remainder order 2.00; the pre-registered 1 % negative control did not reach order 1 within the step range for five (strict xfail) | `test_taylor_remainder.py` |
+| Frame invariance and objectivity | 90° rotation and mirror with orientation fields; rigid rotation of large deformations | ≤ 7e-15 | `test_frame_invariance.py` |
+| First-order optimality of the result | closed-form constrained problem; MBB with MMA, OC, GCMMA, SiMPL | 1.4e-16 at the closed-form solution; falls by 46–27 600× at convergence | `test_kkt_estimate.py` |
 
 ## Known limitations
 
-- **Independent reference for compliance only:** Top88 and Top3D agree to rounding; stress and buckling have not
-  been compared with independent codes, there is no NAFEMS benchmark (curved boundaries cannot be built on the
-  regular grid), and the Q4 comparison is not independent (`ke_q4` comes from top88).
+- **Independent references:** compliance agrees with transcriptions of Top88 and Top3D to rounding. Stiffness
+  (incompatible modes included), mass, conduction, centroid stress, failure indices and buckling agree to rounding
+  with a second implementation written separately in the tests (`tests/toporlogy/_independent_fe.py`); it has the
+  same author, so it is not another team's code. There is no NAFEMS benchmark (curved boundaries cannot be built on
+  the regular grid).
 - **T10 convergence of finished parts:** `post.verify.mesh_convergence` gives a verdict, but a finished surface is
   usually finer than the tet sizes worth solving. gmsh keeps a surface it cannot reparametrise ("discrete" mode), so
   only the interior refines; on `cantilever3d` the finest mesh of a converging sequence (about 750 000 T10 elements)
   does not fit in 16 GB. The R-01 experiment that needs it is pre-registered but not run
   ([`docs/olcumler/r01_onkayit.md`](docs/olcumler/r01_onkayit.md)).
 - **`Result.converged`** means "design change below `tol` and continuation finished"; it does not include constraint
-  feasibility or optimality. Check `summary.json` → `status` and the constraint values.
+  feasibility or optimality. Check `summary.json` → `status`, the constraint values and `stationarity` (first-order
+  optimality of the returned design with multipliers fitted to it, any optimizer; `kkt_residual` uses the
+  optimizer's own multipliers of the last step).
 - **No paper text behind the methods of 21 Nov 2026:** records and abstracts only; SiMPL and the augmented
   Lagrangian are this library's implementations of the published ideas, not verified reproductions.
 - **Stress:** centroid stress of a voxel model (inaccurate at jagged boundaries, under-reported in grey elements);
