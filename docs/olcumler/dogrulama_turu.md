@@ -240,3 +240,16 @@ karşılaştırması ise depo dışındaki eleman kitaplığına (aerokit) bağl
 | K3 | Tutarlı kütle matrisi, 2-B ve 3-B, rastgele ρ | K1 |
 | K4 | Modal: en küçük altı λ, yoğun `scipy.linalg.eigh(K, M)`'ye karşı, Q4 ve H8IM | ≤ 1e-9 göreli |
 | K5 | Isı iletim matrisi (`assemble_conduction`), 2-B ve 3-B | K1 |
+
+### 3.1 Sonuçlar (ilk koşu) [Ö]
+
+| # | Durum | Ölçülen | Eşik | Sonuç |
+|:---|:---|---:|---:|:---|
+| K1 | Q4 / H8 / Q4 alan / H8 alan | 4,6e-16 / 2,6e-16 / 3,3e-16 / 1,7e-16 | 1e-12 | PASS |
+| K2 | Q4IM / H8IM / Q4IM alan / H8IM alan | 2,5e-16 / 2,9e-16 / 2,7e-16 / 2,0e-16 | 1e-12 | PASS |
+| K3 | kütle 2-B / 3-B | 3,0e-16 / 2,3e-16 | 1e-12 | PASS |
+| K4 | modal Q4 / H8IM | 2,2e-15 / 3,2e-14 | 1e-9 | PASS |
+| K5 | iletim 2-B / 3-B | 2,3e-16 / 2,0e-16 | 1e-12 | PASS |
+
+Uyumsuz modlu elemanlar (Wilson'ın Q6'sı ve dokuz modlu H8IM) bağımsız statik yoğunlaştırmayla aynı; kütle
+matrisi, depo dışı eleman kitaplığı olmadan da doğrulanıyor.

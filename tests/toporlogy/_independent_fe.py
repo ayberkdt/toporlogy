@@ -185,3 +185,68 @@ def geometric_stiffness(shape, h, t, Ds, E, u) -> np.ndarray:
         ke = np.kron(kn, np.eye(dim))                      # node-major DOFs: (a, i), (b, j) -> kn[a, b] δ_ij
         KG[np.ix_(ed, ed)] += ke
     return KG
+
+
+# ----------------------------------------------------------------------------------- incompatible modes, mass, heat
+def _mode_strain(xi: np.ndarray, h: float) -> np.ndarray:
+    """B (n_voigt, dim · dim) of Wilson's modes 1 − s_d² (s = 2ξ − 1 ∈ [−1, 1]), one per direction d and
+    displacement component c; columns ordered (mode d, component c)."""
+    dim = len(xi)
+    s = 2 * xi - 1
+    dM = np.zeros((dim, dim))                               # dM[d, j] = ∂(1 − s_d²)/∂X_j = −2 s_d · 2/h δ_dj
+    for d in range(dim):
+        dM[d, d] = -4.0 * s[d] / h
+    return strain_matrix(dM)                               # same layout as nodes: "node" = mode, DOF = component
+
+
+def element_stiffness(dim: int, h: float, t: float, D: np.ndarray, incompatible: bool = False) -> np.ndarray:
+    """Element stiffness (dim · 2^dim square), modes condensed statically when ``incompatible``."""
+    pts, w = gauss(dim)
+    vol = h ** dim * (t if dim == 2 else 1.0)
+    nu_ = dim * 2 ** dim
+    na = dim * dim if incompatible else 0
+    K = np.zeros((nu_ + na, nu_ + na))
+    for xi, wg in zip(pts, w, strict=True):
+        B = strain_matrix(shape_gradients(xi, h))
+        if incompatible:
+            B = np.hstack([B, _mode_strain(xi, h)])
+        K += wg * vol * B.T @ D @ B
+    if not incompatible:
+        return K
+    Kuu, Kua, Kaa = K[:nu_, :nu_], K[:nu_, nu_:], K[nu_:, nu_:]
+    return Kuu - Kua @ np.linalg.solve(Kaa, Kua.T)
+
+
+def assemble(shape, element_matrices) -> np.ndarray:
+    """Dense global matrix from per-element matrices in this module's DOF order (any DOFs per node)."""
+    dim = len(shape)
+    nper = element_matrices.shape[1] // 2 ** dim
+    node_shape = np.array(shape) + 1
+    n = int(np.prod(node_shape)) * nper
+    A = np.zeros((n, n))
+    for cell, ke in zip(np.indices(shape).reshape(dim, -1).T, element_matrices, strict=True):
+        nodes = [int(np.ravel_multi_index(tuple(cell + c), node_shape)) for c in corners(dim)]
+        ed = [m * nper + k for m in nodes for k in range(nper)]
+        A[np.ix_(ed, ed)] += ke
+    return A
+
+
+def element_mass(dim: int, h: float, t: float, rho: float) -> np.ndarray:
+    """Consistent mass ρ ∫ NᵀN dV ⊗ I (2-point Gauss is exact: degree 2 per axis)."""
+    pts, w = gauss(dim)
+    vol = h ** dim * (t if dim == 2 else 1.0)
+    m = np.zeros((2 ** dim, 2 ** dim))
+    for xi, wg in zip(pts, w, strict=True):
+        N = np.array([np.prod([xi[q] if c[q] else 1 - xi[q] for q in range(dim)]) for c in corners(dim)])
+        m += wg * vol * rho * np.outer(N, N)
+    return np.kron(m, np.eye(dim))
+
+
+def element_conduction(dim: int, h: float, t: float, k: float) -> np.ndarray:
+    pts, w = gauss(dim)
+    vol = h ** dim * (t if dim == 2 else 1.0)
+    c = np.zeros((2 ** dim, 2 ** dim))
+    for xi, wg in zip(pts, w, strict=True):
+        dN = shape_gradients(xi, h)
+        c += wg * vol * k * dN @ dN.T
+    return c
