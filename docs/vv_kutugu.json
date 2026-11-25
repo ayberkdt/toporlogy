@@ -1,0 +1,371 @@
+{
+ "schema_version": "1.0.0",
+ "note": "Strict xfail ve atlama kütüğü; tests/toporlogy/test_catalog_ledger.py toplanan testlerle karşılaştırır.",
+ "risk_levels": {
+  "low": "ölçüt ya da kontrolün kendisi; kod sonucu başka testle doğrulanmış",
+  "medium": "açıklanmamış sayısal fark ya da referans yeniden üretilemiyor",
+  "high": "kullanıcıya görünen sessiz kabul (yanlış sonuç üretebilir)"
+ },
+ "xfail": [
+  {
+   "nodeid": "tests/toporlogy/test_fs2019_column.py::test_published_q6_error_20x2",
+   "kind": "pre-registered check failed",
+   "model_backend": "Elasticity Q4IM + LinearBuckling (CPU, direct)",
+   "reason": "Ferrari & Sigmund 2019 Q6 hata değeri -0,0066 üretilmiyor; Q4IM -0,00561 veriyor",
+   "risk": "medium",
+   "resolution": "Q6 ile Q4IM'in K_G formülasyonu farkı belirlenip aynı formülasyonla yeniden ölçülmesi",
+   "record": "docs/olcumler/yayimlanmis_degerler.md",
+   "slow": false
+  },
+  {
+   "nodeid": "tests/toporlogy/test_nonlinear.py::test_v4_newton_converges_quadratically[neo_hooke]",
+   "kind": "pre-registered check failed",
+   "model_backend": "NonlinearElasticity neo-Hooke (CPU)",
+   "reason": "ön kayıtlı yerel ikinci mertebe ölçütü neo-Hooke'ta tutmadı (1,79; 0,77-0,94); ölçüt bu problem için sağlam değil",
+   "risk": "low",
+   "resolution": "ölçütün ayrı, yeni ön kayıtla değiştirilmesi (tanjant FD testi V3 geçiyor)",
+   "record": "docs/olcumler/geometrik_dogrusal_olmama.md",
+   "slow": false
+  },
+  {
+   "nodeid": "tests/toporlogy/test_published_values.py::test_topbuck250_wall_solid_blf_against_published_value",
+   "kind": "pre-registered check failed",
+   "model_backend": "ElasticityGMG + buckling, büyük 3-B (CUDA gerekir)",
+   "reason": "yayımlanmış 3,15 üretilmiyor; aktarılan kod 1,303 veriyor",
+   "risk": "medium",
+   "resolution": "yayımlanmış kodun kurgusunun (yük, BC, ağ) bağımsız okunması",
+   "record": "docs/olcumler/yayimlanmis_degerler.md",
+   "slow": true
+  },
+  {
+   "nodeid": "tests/toporlogy/test_published_values.py::test_deng_displacements_agree_to_rounding",
+   "kind": "pre-registered check failed",
+   "model_backend": "Elasticity H8 (CPU, direct)",
+   "reason": "ön kayıtlı 1e-9 sınırı ilk koşuda 9,7e-8 ile aşıldı; cond(K) ~ 5e9",
+   "risk": "low",
+   "resolution": "koşul sayısına ölçeklenmiş sınırın ayrı ön kayıtla yazılması (geri kararlılık post-hoc testi geçiyor)",
+   "record": "docs/olcumler/yayimlanmis_degerler.md",
+   "slow": false
+  },
+  {
+   "nodeid": "tests/toporlogy/test_published_values.py::test_deng_initial_pnorm_against_published_value",
+   "kind": "pre-registered check failed",
+   "model_backend": "Elasticity + stress p-norm",
+   "reason": "yayımlanmış 33,17 başlangıç tasarımında üretilmiyor (68,45); post-hoc: değer ilk MMA adımından sonra",
+   "risk": "low",
+   "resolution": "kayıt tamam; test tarihsel ön kayıt olarak kalır",
+   "record": "docs/olcumler/yayimlanmis_degerler.md",
+   "slow": false
+  },
+  {
+   "nodeid": "tests/toporlogy/test_sweep_post.py::test_sweep_post_analytic[p05_thin_plate]",
+   "kind": "pre-registered check failed",
+   "model_backend": "post: SDF + yüzey + T10 yeniden analiz (gmsh, PARDISO)",
+   "reason": "son işlem kapısı ön kayıtlı ölçütü tutmadı: hacim +%5,6 (hedef -%1,0)",
+   "risk": "medium",
+   "resolution": "son işlem (pürüzsüzleştirme/T10 ağ) düzeltmesi; kapı eşiği gevşetilmez",
+   "record": "docs/olcumler/robustness.md",
+   "slow": true
+  },
+  {
+   "nodeid": "tests/toporlogy/test_sweep_post.py::test_sweep_post_real[r1_cantilever]",
+   "kind": "pre-registered check failed",
+   "model_backend": "post: SDF + yüzey + T10 yeniden analiz (gmsh, PARDISO)",
+   "reason": "son işlem kapısı ön kayıtlı ölçütü tutmadı: T10/voksel uyum oranı 1,0h->0,5h arası %12,4 (> %5)",
+   "risk": "medium",
+   "resolution": "son işlem (pürüzsüzleştirme/T10 ağ) düzeltmesi; kapı eşiği gevşetilmez",
+   "record": "docs/olcumler/robustness.md",
+   "slow": true
+  },
+  {
+   "nodeid": "tests/toporlogy/test_sweep_post.py::test_sweep_post_real[r2_mbb]",
+   "kind": "pre-registered check failed",
+   "model_backend": "post: SDF + yüzey + T10 yeniden analiz (gmsh, PARDISO)",
+   "reason": "son işlem kapısı ön kayıtlı ölçütü tutmadı: hacim -%1,67, Hausdorff 0,72 h_f",
+   "risk": "medium",
+   "resolution": "son işlem (pürüzsüzleştirme/T10 ağ) düzeltmesi; kapı eşiği gevşetilmez",
+   "record": "docs/olcumler/robustness.md",
+   "slow": true
+  },
+  {
+   "nodeid": "tests/toporlogy/test_sweep_post.py::test_sweep_post_real[r3_bores]",
+   "kind": "pre-registered check failed",
+   "model_backend": "post: SDF + yüzey + T10 yeniden analiz (gmsh, PARDISO)",
+   "reason": "son işlem kapısı ön kayıtlı ölçütü tutmadı: Hausdorff 0,79 h_f (> 0,6)",
+   "risk": "medium",
+   "resolution": "son işlem (pürüzsüzleştirme/T10 ağ) düzeltmesi; kapı eşiği gevşetilmez",
+   "record": "docs/olcumler/robustness.md",
+   "slow": true
+  },
+  {
+   "nodeid": "tests/toporlogy/test_sweep_post.py::test_sweep_post_real[r4_robust]",
+   "kind": "pre-registered check failed",
+   "model_backend": "post: SDF + yüzey + T10 yeniden analiz (gmsh, PARDISO)",
+   "reason": "son işlem kapısı ön kayıtlı ölçütü tutmadı: Hausdorff 0,67 h_f (> 0,6)",
+   "risk": "medium",
+   "resolution": "son işlem (pürüzsüzleştirme/T10 ağ) düzeltmesi; kapı eşiği gevşetilmez",
+   "record": "docs/olcumler/robustness.md",
+   "slow": true
+  },
+  {
+   "nodeid": "tests/toporlogy/test_taylor_remainder.py::test_t2_negative_control[displacement_2d]",
+   "kind": "pre-registered check failed",
+   "model_backend": "gradyan negatif kontrolü (CPU)",
+   "reason": "T2 negatif kontrolü tutmadı (kontrol adımları h* yakınında bitiyor); gradyanın kendisi (T1) ve uyarlanmış kontrol (T3) geçiyor",
+   "risk": "low",
+   "resolution": "kontrolün kendisi; T3 doğru ölçütü taşıyor, T2 tarihsel kayıt",
+   "record": "docs/olcumler/dogrulama_turu.md",
+   "slow": false
+  },
+  {
+   "nodeid": "tests/toporlogy/test_taylor_remainder.py::test_t2_negative_control[stress_pnorm_2d]",
+   "kind": "pre-registered check failed",
+   "model_backend": "gradyan negatif kontrolü (CPU)",
+   "reason": "T2 negatif kontrolü tutmadı (kontrol adımları h* yakınında bitiyor); gradyanın kendisi (T1) ve uyarlanmış kontrol (T3) geçiyor",
+   "risk": "low",
+   "resolution": "kontrolün kendisi; T3 doğru ölçütü taşıyor, T2 tarihsel kayıt",
+   "record": "docs/olcumler/dogrulama_turu.md",
+   "slow": false
+  },
+  {
+   "nodeid": "tests/toporlogy/test_taylor_remainder.py::test_t2_negative_control[buckling_ks_2d]",
+   "kind": "pre-registered check failed",
+   "model_backend": "gradyan negatif kontrolü (CPU)",
+   "reason": "T2 negatif kontrolü tutmadı (%1 hata işaretli kalıntıyı h = 1,6e-3 yakınında sıfırlıyor); gradyanın kendisi (T1) ve uyarlanmış kontrol (T3) geçiyor",
+   "risk": "low",
+   "resolution": "kontrolün kendisi; T3 doğru ölçütü taşıyor, T2 tarihsel kayıt",
+   "record": "docs/olcumler/dogrulama_turu.md",
+   "slow": false
+  },
+  {
+   "nodeid": "tests/toporlogy/test_taylor_remainder.py::test_t2_negative_control[conduction_connectivity]",
+   "kind": "pre-registered check failed",
+   "model_backend": "gradyan negatif kontrolü (CPU)",
+   "reason": "T2 negatif kontrolü tutmadı (kontrol adımları h* yakınında bitiyor); gradyanın kendisi (T1) ve uyarlanmış kontrol (T3) geçiyor",
+   "risk": "low",
+   "resolution": "kontrolün kendisi; T3 doğru ölçütü taşıyor, T2 tarihsel kayıt",
+   "record": "docs/olcumler/dogrulama_turu.md",
+   "slow": false
+  },
+  {
+   "nodeid": "tests/toporlogy/test_taylor_remainder.py::test_t2_negative_control[multiphase_compliance_volume_cost]",
+   "kind": "pre-registered check failed",
+   "model_backend": "gradyan negatif kontrolü (CPU)",
+   "reason": "T2 negatif kontrolü tutmadı (kontrol adımları h* yakınında bitiyor); gradyanın kendisi (T1) ve uyarlanmış kontrol (T3) geçiyor",
+   "risk": "low",
+   "resolution": "kontrolün kendisi; T3 doğru ölçütü taşıyor, T2 tarihsel kayıt",
+   "record": "docs/olcumler/dogrulama_turu.md",
+   "slow": false
+  },
+  {
+   "nodeid": "tests/toporlogy/test_timoshenko_cantilever.py::test_h2_q4_converges_at_second_order",
+   "kind": "pre-registered check failed",
+   "model_backend": "Elasticity Q4 (CPU)",
+   "reason": "Q4 düğüm hata oranı 1,78; 1,82 (ön kayıt ikinci mertebe); n = 32, 64'te 1,85; 1,86",
+   "risk": "low",
+   "resolution": "max-norm h² |ln h| varsayımının ayrı ön kayıtla sınanması",
+   "record": "docs/olcumler/dogrulama_turu.md",
+   "slow": false
+  },
+  {
+   "nodeid": "tests/toporlogy/test_timoshenko_cantilever.py::test_h3_q4im_is_more_accurate",
+   "kind": "pre-registered check failed",
+   "model_backend": "Elasticity Q4IM (CPU)",
+   "reason": "Q4IM hatası Q4'ten 13 kat küçük ama oranlar 1,34; 1,52; neden belirlenmedi (kenar yükü hipotezi çürütüldü)",
+   "risk": "medium",
+   "resolution": "köşe/kenar yükü tekilliğinin ayrıştırılması",
+   "record": "docs/olcumler/dogrulama_turu.md",
+   "slow": false
+  },
+  {
+   "nodeid": "tests/toporlogy/test_fault_injection.py::test_fails_closed_with_a_clear_message[inf_load_solve]",
+   "kind": "pre-registered fault injection failed",
+   "model_backend": "Elasticity.solve_numpy",
+   "reason": "yükte Inf: çözümden sonra SolveResidualError, girdi denetimi yok",
+   "risk": "low",
+   "resolution": "solve girişinde sonluluk denetimi (ValueError)",
+   "record": "docs/vv_fault_injection.md",
+   "slow": false
+  },
+  {
+   "nodeid": "tests/toporlogy/test_fault_injection.py::test_fails_closed_with_a_clear_message[nan_force_config]",
+   "kind": "pre-registered fault injection failed",
+   "model_backend": "config yükleri",
+   "reason": "force [nan, -1] sessizce kabul ediliyor",
+   "risk": "high",
+   "resolution": "yük bileşenlerinde sonluluk denetimi",
+   "record": "docs/vv_fault_injection.md",
+   "slow": false
+  },
+  {
+   "nodeid": "tests/toporlogy/test_fault_injection.py::test_fails_closed_with_a_clear_message[inf_E0_config]",
+   "kind": "pre-registered fault injection failed",
+   "model_backend": "config malzeme (core/material.py)",
+   "reason": "E0 = inf: mesaj ν'ye yönlendiriyor, E0'ı adlandırmıyor",
+   "risk": "low",
+   "resolution": "E0 sonluluk denetimi (tensor-core oturumunun dosyası)",
+   "record": "docs/vv_fault_injection.md",
+   "slow": false
+  },
+  {
+   "nodeid": "tests/toporlogy/test_fault_injection.py::test_fails_closed_with_a_clear_message[negative_E0_config]",
+   "kind": "pre-registered fault injection failed",
+   "model_backend": "config malzeme (core/material.py)",
+   "reason": "E0 = -1: mesaj E1 diyor",
+   "risk": "low",
+   "resolution": "izotrop yolda E0 adıyla mesaj",
+   "record": "docs/vv_fault_injection.md",
+   "slow": false
+  },
+  {
+   "nodeid": "tests/toporlogy/test_fault_injection.py::test_fails_closed_with_a_clear_message[zero_E0_config]",
+   "kind": "pre-registered fault injection failed",
+   "model_backend": "config malzeme (core/material.py)",
+   "reason": "E0 = 0: mesaj E1 diyor",
+   "risk": "low",
+   "resolution": "izotrop yolda E0 adıyla mesaj",
+   "record": "docs/vv_fault_injection.md",
+   "slow": false
+  },
+  {
+   "nodeid": "tests/toporlogy/test_fault_injection.py::test_fails_closed_with_a_clear_message[negative_thickness_domain]",
+   "kind": "pre-registered fault injection failed",
+   "model_backend": "Domain / Elasticity",
+   "reason": "thickness = -1 sessizce kabul (negatif rijitlik)",
+   "risk": "high",
+   "resolution": "Domain'de thickness > 0 denetimi",
+   "record": "docs/vv_fault_injection.md",
+   "slow": false
+  },
+  {
+   "nodeid": "tests/toporlogy/test_fault_injection.py::test_fails_closed_with_a_clear_message[load_wrong_rows_solve]",
+   "kind": "pre-registered fault injection failed",
+   "model_backend": "Elasticity.solve_numpy",
+   "reason": "yanlış satır sayılı F: IndexError",
+   "risk": "medium",
+   "resolution": "F şekil denetimi",
+   "record": "docs/vv_fault_injection.md",
+   "slow": false
+  },
+  {
+   "nodeid": "tests/toporlogy/test_fault_injection.py::test_fails_closed_with_a_clear_message[volume_upper_above_one]",
+   "kind": "pre-registered fault injection failed",
+   "model_backend": "config kısıtlar",
+   "reason": "hacim oranı üst sınırı 50 sessizce kabul",
+   "risk": "medium",
+   "resolution": "oran yanıtlarında 0 < upper <= 1 denetimi",
+   "record": "docs/vv_fault_injection.md",
+   "slow": false
+  },
+  {
+   "nodeid": "tests/toporlogy/test_fault_injection.py::test_fails_closed_with_a_clear_message[yaml_duplicate_key]",
+   "kind": "pre-registered fault injection failed",
+   "model_backend": "config okuma (PyYAML)",
+   "reason": "yinelenen anahtar sessizce sonuncuyla kullanılıyor",
+   "risk": "high",
+   "resolution": "yinelenen anahtarı reddeden YAML yükleyici; test YAML'ı ayrıca düzeltilmeli (kısıt eksik)",
+   "record": "docs/vv_fault_injection.md",
+   "slow": false
+  }
+ ],
+ "skips": [
+  {
+   "file": "tests/toporlogy/test_baseline.py",
+   "site": "pytest.skip(\"post steps need the post extra (pyvista)\")",
+   "backend": "pyvista (post extra)",
+   "covers": "baseline örneklerinin son işlem adımları",
+   "status_when_skipped": "NOT VERIFIED"
+  },
+  {
+   "file": "tests/toporlogy/test_core.py",
+   "site": "pytest.skip(f\"pypardiso not installed ({pardiso.state()['reason']}); set TOPORLOGY_PYLIB to test it\")",
+   "backend": "pypardiso + MKL",
+   "covers": "PARDISO doğrudan çözücü",
+   "status_when_skipped": "NOT VERIFIED"
+  },
+  {
+   "file": "tests/toporlogy/test_gmg.py",
+   "site": "@pytest.mark.skipif(not torch.cuda.is_available(), reason=\"CUDA graphs need a GPU\")",
+   "backend": "CUDA",
+   "covers": "GMG CUDA grafı yeniden kullanımı",
+   "status_when_skipped": "NOT VERIFIED"
+  },
+  {
+   "file": "tests/toporlogy/test_modal.py",
+   "site": "pytest.importorskip(\"aerokit.fem.elements\", reason=\"optional cross-check against the general FE element library\")",
+   "backend": "aerokit (depo dışı)",
+   "covers": "eleman kütle matrisi çapraz denetimi",
+   "status_when_skipped": "NOT VERIFIED"
+  },
+  {
+   "file": "tests/toporlogy/test_post_cantilever.py",
+   "site": "pytest.importorskip(\"gmsh\")                      # T10 re-analysis below; conftest: skip without gmsh",
+   "backend": "gmsh",
+   "covers": "T10 yeniden analiz",
+   "status_when_skipped": "NOT VERIFIED"
+  },
+  {
+   "file": "tests/toporlogy/test_post_verify.py",
+   "site": "tetfem = pytest.importorskip(\"aerokit.bracket.tetfem\")",
+   "backend": "aerokit (depo dışı)",
+   "covers": "T10 rijitliği eski tetfem'e karşı",
+   "status_when_skipped": "NOT VERIFIED"
+  },
+  {
+   "file": "tests/toporlogy/test_post_verify.py",
+   "site": "pytest.importorskip(\"gmsh\")",
+   "backend": "gmsh",
+   "covers": "gmsh tet ağı",
+   "status_when_skipped": "NOT VERIFIED"
+  },
+  {
+   "file": "tests/toporlogy/test_post_verify.py",
+   "site": "pytest.importorskip(\"pyvista\")",
+   "backend": "pyvista",
+   "covers": "gmsh tet ağı",
+   "status_when_skipped": "NOT VERIFIED"
+  },
+  {
+   "file": "tests/toporlogy/test_published_values.py",
+   "site": "pytest.skip(\"needs CUDA for ElasticityGMG at 948 693 DOFs\")",
+   "backend": "CUDA",
+   "covers": "topbuck250 büyük 3-B (yavaş)",
+   "status_when_skipped": "NOT VERIFIED"
+  },
+  {
+   "file": "tests/toporlogy/test_registry_features.py",
+   "site": "pytest.importorskip(\"gmsh\")",
+   "backend": "gmsh",
+   "covers": "reverify son işlem adımı",
+   "status_when_skipped": "NOT VERIFIED"
+  },
+  {
+   "file": "tests/toporlogy/test_registry_features.py",
+   "site": "pytest.importorskip(\"toporlogy.fem.elastic_gmg\")",
+   "backend": "toporlogy.fem.elastic_gmg (her zaman var)",
+   "covers": "elasticity_gmg bileşeni",
+   "status_when_skipped": "NOT VERIFIED"
+  },
+  {
+   "file": "tests/toporlogy/test_skfem_crosscheck.py",
+   "site": "skfem = pytest.importorskip(\"skfem\")",
+   "backend": "scikit-fem (dev extra)",
+   "covers": "X1-X4 dış çözücü çapraz denetimi",
+   "status_when_skipped": "NOT VERIFIED"
+  },
+  {
+   "file": "tests/toporlogy/test_symmetry.py",
+   "site": "pytest.importorskip(\"pyvista\")",
+   "backend": "pyvista",
+   "covers": "simetri son işlem denetimi",
+   "status_when_skipped": "NOT VERIFIED"
+  },
+  {
+   "file": "tests/toporlogy/test_t10_convergence.py",
+   "site": "pytest.importorskip(\"gmsh\")",
+   "backend": "gmsh",
+   "covers": "T10 ağ yakınsaması",
+   "status_when_skipped": "NOT VERIFIED"
+  }
+ ]
+}

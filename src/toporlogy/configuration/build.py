@@ -365,6 +365,8 @@ def build(resolved: dict[str, Any]) -> Setup:
         if other:                     # these steps read one density field (toporlogy.design.phases)
             raise ConfigError(f"with several phases only the phase_report post step is available, got {other}",
                               "post")
+    from toporlogy.configuration.catalog import check_build
+    check_build(r, ctx.physics, [objective] + [c.response for c in constraints])    # catalog's fail-closed rules
     try:
         study = Study(d, ctx.physics, F, ctx.chain, ctx.interp, objective, constraints, optimizer, schedule,
                       move_beta_ref=r["run"].get("move_beta_ref"))
