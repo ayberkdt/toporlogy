@@ -1,4 +1,4 @@
-"""Manufacturing constraints as chain links (docs/mimari_plan.md §3): AM overhang filter, variable tying
+"""Manufacturing constraints as chain links (docs/mimari_plan.md §2): AM overhang filter, variable tying
 (symmetry, extrusion, pattern repetition) and a single-pull casting / milling link.
 
 Valid order in a chain (:func:`manufacturing_chain` builds it, :func:`validate_chain` checks it)::

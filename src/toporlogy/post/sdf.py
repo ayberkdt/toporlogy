@@ -294,7 +294,7 @@ def volume_threshold(rf: np.ndarray, grid: Grid, target: float, combine: Any = N
 
     The field (t − rf)/|∇rf| is distance-like near its zero level, so the partial-volume estimate is sub-voxel.
     ``combine(phi) -> phi`` re-imposes the exact geometry (keep, envelope, holes) inside the loop so that the volume
-    counted is the volume of the finished part. With ``redistanced`` the bisection result is refined by two secant
+    counted is the volume of the finished part. With ``redistanced`` the root-search result is refined by two secant
     steps on the volume of the *redistanced* field (the first-order distance (t − rf)/|∇rf| uses the gradient at the
     sample, not at the surface, and biases the volume by ~0.2 % on a blurred step; measured on a plate).
     Returns (t, φ_t, volume); φ_t is the redistanced field when ``redistanced`` else the first-order field.

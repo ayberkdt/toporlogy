@@ -1,4 +1,4 @@
-"""Design domain on a regular grid (2-D quadrilaterals or 3-D voxels) — layer "Domain" of docs/mimari_plan.md §3.
+"""Design domain on a regular grid (2-D quadrilaterals or 3-D voxels) — layer "Domain" of docs/mimari_plan.md §2.
 
 The grid always covers the full bounding box. Elements outside the part have ``frac = 0`` (no stiffness, no design
 variable); the nodes they alone touch carry no degrees of freedom in the solve. Every element field is an array of

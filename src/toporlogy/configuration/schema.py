@@ -37,10 +37,10 @@ unit, e.g. m; ``E0`` is force/length² (Pa with N and m); forces are force units
     post: []                       # [[]] post-processing components
 
 ``tol`` is the max design change for convergence; ``feasibility_tol`` the relative constraint violation still
-reported as satisfied; ``seed`` seeds NumPy and torch; ``move_beta_ref`` (null = off) shrinks the optimizer's move
-limit to move0 · min(1, move_beta_ref / β) after every β step of the schedule. The resolved config (all defaults
-filled, auto links explicit) is written as ``config.resolved.yaml`` with a ``provenance`` block (git revision,
-time, source, overrides); loading it again builds the identical study.
+judged PASS (constraint verdict); ``seed`` seeds NumPy and torch; ``move_beta_ref`` (null = off) shrinks the
+optimizer's move limit to move0 · min(1, move_beta_ref / β) after every β step of the schedule. The resolved
+config (all defaults filled, auto links explicit) is written as ``config.resolved.yaml`` with a ``provenance``
+block (git revision, time, source, overrides); loading it again builds the identical study.
 
 Boundary conditions. Supports and loads build a :class:`toporlogy.boundary.BoundaryConditions` (selectors, supports,
 loads, per-case supports, combinations); its ``check()`` runs in :func:`build` — an error (e.g. an unrestrained

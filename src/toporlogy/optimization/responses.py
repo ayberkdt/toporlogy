@@ -1,4 +1,4 @@
-"""Responses (objectives and constraints) — docs/mimari_plan.md §3.1.
+"""Responses (objectives and constraints) — docs/mimari_plan.md §2.
 
 A response is called with an :class:`EvalContext` and returns a scalar tensor. It writes only the forward
 computation; derivatives come from autograd (the linear solve has its own adjoint). ``needs`` tells the study which

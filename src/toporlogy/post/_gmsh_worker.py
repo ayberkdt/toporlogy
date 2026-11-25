@@ -1,11 +1,12 @@
 """Subprocess worker: closed STL → 10-node tetrahedra with gmsh; writes X, T, faces to an .npz.
 
-Run as ``python _gmsh_worker.py in.stl out.npz size angle_deg``. Kept in its own process so that a gmsh hang
+Run as ``python _gmsh_worker.py in.stl out.npz size angle_deg [modes]``. Kept in its own process so that a gmsh hang
 (seen once after an OpenCASCADE STEP read in metres in the same process) cannot stall the caller, and so that gmsh's
 runtime never meets torch / MKL in one process. Imports only gmsh and numpy.
 
-Two modes: first ``classifySurfaces`` + ``createGeometry`` (the surface is
-remeshed at the target size), then — if that fails — the STL triangles are kept as the boundary ("discrete").
+Modes (comma-separated ``modes``, default ``reparametrize,discrete``, tried in order): "reparametrize" =
+``classifySurfaces`` + ``createGeometry`` (the surface is remeshed at the target size); if that fails, "discrete" =
+the STL triangles are kept as the boundary.
 gmsh 10-node order: vertices 0-3, edges (0,1) (1,2) (2,0) (3,0) (3,2) (3,1).
 """
 from __future__ import annotations

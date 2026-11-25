@@ -1,4 +1,4 @@
-"""Material interpolation x̄ → element modulus (docs/mimari_plan.md §3)."""
+"""Material interpolation x̄ → element modulus (docs/mimari_plan.md §2)."""
 from __future__ import annotations
 
 import torch
@@ -28,7 +28,7 @@ class SIMP(torch.nn.Module):
 class RAMP(torch.nn.Module):
     """RAMP: ``E_e = (Emin + x̄ / (1 + q (1 − x̄)) (E0 − Emin)) · frac``.
 
-    Stolpe & Svanberg (2001) form; source NOT read in this session (docs/mimari_plan.md §7 rule) — experimental,
+    Stolpe & Svanberg (2001) form; source NOT read in this session (docs/mimari_plan.md §6 rule) — experimental,
     not used by any default.
     """
 

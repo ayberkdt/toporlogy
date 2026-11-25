@@ -5,9 +5,9 @@ Grid version (:func:`grid_topology`): the solid is the union of closed sample cu
 of the cubical complex is χ = V − E + F − C, counted with array shifts (vertices, edges, faces belonging to at
 least one solid cube). For a solid, χ = bodies − tunnels + cavities, so tunnels = bodies + cavities − χ.
 
-Mesh version (:func:`mesh_topology`): for every closed connected triangle surface χ = V − E + F = 2 − 2g; the solid
-bounded by the surfaces has χ = Σ χ_surface / 2. Outer shells and cavity shells are told apart by the sign of their
-enclosed volume.
+Mesh version (:func:`toporlogy.post.mesh.mesh_topology`): for every closed connected triangle surface
+χ = V − E + F = 2 − 2g; the solid bounded by the surfaces has χ = Σ χ_surface / 2. Outer shells and cavity shells
+are told apart by the sign of their enclosed volume.
 """
 from __future__ import annotations
 

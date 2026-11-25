@@ -119,7 +119,7 @@ def test_run_show_compare(capsys, cfg, tmp_path):
     rows = out.strip().splitlines()
     assert rows[0].split() == ["run", "status", "compliance", "volume", "it", "s", "grey"]
     assert [r[2:].split()[0] for r in rows[1:3]] == ["a", "b"]
-    assert [r[0] for r in rows[1:3]].count("*") == 1                  # best feasible run marked once
+    assert [r[0] for r in rows[1:3]].count("*") == 1                  # best PASS run marked once
 
     code, _, err = run_cli(capsys, "run", cfg, "--out", b)              # finished run is never overwritten
     assert code == 2 and "not overwritten" in err

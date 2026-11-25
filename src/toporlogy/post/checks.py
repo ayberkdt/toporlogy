@@ -45,7 +45,7 @@ __all__ = ["CheckThresholds", "CheckResult", "manufacturing_checks", "sdf_local_
 class CheckThresholds:
     max_bodies: int | None = 1
     max_voids: int | None = 0
-    min_wall: float | None = None            # length; gated on the p1 value (``wall_statistic``)
+    min_wall: float | None = None            # length; gated on the ``wall_statistic`` value
     wall_statistic: str = "p1"               # "min" | "p1" | "p5"
     wall_method: str = "ray"                 # "ray" (mesh normals) | "sphere" (local thickness on the grid)
     build_direction: tuple[float, float, float] = (0.0, 0.0, 1.0)
@@ -165,7 +165,7 @@ def ray_thickness(V: np.ndarray, F: np.ndarray, phi: np.ndarray, grid: Any, max_
                   chunk: int = 20000) -> dict[str, Any]:
     """Wall thickness by rays: from every face centre along the inward normal to the first exit (φ > 0, trilinear
     φ on the grid, crossing interpolated linearly). Area-weighted statistics; rays longer than ``max_length``
-    (default 2.2·max inside distance) count as ``max_length``. Unlike the inscribed-ball thickness this is not
+    (default 2.2·max inside distance + 2 h) count as ``max_length``. Unlike the inscribed-ball thickness this is not
     small at sharp convex edges; rays from end faces of long members can be long (that only overstates)."""
     h = grid.h
     L = float(max_length) if max_length is not None else 2.2 * float(max(-phi.min(), h)) + 2 * h

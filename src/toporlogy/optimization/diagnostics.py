@@ -1,4 +1,4 @@
-"""Checks every new link and response must pass (docs/mimari_plan.md §3.1): finite-difference gradients, grey level;
+"""Checks every new link and response must pass (docs/mimari_plan.md §2): finite-difference gradients, grey level;
 mirror-symmetry error of element fields (docs/yol_haritasi_2026-11-18.md §2.3)."""
 from __future__ import annotations
 

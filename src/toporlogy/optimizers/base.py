@@ -1,4 +1,4 @@
-"""Optimizer interface (docs/mimari_plan.md §3.1).
+"""Optimizer interface (docs/mimari_plan.md §2).
 
 Problem form: ``min f0(x)`` s.t. ``g_i(x) ≤ 0`` (i = 1…m), ``0 ≤ x ≤ 1``. The study passes plain NumPy arrays.
 """
@@ -16,7 +16,8 @@ class Optimizer:
 
     ``step(x, f0, df0, g, dg, constraint_fn)`` returns the next design. ``x`` (n,), ``df0`` (n,), ``g`` (m,),
     ``dg`` (m, n). ``constraint_fn(x_new) -> g(x_new)`` (m,) evaluates the constraints without gradients (OC uses it
-    in its bisection; MMA ignores it). ``reset()`` is called when the problem changes discontinuously (a β step).
+    in its bisection, SiMPL in its shift search; MMA and GCMMA ignore it). ``reset()`` is called when the problem
+    changes discontinuously (a β step).
     """
 
     name = "optimizer"

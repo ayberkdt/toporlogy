@@ -64,7 +64,7 @@ def test_plate_thickness_exact_2d_and_3d():
 
 def test_bar_with_free_ends_and_free_faces():
     """A 4-element bar with void faces everywhere: max = thickness; the square ends are convex corners, so the
-    minimum local thickness is small (opening definition) while the 5th percentile is the thickness."""
+    minimum local thickness is small (opening definition) while the median (50th percentile) is the thickness."""
     x = np.zeros((40, 20))
     x[5:35, 8:12] = 1.0
     r = measure_lengthscale(x, 1.0, outside="void")

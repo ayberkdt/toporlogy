@@ -1,4 +1,4 @@
-"""Study: one optimisation problem and its loop (docs/mimari_plan.md §3).
+"""Study: one optimisation problem and its loop (docs/mimari_plan.md §2).
 
 ``Study(domain, physics, loads, chain, interp, objective, constraints, optimizer, schedule)``; ``run()`` follows
 the loop of the legacy voxel driver (kept as a regression oracle in ``tests/toporlogy``):

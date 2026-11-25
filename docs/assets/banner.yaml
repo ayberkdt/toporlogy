@@ -1,0 +1,21 @@
+# The design drawn in the README banner (docs/assets/make_banner.py): a cantilever, clamped on the left edge,
+# loaded downwards at the middle of the right edge.
+name: cantilever_banner
+domain: {type: box, shape: [240, 120], h: 1.0}
+material: {E0: 1.0, nu: 0.3}
+supports:
+  - {type: fixed, where: {type: plane, axis: x, at: min}}
+load_cases:
+  - name: tip
+    loads:
+      - {type: force, where: {type: point, at: [max, mid]}, force: [0, -1]}
+chain:
+  - {type: density_filter, rmin: 3.5}
+  - {type: heaviside_projection}
+schedule: {type: beta_continuation, beta0: 1.0, beta_max: 32.0, every: 30}
+interpolation: {type: simp, penal: 3.0, emin_ratio: 1.0e-9}
+objective: compliance
+constraints:
+  - {response: volume, upper: 0.35}
+optimizer: {type: mma, move: 0.2}
+run: {max_iter: 240, tol: 0.005}

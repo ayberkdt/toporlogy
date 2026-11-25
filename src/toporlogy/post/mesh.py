@@ -1,4 +1,5 @@
-"""Triangle surfaces: iso-surface extraction, topology and manifold checks, quality, decimation, comparison.
+"""Triangle surfaces: iso-surface extraction, topology and manifold checks, quality, decimation, comparison,
+mirror-symmetry distance, subdivision.
 
 A surface is a pair ``(V (n, 3) float, F (m, 3) int)`` with outward (counter-clockwise seen from outside) triangles.
 Extraction uses VTK flying edges (``pyvista.ImageData.contour(method="flying_edges")``; Schroeder, Maynard & Geveci

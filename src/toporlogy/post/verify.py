@@ -1,8 +1,9 @@
-"""Re-verification of the finished surface: gmsh 10-node tetrahedra + linear static T10 solve.
+"""Re-verification of the finished surface: gmsh 10-node tetrahedra + linear static T10 solve, and T10 mesh
+convergence of one geometry on several tet sizes (:func:`mesh_convergence`).
 
 Quadratic tetrahedron (element, 4-point Keast rule exact for Bᵀ D B of the
 quadratic tet, consistent nodal areas, nodal-averaged stress). Boundary conditions are plain callables in physical
-coordinates, so a separate BC module can supply them later:
+coordinates, so a separate BC module supplies them (:func:`toporlogy.configuration.boundary_mapping.bc_mapping`):
 
 * ``supports``: sequence of ``select`` or ``(select, directions)``; ``select(X (n, 3)) -> bool (n,)`` is applied to
   the *boundary* nodes; selected nodes get zero displacement in ``directions`` (default all three);

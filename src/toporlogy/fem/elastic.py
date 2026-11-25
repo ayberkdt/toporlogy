@@ -1,4 +1,4 @@
-"""Linear elasticity on the regular grid with an autograd-aware linear solve (docs/mimari_plan.md §3.1, D1).
+"""Linear elasticity on the regular grid with an autograd-aware linear solve (docs/mimari_plan.md §2, D1).
 
 ``K(E) U = F`` with ``K = Σ_e E_e · s · KE`` over the active elements, where ``s = h`` in 3-D (unit cube scaled to
 edge h: B ∝ 1/h, volume h³) and ``s = thickness`` in 2-D (plane stress, square element of any size). ``E_e`` already
