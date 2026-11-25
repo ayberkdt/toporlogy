@@ -134,7 +134,8 @@ class Modal:
     solver : object with ``factor(A_upper)`` / ``solve(B)``, optional
         Default :class:`DirectSolver`: "splu" up to :data:`SPLU_MAX_DOF` free DOFs, else "auto" (PARDISO).
     elasticity : array, optional
-        Unit-modulus elasticity matrix (as for :class:`Elasticity`); None = isotropic from ``nu``.
+        Unit-modulus elasticity matrix, (k, k) or one per active element (n_active, k, k), as for
+        :class:`Elasticity`; None = isotropic from ``nu``.
 
     Attributes
     ----------
@@ -165,6 +166,7 @@ class Modal:
         self.domain = domain
         self.nu, self.element = self.elastic.nu, self.elastic.element
         self.KE, self.geom = self.elastic.KE, self.elastic.geom
+        self.ke_index = self.elastic.ke_index                   # per-element material: KE[ke_index[e]]
         self.ME = element_mass(domain.dim)
         self.mgeom = domain.h ** 3 if domain.dim == 3 else domain.thickness * domain.h ** 2
         self.elements, self.edof = self.elastic.elements, self.elastic.edof
@@ -175,7 +177,7 @@ class Modal:
         self.mass = mass
         self.n_modes, self.sigma, self.tol = int(n_modes), float(sigma), float(tol)
         self.cluster_tol, self.repeated = float(cluster_tol), repeated
-        nf, nl = len(self.free), self.KE.shape[0]
+        nf, nl = len(self.free), self.KE.shape[-1]
         gmap = np.full(domain.ndof, -1, np.int64)
         gmap[self.free] = np.arange(nf)
         self._gmap = gmap
@@ -223,7 +225,13 @@ class Modal:
 
     def stiffness(self, E_active: np.ndarray) -> sp.csr_matrix:
         """Full symmetric reduced stiffness (free DOFs) for element moduli ``E_active`` (na,)."""
-        return self._assemble(E_active, self.KE, self.geom)
+        if self.ke_index is None:
+            return self._assemble(E_active, self.KE, self.geom)
+        s = np.broadcast_to(np.asarray(E_active, float) * self.geom, (self.n_elements,))
+        A = self._P.copy()
+        A.data = np.bincount(self._inv, weights=(s[:, None, None] * self.KE[self.ke_index]).ravel()[self._sel],
+                             minlength=self._P.nnz)
+        return A
 
     def mass_matrix(self, rho_active: np.ndarray) -> sp.csr_matrix:
         """Full symmetric reduced mass (free DOFs) for element densities ``rho_active`` (na,), point masses included."""
@@ -271,7 +279,10 @@ class Modal:
     def element_modal_energies(self, modes: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         """Unit-coefficient element quadratic forms (na, k): ``s_K φ_eᵀ KE φ_e`` and ``s_M φ_eᵀ ME φ_e``."""
         Pe = modes[self.edof]                                      # (na, nloc, k)
-        kq = self.geom * np.einsum("eak,ab,ebk->ek", Pe, self.KE, Pe)
+        if self.ke_index is None:
+            kq = self.geom * np.einsum("eak,ab,ebk->ek", Pe, self.KE, Pe)
+        else:
+            kq = self.geom * self.elastic.element_energy(modes)
         mq = self.mgeom * np.einsum("eak,ab,ebk->ek", Pe, self.ME, Pe)
         return kq, mq
 

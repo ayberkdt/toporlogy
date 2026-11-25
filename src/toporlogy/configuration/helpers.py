@@ -283,7 +283,8 @@ class MaterialModel:
     ``elasticity``: unit-modulus D for the physics, None for the isotropic default (plane stress in 2-D; the physics
     then builds it from ``nu`` exactly as before); ``szz_row``: plane-strain σzz row (2-D, plane strain), else None;
     ``R``: material axes (orthotropic) or None; ``strength``: Strength / OrthotropicStrength or None;
-    ``orthotropic``: whether the elasticity is orthotropic.
+    ``orthotropic``: whether the elasticity is orthotropic. With an orientation field (``angle_field`` /
+    ``axis_field``) ``elasticity`` is (n_active, k, k), ``R`` (n_active, 3, 3) and ``szz_row`` (n_active, 3).
     """
 
     def __init__(self, elasticity: Any, szz_row: Any, R: Any, strength: Any, orthotropic: bool) -> None:
@@ -296,8 +297,8 @@ def material_model(ctx: BuildContext) -> MaterialModel:
     hit = ctx.extra.get("material_model")
     if hit is not None:
         return hit
-    from toporlogy.core.material import (OrthotropicStrength, elasticity_from_config, out_of_plane_row,
-                                         strength_from_config, unit_elasticity)
+    from toporlogy.core.material import (OrthotropicStrength, elasticity_from_config, out_of_plane_rows,
+                                         strength_from_config, unit_elasticity_field)
     mat = ctx.material
     dim = ctx.domain.dim
     plane = str(mat.get("plane", "stress"))
@@ -306,16 +307,13 @@ def material_model(ctx: BuildContext) -> MaterialModel:
             raise ValueError("material.plane: stress | strain")
         if dim == 3 and plane != "stress":
             raise ValueError("material.plane applies to 2-D domains only (leave it at stress in 3-D)")
-        el, R = elasticity_from_config(mat, dim)
+        el, R = elasticity_from_config(mat, dim, ctx.domain)
         ortho = mat.get("orthotropic") is not None
         if ortho and abs(float(mat["E0"]) - el.reference_modulus) > 1e-12 * el.reference_modulus:
             raise ValueError(f"material.E0 must equal orthotropic.E1 = {el.reference_modulus:g} (the modulus the "
                              f"interpolation scales), got {float(mat['E0']):g}")
-        D = unit_elasticity(el, dim, plane, R) if (ortho or plane == "strain") else None
-        szz = None
-        if dim == 2 and plane == "strain":
-            C = el.stiffness(R) / el.reference_modulus
-            szz = out_of_plane_row(C)
+        D = unit_elasticity_field(el, dim, plane, R) if (ortho or plane == "strain") else None
+        szz = out_of_plane_rows(el, R) if (dim == 2 and plane == "strain") else None
         strength = strength_from_config(mat)
         if strength is not None and ortho != isinstance(strength, OrthotropicStrength):
             raise ValueError("material.strength: orthotropic materials take {Xt, Xc, Yt, Yc, S12, ...}, isotropic "

@@ -45,7 +45,10 @@ block (git revision, time, source, overrides); loading it again builds the ident
 
 Material. ``plane`` (2-D only): ``stress`` [default] or ``strain``. ``orthotropic`` [null = isotropic E0, nu]:
 {E1, E2, E3, G12, G13, G23, nu12, nu13, nu23} in the material axes, oriented by ``angle`` (degrees about z) or
-``axes: [axis1, axis2]`` (3-D); E0 must then equal E1 (the modulus the interpolation scales). ``strength`` [null]:
+``axes: [axis1, axis2]`` (3-D), or per element by ``angle_field`` (2-D: a ``.npy`` file of the element grid shape,
+degrees about z) or ``axis_field`` (3-D: ``.npy`` of shape (*grid, 3) for axis 1 with ``axis2: [x, y, z]``, or
+(*grid, 2, 3) with both axes); E0 must then equal E1 (the modulus the interpolation scales). The fibre angle is
+data, not a design variable. ``strength`` [null]:
 {tension, compression, shear, safety_factor} (isotropic) or {Xt, Xc, Yt, Yc, S12, Zt, Zc, S13, S23, f12,
 safety_factor} (orthotropic); used by the ``stress`` responses (``criterion``) and their default limit.
 (:mod:`toporlogy.core.material`, :mod:`toporlogy.optimization.strength`.)

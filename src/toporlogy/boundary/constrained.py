@@ -214,6 +214,9 @@ class PerCaseSupports:
         self._inv = torch.as_tensor(np.argsort(cols), dtype=torch.long)
         first = self.groups[0][0]
         self.domain, self.elements, self.geom, self.KE = first.domain, first.elements, first.geom, first.KE
+        self.ke_index = getattr(first, "ke_index", None)
+        if hasattr(first, "element_forces"):
+            self.element_forces = first.element_forces
         self.n_cases = len(cols)
 
     def solve(self, E_active: torch.Tensor, F: np.ndarray) -> torch.Tensor:
@@ -232,7 +235,9 @@ def reaction_forces(physics: Elasticity, E_active: np.ndarray, U: np.ndarray, F:
     U2 = U[:, None] if U.ndim == 1 else U
     F2 = F[:, None] if F.ndim == 1 else F
     Ue = U2[physics.edof]                                           # (na, nloc, nc)
-    fe = np.einsum("ab,ebc->eac", physics.KE, Ue) * (np.asarray(E_active, float) * physics.geom)[:, None, None]
+    forces = getattr(physics, "element_forces", None)              # per-element material: indexed matrices
+    ku = forces(Ue) if forces is not None else np.einsum("ab,ebc->eac", physics.KE, Ue)
+    fe = ku * (np.asarray(E_active, float) * physics.geom)[:, None, None]
     R = np.zeros_like(U2)
     np.add.at(R, physics.edof.ravel(), fe.reshape(-1, U2.shape[1]))
     R -= F2

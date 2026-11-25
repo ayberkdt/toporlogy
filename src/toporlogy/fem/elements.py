@@ -14,6 +14,10 @@
 Any other elasticity (orthotropic, rotated, plane strain; :mod:`toporlogy.core.material`) goes through
 :func:`element_matrix_from_D`: the same 2×2(×2) Gauss rule with the given unit-modulus D (H8IM condensed as above).
 For the isotropic plane-stress D it reproduces ``ke_q4`` to rounding, for D_iso ``ke_h8`` exactly (same code path).
+A different D per element (fibre orientation field) goes through :func:`element_matrix_field`: the distinct D
+matrices are found exactly and :func:`element_matrix_from_D` runs once per distinct D (incompatible modes condensed
+per element), so elements sharing a D share the matrix bit for bit; :func:`indexed_matmul` applies such an indexed
+set of matrices to element vectors in chunks.
 
 A physical cube of edge h and modulus E has stiffness ``E·h·KE``; a square of thickness t has ``E·t·KE``.
 Voigt order in 3-D: [εx, εy, εz, γyz, γxz, γxy]; in 2-D: [εx, εy, γxy].
@@ -33,7 +37,8 @@ from toporlogy.references import cite
 
 __all__ = ["H8_CORNER", "Q4_CORNER", "D_iso", "D_plane_stress", "D_plane_strain", "ke_h8", "ke_h8_from_D", "ke_q4",
            "ke_q4_from_D", "ke_q4im_from_D", "element_matrix", "element_matrix_from_D", "b_centroid_h8",
-           "b_centroid_q4", "ELEMENTS_2D", "ELEMENTS_3D"]
+           "b_centroid_q4", "element_matrix_field", "mode_recovery_from_D", "indexed_matmul", "ELEMENTS_2D",
+           "ELEMENTS_3D"]
 
 ELEMENTS_2D = ("Q4", "Q4IM")
 ELEMENTS_3D = ("H8", "H8IM")
@@ -237,3 +242,35 @@ def element_matrix(dim: int, element: str, nu: float) -> np.ndarray:
     if element not in ELEMENTS_2D:
         raise ValueError("2-D element: Q4 | Q4IM")
     return np.asarray(ke_q4(nu), float) if element == "Q4" else ke_q4im_from_D(D_plane_stress(nu))[0]
+
+
+def element_matrix_field(dim: int, element: str, D: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    """Per-element unit-modulus stiffness for per-element D (n, k, k): (distinct matrices (m, nloc, nloc), index (n,))
+    with element e's matrix ``KE[index[e]]``; each distinct D goes through :func:`element_matrix_from_D` once."""
+    from toporlogy.core.material import unique_matrices
+    Dn = np.asarray(D, float)
+    k = 6 if dim == 3 else 3
+    if Dn.ndim != 3 or Dn.shape[1:] != (k, k):
+        raise ValueError(f"per-element D must be (n, {k}, {k}) in {dim}-D, got {Dn.shape}")
+    Du, idx = unique_matrices(Dn)
+    return np.array([element_matrix_from_D(dim, element, Dk) for Dk in Du]), idx
+
+
+def mode_recovery_from_D(dim: int, D: np.ndarray) -> np.ndarray:
+    """Mode recovery matrix R (α = R u_e) of the incompatible-mode element (H8IM in 3-D, Q4IM in 2-D) for one D;
+    (n_modes, nloc)."""
+    if dim == 3:
+        R = ke_h8_from_D(D, "H8IM")[1]
+        assert R is not None
+        return R
+    return ke_q4im_from_D(D)[1]
+
+
+def indexed_matmul(M: np.ndarray, index: np.ndarray, X: np.ndarray, chunk: int = 4096) -> np.ndarray:
+    """(n, a, c) with entry e = ``M[index[e]] @ X[e]`` for matrices M (m, a, b) and X (n, b, c), in chunks of
+    ``chunk`` elements (the gathered matrices are never all in memory at once)."""
+    n = len(index)
+    out = np.empty((n, M.shape[1], X.shape[2]))
+    for s in range(0, n, chunk):
+        out[s:s + chunk] = np.matmul(M[index[s:s + chunk]], X[s:s + chunk])
+    return out
