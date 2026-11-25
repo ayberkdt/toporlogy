@@ -120,6 +120,23 @@ def test_o2_gauss_point_energy_equals_the_stiffness_energy(element):
     assert abs(got - want) <= TOL_ORACLE * want
 
 
+@pytest.mark.parametrize("element", ["Q4IM", "H8IM"])
+def test_incompatible_modes_with_a_different_elasticity_per_element(element):
+    """Not pre-registered (unit check): the energy identity of O2 on the path where every element has its own mode
+    recovery matrix."""
+    rng = np.random.default_rng(13)
+    dim = 2 if element == "Q4IM" else 3
+    d = Domain((4, 3), h=0.7, thickness=0.6) if dim == 2 else Domain((3, 2, 2), h=0.7)
+    ph = Elasticity(d, np.zeros(0, int), element=element, elasticity=_rotated_orthotropic(dim, d.n_active, rng))
+    u = rng.standard_normal(d.ndof)
+    pf = StressRecovery(ph, u).integration_points()
+    got = float((pf.energy_density()[:, :, 0] * pf.weights).sum())
+    ue = u[ph.edof][:, :, None]
+    want = 0.5 * float((ph.geom * ue[:, :, 0] * ph.element_forces(ue)[:, :, 0]).sum())
+    assert ph.ke_index is not None and len(ph.KE) == d.n_active
+    assert abs(got - want) <= TOL_ORACLE * want
+
+
 def test_centre_field_equals_the_constraint_module_stress():
     """The recovery and ``optimization.stress.centroid_stress`` (used by the stress constraints) are the same
     quantity."""
