@@ -379,6 +379,9 @@ uzakta oranlar ikinci mertebe:
 | Q4IM | 1,34 · 1,52 | 2,14 · 2,13 | 2,00 · 2,01 |
 
 Yani H2/H3'ün tutmaması çözücünün genel doğruluğuyla ilgili değil, yüklü köşelerdeki yerel bir etki. Q4IM'de etkinin
-daha güçlü olması için aday: yüklü kenar boyunca sıfır olmayan uyumsuz modlara düşen yük payı ihmal ediliyor
-(yoğunlaştırılmış eleman yalnız düğüm yüklerini alıyor); bu sınanmadı. Tanı `test_h5_..._post_hoc` olarak testte
+daha güçlü olması için ilk aday, yüklü kenar boyunca sıfır olmayan uyumsuz modlara düşen yük payının ihmal edilmesiydi.
+**Sınandı ve çürüdü** [Ö]: bağımsız uygulamada (`_independent_fe`, yoğun çözüm) o yük payı da yoğunlaştırılınca hata
+büyüyor (n = 4 … 32: 4,1e-3 → 1,0e-3, oranlar 0,42 · 0,71 · 0,85). Yalnız düğüm yükleriyle aynı bağımsız çözüm
+kütüphanenin Q4IM sonucunu dört ağda da aynı basamaklarla veriyor (1,850e-4 · 7,321e-5 · 2,547e-5 · 8,212e-6).
+Kütüphanenin seçimi (modlara yük yok) bu problemde doğru olan; köşe etkisinin nedeni, yeri dışında, açıklanmadı. Tanı `test_h5_..._post_hoc` olarak testte
 (ön kayıtlı değil, bu ölçümden sonra yazıldı; eşik H2'nin aralığı).
