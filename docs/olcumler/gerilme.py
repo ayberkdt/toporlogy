@@ -79,7 +79,7 @@ def measure() -> None:
     fields: dict[str, Any] = {}
     for method in B.METHODS:
         lb["unchanged"][method] = B.attempt_unchanged(method)
-        r = B.run(method, True)
+        r = B.run(method)
         lb["posthoc"][method] = {k: v for k, v in r.items() if k != "arrays"}
         fields[method] = {"x_binary": r["arrays"]["x_binary"].tolist(),
                           "ratio_binary": np.round(r["arrays"]["ratio_binary"], 5).tolist(),

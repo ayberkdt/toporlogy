@@ -288,32 +288,22 @@
    "slow": false
   },
   {
-   "nodeid": "tests/toporlogy/test_stress_lbracket.py::test_relaxed_stress_gradient_is_finite_at_zero_density",
-   "kind": "known defect",
-   "model_backend": "VonMises qp relaxation + aggregate (CPU, torch 2.5.1)",
-   "reason": "x̄ = 0'da gevşetme türevi sonsuz, gradyan NaN",
-   "risk": "medium",
-   "resolution": "optimization/stress.py'de x̄ = 0'da sonlu türev; torch yeniyse xfail koşulu kapalıdır",
-   "record": "docs/olcumler/gerilme.md",
-   "slow": false
-  },
-  {
    "nodeid": "tests/toporlogy/test_stress_lbracket.py::test_k1_historical_ratios[aggregated]",
    "kind": "pre-registered check failed",
-   "model_backend": "stress_lbracket2d, GCMMA (CPU, torch 2.5.1)",
-   "reason": "değiştirilmemiş örnek InvalidModuliError ile duruyor",
+   "model_backend": "stress_lbracket2d, GCMMA (CPU)",
+   "reason": "§6 düzeltmesinden sonra örnek koşuyor; gri ham oran farkı (0,098 / 0,066) ±0,05 eşiğini aşıyor",
    "risk": "medium",
-   "resolution": "NaN gradyan hatası giderilip yeniden koşulması",
+   "resolution": "yok (tarihsel değer; ortam ve konveks olmayan optimizasyon farkı); örnek değişirse test kalkar",
    "record": "docs/olcumler/gerilme.md",
    "slow": true
   },
   {
    "nodeid": "tests/toporlogy/test_stress_lbracket.py::test_k1_historical_ratios[augmented_lagrangian]",
    "kind": "pre-registered check failed",
-   "model_backend": "stress_al_lbracket2d, MMA (CPU, torch 2.5.1)",
-   "reason": "değiştirilmemiş örnek InvalidModuliError ile duruyor",
+   "model_backend": "stress_al_lbracket2d, MMA (CPU)",
+   "reason": "§6 düzeltmesinden sonra örnek koşuyor; gri ham oran farkı (0,098 / 0,066) ±0,05 eşiğini aşıyor",
    "risk": "medium",
-   "resolution": "NaN gradyan hatası giderilip yeniden koşulması",
+   "resolution": "yok (tarihsel değer; ortam ve konveks olmayan optimizasyon farkı); örnek değişirse test kalkar",
    "record": "docs/olcumler/gerilme.md",
    "slow": true
   },

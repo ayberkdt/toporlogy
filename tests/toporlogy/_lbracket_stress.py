@@ -1,11 +1,10 @@
 """The L-bracket stress experiment of docs/olcumler/gerilme_onkayit.md §5, used by the slow test and by
 ``docs/olcumler/gerilme.py``.
 
-**Post-hoc part.** The unchanged examples stop in this environment (torch 2.5.1): the qp relaxation x̄^q of
-:class:`~toporlogy.optimization.stress.VonMises` has an infinite derivative where x̄ = 0 exactly, and torch turns the
-zero incoming gradient of the aggregate times it into NaN. ``run(method, safe_gradient=True)`` swaps in
-:class:`ZeroSafeVonMises`: the same values, derivative 0 where x̄ = 0 (the derivative of the aggregated composite
-there, since v^p ~ x̄^(q p) with q p = 4). It is a change made in the experiment only, not in the library.
+**History.** Before 26 Nov 2026 the unchanged examples stopped in this environment (torch 2.5.1): the qp relaxation
+x̄^q had an infinite derivative where x̄ = 0 and torch turned the aggregate's zero incoming gradient times it into NaN.
+The library now sets that derivative to 0 (``optimization/stress.py``, gerilme_onkayit.md §6); the experiment-only
+subclass that did the same is gone.
 
 Everything is measured on the design the study returns (``Result.xphys``) and on its threshold at 0.5, never on the
 optimizer's last accepted values. ``raw`` is the unrelaxed solid von Mises stress over σ_lim, ``relaxed`` the qp form
@@ -42,35 +41,6 @@ HISTORICAL_SOLID = 0.49
 EXCLUDE_LO, EXCLUDE_HI = (34.0, 12.0), (40.0, 16.0)                            # the YAML's exclude box
 LOADS = [(float(x), 16.0) for x in (37, 38, 39, 40)]                            # -0.25 each in y
 LEVELS = (1, 2, 4, 8)
-
-
-class ZeroSafeVonMises(VonMises):
-    """:class:`VonMises` ("ratio" / "margin") with the same values and derivative 0 where x̄ = 0 exactly."""
-
-    def __call__(self, ctx: EvalContext) -> torch.Tensor:
-        if self.form == "polynomial" or self.q == 0:
-            return super().__call__(ctx)
-        r = self.solid_ratio(ctx)
-        x = self.density(ctx)[:, None]
-        solid = x.detach() > 0.5
-        self.last_solid_ratio = float((r.detach() * solid).max()) if bool(solid.any()) else 0.0
-        positive = x > 0
-        relax = torch.where(positive, torch.where(positive, x, torch.ones_like(x)) ** self.q, torch.zeros_like(x))
-        return relax * r if self.form == "ratio" else relax * r - 1.0
-
-
-def torch_turns_zero_times_inf_into_nan() -> bool:
-    """True where a zero incoming gradient through 0 ** 0.5 gives NaN (torch 2.5.1); decides whether the unchanged
-    examples can run at all."""
-    x = torch.zeros(1, dtype=torch.float64, requires_grad=True)
-    (g,) = torch.autograd.grad(x ** 0.5, x, grad_outputs=torch.zeros(1, dtype=torch.float64))
-    return bool(torch.isnan(g).any())
-
-
-def stress_fields(study: Any) -> list[VonMises]:
-    """The von Mises fields behind the study's objective and constraints."""
-    responses = [study.objective, *[c.response for c in study.constraints]]
-    return [f for f in (getattr(r, "field", None) for r in responses) if isinstance(f, VonMises)]
 
 
 def attempt_unchanged(method: str) -> dict[str, Any]:
@@ -148,20 +118,14 @@ def load_path(study: Any, x: np.ndarray, U: np.ndarray) -> dict[str, Any]:
 
 
 @cache
-def run(method: str, safe_gradient: bool = False) -> dict[str, Any]:
-    """Run the YAML example and measure the returned design. ``safe_gradient`` False: unchanged (pre-registered);
-    True: post-hoc (module notes)."""
+def run(method: str) -> dict[str, Any]:
+    """Run the YAML example unchanged and measure the returned design."""
     raw = yaml.safe_load((REPO / "examples" / "research" / f"{METHODS[method]}.yaml").read_text(encoding="utf-8"))
     st = build_setup(raw).study
-    if safe_gradient:
-        fields = stress_fields(st)
-        assert fields
-        for f in fields:
-            f.__class__ = ZeroSafeVonMises
     res = st.run(max_iter=raw["run"]["max_iter"], tol=raw["run"]["tol"])
     d = st.domain
     out: dict[str, Any] = {
-        "example": METHODS[method], "safe_gradient": safe_gradient, "iterations": int(res.iterations),
+        "example": METHODS[method], "iterations": int(res.iterations),
         "state_solves": int(st.n_evaluations),
         "termination": res.termination, "feasible_flag": bool(res.feasible), "objective": float(res.objective),
         "optimizer_constraint_values": {k: float(v) for k, v in res.constraint_values.items()},
@@ -244,8 +208,8 @@ def _base_domain() -> Domain:
 
 @cache
 def refinement(which: str) -> dict[str, Any]:
-    """``which``: "solid" (the full bracket) or a method name (the 0/1 design of its post-hoc run)."""
-    design = np.ones((40, 40)) if which == "solid" else run(which, True)["arrays"]["x_binary"]
+    """``which``: "solid" (the full bracket) or a method name (the 0/1 design of its run)."""
+    design = np.ones((40, 40)) if which == "solid" else run(which)["arrays"]["x_binary"]
     levels = [refined(design * _base_domain().active, k) for k in LEVELS]
     a = assess_peak([r["h"] for r in levels], [r["peak_centroid"]["ratio"] for r in levels])
     return {"levels": levels, "status": a.status, "slopes": list(a.slopes), "increment_ratio": a.increment_ratio}

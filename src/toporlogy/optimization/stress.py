@@ -26,6 +26,13 @@ come from records, abstracts and citing papers; the source texts were not read (
 The formulas themselves are implemented from first principles and verified here: constant-stress patches, a bending
 stress and finite differences (``tests/toporlogy/test_stress.py``).
 
+Derivative at zero density
+--------------------------
+For an exponent 0 < a < 1 (q of "ratio" / "margin", p of "polynomial") the one-sided derivative of x̄^a at x̄ = 0 is
++∞. The library sets it to 0 there (the value stays x̄^a = 0). With p-norm aggregation of exponent P and q·P > 1 this
+is the true derivative of the aggregate (v^P ~ x̄^(qP)); with KS or a local constraint it is a convention, the true
+derivative being +∞ (docs/olcumler/gerilme_onkayit.md §6).
+
 Use
 ---
 * global: ``Constraint(Aggregated(VonMises(...), "pnorm", 8, adaptive=0.5), upper=1.0)`` with MMA / GCMMA;
@@ -84,6 +91,16 @@ def centroid_stress(domain: Any, U: torch.Tensor, nu: float, E0: float = 1.0,
     S = torch.as_tensor(_stress_operator(domain.dim, nu, domain.h, E0), dtype=U2.dtype, device=U2.device)
     ue = U2[torch.as_tensor(domain.edof[el], dtype=torch.long, device=U2.device)]       # (n, nloc, nc)
     return torch.einsum("vk,ekc->evc", S, ue)
+
+
+def _relaxation(x: torch.Tensor, a: float) -> torch.Tensor:
+    """x̄^a of the relaxed forms. For 0 < a < 1 the one-sided derivative at x̄ = 0 is +∞ and the chain rule's 0 · ∞
+    gives NaN; here x̄ ≤ 0 gives the value 0 and the derivative 0 (module notes, "Derivative at zero density"). Other
+    exponents are plain powers (their derivative at 0 is finite)."""
+    if not 0.0 < a < 1.0:
+        return x ** a
+    positive = x > 0
+    return torch.where(positive, torch.where(positive, x, torch.ones_like(x)) ** a, torch.zeros_like(x))
 
 
 @cite("le_2010", "bruggi_2008", "giraldo_londono_paulino_2021",
@@ -173,8 +190,8 @@ class VonMises(LocalField):
         self.last_solid_ratio = float((r.detach() * solid).max()) if bool(solid.any()) else 0.0
         if self.form == "polynomial":
             lam = r - 1.0
-            return x ** self.penal * lam * (lam * lam + 1.0)
-        v = r if self.q == 0 else x.clamp_min(0.0) ** self.q * r
+            return _relaxation(x, self.penal) * lam * (lam * lam + 1.0)
+        v = r if self.q == 0 else _relaxation(x.clamp_min(0.0), self.q) * r
         return v if self.form == "ratio" else v - 1.0
 
     def weights(self, ctx: EvalContext) -> torch.Tensor:

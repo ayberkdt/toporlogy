@@ -119,7 +119,7 @@ toplulaştırmadan gelen sıfır gradyanla çarpımı torch 2.5.1'de NaN (yalın
 
 ### 3.2 Post-hoc koşu
 
-Yalnız deney kodunda `ZeroSafeVonMises`: aynı değerler, x̄ = 0'da türev 0 (toplulaştırılmış bileşiğin oradaki
+Yalnız deney kodunda `ZeroSafeVonMises` (§3.5'ten beri kütüphanede): aynı değerler, x̄ = 0'da türev 0 (toplulaştırılmış bileşiğin oradaki
 türevi budur, v^p ~ x̄⁴). Kütüphane değişmedi. **Bu bölümdeki hiçbir sayı ön kayıtlı kanıt değildir.**
 İki koşu da iterasyon sınırında durdu (120 / 600; 752 / 601 durum çözümü; M_nd 0,236 / 0,177).
 
@@ -179,6 +179,23 @@ Her eleman k × k bölündü; aynı mesnet, aynı dört noktasal yük, aynı fiz
 Dolu parça bile k = 8'de σ_lim'i aşıyor: örneğin "dolu parça uygulanabilir (0,49)" gözlemi ağa bağlı. 0/1
 tasarımların uyumu da inceltmeyle büyür, çünkü yük boş elemana etkiyen noktasal yüktür; bu satırlar geçerli bir
 parçanın gerilmesi değildir.
+
+### 3.5 Kütüphane düzeltmesi (F1–F5, ön kayıt §6)
+
+`optimization/stress.py`: 0 < a < 1 için x̄^a'nın x̄ = 0'daki türevi artık 0 (değer değişmedi). Entegrasyon dalı
+`integrate/research-round-1`, ön kayıt `3e10309`. Testler `tests/toporlogy/test_stress_zero_density.py`.
+
+| # | Sonuç | Ölçülen |
+|:---|:---|:---|
+| F1 | PASS | toplulaştırılmış gradyan sonlu |
+| F2 | PASS | `VonMises` ve `FailureIndex`, üç biçim, a ∈ {0,5; 0,25}: değerler eski formülle bit düzeyinde aynı |
+| F3 | PASS | x̄ > 0 girdilerinde gradyan bit düzeyinde aynı, x̄ = 0'da tam 0 |
+| F4 | PASS | q = 1 ve penal = 3: gradyan bit düzeyinde aynı |
+| F5 | PASS | iki örnek değiştirilmeden koşuyor; 120 / 752 ve 600 / 601 iterasyon / durum çözümü; dört ham oran §3.2 ile göreli fark 0 (bit düzeyinde aynı); süre 19,9 s / 19,8 s |
+
+Sonuç: K1, öngörüldüğü gibi kendi eşiğinde FAIL (gri farklar 0,098 ve 0,066 > 0,05); strict xfail, neden artık
+ölçülen fark. Deney koduna özgü `ZeroSafeVonMises` kaldırıldı (kütüphane aynı şeyi yapıyor). Yük yolu bulgusu
+(§3.2) bu düzeltmeyle değişmedi.
 
 ## Ön kayıttan sapmalar
 

@@ -4,14 +4,14 @@ Kaynak: `tests/toporlogy/_vv_layers.py` (dosya → katman sınıflaması elle, d
 
 | Katman | core | geometry | boundary | design | fem | solvers | optimization | optimizers | configuration | execution | post | references |
 |:---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| U unit / property | 6/99 | 3/30 | — | 6/69 | 4/52 | 3/43 | 9/103 | 2/30 | 1/10 | 1/10 | 4/44 | — |
+| U unit / property | 7/102 | 3/30 | — | 6/69 | 5/55 | 3/43 | 10/106 | 2/30 | 1/10 | 1/10 | 4/44 | — |
 | MP material point | 10/104 | — | — | 6/67 | 8/84 | — | 8/73 | 3/32 | 5/57 | 1/13 | 4/55 | — |
 | EL element patch / quadrature | 5/48 | — | — | 1/10 | 8/77 | 1/14 | 4/52 | 1/14 | 1/17 | — | 2/20 | — |
 | AS assembly / BC / reactions | 1/23 | 1/23 | 5/62 | — | 4/39 | 5/53 | 1/23 | — | — | — | — | — |
 | AN analytical / MMS | 5/52 | — | — | 3/35 | 12/119 | — | 10/111 | 3/41 | 3/41 | 1/13 | 2/20 | — |
 | IS independent solver / implementation | 4/14 | — | — | — | 7/53 | 1/12 | 2/15 | — | 1/14 | — | — | — |
-| OG optimization / KKT / gradient | 6/76 | — | — | 5/56 | 10/117 | 4/48 | 18/161 | 13/137 | 6/70 | 2/30 | 2/30 | — |
-| E2E end-to-end geometry | 3/46 | 5/39 | — | 2/13 | 3/46 | — | 8/69 | 1/21 | 4/38 | 1/10 | 10/67 | — |
+| OG optimization / KKT / gradient | 6/71 | — | — | 5/56 | 10/112 | 4/48 | 18/156 | 13/137 | 6/70 | 2/30 | 2/30 | — |
+| E2E end-to-end geometry | 2/38 | 5/39 | — | 2/13 | 2/38 | — | 7/61 | 1/21 | 4/38 | 1/10 | 10/67 | — |
 | IC integration / compatibility | 3/14 | 2/34 | — | 3/31 | 4/25 | — | 5/50 | 2/23 | 11/105 | 7/77 | 1/8 | 1/11 |
 | PF performance | — | — | 1/11 | — | 2/23 | 2/23 | — | — | — | — | — | — |
 
@@ -104,6 +104,7 @@ Katman sınıflaması (dosya → katmanlar):
 - `test_stress_lbracket.py`: OG, E2E
 - `test_stress_recovery.py`: EL, AN
 - `test_stress_singularity.py`: AN
+- `test_stress_zero_density.py`: U, OG
 - `test_study_options.py`: IC
 - `test_sweep_connectivity.py`: E2E
 - `test_sweep_post.py`: E2E
