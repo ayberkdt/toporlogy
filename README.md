@@ -303,7 +303,7 @@ they show that the implementation did not change, not that it is independently c
   with a second implementation written separately in the tests (`tests/toporlogy/_independent_fe.py`); it has the
   same author, so it is not another team's code. The Timoshenko–Goodier cantilever (closed form, parabolic end
   shear) gives a tip deflection error of 1.8e-4 (Q4) and 2.3e-6 (Q4IM); its pre-registered three-grid rate check
-  failed (1.34–1.82, rising towards 2 on finer grids). There is no NAFEMS benchmark (curved boundaries cannot be
+  failed (1.34–1.82): the largest error sits at a loaded corner; RMS and mid-span rates are 2.00–2.14. There is no NAFEMS benchmark (curved boundaries cannot be
   built on the regular grid).
 - **T10 convergence of finished parts:** `post.verify.mesh_convergence` gives a verdict, but a finished surface is
   usually finer than the tet sizes worth solving. gmsh keeps a surface it cannot reparametrise ("discrete" mode), so
@@ -359,7 +359,7 @@ The current roadmap, the status of every item and the open decisions are in
 ## Development
 
 ```bash
-python -m pytest tests/toporlogy -m "not slow"                  # main suite (886 pass, 11 strict xfail on 25 Nov 2026)
+python -m pytest tests/toporlogy -m "not slow"                  # main suite (888 pass, 11 strict xfail on 25 Nov 2026)
 python -m pytest tests/toporlogy/test_baseline.py -m baseline   # bitwise baseline of the examples (~3.5 min)
 python -m pytest tests/toporlogy -m slow                        # pre-registered sweeps (hours; gmsh for T10)
 ```
