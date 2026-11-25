@@ -170,7 +170,8 @@ def read_run(folder: str | Path) -> dict[str, Any]:
              "objective": res.get("objective"), "objective_source": source, "constraints": cons,
              "iterations": res.get("iterations"), "max_iter": None, "converged": res.get("converged"),
              "seconds": res.get("seconds"), "grey_fraction": grey, "termination": res.get("termination"),
-             "max_violation": res.get("max_violation"), "kkt_residual": res.get("kkt_residual")}
+             "max_violation": res.get("max_violation"), "kkt_residual": res.get("kkt_residual"),
+             "stationarity": res.get("stationarity")}
     else:
         raise FileNotFoundError(f"{f} has neither summary.json nor result.json (is the run finished?)")
     s["verdict"] = verdict_of(s)

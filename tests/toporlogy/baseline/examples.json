@@ -1,7 +1,7 @@
 {
  "meta": {
-  "created": "2026-11-25T20:05:40",
-  "git": "6c4318d",
+  "created": "2026-11-25T22:34:18",
+  "git": "cd66b09",
   "max_iter": 10,
   "solver": "SuperLU (torch imported first)",
   "python": "3.12.1",
@@ -31,12 +31,12 @@
    "returncode": 1,
    "status": "not converged",
    "iterations": 10,
-   "objective": -8.780609827115406e-05,
+   "objective": -8.78060982743834e-05,
    "constraints": {
-    "volume": 0.4988506435376808
+    "volume": 0.4988506435327384
    },
-   "x": "d7a82b3f36300ab4c25cf3b71d6c1f2b9d435d2c3f6eac7ac6f73bacb43fc612",
-   "xphys": "c115a844b0e51a81a6349ca6c5bc267b985c97ed6f5a4912451d0dbd9177a95f",
+   "x": "8844827e595347a885c3a617096c463f79beb87174752d1ae7de253dfd635f93",
+   "xphys": "37699d0506a03814fee1ef10dc1f1001c75f7e4fd40572b95ccaee5c3615cd48",
    "post_steps": [],
    "post_errors": [],
    "geometry_files": {}

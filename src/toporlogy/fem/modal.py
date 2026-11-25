@@ -254,7 +254,13 @@ class Modal:
         A = K - self.sigma * M if self.sigma != 0.0 else K
         Au = sp.triu(A).tocsr()
         Au.sort_indices()
-        self.solver.factor(Au)
+        # K − σM is SPD for σ < 0, and for σ = 0 with supports: nested dissection order with diagonal pivots
+        # (docs/olcumler/cozucu_siralama.md); σ > 0 is indefinite and keeps the solver's pivoting order.
+        spd = self.sigma < 0.0 or (self.sigma == 0.0 and len(self.elastic.fixed) > 0)
+        if spd and isinstance(self.solver, DirectSolver) and self.elastic.ordering == "nested_dissection":
+            self.solver.factor(Au, order=self.elastic.elimination_order())
+        else:
+            self.solver.factor(Au)
         op = spla.LinearOperator((nf, nf), matvec=lambda b: self.solver.solve(b), dtype=float)
         v0 = np.random.default_rng(0).standard_normal(nf)
         ncv = min(nf, max(2 * k + 1, k + 16))

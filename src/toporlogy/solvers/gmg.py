@@ -155,8 +155,10 @@ class _HostCoarse:
                                          "operator_complexity": float(self.ml.operator_complexity())}
         elif kind == "direct":
             from toporlogy.solvers.direct import DirectSolver
-            self._ds = DirectSolver()
-            self._ds.factor(sp.triu(Af, format="csr"))
+            from toporlogy.solvers.ordering import nested_dissection_dofs
+            self._ds = DirectSolver()                 # SPD: nested dissection order (dogrulama_turu.md O12)
+            self._ds.factor(sp.triu(Af, format="csr"),
+                            order=nested_dissection_dofs((nx + 1, ny + 1, nz + 1), 3, self.free_idx))
             self.info = {"method": self._ds.method}
         else:
             raise ValueError(kind)
