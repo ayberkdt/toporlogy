@@ -169,6 +169,31 @@ def test_one_element_thick_member_has_no_patch_and_says_so():
     assert np.array_equal(spr.stress, avg.stress)
 
 
+@pytest.mark.parametrize("shape", [(6, 6), (4, 4, 4)])
+def test_patch_recovery_reproduces_a_linear_stress_field_on_a_concave_part(shape):
+    """Not pre-registered (unit check). A quadratic displacement gives a linear centre stress, which the patches must
+    return exactly everywhere, boundary and concave corner included, with and without a material label array."""
+    dim = len(shape)
+    solid = np.ones(shape, bool)
+    solid[tuple(slice(s // 2, None) for s in shape)] = False
+    d = Domain(shape, 0.5, frac=solid.astype(float))
+    X = d.node_coords()
+    u = np.zeros(d.ndof)
+    u[0::dim] = 0.5 * X[:, 0] ** 2 + 0.3 * X[:, 0] * X[:, 1]
+    u[1::dim] = 0.7 * X[:, 1] ** 2
+    rec = StressRecovery(Elasticity(d, np.zeros(0, int), 0.3), u)
+    cen = rec.centroids()
+    coef = np.linalg.lstsq(np.column_stack([np.ones(len(cen.points)), cen.points]), cen.stress[:, :, 0], rcond=None)[0]
+    labels = np.zeros(shape, int)
+    labels[shape[0] // 2:] = 7
+    for separate in ("material", labels):
+        spr = rec.patch_recovered(separate)
+        want = np.column_stack([np.ones(len(spr.points)), spr.points]) @ coef
+        assert not spr.fallback.any()
+        assert np.abs(spr.stress[:, :, 0] - want).max() <= 1e-12 * np.abs(want).max()
+    assert len(rec.patch_recovered(labels).node) > len(rec.patch_recovered().node)
+
+
 def test_recovery_over_a_subset_uses_only_those_elements():
     case = S.l_corner(8)
     el = case.domain.active_elements[::2]
