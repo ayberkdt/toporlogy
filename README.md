@@ -291,6 +291,7 @@ they show that the implementation did not change, not that it is independently c
 | Reproducibility | stored baseline of the seven examples | bitwise in the recorded reference environment; elsewhere scalars to 1e-6 relative (Linux: largest difference 1.5e-10) | `tests/toporlogy/test_baseline.py` |
 | Stress, buckling, GCMMA, SiMPL, PDE filter | closed forms, invariants, finite differences | table above | `tests/toporlogy/test_stress.py`, `test_buckling.py`, `test_gcmma.py`, `test_simpl.py`, `test_pde_filter.py`, `test_aggregates.py` |
 | Stiffness (Q4, H8, Q4IM, H8IM, orientation fields), mass, modal, conduction, centroid stress, von Mises and Tsai–Wu, buckling with and without preload | separately written dense implementation in the tests | matrices ≤ 4.6e-16, stresses and indices ≤ 1.1e-15, eigenvalues ≤ 3.2e-14, load factors ≤ 4e-13 | `test_independent_matrices.py`, `test_independent_stress.py`, `test_independent_buckling.py` |
+| Another team's FE code | scikit-fem 12: same grid with its own mesh, elements, forms and quadrature | Q4 and H8 stiffness, mass, conduction ≤ 5.8e-16; cantilever solution ≤ 7e-15 | `test_skfem_crosscheck.py` |
 | Manufactured solutions beyond isotropic elasticity | Q4IM; smoothly varying orthotropic axes (Q4, Q4IM, H8); heat conduction; SVK and neo-Hooke at max \|∇u\| = 0.2 | second order on three grids (rates 1.97–2.05); constant axes, wrong conductivity and a linear solve of the non-linear loads stall | `test_fem_mms_extended.py` |
 | Gradients by the Taylor remainder | eleven responses incl. buckling, frequency, multi-phase, non-linear end compliance, multigrid | remainder order 2.00; a 1 % wrong gradient gives order 0.90–1.08 below the crossover step (the first, fixed-step version of that control failed for five responses: strict xfail) | `test_taylor_remainder.py` |
 | Frame invariance and objectivity | 90° rotation and mirror with orientation fields; rigid rotation of large deformations | ≤ 7e-15 | `test_frame_invariance.py` |
@@ -298,7 +299,8 @@ they show that the implementation did not change, not that it is independently c
 
 ## Known limitations
 
-- **Independent references:** compliance agrees with transcriptions of Top88 and Top3D to rounding. Stiffness
+- **Independent references:** compliance agrees with transcriptions of Top88 and Top3D to rounding. Q4 and H8
+  stiffness, mass, conduction and a cantilever solution agree with scikit-fem (another team's code) to 7e-15. Stiffness
   (incompatible modes included), mass, conduction, centroid stress, failure indices and buckling agree to rounding
   with a second implementation written separately in the tests (`tests/toporlogy/_independent_fe.py`); it has the
   same author, so it is not another team's code. The Timoshenko–Goodier cantilever (closed form, parabolic end
@@ -359,7 +361,7 @@ The current roadmap, the status of every item and the open decisions are in
 ## Development
 
 ```bash
-python -m pytest tests/toporlogy -m "not slow"                  # main suite (888 pass, 11 strict xfail on 25 Nov 2026)
+python -m pytest tests/toporlogy -m "not slow"                  # main suite (896 pass, 11 strict xfail on 26 Nov 2026)
 python -m pytest tests/toporlogy/test_baseline.py -m baseline   # bitwise baseline of the examples (~3.5 min)
 python -m pytest tests/toporlogy -m slow                        # pre-registered sweeps (hours; gmsh for T10)
 ```
