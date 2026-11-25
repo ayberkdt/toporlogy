@@ -77,8 +77,9 @@ link  - chain link (design -> physical density) (11)
                         axis=z
   symmetry              planes=? [length]
 
-interpolation  - physical density -> element modulus (4)
+interpolation  - physical density -> element modulus (5)
   hashin_shtrikman  emin_ratio=1e-06
+  multiphase_simp   penal=3.0  emin_ratio=1e-06
   ramp              q=8.0  emin_ratio=1e-06
   simp              penal=3.0  emin_ratio=1e-06
   two_range_simp    penal=3.0  threshold=0.1  q=1.0  emin_ratio=1e-09
@@ -86,33 +87,42 @@ interpolation  - physical density -> element modulus (4)
 solver  - linear solver (1)
   direct  method=auto
 
-physics  - physics model (state solve) (3)
-  elasticity      element=null  solver=direct
-  elasticity_gmg  element=null  tol=1e-08  maxit=300  direct_below=4000 [active elements]
-                  fallback_max_elements=120000 [active elements]  warm_start=true
-                  allow_inexact=false
-  modal           element=null  n_modes=6  sigma=0.0 [eigenvalue]  tol=0.0  mass=linear
-                  rhomin_ratio=0.0  mass_threshold=0.1  mass_q=6.0  added_mass=0.0 [mass (total)]
-                  added_mass_at=null  cluster_tol=0.001  repeated=warn
+physics  - physics model (state solve) (4)
+  elasticity            element=null  solver=direct
+  elasticity_gmg        element=null  tol=1e-08  maxit=300  direct_below=4000 [active elements]
+                        fallback_max_elements=120000 [active elements]  warm_start=true
+                        allow_inexact=false
+  modal                 element=null  n_modes=6  sigma=0.0 [eigenvalue]  tol=0.0  mass=linear
+                        rhomin_ratio=0.0  mass_threshold=0.1  mass_q=6.0
+                        added_mass=0.0 [mass (total)]  added_mass_at=null  cluster_tol=0.001
+                        repeated=warn
+  nonlinear_elasticity  material=svk  element=null  energy_interpolation=true  beta=120.0
+                        cutoff=0.1  cutoff_step=0.02  cutoff_max=1.0  density_exponent=3.0
+                        load_steps=10  max_iter=30  rtol=1e-09  min_step=0.0001 [load factor]
+                        warm_start=false  solver=direct
 
-response  - objective or constraint response (18)
+response  - objective or constraint response (22)
   buckling                     load_factor=null  n_modes=6  rho=50.0  case=0  penal_g=3.0
                                scale=null  preload_case=null  exclude=null
   compliance                   weights=null
   conduction_connectivity      sink=null  kmin_ratio=0.001  penal=3.0  aggregate=pnorm  p=8.0
                                eta=0.7  reference=solid
+  cost                         (no parameters)
   coupling_compliance          held=null  aggregate=pnorm  p=8.0  eta=0.7  reference=first
   dilated_volume               weighted=false
   displacement                 where=?  direction=?  case=0  name=displacement
   eigenvalue                   k=1
+  end_compliance               weights=null
   frequency                    k=1  E_unit=1.0  rho_unit=1.0  length_unit=1.0
   grey_level                   source=xphys
   local_volume                 t_max=null [length]  radius=null [elements]  member=null  p=16.0
                                aggregate=pmean  adaptive=0.0  outside=void  source=xphys
+  mass                         (no parameters)
   maximize                     response=?
   min_eigenvalue_ks            n_modes=3  rho=50.0  scale=null  kind=ks
   min_frequency                f_min=? [Hz]  n_modes=1  rho=50.0  E_unit=1.0  rho_unit=1.0
                                length_unit=1.0
+  phase_volume                 phases=null  weighted=false
   robust_compliance            realisations=["eroded", "intermediate", "dilated"]  aggregate=ks
                                rho=50.0  p=16.0  scale=null  weights=null
   stress                       sigma_lim=null [force/length^2]  aggregate=pnorm  parameter=8.0
@@ -140,7 +150,7 @@ schedule  - continuation schedule (3)
   robust_continuation  beta0=1.0  beta_max=32.0  every=50  tol=null  volume_every=20  target=null
                        update_volume=true
 
-post  - post-processing step after the run (8)
+post  - post-processing step after the run (9)
   connectivity_gate     threshold=0.5  connectivity=face  robust_thresholds=[0.3, 0.7]
                         erosion=true  voids=fail  repair=none  section=2
   discrete_check        volume=constraint  threshold=0.5  max_ratio=null
@@ -159,6 +169,7 @@ post  - post-processing step after the run (8)
                         min_concave_radius=null [length]
   measure_lengthscale   threshold=0.5  outside=void  upsample=null  smooth=0.0 [elements]
                         margin=0.0 [length]  percentiles=[1.0, 5.0, 50.0]  radii=[] [length]
+  phase_report          surfaces=true
   reverify              E=null [force/length^2]  nu=null  size=null [length]  surface_edge=null
                         timeout=600.0  compare_voxel=true
   symmetry_check        planes=? [length]  threshold=0.5  mesh=true
