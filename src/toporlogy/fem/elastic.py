@@ -29,8 +29,9 @@ import torch
 from toporlogy.core.domain import Domain
 from toporlogy.fem.mechanisms import SolveResidualError, check_moduli, check_supports, fixed_dof_rows
 from toporlogy.solvers.direct import DirectSolver
+from toporlogy.solvers.ordering import nested_dissection_dofs
 
-__all__ = ["Elasticity", "element_matrix", "GROUPED_MAX", "RESIDUAL_TOL", "BACKWARD_TOL", "ResidualReport",
+__all__ = ["Elasticity", "element_matrix", "ORDERINGS", "GROUPED_MAX", "RESIDUAL_TOL", "BACKWARD_TOL", "ResidualReport",
            "checked_residual", "matrix_norm1"]
 
 
@@ -58,6 +59,10 @@ class Elasticity:
         for orthotropic, rotated or plane-strain material, or one per active element (n_active, k, k;
         :func:`toporlogy.core.material.unit_elasticity_field`). None = isotropic plane stress / 3-D from ``nu``; when
         it is given, ``nu`` is not used and :attr:`nu` is None.
+    ordering : {"nested_dissection", "solver"}
+        Elimination order handed to a :class:`DirectSolver` (SuperLU): a geometric nested dissection of the node grid
+        (default; :mod:`toporlogy.solvers.ordering`) or the solver's own (``MMD_AT_PLUS_A``, the order before
+        25 Nov 2026). PARDISO and other solvers ignore it. Settable attribute.
 
     Attributes
     ----------
@@ -72,7 +77,9 @@ class Elasticity:
     """
 
     def __init__(self, domain: Domain, fixed: Sequence[int] | np.ndarray, nu: float = 0.3, element: str | None = None,
-                 solver: Any = None, elasticity: np.ndarray | None = None) -> None:
+                 solver: Any = None, elasticity: np.ndarray | None = None,
+                 ordering: str = "nested_dissection") -> None:
+        self.ordering = ordering
         self.domain = domain
         self.element = element or ("H8" if domain.dim == 3 else "Q4")
         self.ke_index: np.ndarray | None = None
@@ -118,6 +125,7 @@ class Elasticity:
         self._inv = inv.astype(np.int64)
         self._P = sp.csr_matrix((np.zeros(len(ukey)), (ukey // nf, ukey % nf)), shape=(nf, nf))
         self.solver = solver if solver is not None else DirectSolver()
+        self._order: np.ndarray | None = None                      # nested dissection of the reduced system, lazy
         self._token = 0                                            # increments with every factorisation
         self._factored_E: np.ndarray | None = None
         self.n_solves = 0
@@ -174,6 +182,23 @@ class Elasticity:
         A.data = np.bincount(self._inv, weights=w, minlength=self._P.nnz)
         return A
 
+    @property
+    def ordering(self) -> str:
+        return self._ordering
+
+    @ordering.setter
+    def ordering(self, value: str) -> None:
+        if value not in ORDERINGS:
+            raise ValueError(f"ordering: {' | '.join(ORDERINGS)}, got {value!r}")
+        self._ordering = value
+
+    def elimination_order(self) -> np.ndarray:
+        """Nested dissection order of the reduced system (index into :attr:`free`), computed once."""
+        if self._order is None:
+            d = self.domain
+            self._order = nested_dissection_dofs(tuple(n + 1 for n in d.shape), d.dim, self.free)
+        return self._order
+
     def _kinematic_rows(self) -> dict[int, np.ndarray]:
         """Support rows per node acting on its displacement (fixed DOFs: unit rows); see :mod:`.mechanisms`."""
         return fixed_dof_rows(self.fixed, self.domain.dim)
@@ -192,7 +217,10 @@ class Elasticity:
             self.check_kinematics()
         self._A = self.matrix(E_active)
         self._A_norm1 = matrix_norm1(self._A)
-        self.solver.factor(self._A)
+        if isinstance(self.solver, DirectSolver) and self.ordering == "nested_dissection":
+            self.solver.factor(self._A, order=self.elimination_order())
+        else:
+            self.solver.factor(self._A)
         self._factored_E = E_active.copy()
         self._token += 1
 
@@ -237,6 +265,8 @@ class Elasticity:
         F2 = F2[:, None] if F2.ndim == 1 else F2
         return _LinearSolve.apply(E_active, self, F2)
 
+
+ORDERINGS = ("nested_dissection", "solver")
 
 GROUPED_MAX = 32
 """Per-element material with at most this many distinct element matrices: element-level products run group by group

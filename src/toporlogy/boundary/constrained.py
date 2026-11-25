@@ -168,6 +168,17 @@ class ConstrainedElasticity(Elasticity):
         self.S = S
         self.constraints = constraints
 
+    def elimination_order(self) -> np.ndarray:
+        """The parent's nested dissection restricted to the kept unknowns of the local system (the frames are
+        node-local, so a node's unknowns stay together)."""
+        if self._order is None:
+            base = super().elimination_order()
+            pos = np.full(len(self.free), -1, np.int64)
+            pos[self.keep] = np.arange(len(self.keep))
+            o = pos[base]
+            self._order = o[o >= 0]
+        return self._order
+
     def _kinematic_rows(self) -> dict[int, np.ndarray]:
         """Fixed DOFs, plus the constrained directions of every local frame (u ⊥ them) and the rows of every spring
         (a spring stores energy unless K_s u = 0)."""

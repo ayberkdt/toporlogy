@@ -367,7 +367,12 @@ def test_tet_voxel_rows_outside_centroid_takes_nearest_voxel():
 
 # ===================================================================================================== P5
 def test_p5_isotropic_t10_unchanged():
-    """P5: the isotropic T10 / voxel path reproduces the values recorded at d566290 on this machine (exact)."""
+    """P5: the isotropic T10 / voxel path reproduces the values recorded at d566290 on this machine (exact).
+
+    Changed at the merge (2026-11-25, coordinator): the voxel reference solves with ``Elasticity``, whose SuperLU
+    elimination order became nested dissection (``solvers.ordering``, docs/olcumler/cozucu_siralama.md). Its two
+    values now differ from the d566290 record in the last digits (compliance 57.11866917633062 against
+    57.1186691763344, 6.6e-14 relative), so that line compares to 1e-12; the T10 part is unchanged and still exact."""
     m = _box_t10((3, 2, 2), (1.5, 1.0, 0.8))
     m.X = m.X + 0.02 * np.random.default_rng(7).standard_normal(m.X.shape)
     K = stiffness_t10(m, 7.0, 0.27).tocsr()
@@ -382,8 +387,9 @@ def test_p5_isotropic_t10_unchanged():
     assert h == "c37c6bb4a85341e2bb619a86df7cd6bf8ddf5071c2829a42b485e52ac6a7df6f"
     assert (c["compliance"], c["max_displacement"], c["vm_max"]) == (3.482339726026348, 3.70297627743529,
                                                                        13.115959479529819)
-    assert (vx["cases"][0]["compliance"], vx["cases"][0]["max_displacement"]) == (57.1186691763344,
-                                                                                  59.143123678603374)
+    for got, rec in zip((vx["cases"][0]["compliance"], vx["cases"][0]["max_displacement"]),
+                        (57.1186691763344, 59.143123678603374), strict=True):
+        assert abs(got - rec) <= 1e-12 * rec
     assert "material" not in r
 
 

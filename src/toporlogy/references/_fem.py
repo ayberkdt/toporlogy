@@ -19,6 +19,9 @@ REFERENCES: tuple[Reference, ...] = (
               "Incompatible displacement models", "in Numerical and Computer Methods in Structural Mechanics, "
               "Academic Press", note="the Q6 element; cited as 'Wilson et al, 1973' by Ferrari & Sigmund 2019 "
               "(arXiv:1809.05300, read); title and venue from memory, not checked"),
+    Reference("george_1973", "A. George", 1973, "Nested dissection of a regular finite element mesh",
+              "SIAM J. Numer. Anal. 10(2):345-363", doi="10.1137/0710032",
+              note="geometric nested dissection on grids (solvers.ordering); details from memory, not checked"),
     Reference("hinton_rock_zienkiewicz_1976", "E. Hinton, T. Rock, O. C. Zienkiewicz", 1976,
               "A note on mass lumping and related processes in the finite element method",
               "Earthquake Eng. Struct. Dyn. 4(3):245-249", doi="10.1002/eqe.4290040305",

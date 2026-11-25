@@ -32,6 +32,7 @@ from scipy import ndimage
 from toporlogy.core.domain import Domain
 from toporlogy.fem.elastic import _LinearSolve
 from toporlogy.solvers.direct import DirectSolver
+from toporlogy.solvers.ordering import nested_dissection_dofs
 
 __all__ = ["conduction_matrix", "element_nodes", "assemble_conduction", "HeatConduction", "ConductivityInterp"]
 
@@ -93,7 +94,8 @@ class HeatConduction:
     fixed : sequence of int
         Node numbers with T = 0 (heat sinks). Nodes not touched by any active element are removed as well.
     solver : object with ``factor(A_upper)`` / ``solve(B)``, optional
-        Default :class:`~toporlogy.solvers.DirectSolver` ("auto").
+        Default :class:`~toporlogy.solvers.DirectSolver` ("auto"); SuperLU then eliminates in nested dissection
+        order (:mod:`toporlogy.solvers.ordering`).
 
     Raises
     ------
@@ -135,6 +137,7 @@ class HeatConduction:
         self._inv = inv.astype(np.int64)
         self._P = sp.csr_matrix((np.zeros(len(ukey)), (ukey // nf, ukey % nf)), shape=(nf, nf))
         self.solver = solver if solver is not None else DirectSolver()
+        self._order: np.ndarray | None = None
         self._token = 0
         self._factored_E: np.ndarray | None = None
         self.n_solves = 0
@@ -173,7 +176,13 @@ class HeatConduction:
 
     def factor(self, k_active: np.ndarray) -> None:
         k_active = np.asarray(k_active, float)
-        self.solver.factor(self.matrix(k_active))
+        A = self.matrix(k_active)
+        if isinstance(self.solver, DirectSolver):              # SPD: nested dissection of the node grid
+            if self._order is None:
+                self._order = nested_dissection_dofs(tuple(n + 1 for n in self.domain.shape), 1, self.free)
+            self.solver.factor(A, order=self._order)
+        else:
+            self.solver.factor(A)
         self._factored_E = k_active.copy()
         self._token += 1
 
