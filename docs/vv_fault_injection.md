@@ -41,3 +41,29 @@ basınç/kuvvet) 08 §4'ün işi, bu dilimde yok.
 
 Kapsam dışı (bu dilimde): çözücü ıraksaması (GMG `maxit`, Newton) ve bayat önbellek/checkpoint (checkpoint/restart
 yok, 08 §4). Bunlar NOT VERIFIED.
+
+## 1. İlk koşu (2026-11-26 00:30 +0300, `b5ba393` üstünde) [Ö]
+
+Komut: `python -m pytest tests/toporlogy/test_fault_injection.py -q -p no:randomly`. Sonuç: 33 durumdan 24'ü ön
+kayıtlı beklentiyi tuttu (PASS), 9'u tutmadı (FAIL → strict xfail; gözlenen davranış testteki `FAILED_FIRST_RUN`
+sözlüğünde, aynı metin aşağıda). Beklentilerin hiçbiri değiştirilmedi.
+
+| Durum | Sonuç | Gözlenen |
+|:---|:---|:---|
+| `inf_load_solve` | FAIL | çözümden sonra `SolveResidualError` (RuntimeError) "load case 0: the solution is not finite": mesaj açık, tür ve yer ön kayıttaki gibi değil (girdi denetimi yok) |
+| `nan_force_config` | FAIL | sessizce kabul: `force: [nan, -1]` ile Setup kuruluyor, NaN yük vektörüne giriyor |
+| `inf_E0_config` | FAIL | "elastic constants do not give a positive definite stiffness (check the Poisson ratios)": E0'ı adlandırmıyor, ν'ye yönlendiriyor |
+| `negative_E0_config`, `zero_E0_config` | FAIL | "material: E1 > 0 is required": izotrop malzemede anahtar E0, mesaj E1 diyor |
+| `negative_thickness_domain` | FAIL | sessizce kabul: `Domain(thickness=-1)` ve `Elasticity` kuruluyor (negatif rijitlik) |
+| `load_wrong_rows_solve` | FAIL | `IndexError` (`Elasticity._solve_free`): F'nin satır sayısı denetlenmiyor |
+| `volume_upper_above_one` | FAIL | sessizce kabul: hacim oranı üst sınırı 50; kısıt hiç etkin olmaz |
+| `yaml_duplicate_key` | FAIL | yinelenen anahtar yakalanmıyor (PyYAML sonuncuyu alır). Testin YAML'ında kısıt yoktu, kurulum ilgisiz bir hatada durdu ("optimizer oc needs at least one constraint"); kısıt eklenmiş keşif koşusunda (ön kayıtsız) ikinci `domain` [4, 4] sessizce kullanıldı |
+| diğer 24 durum | PASS | NaN modül, NaN tasarım, ν = 0,5 / 0,7 / −1,2, SPD olmayan ortotrop, negatif E elemanı, negatif h, desteksiz ve tek düğümlü mesnet, sıfır yük, yanlış uzunlukta E, 1-B şekil, 3 bileşenli 2-B kuvvet, birimli metin, negatif rmin / max_iter / tol, YAML sözdizimi, liste kök, bilinmeyen anahtar, eksik dosya, bitmiş klasöre ikinci koşu (çıkış 2) |
+
+Test tasarımındaki hata (benim): `yaml_duplicate_key` YAML'ı kısıt içermiyordu; bulgu (yinelenen anahtarın
+yakalanmaması) bundan etkilenmiyor ama ön kayıtlı durumun kendisi ilgisiz bir hatayla durdu. Düzeltme ayrı, yeni bir
+ön kayıtlı durum olarak yazılmalı; bu dilimde yapılmadı.
+
+Çözüm koşulu (her biri için): ilgili girdi denetimi eklendiğinde strict xfail XPASS olur ve test kırmızıya döner;
+o zaman `FAILED_FIRST_RUN` girdisi silinir. Düzeltmeler bu dilimin kapsamında değil (malzeme denetimi
+`core/material.py`, tensor-core oturumunun dosyası).

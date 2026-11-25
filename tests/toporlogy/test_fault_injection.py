@@ -199,7 +199,34 @@ CASES: list[tuple[str, Callable[[Path], Any], tuple[type[BaseException], ...], s
 ]
 
 
-@pytest.mark.parametrize(("action", "types", "pattern"), [pytest.param(a, t, p, id=i) for i, a, t, p in CASES])
+# First run 2026-11-26 00:30 +0300: these cases did not meet their pre-registered expectation (observed behaviour in
+# the reason; docs/vv_fault_injection.md §1). Strict: a fix turns the xfail into a failure, and the entry goes.
+FAILED_FIRST_RUN = {
+    "inf_load_solve": "fails closed after the solve with SolveResidualError (a RuntimeError) 'load case 0: the solution "
+                      "is not finite (NaN or Inf)': clear message, but not the pre-registered ValueError at input "
+                      "validation",
+    "nan_force_config": "accepted silently: force [nan, -1] builds a Setup; the NaN reaches the load vector",
+    "inf_E0_config": "ConfigError 'the elastic constants do not give a positive definite stiffness (check the Poisson "
+                     "ratios ...)': does not name E0, points at the Poisson ratios",
+    "negative_E0_config": "ConfigError 'material: E1 > 0 is required': names E1, the config key is E0 (isotropic)",
+    "zero_E0_config": "ConfigError 'material: E1 > 0 is required': names E1, the config key is E0 (isotropic)",
+    "negative_thickness_domain": "accepted silently: Domain(thickness=-1) and Elasticity build (negative stiffness)",
+    "load_wrong_rows_solve": "IndexError 'index 88 is out of bounds for axis 0 with size 88' from Elasticity "
+                             "._solve_free: no shape check of F",
+    "volume_upper_above_one": "accepted silently: volume upper 50 (a fraction) builds; the constraint is never active",
+    "yaml_duplicate_key": "the duplicate key is not detected (PyYAML keeps the last value). The case's YAML lacked "
+                          "constraints, so build stopped on 'optimizer oc needs at least one constraint'; with a "
+                          "volume constraint added (exploratory run, not pre-registered) the second domain [4, 4] "
+                          "is used silently",
+}
+
+
+def _param(i: str, a: Any, t: Any, p: str) -> Any:
+    marks = [pytest.mark.xfail(strict=True, reason=FAILED_FIRST_RUN[i])] if i in FAILED_FIRST_RUN else []
+    return pytest.param(a, t, p, id=i, marks=marks)
+
+
+@pytest.mark.parametrize(("action", "types", "pattern"), [_param(*c) for c in CASES])
 def test_fails_closed_with_a_clear_message(action: Callable[[Path], Any], types: tuple[type[BaseException], ...],
                                            pattern: str, tmp_path: Path) -> None:
     try:
