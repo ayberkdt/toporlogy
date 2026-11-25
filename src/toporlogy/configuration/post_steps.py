@@ -9,7 +9,8 @@ from typing import Any
 import numpy as np
 
 from toporlogy.configuration.boundary_mapping import bc_mapping
-from toporlogy.configuration.helpers import _axis, _coord, _design, _interfaces, _post_state, _reevaluate, _rel
+from toporlogy.configuration.helpers import (_axis, _coord, _design, _interfaces, _post_state, _reevaluate, _rel,
+                                            material_model)
 from toporlogy.configuration.registry import BuildContext, ConfigError, REGISTRY, join, register
 
 
@@ -192,11 +193,17 @@ def reverify_step(ctx: BuildContext, E: float | None = None, nu: float | None = 
                   surface_edge: float | None = None, timeout: float = 600.0, compare_voxel: bool = True) -> Any:
     """Re-verify the finalized part: gmsh T10 mesh + static solve with the config's supports and loads (as
     callables in physical coordinates); with compare_voxel the change against the voxel model. E / nu null =
-    material. Needs a finalize step before it."""
+    material (an orthotropic material, uniform or per element, is passed as its unit elasticity, scaled by E). Needs
+    a finalize step before it."""
     import importlib.util
     if importlib.util.find_spec("gmsh") is None:
         raise ValueError("reverify needs the gmsh package (not importable)")
     state = _post_state(ctx)
+    mm = material_model(ctx)
+    elasticity = mm.elasticity if mm.orthotropic else None
+    if elasticity is not None and nu is not None:
+        raise ConfigError("reverify.nu: an orthotropic material takes its constants from material.orthotropic",
+                          "post")
     E_ = float(ctx.material["E0"] if E is None else E)
     nu_ = float(ctx.material["nu"] if nu is None else nu)
     bcm = bc_mapping(ctx.bc)
@@ -208,7 +215,7 @@ def reverify_step(ctx: BuildContext, E: float | None = None, nu: float | None = 
         xp, label = _design(state, res)                 # the voxel model of the same design that was finalized
         out = reverify(pr, supports, cases, E_, nu_, size=size, surface_edge=surface_edge,
                        domain=study.domain if compare_voxel else None, xphys=xp if compare_voxel else None,
-                       timeout=timeout)
+                       timeout=timeout, elasticity=elasticity)
         out["design"] = state.get("result_design", label)
         # the T10 / voxel comparison is between two meshes under the SAME mapped conditions; whether those are the
         # optimisation's conditions is bc_fidelity ("equivalent" only when nothing was approximated or left out)
