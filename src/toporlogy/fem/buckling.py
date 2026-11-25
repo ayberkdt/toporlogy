@@ -77,6 +77,7 @@ import scipy.sparse.linalg as spla
 from toporlogy.fem.elastic import Elasticity
 from toporlogy.fem.elements import H8_CORNER, Q4_CORNER
 from toporlogy.references import cite
+from toporlogy.solvers.direct import DirectSolver
 
 __all__ = ["gauss_operators", "LinearBuckling", "voigt_pairs", "BucklingClusterWarning"]
 
@@ -277,8 +278,13 @@ class LinearBuckling:
             if mu0 >= 1.0:
                 raise ValueError(f"the preload alone buckles (load factor 1/mu0 = {1 / mu0:.4g} <= 1)")
             Kfull = (Kfull + KG0).tocsr()
-            lu = spla.splu(Kfull.tocsc())
-            Minv = spla.LinearOperator((n, n), matvec=lu.solve, dtype=float)
+            if m.ordering == "nested_dissection":                            # SPD (mu0 < 1): diagonal pivots
+                ps = DirectSolver("splu")
+                ps.factor(sp.triu(Kfull).tocsr(), order=m.elimination_order())
+                Minv = spla.LinearOperator((n, n), matvec=lambda b: ps.solve(b).reshape(-1), dtype=float)
+            else:
+                lu = spla.splu(Kfull.tocsc())
+                Minv = spla.LinearOperator((n, n), matvec=lu.solve, dtype=float)
         mu, Phi = spla.eigsh(-KG, k=k, M=Kfull, Minv=Minv, which="LA", tol=tol, v0=v0,
                              ncv=min(n - 1, max(2 * k + 2, 24)), maxiter=20 * n)
         # Rayleigh–Ritz in the returned span: K-orthonormal modes and consistent μ to round-off

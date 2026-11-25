@@ -159,3 +159,55 @@ def test_default_is_nested_dissection_and_bad_values_are_refused():
     assert m.ordering == "nested_dissection"
     with pytest.raises(ValueError, match="ordering"):
         T.Elasticity(d, fixed, 0.3, ordering="metis")
+
+
+# ------------------------------------------------------- O8, O9 (docs/olcumler/dogrulama_turu.md, pre-registered)
+def _buckling_with_preload(shape, ordering):
+    from toporlogy.fem.buckling import LinearBuckling
+    d = T.Domain(shape, h=1.0)
+    X = d.node_coords()
+    fixed = d.dofs(np.flatnonzero(X[:, 1] < 1e-9))
+    top = np.flatnonzero(X[:, 1] > X[:, 1].max() - 1e-9)
+    F = np.zeros(d.ndof)
+    F[d.dim * top + 1] = -1.0 / len(top)
+    F0 = np.zeros(d.ndof)
+    F0[d.dim * top] = 0.1 / len(top)
+    E = 0.1 + 0.9 * np.random.default_rng(0).random(d.n_active)
+    m = T.Elasticity(d, fixed, nu=0.3, ordering=ordering)
+    U = m.solve_numpy(E, np.column_stack([F, F0]))
+    lb = LinearBuckling(m)
+    mu, _ = lb.modes(E, E, U[:, 0], k=6, KG0=lb.geometric_matrix(E, U[:, 1]))
+    return mu
+
+
+@pytest.mark.parametrize("shape", [(40, 12), (8, 4, 4)])
+def test_o8_buckling_preload_same_load_factors(shape):
+    a, b = _buckling_with_preload(shape, "nested_dissection"), _buckling_with_preload(shape, "solver")
+    err = float(np.abs(a - b).max() / np.abs(b).max())
+    print(f"\n  O8 {shape}: {err:.2e}")
+    assert err <= 1e-9
+
+
+def _modal(shape, sigma, ordering):
+    from toporlogy.fem.modal import Modal
+    from toporlogy.solvers.direct import DirectSolver
+    d = T.Domain(shape, h=1.0)
+    X = d.node_coords()
+    mo = Modal(d, d.dofs(np.flatnonzero(X[:, 0] < 1e-9)), nu=0.3, n_modes=6, sigma=sigma, solver=DirectSolver("splu"))
+    mo.elastic.ordering = ordering
+    E = 0.1 + 0.9 * np.random.default_rng(1).random(d.n_active)
+    lam, _ = mo.solve_numpy(E, np.ones(d.n_active), 6)
+    return np.asarray(lam), mo.solver
+
+
+@pytest.mark.parametrize("sigma", [0.0, -1e-3, 1e-4])
+@pytest.mark.parametrize("shape", [(40, 12), (8, 4, 4)])
+def test_o9_modal_same_eigenvalues(shape, sigma):
+    (a, sa), (b, _) = _modal(shape, sigma, "nested_dissection"), _modal(shape, sigma, "solver")
+    err = float(np.abs(a - b).max() / np.abs(b).max())
+    print(f"\n  O9 {shape} sigma={sigma}: {err:.2e}")
+    assert err <= 1e-9
+    # σ > 0 (indefinite K − σM) keeps the pivoting order: bit for bit the old path
+    assert (sa._order is None) == (sigma > 0)
+    if sigma > 0:
+        assert np.array_equal(a, b)
