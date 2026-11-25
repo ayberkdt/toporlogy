@@ -38,6 +38,7 @@ from typing import Any
 import numpy as np
 import scipy.sparse as sp
 
+from toporlogy.core.tensor import von_mises_squared
 from toporlogy.references import cite
 
 __all__ = ["TetMesh", "tet_mesh", "stiffness_t10", "solve_t10", "voxel_reference", "reverify", "d_iso",
@@ -72,7 +73,12 @@ _DN_NODES = np.array([_dN(p) for p in _NODES_NAT])
 
 
 def d_iso(E: float, nu: float) -> np.ndarray:
-    """Isotropic elasticity matrix, Voigt order [εx, εy, εz, γyz, γxz, γxy]."""
+    """Isotropic elasticity matrix, Voigt order [εx, εy, εz, γyz, γxz, γxy].
+
+    Same matrix as :func:`toporlogy.core.linear_elastic.isotropic_stiffness` except for rounding (shear written as
+    c (1 − 2ν) / 2 instead of E / (2(1 + ν))). Kept as written because the T10 regression record P5
+    (``tests/toporlogy/test_element_orientation.py``) pins the stiffness bit for bit; agreement to 1e-15 is
+    checked in ``tests/toporlogy/test_linear_elastic.py``."""
     c = E / ((1 + nu) * (1 - 2 * nu))
     D = np.zeros((6, 6))
     D[:3, :3] = c * nu
@@ -82,8 +88,8 @@ def d_iso(E: float, nu: float) -> np.ndarray:
 
 
 def von_mises(s: np.ndarray) -> np.ndarray:
-    sx, sy, sz, tyz, txz, txy = (s[..., i] for i in range(6))
-    return np.sqrt(0.5 * ((sx - sy) ** 2 + (sy - sz) ** 2 + (sz - sx) ** 2) + 3.0 * (tyz ** 2 + txz ** 2 + txy ** 2))
+    """σ_vM of Voigt stresses (..., 6) (:func:`toporlogy.core.tensor.von_mises_squared`)."""
+    return np.sqrt(von_mises_squared(s))
 
 
 @dataclass

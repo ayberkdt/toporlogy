@@ -15,9 +15,16 @@ coated-sphere / coated-cylinder assemblage and are checked in ``tests/toporlogy/
 solution of a hollow sphere and a hollow cylinder; the shear bounds are checked for their limits only).
 
 :func:`simp_admissible_penal` is the smallest SIMP exponent for which x^p K ≤ K_HS and x^p G ≤ G_HS for all x
-(slope condition at x = 1, the binding one): 2-D max(2/(1 − ν), 4/(1 + ν)), 3-D max(3(1 − ν)/(2(1 − 2ν)),
-15(1 − ν)/(7 − 5ν)). Derived from the bounds above; they agree with the conditions attributed to Bendsøe & Sigmund
-(1999) as remembered (text not read). For ν = 0.3: 2-D 3.08, 3-D 2.63; in 2-D, p = 3 is admissible only at ν = 1/3.
+(slope condition at x = 1, the binding one; checked on a grid of x in ``tests/toporlogy/test_anisotropy.py``):
+2-D max(2/(1 − ν), 4/(1 + ν)), 3-D max(3(1 − ν)/(2(1 − 2ν)), 15(1 − ν)/(7 − 5ν)). Derived from the bounds above;
+they agree with the conditions attributed to Bendsøe & Sigmund (1999) as remembered (text not read). For ν = 0.3:
+2-D 3.08, 3-D 2.63; in 2-D, p = 3 is admissible only at ν = 1/3. :func:`hs_admissible_exponents` gives the bulk and
+the shear exponent separately, from the slopes p_K = 1 + κ/G, p_G = 2 + 2G/κ (2-D) and p_K = 1 + 3K/(4G),
+p_G = (15K + 20G)/(9K + 8G) (3-D). The 2-D value depends on the plane convention through κ: plane stress
+κ = E/(2(1 − ν)) (the default and :func:`simp_admissible_penal`), plane strain κ = λ + μ, which is the plane-stress
+formula with ν/(1 − ν) in place of ν (ν = 0.3: 3.5 instead of 3.08). Plane stress and plane strain results must not
+be mixed. These bounds treat a grey element as an isotropic porous solid of the given volume fraction; SIMP does not
+claim that its grey elements are such a material.
 
 :class:`HashinShtrikman` interpolates E with the HS upper bound (best porous material; it does NOT penalise grey,
 use it to judge a grey design, not to drive an optimisation). The finite element keeps the solid's ν, while the HS
@@ -25,25 +32,31 @@ porous material has ν_HS(x) ≠ ν: the E-only form is an approximation whose �
 """
 from __future__ import annotations
 
+from typing import Any
+
 import torch
 
+from toporlogy.core.linear_elastic import isotropic_moduli, plane_bulk_modulus
 from toporlogy.references import cite
 from toporlogy.core.domain import Domain
 
-__all__ = ["SIMP", "RAMP", "HashinShtrikman", "hashin_shtrikman_moduli", "simp_admissible_penal"]
+__all__ = ["SIMP", "RAMP", "HashinShtrikman", "hashin_shtrikman_moduli", "hashin_shtrikman_bounds",
+           "simp_admissible_penal", "hs_admissible_exponents"]
 
 
-def _bulk_shear(E: float, nu: float, dim: int) -> tuple[float, float]:
-    """(bulk, shear): 3-D K = E / (3(1 − 2ν)); 2-D plane-stress κ = E / (2(1 − ν)); G = E / (2(1 + ν))."""
-    if not -1 < nu < 0.5:
-        raise ValueError("-1 < nu < 0.5 is required")
-    G = E / (2 * (1 + nu))
-    return (E / (3 * (1 - 2 * nu)) if dim == 3 else E / (2 * (1 - nu))), G
+def _bulk_shear(E: float, nu: float, dim: int, plane: str = "stress") -> tuple[float, float]:
+    """(bulk, shear): 3-D K = E / (3(1 − 2ν)); 2-D κ of the plane convention (plane stress E / (2(1 − ν)), plane
+    strain λ + μ); G = E / (2(1 + ν)) (core.linear_elastic)."""
+    m = isotropic_moduli(E=E, nu=nu)
+    if dim == 3:
+        return m.K, m.G
+    if dim == 2:
+        return plane_bulk_modulus(E, nu, plane), m.G
+    raise ValueError("dim must be 2 or 3")
 
 
-def _hs_slopes(x: torch.Tensor, E: float, nu: float, dim: int) -> tuple[torch.Tensor, torch.Tensor]:
-    """K_HS / x and G_HS / x (finite at x = 0)."""
-    K, G = _bulk_shear(E, nu, dim)
+def _slopes(x: Any, K: float, G: float, dim: int) -> tuple[Any, Any]:
+    """K_HS / x and G_HS / x (finite at x = 0) for solid moduli K (κ in 2-D), G."""
     if dim == 3:
         return 4 * G * K / (3 * K * (1 - x) + 4 * G), G * (9 * K + 8 * G) / (15 * K + 20 * G - 6 * x * (K + 2 * G))
     if dim == 2:
@@ -51,22 +64,40 @@ def _hs_slopes(x: torch.Tensor, E: float, nu: float, dim: int) -> tuple[torch.Te
     raise ValueError("dim must be 2 or 3")
 
 
+def _hs_slopes(x: torch.Tensor, E: float, nu: float, dim: int) -> tuple[torch.Tensor, torch.Tensor]:
+    """K_HS / x and G_HS / x of the isotropic solid E, ν (plane stress in 2-D)."""
+    return _slopes(x, *_bulk_shear(E, nu, dim), dim)
+
+
 def hashin_shtrikman_moduli(x: torch.Tensor, E: float, nu: float, dim: int) -> tuple[torch.Tensor, torch.Tensor]:
-    """HS upper bounds (bulk, shear) of a porous solid with volume fraction ``x`` (module notes)."""
+    """HS upper bounds (bulk, shear) of a porous solid with volume fraction ``x`` (module notes; 2-D: plane stress)."""
     k, g = _hs_slopes(x, E, nu, dim)
     return x * k, x * g
 
 
+def hashin_shtrikman_bounds(x: Any, bulk: float, shear: float, dim: int) -> tuple[Any, Any]:
+    """HS upper bounds (bulk, shear) for void inclusions in a solid of bulk modulus ``bulk`` (3-D K, or 2-D κ of
+    the chosen plane convention) and shear modulus ``shear``; ``x`` array or tensor of volume fractions."""
+    if not (bulk > 0 and shear > 0):
+        raise ValueError("bulk > 0 and shear > 0 are required")
+    k, g = _slopes(x, float(bulk), float(shear), dim)
+    return x * k, x * g
+
+
+def hs_admissible_exponents(nu: float, dim: int, plane: str = "stress") -> tuple[float, float]:
+    """(p_bulk, p_shear): smallest SIMP exponents with x^p K ≤ K_HS and x^p G ≤ G_HS (module notes); 2-D for the
+    ``plane`` convention ("stress" | "strain")."""
+    K, G = _bulk_shear(1.0, nu, dim, plane)
+    if dim == 3:
+        return 1 + 3 * K / (4 * G), (15 * K + 20 * G) / (9 * K + 8 * G)
+    return 1 + K / G, 2 + 2 * G / K
+
+
 @cite("bendsoe_sigmund_1999", note="admissibility derived here from the HS bounds; agrees with the remembered form")
 def simp_admissible_penal(nu: float, dim: int) -> float:
-    """Smallest SIMP exponent with x^p E below the HS upper bounds of a porous solid (module notes)."""
-    if not -1 < nu < 0.5:
-        raise ValueError("-1 < nu < 0.5 is required")
-    if dim == 2:
-        return max(2 / (1 - nu), 4 / (1 + nu))
-    if dim == 3:
-        return max(3 * (1 - nu) / (2 * (1 - 2 * nu)), 15 * (1 - nu) / (7 - 5 * nu))
-    raise ValueError("dim must be 2 or 3")
+    """Smallest SIMP exponent with x^p E below the HS upper bounds of a porous solid (module notes; 2-D: plane
+    stress)."""
+    return max(hs_admissible_exponents(nu, dim, "stress"))
 
 
 @cite("sigmund_2007", note="modified SIMP E = Emin + x^p (E0 − Emin)")

@@ -1,8 +1,10 @@
 """Material data: elasticity (isotropic, orthotropic, rotated, plane stress / plane strain) and strengths.
 
-Voigt order is the library's (:mod:`toporlogy.fem.elements`): 3-D ``[xx, yy, zz, yz, xz, xy]`` with engineering shear
-strains, 2-D ``[xx, yy, xy]``. Everything here is plain NumPy (base layer); the finite elements, the stress fields and
-the failure criteria use these matrices.
+Voigt order is the library's (:data:`toporlogy.core.tensor.VOIGT_3D`): 3-D ``[xx, yy, zz, yz, xz, xy]`` with
+engineering shear strains, 2-D ``[xx, yy, xy]``. Everything here is plain NumPy (base layer); the finite elements, the
+stress fields and the failure criteria use these matrices. The tensor algebra (Voigt <-> tensor, rotation, symmetry
+and positive-definiteness checks) is :mod:`toporlogy.core.tensor` and :mod:`toporlogy.core.linear_elastic`; this
+module holds the configuration-facing material records and the 3-D -> 2-D reductions.
 
 Elasticity
 ----------
@@ -13,16 +15,26 @@ Elasticity
          [ −ν13/E1, −ν23/E2, 1/E3,  0, 0, 0 ],
          [ 0, 0, 0, 1/G23, 0, 0 ], [ 0, 0, 0, 0, 1/G13, 0 ], [ 0, 0, 0, 0, 0, 1/G12 ]]
 
-and C = S⁻¹; it refuses constants for which C is not positive definite (the material would release energy). An
-isotropic material is the special case E1 = E2 = E3 = E, G = E / (2(1 + ν)) (:meth:`Orthotropic.isotropic`).
+(:func:`toporlogy.core.linear_elastic.orthotropic_compliance`) and C = S⁻¹; it refuses constants for which S is not
+positive definite (:func:`toporlogy.core.linear_elastic.check_positive_definite`: Cholesky and the scaled Mandel
+eigenvalue; the material would release energy). An isotropic material is the special case E1 = E2 = E3 = E,
+G = E / (2(1 + ν)) (:meth:`Orthotropic.isotropic`). A single ν_ij may lie outside the isotropic range (−1, 1/2).
 
 The material axes are given by a rotation ``R`` whose columns are the material axes 1, 2, 3 in global coordinates
 (:func:`rotation_from_axes`, :func:`rotation_about_z`). The stiffness is rotated as the fourth-order tensor,
-C'_ijkl = R_ip R_jq R_kr R_ls C_pqrs, not by Voigt transformation matrices, so there is no factor-of-two bookkeeping.
+C'_ijkl = R_ip R_jq R_kr R_ls C_pqrs (:func:`toporlogy.core.tensor.rotate4`), not by Voigt transformation matrices,
+so there is no factor-of-two bookkeeping. An input C that is not symmetric is refused, not symmetrised; the output is
+averaged with its transpose only to remove rounding-level asymmetry of the einsum.
 
-2-D: :func:`plane_stress` eliminates σzz = σyz = σxz = 0 through the compliance (exact for any orientation);
-:func:`plane_strain` keeps the in-plane rows and columns of C (εzz = εyz = εxz = 0); :func:`out_of_plane_row` is the
-row of C that gives σzz from the in-plane strains under plane strain (failure criteria need it).
+2-D: :func:`plane_stress` eliminates σzz = σyz = σxz = 0 through the compliance, Q = (S_pp)⁻¹, which is the Schur
+complement C_pp − C_po C_oo⁻¹ C_op of all three out-of-plane stresses (exact for any orientation; with coupling of
+the out-of-plane shears, as after a rotation that is not about z, eliminating σzz alone is wrong, see
+``tests/toporlogy/test_linear_elastic.py``). :func:`plane_stress_recovery` gives the out-of-plane strains
+[εzz, γyz, γxz] and :func:`plane_stress_derivative` dQ for a change dC. :func:`plane_strain` keeps the in-plane rows
+and columns of C (εzz = εyz = εxz = 0); :func:`plane_strain_recovery` gives [σzz, σyz, σxz] from the in-plane
+strains and :func:`out_of_plane_row` its σzz row (failure criteria need it). The 2-D kinematics are assumptions: plane
+stress for thin plates loaded in their plane, plane strain for long prismatic bodies; neither represents bending or
+out-of-plane warping.
 
 Normalisation: the finite elements are built for a unit modulus and scaled by the interpolation's E0. A material's
 ``reference_modulus`` is that E0 (E for isotropic, E1 for orthotropic); :func:`unit_elasticity` returns D / E0.
@@ -51,15 +63,18 @@ from typing import Any
 
 import numpy as np
 
-__all__ = ["VOIGT_3D", "Orthotropic", "Strength", "OrthotropicStrength", "rotation_from_axes", "rotation_about_z",
+from toporlogy.core import tensor as T
+from toporlogy.core.linear_elastic import check_positive_definite, isotropic_moduli, orthotropic_compliance
+
+__all__ = ["Orthotropic", "Strength", "OrthotropicStrength", "rotation_from_axes", "rotation_about_z",
            "rotations_from_axes", "rotations_about_z", "rotate_stiffness", "plane_stress", "plane_strain",
-           "out_of_plane_row", "out_of_plane_rows", "unit_elasticity", "unit_elasticity_field", "unique_matrices",
+           "out_of_plane_row", "out_of_plane_rows", "plane_stress_recovery", "plane_strain_recovery",
+           "plane_stress_derivative", "unit_elasticity", "unit_elasticity_field", "unique_matrices",
            "elasticity_from_config", "strength_from_config", "PLANE_MODES"]
 
-#: tensor index pairs of the 3-D Voigt components (toporlogy order)
-VOIGT_3D = ((0, 0), (1, 1), (2, 2), (1, 2), (0, 2), (0, 1))
 PLANE_MODES = ("stress", "strain")
 _IN_PLANE = [0, 1, 5]                       # xx, yy, xy inside the 3-D Voigt vector
+_OUT_OF_PLANE = [2, 3, 4]                   # zz, yz, xz
 
 
 @dataclass(frozen=True)
@@ -80,20 +95,17 @@ class Orthotropic:
     nu23: float
 
     def __post_init__(self) -> None:
-        for k in ("E1", "E2", "E3", "G12", "G13", "G23"):
-            if not float(getattr(self, k)) > 0:
-                raise ValueError(f"{k} > 0 is required")
-        w = np.linalg.eigvalsh(0.5 * (self.compliance() + self.compliance().T))
-        if not w.min() > 0:
-            raise ValueError("the elastic constants do not give a positive definite stiffness (check the Poisson "
-                             f"ratios: smallest compliance eigenvalue {w.min():.3g})")
+        S = self.compliance()                       # checks E_i > 0, G_ij > 0
+        try:
+            check_positive_definite(S, "compliance", "S")
+        except ValueError as e:
+            raise ValueError(f"the elastic constants do not give a positive definite stiffness (check the Poisson "
+                             f"ratios; reciprocity nu_ji = nu_ij E_j / E_i is built in): {e}") from None
 
     @classmethod
     def isotropic(cls, E: float, nu: float) -> Orthotropic:
         """The isotropic material E, ν (G = E / (2(1 + ν)))."""
-        if not -1 < nu < 0.5:
-            raise ValueError("-1 < nu < 0.5 is required")
-        G = E / (2 * (1 + nu))
+        G = isotropic_moduli(E=E, nu=nu).G                  # refuses E <= 0 and nu outside (-1, 1/2)
         return cls(E, E, E, G, G, G, nu, nu, nu)
 
     @property
@@ -102,14 +114,8 @@ class Orthotropic:
 
     def compliance(self) -> np.ndarray:
         """S (6, 6) in the material axes, Voigt [11, 22, 33, 23, 13, 12], engineering shear strains."""
-        E1, E2, E3 = float(self.E1), float(self.E2), float(self.E3)
-        S = np.zeros((6, 6))
-        S[0, 0], S[1, 1], S[2, 2] = 1 / E1, 1 / E2, 1 / E3
-        S[0, 1] = S[1, 0] = -float(self.nu12) / E1
-        S[0, 2] = S[2, 0] = -float(self.nu13) / E1
-        S[1, 2] = S[2, 1] = -float(self.nu23) / E2
-        S[3, 3], S[4, 4], S[5, 5] = 1 / float(self.G23), 1 / float(self.G13), 1 / float(self.G12)
-        return S
+        return orthotropic_compliance(self.E1, self.E2, self.E3, self.G12, self.G13, self.G23, self.nu12, self.nu13,
+                                      self.nu23)
 
     def stiffness(self, R: np.ndarray | None = None) -> np.ndarray:
         """C (6, 6) in global axes for material axes ``R`` (columns = axes 1, 2, 3; None = aligned)."""
@@ -176,31 +182,45 @@ def unique_matrices(A: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
     return u.reshape((len(u),) + A.shape[1:]), np.asarray(idx, np.int64).reshape(-1)
 
 
-def _tensor(C6: np.ndarray) -> np.ndarray:
-    C = np.zeros((3, 3, 3, 3))
-    for a, (i, j) in enumerate(VOIGT_3D):
-        for b, (k, m) in enumerate(VOIGT_3D):
-            for p, q in {(i, j), (j, i)}:
-                for r, s in {(k, m), (m, k)}:
-                    C[p, q, r, s] = C6[a, b]
-    return C
-
-
 def rotate_stiffness(C6: np.ndarray, R: np.ndarray) -> np.ndarray:
-    """C'_ijkl = R_ip R_jq R_kr R_ls C_pqrs in Voigt form (engineering shear strains on both sides)."""
+    """C'_ijkl = R_ip R_jq R_kr R_ls C_pqrs in Voigt form (engineering shear strains on both sides). ``R`` (3, 3)
+    orthogonal to 1e-12 (a reflection gives the same even-order tensor as −R and is accepted); C6 symmetric."""
     Rm = np.asarray(R, float)
-    if Rm.shape != (3, 3) or not np.allclose(Rm.T @ Rm, np.eye(3), atol=1e-12):
+    if Rm.shape != (3, 3):
         raise ValueError("R must be a 3 x 3 orthogonal matrix")
-    Ct = np.einsum("ip,jq,kr,ls,pqrs->ijkl", Rm, Rm, Rm, Rm, _tensor(np.asarray(C6, float)))
-    out = np.array([[Ct[i, j, k, m] for (k, m) in VOIGT_3D] for (i, j) in VOIGT_3D])
+    T.check_rotation(Rm, proper=False)
+    C = _check_C6(C6)
+    out = T.tensor_to_stiffness(T.rotate4(T.stiffness_to_tensor(C), Rm))
     return 0.5 * (out + out.T)
 
 
+def _check_C6(C6: np.ndarray) -> np.ndarray:
+    C = np.asarray(C6, float)
+    if C.shape != (6, 6):
+        raise ValueError(f"C must be (6, 6), got {C.shape}")
+    return T.check_symmetric(C, T.SYMMETRY_RTOL, "C")
+
+
 def plane_stress(C6: np.ndarray) -> np.ndarray:
-    """In-plane stiffness (3, 3) [xx, yy, xy] with σzz = σyz = σxz = 0."""
-    S = np.linalg.inv(np.asarray(C6, float))
+    """In-plane stiffness (3, 3) [xx, yy, xy] with σzz = σyz = σxz = 0: Q = (S_pp)⁻¹ (module notes)."""
+    S = np.linalg.inv(_check_C6(C6))
     Q = np.linalg.inv(S[np.ix_(_IN_PLANE, _IN_PLANE)])
     return 0.5 * (Q + Q.T)
+
+
+def plane_stress_recovery(C6: np.ndarray) -> np.ndarray:
+    """(3, 3) matrix giving the out-of-plane strains [εzz, γyz, γxz] = S_op Q [εxx, εyy, γxy] under plane stress."""
+    S = np.linalg.inv(_check_C6(C6))
+    return S[np.ix_(_OUT_OF_PLANE, _IN_PLANE)] @ plane_stress(C6)
+
+
+def plane_stress_derivative(C6: np.ndarray, dC6: np.ndarray) -> np.ndarray:
+    """dQ of :func:`plane_stress` for a symmetric change dC: dQ = Q S_p: dC S_:p Q with S = C⁻¹ (from dS = −S dC S
+    and dQ = −Q dS_pp Q)."""
+    S = np.linalg.inv(_check_C6(C6))
+    Q = plane_stress(C6)
+    Sp = S[_IN_PLANE, :]
+    return Q @ Sp @ np.asarray(dC6, float) @ Sp.T @ Q
 
 
 def plane_strain(C6: np.ndarray) -> np.ndarray:
@@ -208,8 +228,14 @@ def plane_strain(C6: np.ndarray) -> np.ndarray:
     return np.asarray(C6, float)[np.ix_(_IN_PLANE, _IN_PLANE)].copy()
 
 
+def plane_strain_recovery(C6: np.ndarray) -> np.ndarray:
+    """(3, 3) rows [σzz, σyz, σxz] = rows · [εxx, εyy, γxy] under plane strain (σyz, σxz vanish unless the
+    out-of-plane shears couple to the in-plane strains)."""
+    return np.asarray(C6, float)[np.ix_(_OUT_OF_PLANE, _IN_PLANE)].copy()
+
+
 def out_of_plane_row(C6: np.ndarray) -> np.ndarray:
-    """(3,) row with σzz = row · [εxx, εyy, γxy] under plane strain."""
+    """(3,) row with σzz = row · [εxx, εyy, γxy] under plane strain (first row of :func:`plane_strain_recovery`)."""
     return np.asarray(C6, float)[2, _IN_PLANE].copy()
 
 

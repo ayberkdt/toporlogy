@@ -74,14 +74,22 @@ def fingerprint() -> dict[str, np.ndarray]:
     out["expand_plane"] = st.expand_plane(torch.as_tensor(s[:, :3]), torch.as_tensor(s[:, 3])).numpy()
     out["vm_matrix2"], out["vm_matrix3"] = von_mises_matrix(2), von_mises_matrix(3)
     out["verify_vm"] = von_mises(s)
+    if hasattr(nl, "_green"):                    # before: module-private helpers of fem.nonlinear
+        green, voigt, detm1 = nl._green, nl._voigt, nl._det_minus_one
+    else:                                        # after: core.tensor
+        from toporlogy.core import tensor as T
+        green, detm1 = T.green_lagrange, T.jacobian_minus_one
+
+        def voigt(E: np.ndarray, dim: int) -> np.ndarray:
+            return T.strain_to_voigt(E, rtol=None)
     for dim in (2, 3):
         H = 0.3 * rng.standard_normal((25, dim, dim))
-        out[f"nl_green{dim}"] = nl._green(H)
-        out[f"nl_voigt{dim}"] = nl._voigt(nl._green(H), dim)
-        out[f"nl_detm1_{dim}"] = nl._det_minus_one(H)
-        out[f"nl_detm1_small{dim}"] = nl._det_minus_one(1e-9 * H)
+        out[f"nl_green{dim}"] = green(H)
+        out[f"nl_voigt{dim}"] = voigt(green(H), dim)
+        out[f"nl_detm1_{dim}"] = detm1(H)
+        out[f"nl_detm1_small{dim}"] = detm1(1e-9 * H)
     H3 = 0.2 * rng.standard_normal((25, 3, 3))
-    S, C, psi = nl.neo_hooke_response(nl._green(H3), nl._det_minus_one(H3), 1.3, 0.4, True)
+    S, C, psi = nl.neo_hooke_response(green(H3), detm1(H3), 1.3, 0.4, True)
     out["nh_S"], out["nh_C"], out["nh_psi"] = S, C, psi
     out["simp_penal"] = np.array([[interp.simp_admissible_penal(v, d) for v in nus] for d in (2, 3)])
     x = torch.linspace(0.0, 1.0, 11, dtype=torch.float64)
