@@ -1,10 +1,15 @@
-# toporlogy
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/banner-dark.svg">
+  <img src="docs/assets/banner-light.svg" width="100%"
+       alt="toporlogy: topology optimisation you can take apart. A cantilever designed by toporlogy, clamped on the left and loaded at the right, coloured by strain energy density, next to the same run at iterations 6, 18 and 45.">
+</picture>
 
-**Topology optimisation you can take apart.** Density-based structural optimisation on regular 2-D and 3-D grids,
-built from small, replaceable pieces: geometry and boundary conditions, a differentiable design chain, linear FEM
-with an exact adjoint, four optimisers (OC, MMA, GCMMA, SiMPL), stress, buckling, eigenfrequency, manufacturing and
-connectivity constraints, a GPU multigrid solver, and a post-processing pipeline that turns the density field into a
-checked, printable surface.
+**toporlogy** is density-based structural optimisation on regular 2-D and 3-D grids, built from small, replaceable
+pieces: geometry and boundary conditions, a differentiable design chain, linear FEM with an exact adjoint, four
+optimisers (OC, MMA, GCMMA, SiMPL), stress, buckling, eigenfrequency, manufacturing and connectivity constraints, a
+GPU multigrid solver, and a post-processing pipeline that turns the density field into a checked, printable surface.
+The banner is one of its results ([`docs/assets/make_banner.py`](docs/assets/make_banner.py) re-runs and redraws
+it).
 
 Derivatives come from PyTorch autograd plus one hand-written adjoint for the linear solve. A new objective or
 constraint is therefore a forward computation and a finite-difference test, nothing more
@@ -60,7 +65,7 @@ time, grey fraction). The run folder holds everything needed to reproduce and in
 | `history.jsonl` | one row per iteration: objective, constraints, design change, schedule state |
 | `result.npz` | final design vector `x` and physical density `xphys` |
 | `result.json` | iterations, convergence flag, time, objective, constraint values, settings |
-| `summary.json` | objective and constraints of the returned design, post-processing results, status |
+| `summary.json` | objective and constraints of the returned design, each constraint's verdict (PASS / FAIL / UNVERIFIED) and the source of its value, post-processing results, status |
 
 A real part, from primitives to a printable surface:
 
@@ -79,8 +84,9 @@ member size, keeps the part in one body, and exports a smoothed STL with a quali
 | `compare RUN_DIR...` | several runs side by side |
 | `list [KIND]` | every registered component with its parameters and units |
 
-Exit codes: 0 ok, 1 run finished but failed a check (not converged, constraint violated, a post step failed),
-2 configuration error.
+Exit codes: 0 ok, 1 run finished but failed a check (not converged, constraint violated or unverified, objective
+unverified, a post step failed), 2 configuration error. Only a value computed on the returned design can PASS or
+FAIL; a value read from an older run folder or from the last iterate is UNVERIFIED and never shown as "ok".
 
 ## Configuration
 
@@ -110,7 +116,7 @@ run: {max_iter: 300, tol: 0.01}
 Seven examples cover 2-D and 3-D compliance, multiple load cases, eigenfrequency maximisation, symmetry with an
 additive-manufacturing filter, connectivity and the full post-processing chain (`examples/`); five more in
 `examples/research/` cover stress constraints (aggregated and augmented Lagrangian), buckling, a compliant inverter
-and SiMPL with a PDE filter. 95 components in 13 kinds are available from YAML; `python -m toporlogy list` documents them and
+and SiMPL with a PDE filter. 96 components in 13 kinds are available from YAML; `python -m toporlogy list` documents them and
 [`docs/registry.md`](docs/registry.md) shows how to add one in a single line.
 
 ## Python API
@@ -150,7 +156,7 @@ module, class and config component has one name; there are no alias modules or s
 | Responses | `optimization` (`responses`, `robust`, `lengthscale`, `connectivity`, `dynamics`, `stress`, `buckling`, `compose`) | compliance, volume; robust minimum solid/void size; maximum thickness; one-body constraints; eigenfrequencies; von Mises stress; buckling load factor; displacement; sums and ratios of responses |
 | Method toolkit | `optimization` (`aggregates`, `local`, `benchmark`) | six smooth aggregates with proven bounds; any local criterion as one aggregated constraint or as an augmented Lagrangian; evaluation of the thresholded design and comparison tables |
 | Optimisation | `optimizers`, `optimization.study` | OC (one constraint), MMA and GCMMA (any number), SiMPL (one volume-type constraint), β continuation, multiplier updates, move-limit control; run folders with git revision |
-| Post-processing | `post` | density → signed distance → topology-preserving opening/closing → exact functional faces → smooth surface → manufacturing checks → T10 re-analysis → STL/PLY/OBJ |
+| Post-processing | `post` | density → signed distance → topology-preserving opening/closing → exact functional faces → smooth surface (optionally clipped to the exact CAD envelope, `envelope: cad`) → manufacturing checks → T10 re-analysis with a mesh-convergence verdict → STL/PLY/OBJ; symmetry report of the design and the surface (`symmetry_check`) |
 
 ## Methods added on 21 Nov 2026
 
@@ -197,6 +203,12 @@ re-optimising: repaired designs measured 1.07–2.61 × the volume bound. The ga
 and one whose constraints cannot all be evaluated: robust and eroded-field responses need the design chain, which a
 repaired density does not have (on `lbracket_bore3d` none of the constraints can be evaluated).
 
+On a symmetric problem the ties can be mirrored (`connectivity.symmetry`, or the planes of a `symmetry` chain link).
+On the bracket of [`docs/olcumler/simetrik_baglar.md`](docs/olcumler/simetrik_baglar.md) this makes the frozen
+cells symmetric but not the design (compliance +2.2 %); an exactly symmetric design needs `SymmetryTying`
+(+1.5 %). Mirrored ties join every pair of interfaces through frozen cells, so the gate's narrowest-neck measure is
+then undefined. The default is unchanged.
+
 ## Evidence
 
 Every claim names the test or measurement behind it. The regression oracles are earlier drivers of this repository:
@@ -204,21 +216,28 @@ they show that the implementation did not change, not that it is independently c
 
 | Check | Reference | Result | Source |
 |:---|:---|:---|:---|
+| Compliance problems against published codes | NumPy transcriptions of Top88 (`mbb2d.yaml`) and Top3D (24 × 8 × 4), tolerances written before the first run | objective and gradient ≤ 2.1e-11; 50- and 30-iteration histories ≤ 1e-11; same iteration count to convergence (158, 141) | `tests/toporlogy/test_independent_vv.py` |
+| T10 mesh convergence | three-grid apparent order, Richardson value, fine-grid GCI | box cantilever: 0.8 / 0.5 / 0.32 CONVERGED (order 1.47, GCI 0.07 %), 2.0 … 0.5 NOT CONVERGED | `tests/toporlogy/test_t10_convergence.py` |
 | 3-D optimisation history | earlier voxel driver | ≤ 3.4e-11 relative, 7 scenarios | `tests/toporlogy/test_regression.py` |
 | 2-D half-MBB history | repository's Python port of top88 | 1.4e-11 relative | `tests/toporlogy/test_regression.py` |
 | Gradients of every link and response | central finite differences | ≤ 1e-6 relative | `tests/toporlogy/test_gradients.py` |
 | Elements H8, H8IM, Q4, T10 | patch test, uniform tension | exact to 1e-12 (T10: 1e-9) | `tests/toporlogy/test_core.py`, `test_post_verify.py` |
 | First bending frequency | Euler–Bernoulli cantilever | 0.997–1.001 (H8IM) | `tests/toporlogy/test_modal.py` |
 | Multigrid solver | PARDISO, same system | 7.2× faster at 163 k DOF; 10⁶ elements to 1e-8 | `docs/olcumler/A2.md` |
-| Post-processing, 12 inputs | pre-registered criteria | 9/12 pass the geometric criteria, 7/12 all criteria incl. exact-solid volume and T10 mesh convergence; 12/12 watertight with topology preserved | `docs/olcumler/robustness.json`, `tests/toporlogy/test_sweep_post.py` |
-| Reproducibility | two runs in separate processes | the seven examples bitwise identical (CPU, SuperLU) | `tests/toporlogy/test_baseline.py` |
+| Post-processing, 12 inputs | pre-registered criteria | 9/12 pass the geometric criteria, 7/12 all criteria incl. exact-solid volume and a T10 check at two tet sizes (an earlier criterion that the mesh-convergence test above replaces); 12/12 watertight with topology preserved | `docs/olcumler/robustness.json`, `tests/toporlogy/test_sweep_post.py` |
+| Reproducibility | stored baseline of the seven examples | bitwise in the recorded reference environment; elsewhere scalars to 1e-6 relative (Linux: largest difference 1.5e-10) | `tests/toporlogy/test_baseline.py` |
 | Stress, buckling, GCMMA, SiMPL, PDE filter | closed forms, invariants, finite differences | table above | `tests/toporlogy/test_stress.py`, `test_buckling.py`, `test_gcmma.py`, `test_simpl.py`, `test_pde_filter.py`, `test_aggregates.py` |
 
 ## Known limitations
 
-- **No independent reference yet:** no comparison with the original DTU top88/Top3D codes or NAFEMS benchmarks.
-- **T10 mesh convergence is not shown:** on the cantilever the T10/voxel compliance ratio changed by 12.4 % between
-  the two tet sizes; on the MBB the finer tet size barely refined the mesh.
+- **Independent reference for compliance only:** Top88 and Top3D agree to rounding; stress and buckling have not
+  been compared with independent codes, there is no NAFEMS benchmark (curved boundaries cannot be built on the
+  regular grid), and the Q4 comparison is not independent (`ke_q4` comes from top88).
+- **T10 convergence of finished parts:** `post.verify.mesh_convergence` gives a verdict, but a finished surface is
+  usually finer than the tet sizes worth solving. gmsh keeps a surface it cannot reparametrise ("discrete" mode), so
+  only the interior refines; on `cantilever3d` the finest mesh of a converging sequence (about 750 000 T10 elements)
+  does not fit in 16 GB. The R-01 experiment that needs it is pre-registered but not run
+  ([`docs/olcumler/r01_onkayit.md`](docs/olcumler/r01_onkayit.md)).
 - **`Result.converged`** means "design change below `tol` and continuation finished"; it does not include constraint
   feasibility or optimality. Check `summary.json` → `status` and the constraint values.
 - **No paper text behind the methods of 21 Nov 2026:** records and abstracts only; SiMPL and the augmented
@@ -228,28 +247,27 @@ they show that the implementation did not change, not that it is independently c
   relaxed constraint on the grey design, not the stress limit on the thresholded one.
 - **Buckling:** plain `Elasticity` only (direct solver, axis-aligned supports, one support set); no regularisation
   of the stress field against localised modes; the number of aggregated modes is fixed by the user.
-- **Baseline on another platform:** in numerical mode on Linux / Python 3.13 six of the seven examples agree with
-  the Windows reference to 1e-6; `lbracket_bore3d` differs by 0.6 % in the objective (measured 21 Nov 2026 on the
-  unchanged code of `5f97b86`, cause not investigated).
 - **MMA** is plain MMA: no global convergence guarantee; a two-cycle has been seen without an active constraint.
   GCMMA removes it at the cost of extra solves.
 - **OC and SiMPL** handle exactly one constraint, and only one that needs no state solve (rejected at build
-  otherwise).
+  otherwise). OC's bisection result depends on the constraint scale (Top3D comparison: rounding-level agreement
+  when the scale is a power of 2, 1.9e-3 at 1/0.3).
 - **Multigrid** is 3-D only, H8/H8IM only, and a separate physics class (`ElasticityGMG`), not a pluggable solver.
 - **Geometry:** bore detection is axis-aligned only; CSG Booleans give a distance bound, not the exact distance.
 - **Not provided:** thermoelasticity, nonlinear analysis, multi-material, de-homogenisation, neural
   parameterisations; STEP or other B-rep output (STL/PLY/OBJ only).
 - **RAMP** interpolation is experimental and used by no default.
 
-The full inventory, the open findings and the migration plan are in
+The current roadmap, the status of every item and the open decisions are in
+[`docs/yol_haritasi_2026-11-18.md`](docs/yol_haritasi_2026-11-18.md); the full inventory and the migration plan in
 [`docs/gelistirme_plani.md`](docs/gelistirme_plani.md); the method decisions in
 [`docs/mimari_plan.md`](docs/mimari_plan.md); the literature survey and open problems in
-[`docs/literatur_2026-11-21.md`](docs/literatur_2026-11-21.md).
+[`docs/literatur_2026-11-21.md`](docs/literatur_2026-11-21.md); measurements in [`docs/olcumler/`](docs/olcumler/).
 
 ## Development
 
 ```bash
-python -m pytest tests/toporlogy -m "not slow"                  # main suite (5–10 min; 521 tests on 21 Nov 2026)
+python -m pytest tests/toporlogy -m "not slow"                  # main suite (594 tests on 25 Nov 2026)
 python -m pytest tests/toporlogy/test_baseline.py -m baseline   # bitwise baseline of the examples (~3.5 min)
 python -m pytest tests/toporlogy -m slow                        # pre-registered sweeps (hours; gmsh for T10)
 ```
@@ -258,7 +276,7 @@ Guard rails for refactoring (`tests/toporlogy`):
 
 | Test | Fails when |
 |:---|:---|
-| `test_baseline.py` | any example's objective, constraints, design or exported surface changes by one bit |
+| `test_baseline.py` | any example's objective, constraints, design or exported surface changes by one bit (in the recorded reference environment; elsewhere a scalar changes by more than 1e-6 relative) |
 | `test_api_surface.py` | a public name disappears or points to another object; `toporlogy list` output changes |
 | `test_architecture.py` | an import crosses the layer rules, or importing toporlogy loads torch before PARDISO |
 
@@ -270,7 +288,9 @@ After an intended change, rewrite the snapshot and say why in the commit:
   path separator), the MKL DLLs through `TOPORLOGY_MKL_BIN`.
 - Under heavy CPU load, multithreaded MKL and torch can be 10–25× slower than single-threaded; set
   `torch.set_num_threads` in long runs.
-- Static checks: `ruff check src tests` (clean); `mypy src/toporlogy` (existing errors; a change must not add any).
+- Static checks: `ruff check src/toporlogy tests/toporlogy` and `mypy src/toporlogy`, both clean and both run by CI
+  (`.github/workflows/tests.yml`); PARDISO, gmsh/T10 and the Linux baseline run in `backends.yml`. A test that needs
+  a missing backend reports it as NOT VERIFIED, never as passed.
 
 ## Licence
 
