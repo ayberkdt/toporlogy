@@ -1,0 +1,1316 @@
+{
+ "git_sha": "8d444535a6c9c378525f1aaf3923561bac682bd7",
+ "core": {
+  "Study": {
+   "module": "toporlogy.optimization.study",
+   "imports": [
+    "toporlogy.core.domain",
+    "toporlogy.design.chain",
+    "toporlogy.optimization.diagnostics",
+    "toporlogy.optimization.responses",
+    "toporlogy.optimizers.base",
+    "toporlogy.optimizers.schedule"
+   ],
+   "imports_lazy": [
+    "toporlogy.design.phases"
+   ],
+   "imported_by": [
+    "toporlogy",
+    "toporlogy.optimization.dynamics",
+    "toporlogy.optimization.robust"
+   ],
+   "imported_by_lazy": [
+    "toporlogy.configuration.build",
+    "toporlogy.optimization.connectivity"
+   ]
+  },
+  "EvalContext": {
+   "module": "toporlogy.optimization.responses",
+   "imports": [
+    "toporlogy.core.domain"
+   ],
+   "imports_lazy": [],
+   "imported_by": [
+    "toporlogy",
+    "toporlogy.boundary.loads",
+    "toporlogy.optimization.benchmark",
+    "toporlogy.optimization.buckling",
+    "toporlogy.optimization.compose",
+    "toporlogy.optimization.connectivity",
+    "toporlogy.optimization.dynamics",
+    "toporlogy.optimization.lengthscale",
+    "toporlogy.optimization.local",
+    "toporlogy.optimization.nonlinear",
+    "toporlogy.optimization.robust",
+    "toporlogy.optimization.stress",
+    "toporlogy.optimization.study"
+   ],
+   "imported_by_lazy": [
+    "toporlogy.configuration.components.core"
+   ]
+  },
+  "Domain": {
+   "module": "toporlogy.core.domain",
+   "imports": [],
+   "imports_lazy": [],
+   "imported_by": [
+    "toporlogy",
+    "toporlogy.boundary.cases",
+    "toporlogy.boundary.constrained",
+    "toporlogy.boundary.loads",
+    "toporlogy.boundary.part",
+    "toporlogy.boundary.selectors",
+    "toporlogy.design.chain",
+    "toporlogy.design.interp",
+    "toporlogy.design.manufacturing",
+    "toporlogy.design.pde_filter",
+    "toporlogy.design.phases",
+    "toporlogy.fem.elastic",
+    "toporlogy.fem.elastic_gmg",
+    "toporlogy.fem.heat",
+    "toporlogy.fem.modal",
+    "toporlogy.fem.nonlinear",
+    "toporlogy.geometry",
+    "toporlogy.optimization.connectivity",
+    "toporlogy.optimization.dynamics",
+    "toporlogy.optimization.responses",
+    "toporlogy.optimization.study"
+   ],
+   "imported_by_lazy": [
+    "toporlogy.configuration.components.core",
+    "toporlogy.configuration.components.geometry"
+   ]
+  },
+  "Elasticity": {
+   "module": "toporlogy.fem.elastic",
+   "imports": [
+    "toporlogy.core.domain",
+    "toporlogy.fem.elements",
+    "toporlogy.fem.mechanisms",
+    "toporlogy.solvers.direct",
+    "toporlogy.solvers.ordering"
+   ],
+   "imports_lazy": [],
+   "imported_by": [
+    "toporlogy.boundary.cases",
+    "toporlogy.boundary.constrained",
+    "toporlogy.boundary.loads",
+    "toporlogy.fem",
+    "toporlogy.fem.buckling",
+    "toporlogy.fem.elastic_gmg",
+    "toporlogy.fem.heat",
+    "toporlogy.fem.modal",
+    "toporlogy.fem.nonlinear",
+    "toporlogy.optimization.buckling",
+    "toporlogy.optimization.connectivity"
+   ],
+   "imported_by_lazy": [
+    "toporlogy.fem.elastic_gmg"
+   ]
+  },
+  "ElasticityGMG": {
+   "module": "toporlogy.fem.elastic_gmg",
+   "imports": [
+    "toporlogy.core.domain",
+    "toporlogy.fem.elastic",
+    "toporlogy.fem.elements",
+    "toporlogy.fem.mechanisms",
+    "toporlogy.solvers",
+    "toporlogy.solvers.gmg",
+    "toporlogy.solvers.gmg_kernels"
+   ],
+   "imports_lazy": [
+    "toporlogy.fem.elastic"
+   ],
+   "imported_by": [],
+   "imported_by_lazy": [
+    "toporlogy.configuration.components.physics",
+    "toporlogy.fem"
+   ]
+  },
+  "NonlinearElasticity": {
+   "module": "toporlogy.fem.nonlinear",
+   "imports": [
+    "toporlogy.core.domain",
+    "toporlogy.core.material",
+    "toporlogy.fem.elastic",
+    "toporlogy.fem.elements",
+    "toporlogy.fem.mechanisms",
+    "toporlogy.references",
+    "toporlogy.solvers.direct"
+   ],
+   "imports_lazy": [],
+   "imported_by": [],
+   "imported_by_lazy": [
+    "toporlogy.configuration.components.physics",
+    "toporlogy.configuration.components.responses",
+    "toporlogy.optimization.nonlinear"
+   ]
+  },
+  "MultiPhaseSIMP": {
+   "module": "toporlogy.design.phases",
+   "imports": [
+    "toporlogy.core.domain",
+    "toporlogy.references"
+   ],
+   "imports_lazy": [],
+   "imported_by": [],
+   "imported_by_lazy": [
+    "toporlogy.configuration.components.core",
+    "toporlogy.configuration.components.design",
+    "toporlogy.execution.runner",
+    "toporlogy.optimization.study"
+   ]
+  },
+  "registry": {
+   "module": "toporlogy.configuration.registry",
+   "imports": [],
+   "imports_lazy": [],
+   "imported_by": [
+    "toporlogy.configuration",
+    "toporlogy.configuration.build",
+    "toporlogy.configuration.catalog",
+    "toporlogy.configuration.components.boundary",
+    "toporlogy.configuration.components.core",
+    "toporlogy.configuration.components.design",
+    "toporlogy.configuration.components.geometry",
+    "toporlogy.configuration.components.physics",
+    "toporlogy.configuration.components.responses",
+    "toporlogy.configuration.components.schedules",
+    "toporlogy.configuration.helpers",
+    "toporlogy.configuration.post_steps",
+    "toporlogy.configuration.resolve",
+    "toporlogy.configuration.schema",
+    "toporlogy.execution.cli"
+   ],
+   "imported_by_lazy": [
+    "toporlogy.configuration.catalog"
+   ]
+  },
+  "build": {
+   "module": "toporlogy.configuration.build",
+   "imports": [
+    "toporlogy.configuration.registry",
+    "toporlogy.configuration.resolve"
+   ],
+   "imports_lazy": [
+    "toporlogy.boundary",
+    "toporlogy.configuration.catalog",
+    "toporlogy.configuration.helpers",
+    "toporlogy.design.chain",
+    "toporlogy.design.manufacturing",
+    "toporlogy.optimization.connectivity",
+    "toporlogy.optimization.robust",
+    "toporlogy.optimization.study"
+   ],
+   "imported_by": [
+    "toporlogy.execution.cli",
+    "toporlogy.execution.runner"
+   ],
+   "imported_by_lazy": [
+    "toporlogy.configuration.catalog"
+   ]
+  },
+  "references": {
+   "module": "toporlogy.references",
+   "imports": [],
+   "imports_lazy": [],
+   "imported_by": [
+    "toporlogy.design.chain",
+    "toporlogy.design.interp",
+    "toporlogy.design.manufacturing",
+    "toporlogy.design.pde_filter",
+    "toporlogy.design.phases",
+    "toporlogy.fem.buckling",
+    "toporlogy.fem.elements",
+    "toporlogy.fem.nonlinear",
+    "toporlogy.geometry",
+    "toporlogy.optimization.aggregates",
+    "toporlogy.optimization.benchmark",
+    "toporlogy.optimization.buckling",
+    "toporlogy.optimization.lengthscale",
+    "toporlogy.optimization.local",
+    "toporlogy.optimization.robust",
+    "toporlogy.optimization.strength",
+    "toporlogy.optimization.stress",
+    "toporlogy.optimizers._mma_core",
+    "toporlogy.optimizers.gcmma",
+    "toporlogy.optimizers.mma",
+    "toporlogy.optimizers.oc",
+    "toporlogy.optimizers.simpl",
+    "toporlogy.post.export",
+    "toporlogy.post.mesh",
+    "toporlogy.post.smooth",
+    "toporlogy.post.verify",
+    "toporlogy.references._aero",
+    "toporlogy.references._cad",
+    "toporlogy.references._composites",
+    "toporlogy.references._core",
+    "toporlogy.references._fem",
+    "toporlogy.references._fem_dynamics",
+    "toporlogy.references._materials",
+    "toporlogy.references._optimization",
+    "toporlogy.references._structures",
+    "toporlogy.references._topopt_methods",
+    "toporlogy.solvers.ordering"
+   ],
+   "imported_by_lazy": []
+  },
+  "material": {
+   "module": "toporlogy.core.material",
+   "imports": [],
+   "imports_lazy": [],
+   "imported_by": [
+    "toporlogy.fem.nonlinear",
+    "toporlogy.optimization.strength"
+   ],
+   "imported_by_lazy": [
+    "toporlogy.configuration.components.responses",
+    "toporlogy.configuration.helpers",
+    "toporlogy.fem.elements"
+   ]
+  },
+  "elements": {
+   "module": "toporlogy.fem.elements",
+   "imports": [
+    "toporlogy.references"
+   ],
+   "imports_lazy": [
+    "toporlogy.core.material"
+   ],
+   "imported_by": [
+    "toporlogy.fem.buckling",
+    "toporlogy.fem.elastic",
+    "toporlogy.fem.elastic_gmg",
+    "toporlogy.fem.nonlinear",
+    "toporlogy.optimization.stress"
+   ],
+   "imported_by_lazy": [
+    "toporlogy.fem.buckling"
+   ]
+  },
+  "T10 (verify)": {
+   "module": "toporlogy.post.verify",
+   "imports": [
+    "toporlogy.references"
+   ],
+   "imports_lazy": [
+    "toporlogy.fem",
+    "toporlogy.geometry",
+    "toporlogy.post",
+    "toporlogy.post.mesh",
+    "toporlogy.post.pipeline",
+    "toporlogy.solvers"
+   ],
+   "imported_by": [
+    "toporlogy.post"
+   ],
+   "imported_by_lazy": []
+  },
+  "post pipeline": {
+   "module": "toporlogy.post.pipeline",
+   "imports": [
+    "toporlogy.post",
+    "toporlogy.post.mesh",
+    "toporlogy.post.primitives",
+    "toporlogy.post.regularize",
+    "toporlogy.post.sdf",
+    "toporlogy.post.smooth",
+    "toporlogy.post.topology"
+   ],
+   "imports_lazy": [
+    "toporlogy",
+    "toporlogy.geometry",
+    "toporlogy.post.checks",
+    "toporlogy.post.export"
+   ],
+   "imported_by": [
+    "toporlogy.post"
+   ],
+   "imported_by_lazy": [
+    "toporlogy.post.export",
+    "toporlogy.post.verify"
+   ]
+  },
+  "post steps": {
+   "module": "toporlogy.configuration.post_steps",
+   "imports": [
+    "toporlogy.configuration.boundary_mapping",
+    "toporlogy.configuration.helpers",
+    "toporlogy.configuration.registry"
+   ],
+   "imports_lazy": [
+    "toporlogy",
+    "toporlogy.geometry",
+    "toporlogy.optimization.benchmark",
+    "toporlogy.optimization.connectivity",
+    "toporlogy.optimization.diagnostics",
+    "toporlogy.optimization.lengthscale",
+    "toporlogy.post",
+    "toporlogy.post.mesh",
+    "toporlogy.post.primitives"
+   ],
+   "imported_by": [],
+   "imported_by_lazy": [
+    "toporlogy.configuration.components"
+   ]
+  },
+  "buckling": {
+   "module": "toporlogy.fem.buckling",
+   "imports": [
+    "toporlogy.fem.elastic",
+    "toporlogy.fem.elements",
+    "toporlogy.references",
+    "toporlogy.solvers.direct"
+   ],
+   "imports_lazy": [
+    "toporlogy.fem.elements"
+   ],
+   "imported_by": [
+    "toporlogy.optimization.buckling"
+   ],
+   "imported_by_lazy": []
+  },
+  "modal": {
+   "module": "toporlogy.fem.modal",
+   "imports": [
+    "toporlogy.core.domain",
+    "toporlogy.fem.elastic",
+    "toporlogy.fem.mechanisms",
+    "toporlogy.solvers.direct"
+   ],
+   "imports_lazy": [
+    "toporlogy.optimization.dynamics"
+   ],
+   "imported_by": [
+    "toporlogy.optimization.buckling",
+    "toporlogy.optimization.dynamics"
+   ],
+   "imported_by_lazy": [
+    "toporlogy.configuration.components.physics",
+    "toporlogy.configuration.components.responses"
+   ]
+  },
+  "stress": {
+   "module": "toporlogy.optimization.stress",
+   "imports": [
+    "toporlogy.fem.elements",
+    "toporlogy.optimization.local",
+    "toporlogy.optimization.responses",
+    "toporlogy.optimization.strength",
+    "toporlogy.references"
+   ],
+   "imports_lazy": [],
+   "imported_by": [],
+   "imported_by_lazy": [
+    "toporlogy.configuration.components.responses"
+   ]
+  }
+ },
+ "graph": {
+  "toporlogy": {
+   "module_level": [
+    "toporlogy.core.domain",
+    "toporlogy.design.chain",
+    "toporlogy.design.interp",
+    "toporlogy.execution.record",
+    "toporlogy.fem",
+    "toporlogy.optimization.diagnostics",
+    "toporlogy.optimization.responses",
+    "toporlogy.optimization.study",
+    "toporlogy.optimizers",
+    "toporlogy.solvers",
+    "toporlogy.solvers.pardiso"
+   ],
+   "lazy": []
+  },
+  "toporlogy.__main__": {
+   "module_level": [
+    "toporlogy.execution.cli"
+   ],
+   "lazy": []
+  },
+  "toporlogy.boundary": {
+   "module_level": [
+    "toporlogy.boundary.cases",
+    "toporlogy.boundary.constrained",
+    "toporlogy.boundary.loads",
+    "toporlogy.boundary.part",
+    "toporlogy.boundary.report",
+    "toporlogy.boundary.selectors",
+    "toporlogy.boundary.supports"
+   ],
+   "lazy": []
+  },
+  "toporlogy.boundary.cases": {
+   "module_level": [
+    "toporlogy.boundary.constrained",
+    "toporlogy.boundary.loads",
+    "toporlogy.boundary.part",
+    "toporlogy.boundary.report",
+    "toporlogy.boundary.supports",
+    "toporlogy.core.domain",
+    "toporlogy.fem.elastic",
+    "toporlogy.geometry"
+   ],
+   "lazy": [
+    "toporlogy.geometry"
+   ]
+  },
+  "toporlogy.boundary.constrained": {
+   "module_level": [
+    "toporlogy.boundary.part",
+    "toporlogy.boundary.supports",
+    "toporlogy.core.domain",
+    "toporlogy.fem.elastic"
+   ],
+   "lazy": []
+  },
+  "toporlogy.boundary.loads": {
+   "module_level": [
+    "toporlogy.boundary.constrained",
+    "toporlogy.boundary.part",
+    "toporlogy.boundary.selectors",
+    "toporlogy.core.domain",
+    "toporlogy.fem.elastic",
+    "toporlogy.geometry",
+    "toporlogy.optimization.responses"
+   ],
+   "lazy": []
+  },
+  "toporlogy.boundary.part": {
+   "module_level": [
+    "toporlogy.core.domain"
+   ],
+   "lazy": []
+  },
+  "toporlogy.boundary.report": {
+   "module_level": [],
+   "lazy": []
+  },
+  "toporlogy.boundary.selectors": {
+   "module_level": [
+    "toporlogy.boundary.part",
+    "toporlogy.core.domain",
+    "toporlogy.geometry"
+   ],
+   "lazy": []
+  },
+  "toporlogy.boundary.supports": {
+   "module_level": [
+    "toporlogy.boundary.part",
+    "toporlogy.boundary.selectors",
+    "toporlogy.geometry"
+   ],
+   "lazy": []
+  },
+  "toporlogy.configuration": {
+   "module_level": [
+    "toporlogy.configuration.components",
+    "toporlogy.configuration.registry"
+   ],
+   "lazy": []
+  },
+  "toporlogy.configuration.boundary_mapping": {
+   "module_level": [],
+   "lazy": [
+    "toporlogy",
+    "toporlogy.boundary"
+   ]
+  },
+  "toporlogy.configuration.build": {
+   "module_level": [
+    "toporlogy.configuration.registry",
+    "toporlogy.configuration.resolve"
+   ],
+   "lazy": [
+    "toporlogy.boundary",
+    "toporlogy.configuration.catalog",
+    "toporlogy.configuration.helpers",
+    "toporlogy.design.chain",
+    "toporlogy.design.manufacturing",
+    "toporlogy.optimization.connectivity",
+    "toporlogy.optimization.robust",
+    "toporlogy.optimization.study"
+   ]
+  },
+  "toporlogy.configuration.catalog": {
+   "module_level": [
+    "toporlogy.configuration.registry"
+   ],
+   "lazy": [
+    "toporlogy.boundary.constrained",
+    "toporlogy.configuration.build",
+    "toporlogy.configuration.registry"
+   ]
+  },
+  "toporlogy.configuration.components": {
+   "module_level": [],
+   "lazy": [
+    "toporlogy.configuration.components.boundary",
+    "toporlogy.configuration.components.core",
+    "toporlogy.configuration.components.design",
+    "toporlogy.configuration.components.geometry",
+    "toporlogy.configuration.components.physics",
+    "toporlogy.configuration.components.responses",
+    "toporlogy.configuration.components.schedules",
+    "toporlogy.configuration.post_steps"
+   ]
+  },
+  "toporlogy.configuration.components.boundary": {
+   "module_level": [
+    "toporlogy.configuration.helpers",
+    "toporlogy.configuration.registry"
+   ],
+   "lazy": [
+    "toporlogy",
+    "toporlogy.boundary"
+   ]
+  },
+  "toporlogy.configuration.components.core": {
+   "module_level": [
+    "toporlogy.configuration.helpers",
+    "toporlogy.configuration.registry"
+   ],
+   "lazy": [
+    "toporlogy.boundary",
+    "toporlogy.core.domain",
+    "toporlogy.design.chain",
+    "toporlogy.design.interp",
+    "toporlogy.design.phases",
+    "toporlogy.optimization.responses",
+    "toporlogy.optimizers.oc",
+    "toporlogy.optimizers.schedule",
+    "toporlogy.solvers.direct"
+   ]
+  },
+  "toporlogy.configuration.components.design": {
+   "module_level": [
+    "toporlogy.configuration.helpers",
+    "toporlogy.configuration.registry"
+   ],
+   "lazy": [
+    "toporlogy.design",
+    "toporlogy.design.manufacturing",
+    "toporlogy.design.phases",
+    "toporlogy.post.export"
+   ]
+  },
+  "toporlogy.configuration.components.geometry": {
+   "module_level": [
+    "toporlogy.configuration.helpers",
+    "toporlogy.configuration.registry"
+   ],
+   "lazy": [
+    "toporlogy",
+    "toporlogy.core.domain",
+    "toporlogy.geometry"
+   ]
+  },
+  "toporlogy.configuration.components.physics": {
+   "module_level": [
+    "toporlogy.configuration.helpers",
+    "toporlogy.configuration.registry"
+   ],
+   "lazy": [
+    "toporlogy.fem.elastic_gmg",
+    "toporlogy.fem.modal",
+    "toporlogy.fem.nonlinear",
+    "toporlogy.optimization.dynamics"
+   ]
+  },
+  "toporlogy.configuration.components.responses": {
+   "module_level": [
+    "toporlogy.configuration.helpers",
+    "toporlogy.configuration.registry"
+   ],
+   "lazy": [
+    "toporlogy.core.material",
+    "toporlogy.fem.modal",
+    "toporlogy.fem.nonlinear",
+    "toporlogy.optimization.buckling",
+    "toporlogy.optimization.compose",
+    "toporlogy.optimization.connectivity",
+    "toporlogy.optimization.dynamics",
+    "toporlogy.optimization.lengthscale",
+    "toporlogy.optimization.local",
+    "toporlogy.optimization.nonlinear",
+    "toporlogy.optimization.robust",
+    "toporlogy.optimization.strength",
+    "toporlogy.optimization.stress"
+   ]
+  },
+  "toporlogy.configuration.components.schedules": {
+   "module_level": [
+    "toporlogy.configuration.registry"
+   ],
+   "lazy": [
+    "toporlogy.optimization.local",
+    "toporlogy.optimization.robust",
+    "toporlogy.optimizers.schedule"
+   ]
+  },
+  "toporlogy.configuration.helpers": {
+   "module_level": [
+    "toporlogy.boundary",
+    "toporlogy.configuration.registry"
+   ],
+   "lazy": [
+    "toporlogy.boundary",
+    "toporlogy.core.material",
+    "toporlogy.core.verdict",
+    "toporlogy.geometry",
+    "toporlogy.optimization.robust"
+   ]
+  },
+  "toporlogy.configuration.post_steps": {
+   "module_level": [
+    "toporlogy.configuration.boundary_mapping",
+    "toporlogy.configuration.helpers",
+    "toporlogy.configuration.registry"
+   ],
+   "lazy": [
+    "toporlogy",
+    "toporlogy.geometry",
+    "toporlogy.optimization.benchmark",
+    "toporlogy.optimization.connectivity",
+    "toporlogy.optimization.diagnostics",
+    "toporlogy.optimization.lengthscale",
+    "toporlogy.post",
+    "toporlogy.post.mesh",
+    "toporlogy.post.primitives"
+   ]
+  },
+  "toporlogy.configuration.registry": {
+   "module_level": [],
+   "lazy": []
+  },
+  "toporlogy.configuration.resolve": {
+   "module_level": [
+    "toporlogy.configuration.registry",
+    "toporlogy.configuration.schema"
+   ],
+   "lazy": [
+    "toporlogy.optimization.robust"
+   ]
+  },
+  "toporlogy.configuration.schema": {
+   "module_level": [
+    "toporlogy.configuration.registry"
+   ],
+   "lazy": []
+  },
+  "toporlogy.core": {
+   "module_level": [],
+   "lazy": []
+  },
+  "toporlogy.core.bodies": {
+   "module_level": [],
+   "lazy": []
+  },
+  "toporlogy.core.domain": {
+   "module_level": [],
+   "lazy": []
+  },
+  "toporlogy.core.material": {
+   "module_level": [],
+   "lazy": []
+  },
+  "toporlogy.core.verdict": {
+   "module_level": [],
+   "lazy": []
+  },
+  "toporlogy.design": {
+   "module_level": [],
+   "lazy": []
+  },
+  "toporlogy.design.chain": {
+   "module_level": [
+    "toporlogy.core.domain",
+    "toporlogy.references"
+   ],
+   "lazy": []
+  },
+  "toporlogy.design.interp": {
+   "module_level": [
+    "toporlogy.core.domain",
+    "toporlogy.references"
+   ],
+   "lazy": []
+  },
+  "toporlogy.design.manufacturing": {
+   "module_level": [
+    "toporlogy.core.domain",
+    "toporlogy.design.chain",
+    "toporlogy.references"
+   ],
+   "lazy": []
+  },
+  "toporlogy.design.pde_filter": {
+   "module_level": [
+    "toporlogy.core.domain",
+    "toporlogy.references"
+   ],
+   "lazy": []
+  },
+  "toporlogy.design.phases": {
+   "module_level": [
+    "toporlogy.core.domain",
+    "toporlogy.references"
+   ],
+   "lazy": []
+  },
+  "toporlogy.execution": {
+   "module_level": [],
+   "lazy": []
+  },
+  "toporlogy.execution.cli": {
+   "module_level": [
+    "toporlogy.configuration.build",
+    "toporlogy.configuration.registry",
+    "toporlogy.configuration.resolve",
+    "toporlogy.configuration.schema",
+    "toporlogy.core.verdict",
+    "toporlogy.execution.runner",
+    "toporlogy.execution.runs"
+   ],
+   "lazy": []
+  },
+  "toporlogy.execution.record": {
+   "module_level": [],
+   "lazy": []
+  },
+  "toporlogy.execution.runner": {
+   "module_level": [
+    "toporlogy.configuration.build",
+    "toporlogy.core.verdict",
+    "toporlogy.execution.runs"
+   ],
+   "lazy": [
+    "toporlogy.design.phases",
+    "toporlogy.execution.record",
+    "toporlogy.optimization.diagnostics"
+   ]
+  },
+  "toporlogy.execution.runs": {
+   "module_level": [
+    "toporlogy.configuration.schema",
+    "toporlogy.core.verdict"
+   ],
+   "lazy": [
+    "toporlogy",
+    "toporlogy.execution.record",
+    "toporlogy.optimization.diagnostics"
+   ]
+  },
+  "toporlogy.fem": {
+   "module_level": [
+    "toporlogy.fem.elastic"
+   ],
+   "lazy": [
+    "toporlogy.fem.elastic_gmg"
+   ]
+  },
+  "toporlogy.fem.buckling": {
+   "module_level": [
+    "toporlogy.fem.elastic",
+    "toporlogy.fem.elements",
+    "toporlogy.references",
+    "toporlogy.solvers.direct"
+   ],
+   "lazy": [
+    "toporlogy.fem.elements"
+   ]
+  },
+  "toporlogy.fem.elastic": {
+   "module_level": [
+    "toporlogy.core.domain",
+    "toporlogy.fem.elements",
+    "toporlogy.fem.mechanisms",
+    "toporlogy.solvers.direct",
+    "toporlogy.solvers.ordering"
+   ],
+   "lazy": []
+  },
+  "toporlogy.fem.elastic_gmg": {
+   "module_level": [
+    "toporlogy.core.domain",
+    "toporlogy.fem.elastic",
+    "toporlogy.fem.elements",
+    "toporlogy.fem.mechanisms",
+    "toporlogy.solvers",
+    "toporlogy.solvers.gmg",
+    "toporlogy.solvers.gmg_kernels"
+   ],
+   "lazy": [
+    "toporlogy.fem.elastic"
+   ]
+  },
+  "toporlogy.fem.elements": {
+   "module_level": [
+    "toporlogy.references"
+   ],
+   "lazy": [
+    "toporlogy.core.material"
+   ]
+  },
+  "toporlogy.fem.heat": {
+   "module_level": [
+    "toporlogy.core.domain",
+    "toporlogy.fem.elastic",
+    "toporlogy.solvers.direct",
+    "toporlogy.solvers.ordering"
+   ],
+   "lazy": []
+  },
+  "toporlogy.fem.mechanisms": {
+   "module_level": [],
+   "lazy": []
+  },
+  "toporlogy.fem.modal": {
+   "module_level": [
+    "toporlogy.core.domain",
+    "toporlogy.fem.elastic",
+    "toporlogy.fem.mechanisms",
+    "toporlogy.solvers.direct"
+   ],
+   "lazy": [
+    "toporlogy.optimization.dynamics"
+   ]
+  },
+  "toporlogy.fem.nonlinear": {
+   "module_level": [
+    "toporlogy.core.domain",
+    "toporlogy.core.material",
+    "toporlogy.fem.elastic",
+    "toporlogy.fem.elements",
+    "toporlogy.fem.mechanisms",
+    "toporlogy.references",
+    "toporlogy.solvers.direct"
+   ],
+   "lazy": []
+  },
+  "toporlogy.geometry": {
+   "module_level": [
+    "toporlogy.core.domain",
+    "toporlogy.references"
+   ],
+   "lazy": []
+  },
+  "toporlogy.optimization": {
+   "module_level": [],
+   "lazy": []
+  },
+  "toporlogy.optimization.aggregates": {
+   "module_level": [
+    "toporlogy.references"
+   ],
+   "lazy": []
+  },
+  "toporlogy.optimization.benchmark": {
+   "module_level": [
+    "toporlogy.core.verdict",
+    "toporlogy.optimization.responses",
+    "toporlogy.references"
+   ],
+   "lazy": []
+  },
+  "toporlogy.optimization.buckling": {
+   "module_level": [
+    "toporlogy.fem.buckling",
+    "toporlogy.fem.elastic",
+    "toporlogy.fem.modal",
+    "toporlogy.optimization.aggregates",
+    "toporlogy.optimization.responses",
+    "toporlogy.references"
+   ],
+   "lazy": []
+  },
+  "toporlogy.optimization.compose": {
+   "module_level": [
+    "toporlogy.optimization.responses"
+   ],
+   "lazy": []
+  },
+  "toporlogy.optimization.connectivity": {
+   "module_level": [
+    "toporlogy.core.bodies",
+    "toporlogy.core.domain",
+    "toporlogy.design.chain",
+    "toporlogy.fem.elastic",
+    "toporlogy.fem.heat",
+    "toporlogy.optimization.responses"
+   ],
+   "lazy": [
+    "toporlogy.design.manufacturing",
+    "toporlogy.optimization.study"
+   ]
+  },
+  "toporlogy.optimization.diagnostics": {
+   "module_level": [],
+   "lazy": [
+    "toporlogy.design.manufacturing"
+   ]
+  },
+  "toporlogy.optimization.dynamics": {
+   "module_level": [
+    "toporlogy.core.domain",
+    "toporlogy.fem.modal",
+    "toporlogy.optimization.responses",
+    "toporlogy.optimization.study"
+   ],
+   "lazy": []
+  },
+  "toporlogy.optimization.lengthscale": {
+   "module_level": [
+    "toporlogy.optimization.responses",
+    "toporlogy.references"
+   ],
+   "lazy": []
+  },
+  "toporlogy.optimization.local": {
+   "module_level": [
+    "toporlogy.optimization.aggregates",
+    "toporlogy.optimization.responses",
+    "toporlogy.optimizers.schedule",
+    "toporlogy.references"
+   ],
+   "lazy": []
+  },
+  "toporlogy.optimization.nonlinear": {
+   "module_level": [
+    "toporlogy.optimization.responses"
+   ],
+   "lazy": [
+    "toporlogy.fem.nonlinear"
+   ]
+  },
+  "toporlogy.optimization.responses": {
+   "module_level": [
+    "toporlogy.core.domain"
+   ],
+   "lazy": []
+  },
+  "toporlogy.optimization.robust": {
+   "module_level": [
+    "toporlogy.design.chain",
+    "toporlogy.optimization.responses",
+    "toporlogy.optimization.study",
+    "toporlogy.optimizers.schedule",
+    "toporlogy.references"
+   ],
+   "lazy": []
+  },
+  "toporlogy.optimization.strength": {
+   "module_level": [
+    "toporlogy.core.material",
+    "toporlogy.references"
+   ],
+   "lazy": []
+  },
+  "toporlogy.optimization.stress": {
+   "module_level": [
+    "toporlogy.fem.elements",
+    "toporlogy.optimization.local",
+    "toporlogy.optimization.responses",
+    "toporlogy.optimization.strength",
+    "toporlogy.references"
+   ],
+   "lazy": []
+  },
+  "toporlogy.optimization.study": {
+   "module_level": [
+    "toporlogy.core.domain",
+    "toporlogy.design.chain",
+    "toporlogy.optimization.diagnostics",
+    "toporlogy.optimization.responses",
+    "toporlogy.optimizers.base",
+    "toporlogy.optimizers.schedule"
+   ],
+   "lazy": [
+    "toporlogy.design.phases"
+   ]
+  },
+  "toporlogy.optimizers": {
+   "module_level": [
+    "toporlogy.optimizers.base",
+    "toporlogy.optimizers.gcmma",
+    "toporlogy.optimizers.mma",
+    "toporlogy.optimizers.oc",
+    "toporlogy.optimizers.schedule",
+    "toporlogy.optimizers.simpl"
+   ],
+   "lazy": []
+  },
+  "toporlogy.optimizers._mma_core": {
+   "module_level": [
+    "toporlogy.references"
+   ],
+   "lazy": []
+  },
+  "toporlogy.optimizers.base": {
+   "module_level": [],
+   "lazy": []
+  },
+  "toporlogy.optimizers.gcmma": {
+   "module_level": [
+    "toporlogy.optimizers._mma_core",
+    "toporlogy.optimizers.base",
+    "toporlogy.references"
+   ],
+   "lazy": []
+  },
+  "toporlogy.optimizers.mma": {
+   "module_level": [
+    "toporlogy.optimizers._mma_core",
+    "toporlogy.optimizers.base",
+    "toporlogy.references"
+   ],
+   "lazy": []
+  },
+  "toporlogy.optimizers.oc": {
+   "module_level": [
+    "toporlogy.optimizers.base",
+    "toporlogy.references"
+   ],
+   "lazy": []
+  },
+  "toporlogy.optimizers.schedule": {
+   "module_level": [
+    "toporlogy.design.chain"
+   ],
+   "lazy": []
+  },
+  "toporlogy.optimizers.simpl": {
+   "module_level": [
+    "toporlogy.optimizers.base",
+    "toporlogy.references"
+   ],
+   "lazy": []
+  },
+  "toporlogy.post": {
+   "module_level": [
+    "toporlogy.post.checks",
+    "toporlogy.post.export",
+    "toporlogy.post.pipeline",
+    "toporlogy.post.primitives",
+    "toporlogy.post.verify"
+   ],
+   "lazy": []
+  },
+  "toporlogy.post._gmsh_worker": {
+   "module_level": [],
+   "lazy": []
+  },
+  "toporlogy.post.checks": {
+   "module_level": [
+    "toporlogy.post",
+    "toporlogy.post.mesh",
+    "toporlogy.post.sdf"
+   ],
+   "lazy": [
+    "toporlogy.post.primitives"
+   ]
+  },
+  "toporlogy.post.export": {
+   "module_level": [
+    "toporlogy.geometry",
+    "toporlogy.references"
+   ],
+   "lazy": [
+    "toporlogy.post.pipeline"
+   ]
+  },
+  "toporlogy.post.mesh": {
+   "module_level": [
+    "toporlogy.references"
+   ],
+   "lazy": []
+  },
+  "toporlogy.post.pipeline": {
+   "module_level": [
+    "toporlogy.post",
+    "toporlogy.post.mesh",
+    "toporlogy.post.primitives",
+    "toporlogy.post.regularize",
+    "toporlogy.post.sdf",
+    "toporlogy.post.smooth",
+    "toporlogy.post.topology"
+   ],
+   "lazy": [
+    "toporlogy",
+    "toporlogy.geometry",
+    "toporlogy.post.checks",
+    "toporlogy.post.export"
+   ]
+  },
+  "toporlogy.post.primitives": {
+   "module_level": [
+    "toporlogy.geometry"
+   ],
+   "lazy": []
+  },
+  "toporlogy.post.regularize": {
+   "module_level": [
+    "toporlogy.core.bodies",
+    "toporlogy.post",
+    "toporlogy.post.sdf",
+    "toporlogy.post.topology"
+   ],
+   "lazy": []
+  },
+  "toporlogy.post.sdf": {
+   "module_level": [],
+   "lazy": [
+    "toporlogy.post.primitives"
+   ]
+  },
+  "toporlogy.post.smooth": {
+   "module_level": [
+    "toporlogy.post.mesh",
+    "toporlogy.references"
+   ],
+   "lazy": [
+    "toporlogy.post.mesh"
+   ]
+  },
+  "toporlogy.post.topology": {
+   "module_level": [
+    "toporlogy.core.bodies"
+   ],
+   "lazy": []
+  },
+  "toporlogy.post.verify": {
+   "module_level": [
+    "toporlogy.references"
+   ],
+   "lazy": [
+    "toporlogy.fem",
+    "toporlogy.geometry",
+    "toporlogy.post",
+    "toporlogy.post.mesh",
+    "toporlogy.post.pipeline",
+    "toporlogy.solvers"
+   ]
+  },
+  "toporlogy.references": {
+   "module_level": [],
+   "lazy": []
+  },
+  "toporlogy.references._aero": {
+   "module_level": [
+    "toporlogy.references"
+   ],
+   "lazy": []
+  },
+  "toporlogy.references._cad": {
+   "module_level": [
+    "toporlogy.references"
+   ],
+   "lazy": []
+  },
+  "toporlogy.references._composites": {
+   "module_level": [
+    "toporlogy.references"
+   ],
+   "lazy": []
+  },
+  "toporlogy.references._core": {
+   "module_level": [
+    "toporlogy.references"
+   ],
+   "lazy": []
+  },
+  "toporlogy.references._fem": {
+   "module_level": [
+    "toporlogy.references"
+   ],
+   "lazy": []
+  },
+  "toporlogy.references._fem_dynamics": {
+   "module_level": [
+    "toporlogy.references"
+   ],
+   "lazy": []
+  },
+  "toporlogy.references._materials": {
+   "module_level": [
+    "toporlogy.references"
+   ],
+   "lazy": []
+  },
+  "toporlogy.references._optimization": {
+   "module_level": [
+    "toporlogy.references"
+   ],
+   "lazy": []
+  },
+  "toporlogy.references._structures": {
+   "module_level": [
+    "toporlogy.references"
+   ],
+   "lazy": []
+  },
+  "toporlogy.references._topopt_methods": {
+   "module_level": [
+    "toporlogy.references"
+   ],
+   "lazy": []
+  },
+  "toporlogy.solvers": {
+   "module_level": [
+    "toporlogy.solvers.direct"
+   ],
+   "lazy": [
+    "toporlogy.solvers.gmg"
+   ]
+  },
+  "toporlogy.solvers.direct": {
+   "module_level": [],
+   "lazy": [
+    "toporlogy.solvers",
+    "toporlogy.solvers.pardiso"
+   ]
+  },
+  "toporlogy.solvers.gmg": {
+   "module_level": [
+    "toporlogy.solvers",
+    "toporlogy.solvers.gmg_deflation",
+    "toporlogy.solvers.gmg_kernels",
+    "toporlogy.solvers.gmg_transfer"
+   ],
+   "lazy": [
+    "toporlogy.solvers.direct",
+    "toporlogy.solvers.ordering"
+   ]
+  },
+  "toporlogy.solvers.gmg_deflation": {
+   "module_level": [
+    "toporlogy.solvers",
+    "toporlogy.solvers.gmg_kernels"
+   ],
+   "lazy": []
+  },
+  "toporlogy.solvers.gmg_kernels": {
+   "module_level": [],
+   "lazy": []
+  },
+  "toporlogy.solvers.gmg_transfer": {
+   "module_level": [
+    "toporlogy.solvers",
+    "toporlogy.solvers.gmg_kernels"
+   ],
+   "lazy": []
+  },
+  "toporlogy.solvers.ordering": {
+   "module_level": [
+    "toporlogy.references"
+   ],
+   "lazy": []
+  },
+  "toporlogy.solvers.pardiso": {
+   "module_level": [],
+   "lazy": []
+  }
+ }
+}

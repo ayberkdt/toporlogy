@@ -11,6 +11,8 @@ domain:
   shapes:
     - {type: box, lo: [0, 0], hi: [40, 16]}
     - {type: box, lo: [0, 0], hi: [16, 40]}
+  keep:                                       # the load pad under the four loaded nodes is frozen solid
+    - {type: box, lo: [36, 12], hi: [40, 16]}
 material: {E0: 1.0, nu: 0.3}
 supports:
   - {type: fixed, where: {type: on_plane, axis: y, at: max}}
@@ -33,6 +35,10 @@ constraints:
       adaptive: 0.5
       exclude:
         - {type: box, lo: [34, 12], hi: [40, 16]}
+# One body: the support and the load pad are joined by a frozen tie (1 element), a virtual-conduction constraint
+# keeps the path, and the gate after the run fails the run (exit 1) if the design falls apart. Without it the
+# volume objective drops the load into void: the relaxed stress vanishes with x̄ (docs/olcumler/gerilme.md §3.6).
+connectivity: {ties: 1, constraint: conduction, gate: true}
 optimizer: {type: gcmma, move: 0.1}
 schedule: {type: beta_continuation, beta_max: 8.0, every: 30}
 run: {max_iter: 120, tol: 0.002}

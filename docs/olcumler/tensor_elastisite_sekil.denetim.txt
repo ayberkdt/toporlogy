@@ -1,0 +1,21 @@
+figür denetimi: 0 HATA · 0 UYARI · 10 BİLGİ · TESLİM EDİLEBİLİR
+  [BİLGİ] birim              eksen 0: x etiketi birim içermiyor: 'Poisson oranı ν'
+          → birimsizse sorun yok; değilse '(birim)' ekle  [APSStyleGuide (nicelik (birim)); NatureFigGuide; Wilke2019 W6]
+  [BİLGİ] dogrudan-etiket    eksen 1: 2 çizgi serisi lejantla adlandırılmış
+          → çizgi sonlarına doğrudan etiket: datawiz.etiket.cizgi_sonu(ax)  [Franconeri2021 (Lohse1993); Sweller2019 bölünmüş dikkat; IEEEGraphics; Wilke2019 W4]
+  [BİLGİ] birim              eksen 1: y etiketi birim içermiyor: 'Poisson oranı'
+          → birimsizse sorun yok; değilse '(birim)' ekle  [APSStyleGuide (nicelik (birim)); NatureFigGuide; Wilke2019 W6]
+  [BİLGİ] dogrudan-etiket    eksen 2: 2 çizgi serisi lejantla adlandırılmış
+          → çizgi sonlarına doğrudan etiket: datawiz.etiket.cizgi_sonu(ax)  [Franconeri2021 (Lohse1993); Sweller2019 bölünmüş dikkat; IEEEGraphics; Wilke2019 W4]
+  [BİLGİ] birim              eksen 2: y etiketi birim içermiyor: 'Poisson oranı, log ölçek'
+          → birimsizse sorun yok; değilse '(birim)' ekle  [APSStyleGuide (nicelik (birim)); NatureFigGuide; Wilke2019 W6]
+  [BİLGİ] dogrudan-etiket    eksen 3: 3 çizgi serisi lejantla adlandırılmış
+          → çizgi sonlarına doğrudan etiket: datawiz.etiket.cizgi_sonu(ax)  [Franconeri2021 (Lohse1993); Sweller2019 bölünmüş dikkat; IEEEGraphics; Wilke2019 W4]
+  [BİLGİ] birim              eksen 3: x etiketi birim içermiyor: 'Poisson oranı ν'
+          → birimsizse sorun yok; değilse '(birim)' ekle  [APSStyleGuide (nicelik (birim)); NatureFigGuide; Wilke2019 W6]
+  [BİLGİ] birim              eksen 3: y etiketi birim içermiyor: 'SIMP üssü p*'
+          → birimsizse sorun yok; değilse '(birim)' ekle  [APSStyleGuide (nicelik (birim)); NatureFigGuide; Wilke2019 W6]
+  [BİLGİ] banking-45         eksen 3: çizim alanı y/g = 0.56; 45° için ≈ 8.63
+          → eğim karşılaştırması amaçsa oranı yaklaştır (ax.set_box_aspect)  [ClevelandMcGillMcGill1988 (VS); Kosara2013b; TalbotGerthHanrahan2011 — başlangıç sezgisi]
+  [BİLGİ] lejant-sirasi      eksen 3: lejant sırası çizgilerin sağ uçtaki dikey sırasıyla aynı değil
+          → lejantı uç değerlerine göre sırala ya da doğrudan etiket (dw.etiket.cizgi_sonu)  [06 T8: Kosslyn2012 corollary 3; UrbanStyle (Legend, Line charts)]

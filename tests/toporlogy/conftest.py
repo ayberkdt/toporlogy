@@ -33,6 +33,18 @@ def pytest_configure(config: pytest.Config) -> None:
         config.addinivalue_line("markers", f"{b}: needs the optional backend: {what}")
 
 
+@pytest.hookimpl(tryfirst=True)
+def pytest_collection_modifyitems(session: pytest.Session, config: pytest.Config, items: list[pytest.Item]) -> None:
+    V.COLLECTED[:] = [V.item_record(i) for i in items]          # before -m / -k deselection (strict-xfail ledger)
+
+
+def pytest_collection_finish(session: pytest.Session) -> None:
+    path = os.environ.get("TOPORLOGY_COLLECT_DUMP")             # test_catalog_ledger.py: collection in a subprocess
+    if path:
+        with open(path, "w", encoding="utf-8") as fh:
+            json.dump(V.COLLECTED, fh)
+
+
 def pytest_report_header(config: pytest.Config) -> list[str]:
     env = V.environment()
     opt = ", ".join(f"{k} {v or '-'}" for k, v in env["optional"].items())

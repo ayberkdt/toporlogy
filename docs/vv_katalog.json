@@ -1,0 +1,1621 @@
+{
+ "schema_version": "1.0.0",
+ "statuses": [
+  "SUPPORTED",
+  "EXPERIMENTAL",
+  "UNSUPPORTED",
+  "NOT VERIFIED"
+ ],
+ "benchmark_kinds": [
+  "analytic",
+  "mms",
+  "published",
+  "internal_oracle",
+  "independent_same_author",
+  "external_solver",
+  "gradient",
+  "experimental"
+ ],
+ "elements": [
+  {
+   "id": "Q4",
+   "dim": 2,
+   "geometry": "square",
+   "nodes": 4,
+   "dofs_per_node": 2,
+   "interpolation": "bilinear",
+   "quadrature": "2 x 2 Gauss",
+   "physics": [
+    "elasticity",
+    "modal",
+    "nonlinear_elasticity"
+   ],
+   "locking": "shear-locks in bending (parasitic shear)",
+   "distortion": "regular grid, undistorted unit square/cube elements only (no Jacobian varies)",
+   "references": [
+    "andreassen_2011",
+    "cook_2002"
+   ],
+   "evidence": [
+    "tests/toporlogy/test_fem_mms.py::test_manufactured_solution_converges_at_second_order",
+    "tests/toporlogy/test_skfem_crosscheck.py::test_x1_stiffness",
+    "tests/toporlogy/test_independent_vv.py::test_top88_fixed_design_objective_and_sensitivity"
+   ],
+   "source": "fem/elements.py: ke_q4, ke_q4_from_D"
+  },
+  {
+   "id": "Q4IM",
+   "dim": 2,
+   "geometry": "square",
+   "nodes": 4,
+   "dofs_per_node": 2,
+   "interpolation": "bilinear + 2 incompatible modes per component (Q6), statically condensed",
+   "quadrature": "2 x 2 Gauss",
+   "physics": [
+    "elasticity",
+    "modal"
+   ],
+   "locking": "removes bending shear locking on undistorted squares",
+   "distortion": "regular grid, undistorted unit square/cube elements only (no Jacobian varies)",
+   "references": [
+    "wilson_1973",
+    "taylor_beresford_wilson_1976"
+   ],
+   "evidence": [
+    "tests/toporlogy/test_fem_mms_extended.py::test_m1_q4im_converges_at_second_order",
+    "tests/toporlogy/test_buckling_physics.py::test_gradient_q4im_with_modes_in_kg"
+   ],
+   "source": "fem/elements.py: ke_q4im_from_D"
+  },
+  {
+   "id": "H8",
+   "dim": 3,
+   "geometry": "cube",
+   "nodes": 8,
+   "dofs_per_node": 3,
+   "interpolation": "trilinear",
+   "quadrature": "2 x 2 x 2 Gauss",
+   "physics": [
+    "elasticity",
+    "elasticity_gmg",
+    "modal",
+    "nonlinear_elasticity"
+   ],
+   "locking": "shear-locks in bending",
+   "distortion": "regular grid, undistorted unit square/cube elements only (no Jacobian varies)",
+   "references": [
+    "liu_tovar_2014",
+    "cook_2002"
+   ],
+   "evidence": [
+    "tests/toporlogy/test_fem_mms.py::test_manufactured_solution_converges_at_second_order",
+    "tests/toporlogy/test_regression.py::test_topo3d_box_no_projection",
+    "tests/toporlogy/test_gmg.py::test_gmg_matches_direct_masked_domain"
+   ],
+   "source": "fem/elements.py: ke_h8, ke_h8_from_D"
+  },
+  {
+   "id": "H8IM",
+   "dim": 3,
+   "geometry": "cube",
+   "nodes": 8,
+   "dofs_per_node": 3,
+   "interpolation": "trilinear + 9 Wilson incompatible modes, statically condensed",
+   "quadrature": "2 x 2 x 2 Gauss",
+   "physics": [
+    "elasticity",
+    "elasticity_gmg",
+    "modal"
+   ],
+   "locking": "removes bending shear locking on undistorted cubes",
+   "distortion": "regular grid, undistorted unit square/cube elements only (no Jacobian varies)",
+   "references": [
+    "taylor_beresford_wilson_1976",
+    "cook_2002"
+   ],
+   "evidence": [
+    "tests/toporlogy/test_regression.py::test_topo3d_h8im",
+    "tests/toporlogy/test_buckling.py::test_euler_column_3d_h8im",
+    "tests/toporlogy/test_gmg.py::test_gmg_matches_direct_masked_domain"
+   ],
+   "source": "fem/elements.py: ke_h8(element='H8IM')"
+  },
+  {
+   "id": "T10",
+   "dim": 3,
+   "geometry": "tetrahedron",
+   "nodes": 10,
+   "dofs_per_node": 3,
+   "interpolation": "quadratic",
+   "quadrature": "4-point rule",
+   "physics": [
+    "post:reverify"
+   ],
+   "locking": "none expected for quadratic tetrahedra (not measured here)",
+   "distortion": "general gmsh meshes; inverted or degenerate Jacobians are refused",
+   "references": [
+    "zienkiewicz_taylor_2013",
+    "keast_1986",
+    "cook_2002"
+   ],
+   "evidence": [
+    "tests/toporlogy/test_post_verify.py::test_t10_patch_uniaxial_tension",
+    "tests/toporlogy/test_t10_convergence.py::test_mesh_convergence_needs_three_sizes"
+   ],
+   "source": "post/verify.py (verification of the finished surface only; needs gmsh)"
+  }
+ ],
+ "physics": [
+  {
+   "id": "elasticity",
+   "residual": "K(E) u = f (linear, small strain)",
+   "tangent": "K(E), linear in the element moduli",
+   "matrix": "symmetric positive definite on the free DOFs (refuses floating parts)",
+   "solve": "direct (solver: direct)",
+   "devices": [
+    "cpu"
+   ],
+   "dims": [
+    2,
+    3
+   ],
+   "elements": [
+    "Q4",
+    "Q4IM",
+    "H8",
+    "H8IM"
+   ],
+   "supports": "fixed DOFs; oblique rollers and springs (ConstrainedElasticity); per-case supports (PerCaseSupports)",
+   "convergence": "direct solve; relative residual <= 1e-6 or backward error <= 1e-14 accepted, else SolveResidualError",
+   "memory": "assembled sparse K and its factor",
+   "evidence": [
+    "tests/toporlogy/test_gradients.py::test_compliance_single_case",
+    "tests/toporlogy/test_skfem_crosscheck.py::test_x4_cantilever_solution",
+    "tests/toporlogy/test_fem_mms.py::test_manufactured_solution_converges_at_second_order"
+   ],
+   "scalar_modulus": "E_active (n_active,) scales one unit-modulus D per element (D may differ per element)"
+  },
+  {
+   "id": "elasticity_gmg",
+   "residual": "K(E) u = f (linear, small strain)",
+   "tangent": "matrix-free K(E)",
+   "matrix": "symmetric positive definite",
+   "solve": "geometric multigrid preconditioned CG; direct below direct_below DOFs",
+   "devices": [
+    "cpu",
+    "cuda"
+   ],
+   "dims": [
+    3
+   ],
+   "elements": [
+    "H8",
+    "H8IM"
+   ],
+   "supports": "axis-aligned fixed DOFs, one support set",
+   "convergence": "PCG to tol (default 1e-8); fail-closed without fallback, logged fallback to the direct solver",
+   "memory": "matrix-free; multigrid hierarchy",
+   "evidence": [
+    "tests/toporlogy/test_gmg.py::test_gmg_matches_direct_masked_domain",
+    "tests/toporlogy/test_gmg.py::test_gradients",
+    "tests/toporlogy/test_gmg.py::test_fail_closed_without_fallback"
+   ],
+   "scalar_modulus": "E_active scales ONE unit D (per-element D refused)"
+  },
+  {
+   "id": "modal",
+   "residual": "K(E) phi = lambda M(x) phi (generalised eigenproblem)",
+   "tangent": "K(E), M(x)",
+   "matrix": "K SPD on the free DOFs, M SPD; repeated eigenvalues detected (KS aggregation)",
+   "solve": "shift-invert eigensolver (sigma) with the direct solver",
+   "devices": [
+    "cpu"
+   ],
+   "dims": [
+    2,
+    3
+   ],
+   "elements": [
+    "Q4",
+    "Q4IM",
+    "H8",
+    "H8IM"
+   ],
+   "supports": "axis-aligned fixed DOFs, one support set; no static state u",
+   "convergence": "eigensolver tolerance (not recorded per run)",
+   "memory": "assembled K and M",
+   "evidence": [
+    "tests/toporlogy/test_modal.py::test_eigenpairs_match_dense",
+    "tests/toporlogy/test_independent_matrices.py::test_k4_modal_eigenvalues",
+    "tests/toporlogy/test_modal.py::test_response_gradients"
+   ],
+   "scalar_modulus": "E_active scales K; mass from the density (linear or two-range)"
+  },
+  {
+   "id": "nonlinear_elasticity",
+   "residual": "r(u; E) = f_int(u) - f = 0 (total Lagrangian, SVK or neo-Hooke)",
+   "tangent": "consistent tangent K_T(u)",
+   "matrix": "symmetric; positive definite only on the stable branch",
+   "solve": "Newton with load steps; one adjoint solve with K_T per case",
+   "devices": [
+    "cpu"
+   ],
+   "dims": [
+    2,
+    3
+   ],
+   "elements": [
+    "Q4",
+    "H8"
+   ],
+   "supports": "axis-aligned fixed DOFs, one support set",
+   "convergence": "Newton residual and error contraction; NonlinearConvergenceError with the history",
+   "memory": "assembled K_T per Newton step",
+   "evidence": [
+    "tests/toporlogy/test_nonlinear.py::test_v3_consistent_tangent_finite_difference",
+    "tests/toporlogy/test_nonlinear.py::test_v5_large_deflection_cantilever_elastica",
+    "tests/toporlogy/test_nonlinear.py::test_v6_end_compliance_gradient_finite_difference"
+   ],
+   "scalar_modulus": "E_active through an energy interpolation; general D with material svk only"
+  }
+ ],
+ "solvers": [
+  {
+   "id": "direct",
+   "registry": true,
+   "method": "sparse Cholesky / LU of the upper triangle",
+   "backends": [
+    "SuperLU (scipy)",
+    "PARDISO (pypardiso)"
+   ],
+   "status": "SUPPORTED",
+   "note": "SuperLU always available; PARDISO optional (fast extra), VERIFIED only where the pardiso tests ran (backends.yml)"
+  },
+  {
+   "id": "gmg",
+   "registry": false,
+   "method": "geometric multigrid PCG (inside physics elasticity_gmg)",
+   "backends": [
+    "torch CPU",
+    "torch CUDA"
+   ],
+   "status": "EXPERIMENTAL",
+   "note": "CPU path tested in the fast suite; CUDA path NOT VERIFIED without a GPU"
+  }
+ ],
+ "benchmarks": [
+  {
+   "id": "mms_q4_h8",
+   "kind": "mms",
+   "test": "tests/toporlogy/test_fem_mms.py::test_manufactured_solution_converges_at_second_order",
+   "quantity": "nodal error, observed order (Q4, H8, H8IM)",
+   "reference": "manufactured solution (docs/gelistirme_plani.md V1)",
+   "tolerance": "rates in [1.8, 2.25]; finest e < 1e-3 / 1e-2 / 1.2e-2",
+   "runtime": "fast",
+   "validation": "solution verification",
+   "note": ""
+  },
+  {
+   "id": "mms_wrong_constant",
+   "kind": "mms",
+   "test": "tests/toporlogy/test_fem_mms.py::test_manufactured_solution_detects_a_wrong_material_constant",
+   "quantity": "order with a wrong material constant (negative control)",
+   "reference": "manufactured solution",
+   "tolerance": "last rate < 1.0, error > 5x",
+   "runtime": "fast",
+   "validation": "solution verification",
+   "note": ""
+  },
+  {
+   "id": "mms_q4im",
+   "kind": "mms",
+   "test": "tests/toporlogy/test_fem_mms_extended.py::test_m1_q4im_converges_at_second_order",
+   "quantity": "Q4IM nodal error order",
+   "reference": "manufactured solution (dogrulama_turu M1)",
+   "tolerance": "rates in (1.8, 2.25); finest <= 1e-3",
+   "runtime": "fast",
+   "validation": "solution verification",
+   "note": ""
+  },
+  {
+   "id": "mms_orientation_field",
+   "kind": "mms",
+   "test": "tests/toporlogy/test_fem_mms_extended.py::test_m2_orientation_field_converges_at_second_order",
+   "quantity": "orthotropic orientation field order",
+   "reference": "manufactured solution (M2)",
+   "tolerance": "rates in (1.8, 2.25); finest <= 5e-3 / 5e-2",
+   "runtime": "fast",
+   "validation": "solution verification",
+   "note": ""
+  },
+  {
+   "id": "mms_heat",
+   "kind": "mms",
+   "test": "tests/toporlogy/test_fem_mms_extended.py::test_m3_heat_conduction_converges_at_second_order",
+   "quantity": "conduction order",
+   "reference": "manufactured solution (M3)",
+   "tolerance": "rates in (1.8, 2.25)",
+   "runtime": "fast",
+   "validation": "solution verification",
+   "note": ""
+  },
+  {
+   "id": "mms_nonlinear",
+   "kind": "mms",
+   "test": "tests/toporlogy/test_fem_mms_extended.py::test_m4_nonlinear_manufactured_solution_converges_at_second_order",
+   "quantity": "SVK / neo-Hooke order",
+   "reference": "manufactured solution (M4)",
+   "tolerance": "rates in (1.8, 2.25)",
+   "runtime": "fast (3-D cases slow)",
+   "validation": "solution verification",
+   "note": ""
+  },
+  {
+   "id": "skfem_stiffness",
+   "kind": "external_solver",
+   "test": "tests/toporlogy/test_skfem_crosscheck.py::test_x1_stiffness",
+   "quantity": "stiffness matrix",
+   "reference": "scikit-fem",
+   "tolerance": "relative <= 1e-12",
+   "runtime": "fast",
+   "validation": "code verification",
+   "note": ""
+  },
+  {
+   "id": "skfem_mass",
+   "kind": "external_solver",
+   "test": "tests/toporlogy/test_skfem_crosscheck.py::test_x2_mass",
+   "quantity": "consistent mass",
+   "reference": "scikit-fem",
+   "tolerance": "relative <= 1e-12",
+   "runtime": "fast",
+   "validation": "code verification",
+   "note": ""
+  },
+  {
+   "id": "skfem_conduction",
+   "kind": "external_solver",
+   "test": "tests/toporlogy/test_skfem_crosscheck.py::test_x3_conduction",
+   "quantity": "conduction matrix",
+   "reference": "scikit-fem",
+   "tolerance": "relative <= 1e-12",
+   "runtime": "fast",
+   "validation": "code verification",
+   "note": ""
+  },
+  {
+   "id": "skfem_cantilever",
+   "kind": "external_solver",
+   "test": "tests/toporlogy/test_skfem_crosscheck.py::test_x4_cantilever_solution",
+   "quantity": "cantilever displacement",
+   "reference": "scikit-fem",
+   "tolerance": "relative <= 1e-10",
+   "runtime": "fast",
+   "validation": "code verification",
+   "note": ""
+  },
+  {
+   "id": "top88_fixed_design",
+   "kind": "internal_oracle",
+   "test": "tests/toporlogy/test_independent_vv.py::test_top88_fixed_design_objective_and_sensitivity",
+   "quantity": "objective, sensitivity",
+   "reference": "published_codes.py (Top88 port)",
+   "tolerance": "c 1e-9, dc 1e-8",
+   "runtime": "fast",
+   "validation": "code verification",
+   "note": ""
+  },
+  {
+   "id": "top88_history",
+   "kind": "internal_oracle",
+   "test": "tests/toporlogy/test_independent_vv.py::test_top88_history_first_50_iterations",
+   "quantity": "compliance history, 50 iterations",
+   "reference": "published_codes.py (Top88 port)",
+   "tolerance": "c 1e-6, x 1e-5",
+   "runtime": "fast",
+   "validation": "code verification",
+   "note": ""
+  },
+  {
+   "id": "top3d_fixed_design",
+   "kind": "internal_oracle",
+   "test": "tests/toporlogy/test_independent_vv.py::test_top3d_fixed_design_objective_and_sensitivity",
+   "quantity": "objective, sensitivity",
+   "reference": "published_codes.py (Top3D port)",
+   "tolerance": "c 1e-9, dc 1e-8",
+   "runtime": "fast",
+   "validation": "code verification",
+   "note": ""
+  },
+  {
+   "id": "topo3d_regression",
+   "kind": "internal_oracle",
+   "test": "tests/toporlogy/test_regression.py::test_topo3d_box_no_projection",
+   "quantity": "compliance history, density",
+   "reference": "topo_oracles.topo3d (frozen driver)",
+   "tolerance": "c 1e-6, x 1e-6",
+   "runtime": "fast",
+   "validation": "code verification",
+   "note": ""
+  },
+  {
+   "id": "cantilever_exact",
+   "kind": "analytic",
+   "test": "tests/toporlogy/test_independent_vv.py::test_cantilever_q4_converges_to_the_exact_solution",
+   "quantity": "compliance bound and tip error order",
+   "reference": "exact polynomial cantilever solution",
+   "tolerance": "order >= 1.8; tip <= 2e-2",
+   "runtime": "fast",
+   "validation": "solution verification",
+   "note": ""
+  },
+  {
+   "id": "slip_square_modes",
+   "kind": "analytic",
+   "test": "tests/toporlogy/test_independent_vv.py::test_slip_square_q4_eigenvalues_converge_with_repeated_pairs",
+   "quantity": "eigenvalues with repeated pairs",
+   "reference": "analytic slip-wall modes",
+   "tolerance": "order >= 1.8; gaps <= 1e-8",
+   "runtime": "fast",
+   "validation": "solution verification",
+   "note": ""
+  },
+  {
+   "id": "independent_K",
+   "kind": "independent_same_author",
+   "test": "tests/toporlogy/test_independent_matrices.py::test_k1_k2_reduced_stiffness",
+   "quantity": "reduced stiffness (8 element/material variants)",
+   "reference": "_independent_fe.py",
+   "tolerance": "relative <= 1e-12",
+   "runtime": "fast",
+   "validation": "code verification",
+   "note": ""
+  },
+  {
+   "id": "independent_buckling",
+   "kind": "independent_same_author",
+   "test": "tests/toporlogy/test_independent_buckling.py::test_load_factors_equal_the_dense_independent_solution",
+   "quantity": "first six load factors",
+   "reference": "_independent_fe.py (dense eigh)",
+   "tolerance": "|dmu| <= 1e-9 |mu1|",
+   "runtime": "fast",
+   "validation": "code verification",
+   "note": ""
+  },
+  {
+   "id": "independent_stress",
+   "kind": "independent_same_author",
+   "test": "tests/toporlogy/test_independent_stress.py::test_s2_von_mises_index",
+   "quantity": "von Mises index",
+   "reference": "_independent_fe.py",
+   "tolerance": "relative <= 1e-12",
+   "runtime": "fast",
+   "validation": "code verification",
+   "note": ""
+  },
+  {
+   "id": "timoshenko_tip",
+   "kind": "analytic",
+   "test": "tests/toporlogy/test_timoshenko_cantilever.py::test_h4_tip_deflection",
+   "quantity": "tip deflection",
+   "reference": "timoshenko_goodier_1970",
+   "tolerance": "Q4 <= 2e-2, Q4IM <= 2e-3",
+   "runtime": "fast",
+   "validation": "solution verification",
+   "note": ""
+  },
+  {
+   "id": "timoshenko_order_q4",
+   "kind": "analytic",
+   "test": "tests/toporlogy/test_timoshenko_cantilever.py::test_h2_q4_converges_at_second_order",
+   "quantity": "nodal error order (strict xfail)",
+   "reference": "timoshenko_goodier_1970",
+   "tolerance": "rates in [1.8, 2.25]",
+   "runtime": "fast",
+   "validation": "solution verification",
+   "note": "FAILED pre-registered (ledger)"
+  },
+  {
+   "id": "fs2019_q4_column",
+   "kind": "published",
+   "test": "tests/toporlogy/test_fs2019_column.py::test_published_q4_error_20x2",
+   "quantity": "buckling error Q4 20x2",
+   "reference": "ferrari_sigmund_2019 (Fig. 1 table)",
+   "tolerance": "|e - 0.119| <= 5e-4",
+   "runtime": "fast",
+   "validation": "code verification",
+   "note": ""
+  },
+  {
+   "id": "fs2019_q6_column",
+   "kind": "published",
+   "test": "tests/toporlogy/test_fs2019_column.py::test_published_q6_error_20x2",
+   "quantity": "buckling error Q4IM vs published Q6 (strict xfail)",
+   "reference": "ferrari_sigmund_2019",
+   "tolerance": "|e + 6.6e-3| <= 5e-5",
+   "runtime": "fast",
+   "validation": "code verification",
+   "note": "FAILED pre-registered (ledger)"
+  },
+  {
+   "id": "euler_column_orthotropic",
+   "kind": "analytic",
+   "test": "tests/toporlogy/test_buckling_physics.py::test_orthotropic_column_buckles_with_its_axial_modulus",
+   "quantity": "column buckling load, refinement ratios",
+   "reference": "Euler column",
+   "tolerance": "err <= 5e-3; ratios >= 2.5",
+   "runtime": "fast",
+   "validation": "solution verification",
+   "note": ""
+  },
+  {
+   "id": "euler_bernoulli_modal_2d",
+   "kind": "analytic",
+   "test": "tests/toporlogy/test_modal.py::test_cantilever_vs_euler_bernoulli_2d",
+   "quantity": "first frequency ratio",
+   "reference": "Euler-Bernoulli beam",
+   "tolerance": "0.98 < r < 1.0, monotone",
+   "runtime": "fast",
+   "validation": "solution verification",
+   "note": ""
+  },
+  {
+   "id": "heat_series_bar",
+   "kind": "analytic",
+   "test": "tests/toporlogy/test_heat.py::test_bar_series_resistance_exact",
+   "quantity": "end temperature",
+   "reference": "series resistance",
+   "tolerance": "relative <= 1e-10",
+   "runtime": "fast",
+   "validation": "code verification",
+   "note": ""
+  },
+  {
+   "id": "nl_uniaxial",
+   "kind": "analytic",
+   "test": "tests/toporlogy/test_nonlinear.py::test_v2_uniaxial_tension_closed_form",
+   "quantity": "stretches under dead load",
+   "reference": "closed form",
+   "tolerance": "<= 1e-9",
+   "runtime": "fast",
+   "validation": "code verification",
+   "note": ""
+  },
+  {
+   "id": "nl_elastica",
+   "kind": "independent_same_author",
+   "test": "tests/toporlogy/test_nonlinear.py::test_v5_large_deflection_cantilever_elastica",
+   "quantity": "tip displacement",
+   "reference": "_elastica.py",
+   "tolerance": "v <= 5e-3, u <= 1e-2 at n = 16",
+   "runtime": "slow",
+   "validation": "solution verification",
+   "note": ""
+  },
+  {
+   "id": "deng_pnorm_after_mma",
+   "kind": "published",
+   "test": "tests/toporlogy/test_published_values.py::test_deng_cantilever_published_value_is_after_the_first_mma_step",
+   "quantity": "p-norm after one MMA step (post hoc)",
+   "reference": "Deng, Vulimiri & To 2021 §6.2",
+   "tolerance": "relative <= 5e-3",
+   "runtime": "fast",
+   "validation": "code verification",
+   "note": "post-hoc reading of the paper"
+  },
+  {
+   "id": "topbuck250_wall",
+   "kind": "published",
+   "test": "tests/toporlogy/test_published_values.py::test_topbuck250_wall_solid_blf_against_published_value",
+   "quantity": "solid wall load factor (strict xfail)",
+   "reference": "ferrari_sigmund_guest_2021 §5.2",
+   "tolerance": "|lambda - 3.15| <= 0.0051",
+   "runtime": "slow",
+   "validation": "code verification",
+   "note": "FAILED (ledger)"
+  },
+  {
+   "id": "t10_mesh_convergence",
+   "kind": "mms",
+   "test": "tests/toporlogy/test_t10_convergence.py::test_the_same_cantilever_converges_on_fine_meshes_and_not_on_coarse_ones",
+   "quantity": "three-grid GCI verdict",
+   "reference": "celik_2008",
+   "tolerance": "CONVERGED on fine, NOT CONVERGED on coarse",
+   "runtime": "slow",
+   "validation": "solution verification",
+   "note": "needs gmsh"
+  },
+  {
+   "id": "taylor_t1",
+   "kind": "gradient",
+   "test": "tests/toporlogy/test_taylor_remainder.py::test_t1_taylor_orders",
+   "quantity": "Taylor remainder order of 11 responses",
+   "reference": "docs/olcumler/dogrulama_turu.md T",
+   "tolerance": "two consecutive p in (1.8, 2.2)",
+   "runtime": "fast",
+   "validation": "code verification",
+   "note": ""
+  },
+  {
+   "id": "gradients_compliance",
+   "kind": "gradient",
+   "test": "tests/toporlogy/test_gradients.py::test_compliance_single_case",
+   "quantity": "compliance gradient",
+   "reference": "five-point finite difference",
+   "tolerance": "relative <= 1e-6",
+   "runtime": "fast",
+   "validation": "code verification",
+   "note": ""
+  }
+ ],
+ "materials": [
+  {
+   "id": "synthetic_unit_isotropic",
+   "kind": "synthetic",
+   "family": "isotropic",
+   "values": {
+    "E0": 1.0,
+    "nu": 0.3,
+    "rho": 1.0
+   },
+   "units": "dimensionless (consistent user units)",
+   "source": "schema default (configuration/schema.py _MATERIAL)",
+   "used_by": [
+    "examples/*.yaml without a material block"
+   ],
+   "note": "not a real material; the default of every config"
+  }
+ ],
+ "compatibility": {
+  "physics": [
+   "elasticity",
+   "elasticity_gmg",
+   "modal",
+   "nonlinear_elasticity"
+  ],
+  "physics_x_response": {
+   "buckling": {
+    "elasticity": {
+     "status": "SUPPORTED",
+     "evidence": [
+      "tests/toporlogy/test_buckling.py::test_gradient_buckling_ks",
+      "tests/toporlogy/test_independent_buckling.py::test_load_factors_equal_the_dense_independent_solution"
+     ],
+     "reason": "",
+     "enforced": ""
+    },
+    "elasticity_gmg": {
+     "status": "UNSUPPORTED",
+     "evidence": [],
+     "reason": "buckling needs plain Elasticity (direct solver)",
+     "enforced": "catalog"
+    },
+    "modal": {
+     "status": "UNSUPPORTED",
+     "evidence": [],
+     "reason": "needs the static state u; physics modal solves an eigenproblem only",
+     "enforced": "catalog"
+    },
+    "nonlinear_elasticity": {
+     "status": "UNSUPPORTED",
+     "evidence": [],
+     "reason": "linear buckling about a linear prestress; not defined on the non-linear state",
+     "enforced": "catalog"
+    }
+   },
+   "compliance": {
+    "elasticity": {
+     "status": "SUPPORTED",
+     "evidence": [
+      "tests/toporlogy/test_gradients.py::test_compliance_single_case",
+      "tests/toporlogy/test_independent_vv.py::test_top88_fixed_design_objective_and_sensitivity"
+     ],
+     "reason": "",
+     "enforced": ""
+    },
+    "elasticity_gmg": {
+     "status": "SUPPORTED",
+     "evidence": [
+      "tests/toporlogy/test_gmg.py::test_gradients",
+      "tests/toporlogy/test_gmg.py::test_study_regression_against_direct"
+     ],
+     "reason": "",
+     "enforced": ""
+    },
+    "modal": {
+     "status": "UNSUPPORTED",
+     "evidence": [],
+     "reason": "needs the static state u; physics modal solves an eigenproblem only",
+     "enforced": "catalog"
+    },
+    "nonlinear_elasticity": {
+     "status": "EXPERIMENTAL",
+     "evidence": [
+      "tests/toporlogy/test_nonlinear.py::test_v6_end_compliance_gradient_finite_difference"
+     ],
+     "reason": "same number as end_compliance by construction (EndCompliance subclasses Compliance); only end_compliance is tested",
+     "enforced": ""
+    }
+   },
+   "conduction_connectivity": {
+    "elasticity": {
+     "status": "SUPPORTED",
+     "evidence": [
+      "tests/toporlogy/test_connectivity.py::test_gradcheck_conduction_connectivity"
+     ],
+     "reason": "tested with physics elasticity",
+     "enforced": ""
+    },
+    "elasticity_gmg": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "does not read the study's physics (read from the code); combination not tested",
+     "enforced": ""
+    },
+    "modal": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "does not read the study's physics (read from the code); combination not tested",
+     "enforced": ""
+    },
+    "nonlinear_elasticity": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "does not read the study's physics (read from the code); combination not tested",
+     "enforced": ""
+    }
+   },
+   "cost": {
+    "elasticity": {
+     "status": "SUPPORTED",
+     "evidence": [
+      "tests/toporlogy/test_multi_material.py::test_v4_gradients_finite_difference"
+     ],
+     "reason": "tested with physics elasticity",
+     "enforced": ""
+    },
+    "elasticity_gmg": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "does not read the study's physics (read from the code); combination not tested",
+     "enforced": ""
+    },
+    "modal": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "does not read the study's physics (read from the code); combination not tested",
+     "enforced": ""
+    },
+    "nonlinear_elasticity": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "does not read the study's physics (read from the code); combination not tested",
+     "enforced": ""
+    }
+   },
+   "coupling_compliance": {
+    "elasticity": {
+     "status": "SUPPORTED",
+     "evidence": [
+      "tests/toporlogy/test_connectivity.py::test_gradcheck_coupling_compliance"
+     ],
+     "reason": "tested with physics elasticity",
+     "enforced": ""
+    },
+    "elasticity_gmg": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "does not read the study's physics (read from the code); combination not tested",
+     "enforced": ""
+    },
+    "modal": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "does not read the study's physics (read from the code); combination not tested",
+     "enforced": ""
+    },
+    "nonlinear_elasticity": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "does not read the study's physics (read from the code); combination not tested",
+     "enforced": ""
+    }
+   },
+   "dilated_volume": {
+    "elasticity": {
+     "status": "SUPPORTED",
+     "evidence": [
+      "tests/toporlogy/test_robust.py::test_gradcheck_robust_compliance_and_dilated_volume"
+     ],
+     "reason": "tested with physics elasticity",
+     "enforced": ""
+    },
+    "elasticity_gmg": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "does not read the study's physics (read from the code); combination not tested",
+     "enforced": ""
+    },
+    "modal": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "does not read the study's physics (read from the code); combination not tested",
+     "enforced": ""
+    },
+    "nonlinear_elasticity": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "does not read the study's physics (read from the code); combination not tested",
+     "enforced": ""
+    }
+   },
+   "displacement": {
+    "elasticity": {
+     "status": "SUPPORTED",
+     "evidence": [
+      "tests/toporlogy/test_gradients.py::test_non_self_adjoint_displacement",
+      "tests/toporlogy/test_compose.py::test_displacement_value_and_gradient"
+     ],
+     "reason": "",
+     "enforced": ""
+    },
+    "elasticity_gmg": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "",
+     "enforced": ""
+    },
+    "modal": {
+     "status": "UNSUPPORTED",
+     "evidence": [],
+     "reason": "needs the static state u; physics modal solves an eigenproblem only",
+     "enforced": "catalog"
+    },
+    "nonlinear_elasticity": {
+     "status": "SUPPORTED",
+     "evidence": [
+      "tests/toporlogy/test_nonlinear.py::test_v5_large_deflection_cantilever_elastica",
+      "tests/toporlogy/test_nonlinear.py::test_v6_end_compliance_gradient_finite_difference"
+     ],
+     "reason": "",
+     "enforced": ""
+    }
+   },
+   "eigenvalue": {
+    "elasticity": {
+     "status": "UNSUPPORTED",
+     "evidence": [],
+     "reason": "needs physics modal",
+     "enforced": "component"
+    },
+    "elasticity_gmg": {
+     "status": "UNSUPPORTED",
+     "evidence": [],
+     "reason": "needs physics modal",
+     "enforced": "component"
+    },
+    "modal": {
+     "status": "SUPPORTED",
+     "evidence": [
+      "tests/toporlogy/test_modal.py::test_response_gradients",
+      "tests/toporlogy/test_modal.py::test_eigenpairs_match_dense"
+     ],
+     "reason": "",
+     "enforced": ""
+    },
+    "nonlinear_elasticity": {
+     "status": "UNSUPPORTED",
+     "evidence": [],
+     "reason": "needs physics modal",
+     "enforced": "component"
+    }
+   },
+   "end_compliance": {
+    "elasticity": {
+     "status": "UNSUPPORTED",
+     "evidence": [],
+     "reason": "needs physics nonlinear_elasticity",
+     "enforced": "component"
+    },
+    "elasticity_gmg": {
+     "status": "UNSUPPORTED",
+     "evidence": [],
+     "reason": "needs physics nonlinear_elasticity",
+     "enforced": "component"
+    },
+    "modal": {
+     "status": "UNSUPPORTED",
+     "evidence": [],
+     "reason": "needs physics nonlinear_elasticity",
+     "enforced": "component"
+    },
+    "nonlinear_elasticity": {
+     "status": "SUPPORTED",
+     "evidence": [
+      "tests/toporlogy/test_nonlinear.py::test_v6_end_compliance_gradient_finite_difference",
+      "tests/toporlogy/test_nonlinear_orientation.py::test_n4_end_compliance_gradient_with_a_field"
+     ],
+     "reason": "",
+     "enforced": ""
+    }
+   },
+   "frequency": {
+    "elasticity": {
+     "status": "UNSUPPORTED",
+     "evidence": [],
+     "reason": "needs physics modal",
+     "enforced": "component"
+    },
+    "elasticity_gmg": {
+     "status": "UNSUPPORTED",
+     "evidence": [],
+     "reason": "needs physics modal",
+     "enforced": "component"
+    },
+    "modal": {
+     "status": "SUPPORTED",
+     "evidence": [
+      "tests/toporlogy/test_modal.py::test_response_gradients",
+      "tests/toporlogy/test_modal.py::test_eigenpairs_match_dense"
+     ],
+     "reason": "",
+     "enforced": ""
+    },
+    "nonlinear_elasticity": {
+     "status": "UNSUPPORTED",
+     "evidence": [],
+     "reason": "needs physics modal",
+     "enforced": "component"
+    }
+   },
+   "grey_level": {
+    "elasticity": {
+     "status": "SUPPORTED",
+     "evidence": [
+      "tests/toporlogy/test_lengthscale.py::test_gradcheck_local_volume_and_grey"
+     ],
+     "reason": "tested with physics elasticity",
+     "enforced": ""
+    },
+    "elasticity_gmg": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "does not read the study's physics (read from the code); combination not tested",
+     "enforced": ""
+    },
+    "modal": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "does not read the study's physics (read from the code); combination not tested",
+     "enforced": ""
+    },
+    "nonlinear_elasticity": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "does not read the study's physics (read from the code); combination not tested",
+     "enforced": ""
+    }
+   },
+   "local_volume": {
+    "elasticity": {
+     "status": "SUPPORTED",
+     "evidence": [
+      "tests/toporlogy/test_lengthscale.py::test_gradcheck_local_volume_and_grey"
+     ],
+     "reason": "tested with physics elasticity",
+     "enforced": ""
+    },
+    "elasticity_gmg": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "does not read the study's physics (read from the code); combination not tested",
+     "enforced": ""
+    },
+    "modal": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "does not read the study's physics (read from the code); combination not tested",
+     "enforced": ""
+    },
+    "nonlinear_elasticity": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "does not read the study's physics (read from the code); combination not tested",
+     "enforced": ""
+    }
+   },
+   "mass": {
+    "elasticity": {
+     "status": "SUPPORTED",
+     "evidence": [
+      "tests/toporlogy/test_multi_material.py::test_v4_gradients_finite_difference"
+     ],
+     "reason": "tested with physics elasticity",
+     "enforced": ""
+    },
+    "elasticity_gmg": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "does not read the study's physics (read from the code); combination not tested",
+     "enforced": ""
+    },
+    "modal": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "does not read the study's physics (read from the code); combination not tested",
+     "enforced": ""
+    },
+    "nonlinear_elasticity": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "does not read the study's physics (read from the code); combination not tested",
+     "enforced": ""
+    }
+   },
+   "maximize": {
+    "elasticity": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "composite: the weakest status of its parts",
+     "enforced": ""
+    },
+    "elasticity_gmg": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "composite: the weakest status of its parts",
+     "enforced": ""
+    },
+    "modal": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "composite: the weakest status of its parts",
+     "enforced": ""
+    },
+    "nonlinear_elasticity": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "composite: the weakest status of its parts",
+     "enforced": ""
+    }
+   },
+   "min_eigenvalue_ks": {
+    "elasticity": {
+     "status": "UNSUPPORTED",
+     "evidence": [],
+     "reason": "needs physics modal",
+     "enforced": "component"
+    },
+    "elasticity_gmg": {
+     "status": "UNSUPPORTED",
+     "evidence": [],
+     "reason": "needs physics modal",
+     "enforced": "component"
+    },
+    "modal": {
+     "status": "SUPPORTED",
+     "evidence": [
+      "tests/toporlogy/test_modal.py::test_response_gradients",
+      "tests/toporlogy/test_modal.py::test_eigenpairs_match_dense"
+     ],
+     "reason": "",
+     "enforced": ""
+    },
+    "nonlinear_elasticity": {
+     "status": "UNSUPPORTED",
+     "evidence": [],
+     "reason": "needs physics modal",
+     "enforced": "component"
+    }
+   },
+   "min_frequency": {
+    "elasticity": {
+     "status": "UNSUPPORTED",
+     "evidence": [],
+     "reason": "needs physics modal",
+     "enforced": "component"
+    },
+    "elasticity_gmg": {
+     "status": "UNSUPPORTED",
+     "evidence": [],
+     "reason": "needs physics modal",
+     "enforced": "component"
+    },
+    "modal": {
+     "status": "SUPPORTED",
+     "evidence": [
+      "tests/toporlogy/test_modal.py::test_response_gradients",
+      "tests/toporlogy/test_modal.py::test_eigenpairs_match_dense"
+     ],
+     "reason": "",
+     "enforced": ""
+    },
+    "nonlinear_elasticity": {
+     "status": "UNSUPPORTED",
+     "evidence": [],
+     "reason": "needs physics modal",
+     "enforced": "component"
+    }
+   },
+   "phase_volume": {
+    "elasticity": {
+     "status": "SUPPORTED",
+     "evidence": [
+      "tests/toporlogy/test_multi_material.py::test_v4_gradients_finite_difference"
+     ],
+     "reason": "tested with physics elasticity",
+     "enforced": ""
+    },
+    "elasticity_gmg": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "does not read the study's physics (read from the code); combination not tested",
+     "enforced": ""
+    },
+    "modal": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "does not read the study's physics (read from the code); combination not tested",
+     "enforced": ""
+    },
+    "nonlinear_elasticity": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "does not read the study's physics (read from the code); combination not tested",
+     "enforced": ""
+    }
+   },
+   "robust_compliance": {
+    "elasticity": {
+     "status": "SUPPORTED",
+     "evidence": [
+      "tests/toporlogy/test_robust.py::test_gradcheck_robust_compliance_and_dilated_volume"
+     ],
+     "reason": "",
+     "enforced": ""
+    },
+    "elasticity_gmg": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "",
+     "enforced": ""
+    },
+    "modal": {
+     "status": "UNSUPPORTED",
+     "evidence": [],
+     "reason": "needs the static state u; physics modal solves an eigenproblem only",
+     "enforced": "catalog"
+    },
+    "nonlinear_elasticity": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "",
+     "enforced": ""
+    }
+   },
+   "stress": {
+    "elasticity": {
+     "status": "SUPPORTED",
+     "evidence": [
+      "tests/toporlogy/test_stress.py::test_gradient_aggregated_stress",
+      "tests/toporlogy/test_independent_stress.py::test_s2_von_mises_index"
+     ],
+     "reason": "",
+     "enforced": ""
+    },
+    "elasticity_gmg": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "",
+     "enforced": ""
+    },
+    "modal": {
+     "status": "UNSUPPORTED",
+     "evidence": [],
+     "reason": "needs the static state u; physics modal solves an eigenproblem only",
+     "enforced": "catalog"
+    },
+    "nonlinear_elasticity": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "builds; the small-strain stress of the stress response on a large-displacement state is not a verified measure (risk)",
+     "enforced": ""
+    }
+   },
+   "stress_augmented_lagrangian": {
+    "elasticity": {
+     "status": "SUPPORTED",
+     "evidence": [
+      "tests/toporlogy/test_stress.py::test_gradient_augmented_lagrangian"
+     ],
+     "reason": "",
+     "enforced": ""
+    },
+    "elasticity_gmg": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "",
+     "enforced": ""
+    },
+    "modal": {
+     "status": "UNSUPPORTED",
+     "evidence": [],
+     "reason": "needs the static state u; physics modal solves an eigenproblem only",
+     "enforced": "catalog"
+    },
+    "nonlinear_elasticity": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "",
+     "enforced": ""
+    }
+   },
+   "volume": {
+    "elasticity": {
+     "status": "SUPPORTED",
+     "evidence": [
+      "tests/toporlogy/test_gradients.py::test_volume_weighted_and_unweighted"
+     ],
+     "reason": "tested with physics elasticity",
+     "enforced": ""
+    },
+    "elasticity_gmg": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "does not read the study's physics (read from the code); combination not tested",
+     "enforced": ""
+    },
+    "modal": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "does not read the study's physics (read from the code); combination not tested",
+     "enforced": ""
+    },
+    "nonlinear_elasticity": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "does not read the study's physics (read from the code); combination not tested",
+     "enforced": ""
+    }
+   },
+   "weighted_sum": {
+    "elasticity": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "composite: the weakest status of its parts",
+     "enforced": ""
+    },
+    "elasticity_gmg": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "composite: the weakest status of its parts",
+     "enforced": ""
+    },
+    "modal": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "composite: the weakest status of its parts",
+     "enforced": ""
+    },
+    "nonlinear_elasticity": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "composite: the weakest status of its parts",
+     "enforced": ""
+    }
+   }
+  },
+  "rules": [
+   {
+    "id": "gmg_2d",
+    "when": {
+     "physics": "elasticity_gmg",
+     "dim": "2"
+    },
+    "status": "UNSUPPORTED",
+    "reason": "elasticity_gmg is 3-D only",
+    "evidence": [],
+    "enforced": "component"
+   },
+   {
+    "id": "gmg_material_field",
+    "when": {
+     "physics": "elasticity_gmg",
+     "material": "orthotropic_field"
+    },
+    "status": "UNSUPPORTED",
+    "reason": "matrix-free kernels assume one element matrix",
+    "evidence": [],
+    "enforced": "component"
+   },
+   {
+    "id": "gmg_per_case_supports",
+    "when": {
+     "physics": "elasticity_gmg",
+     "supports": "per_case"
+    },
+    "status": "UNSUPPORTED",
+    "reason": "one support set only",
+    "evidence": [],
+    "enforced": "component"
+   },
+   {
+    "id": "gmg_oblique_supports",
+    "when": {
+     "physics": "elasticity_gmg",
+     "supports": "oblique_or_spring"
+    },
+    "status": "UNSUPPORTED",
+    "reason": "axis-aligned fixed DOFs only",
+    "evidence": [],
+    "enforced": "component"
+   },
+   {
+    "id": "modal_per_case_supports",
+    "when": {
+     "physics": "modal",
+     "supports": "per_case"
+    },
+    "status": "UNSUPPORTED",
+    "reason": "one support set only",
+    "evidence": [],
+    "enforced": "component"
+   },
+   {
+    "id": "nonlinear_per_case_supports",
+    "when": {
+     "physics": "nonlinear_elasticity",
+     "supports": "per_case"
+    },
+    "status": "UNSUPPORTED",
+    "reason": "one support set only",
+    "evidence": [],
+    "enforced": "component"
+   },
+   {
+    "id": "buckling_oblique_supports",
+    "when": {
+     "response": "buckling",
+     "supports": "oblique_or_spring"
+    },
+    "status": "UNSUPPORTED",
+    "reason": "LinearBuckling assumes axis-aligned fixed DOFs (ConstrainedElasticity gave 'wrong M dimensions' at the first evaluation before this rule)",
+    "evidence": [],
+    "enforced": "catalog"
+   },
+   {
+    "id": "buckling_per_case_supports",
+    "when": {
+     "response": "buckling",
+     "supports": "per_case"
+    },
+    "status": "UNSUPPORTED",
+    "reason": "LinearBuckling needs one support set",
+    "evidence": [],
+    "enforced": "catalog"
+   },
+   {
+    "id": "plane_strain_3d",
+    "when": {
+     "material": "plane_strain",
+     "dim": "3"
+    },
+    "status": "UNSUPPORTED",
+    "reason": "plane applies to 2-D only",
+    "evidence": [],
+    "enforced": "component"
+   },
+   {
+    "id": "hashin_shtrikman_orthotropic",
+    "when": {
+     "interpolation": "hashin_shtrikman",
+     "material": "orthotropic"
+    },
+    "status": "UNSUPPORTED",
+    "reason": "isotropic bound",
+    "evidence": [],
+    "enforced": "component"
+   },
+   {
+    "id": "phases_responses",
+    "when": {
+     "material": "phases",
+     "response": "other_than_compliance_phase_volume_mass_cost"
+    },
+    "status": "UNSUPPORTED",
+    "reason": "only Compliance, PhaseVolume, Mass, Cost verified with several phases",
+    "evidence": [],
+    "enforced": "component"
+   },
+   {
+    "id": "phases_oc",
+    "when": {
+     "material": "phases",
+     "optimizer": "oc"
+    },
+    "status": "UNSUPPORTED",
+    "reason": "OC assumes one positive-gradient constraint",
+    "evidence": [],
+    "enforced": "component"
+   },
+   {
+    "id": "phases_links",
+    "when": {
+     "material": "phases",
+     "link": "other_than_embed_density_filter_projection_passive"
+    },
+    "status": "UNSUPPORTED",
+    "reason": "only Embed, DensityFilter, HeavisideProjection, Passive verified",
+    "evidence": [],
+    "enforced": "component"
+   },
+   {
+    "id": "phases_elasticity",
+    "when": {
+     "material": "phases",
+     "physics": "elasticity"
+    },
+    "status": "SUPPORTED",
+    "reason": "",
+    "evidence": [
+     "tests/toporlogy/test_multi_material.py::test_v4_gradients_finite_difference",
+     "tests/toporlogy/test_multi_material.py::test_v3_two_material_bar_closed_form"
+    ],
+    "enforced": ""
+   },
+   {
+    "id": "phases_gmg",
+    "when": {
+     "material": "phases",
+     "physics": "elasticity_gmg"
+    },
+    "status": "NOT VERIFIED",
+    "reason": "",
+    "evidence": [],
+    "enforced": ""
+   },
+   {
+    "id": "phases_modal",
+    "when": {
+     "material": "phases",
+     "physics": "modal"
+    },
+    "status": "NOT VERIFIED",
+    "reason": "builds; the mass interpolation of several phases is not tested",
+    "evidence": [],
+    "enforced": ""
+   },
+   {
+    "id": "phases_nonlinear",
+    "when": {
+     "material": "phases",
+     "physics": "nonlinear_elasticity"
+    },
+    "status": "NOT VERIFIED",
+    "reason": "builds with compliance; end_compliance is refused with phases",
+    "evidence": [],
+    "enforced": ""
+   },
+   {
+    "id": "orthotropic_elasticity",
+    "when": {
+     "material": "orthotropic_field",
+     "physics": "elasticity"
+    },
+    "status": "SUPPORTED",
+    "reason": "",
+    "evidence": [
+     "tests/toporlogy/test_fem_mms_extended.py::test_m2_orientation_field_converges_at_second_order",
+     "tests/toporlogy/test_independent_matrices.py::test_k1_k2_reduced_stiffness"
+    ],
+    "enforced": ""
+   },
+   {
+    "id": "orthotropic_buckling",
+    "when": {
+     "material": "orthotropic_field",
+     "response": "buckling"
+    },
+    "status": "SUPPORTED",
+    "reason": "",
+    "evidence": [
+     "tests/toporlogy/test_element_orientation.py::test_p3c_buckling_gradient_q4im",
+     "tests/toporlogy/test_buckling_physics.py::test_orthotropic_column_buckles_with_its_axial_modulus"
+    ],
+    "enforced": ""
+   },
+   {
+    "id": "orthotropic_modal",
+    "when": {
+     "material": "orthotropic",
+     "physics": "modal"
+    },
+    "status": "NOT VERIFIED",
+    "reason": "builds; modal tests use isotropic material",
+    "evidence": [],
+    "enforced": ""
+   },
+   {
+    "id": "orthotropic_gmg_uniform",
+    "when": {
+     "material": "orthotropic",
+     "physics": "elasticity_gmg"
+    },
+    "status": "NOT VERIFIED",
+    "reason": "one rotated D is accepted; not tested",
+    "evidence": [],
+    "enforced": ""
+   },
+   {
+    "id": "orthotropic_nonlinear",
+    "when": {
+     "material": "orthotropic_field",
+     "physics": "nonlinear_elasticity"
+    },
+    "status": "SUPPORTED",
+    "reason": "material svk only (neo-Hooke with a general D is refused)",
+    "evidence": [
+     "tests/toporlogy/test_nonlinear_orientation.py::test_n3_consistent_tangent_with_a_field",
+     "tests/toporlogy/test_nonlinear_orientation.py::test_n4_end_compliance_gradient_with_a_field"
+    ],
+    "enforced": ""
+   },
+   {
+    "id": "nonlinear_incompatible_modes",
+    "when": {
+     "physics": "nonlinear_elasticity",
+     "element": "Q4IM|H8IM"
+    },
+    "status": "UNSUPPORTED",
+    "reason": "incompatible-mode elements not implemented for the non-linear physics",
+    "evidence": [],
+    "enforced": "component"
+   },
+   {
+    "id": "plane_strain_elasticity",
+    "when": {
+     "material": "plane_strain",
+     "physics": "elasticity"
+    },
+    "status": "EXPERIMENTAL",
+    "reason": "D checked against D_plane_strain; no solution benchmark in plane strain",
+    "evidence": [
+     "tests/toporlogy/test_material_config.py::test_plane_strain"
+    ],
+    "enforced": ""
+   },
+   {
+    "id": "plane_strain_modal",
+    "when": {
+     "material": "plane_strain",
+     "physics": "modal"
+    },
+    "status": "NOT VERIFIED",
+    "reason": "",
+    "evidence": [],
+    "enforced": ""
+   },
+   {
+    "id": "finalize_2d",
+    "when": {
+     "post": "finalize",
+     "dim": "2"
+    },
+    "status": "UNSUPPORTED",
+    "reason": "finalize needs a 3-D domain",
+    "evidence": [],
+    "enforced": "component"
+   },
+   {
+    "id": "cuda_gmg",
+    "when": {
+     "physics": "elasticity_gmg",
+     "device": "cuda"
+    },
+    "status": "NOT VERIFIED",
+    "reason": "no GPU in CI or in this record",
+    "evidence": [],
+    "enforced": ""
+   }
+  ]
+ }
+}

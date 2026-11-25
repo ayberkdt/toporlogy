@@ -39,7 +39,8 @@ from typing import Any
 import numpy as np
 import torch
 
-from toporlogy.core.material import OrthotropicStrength, Strength, VOIGT_3D
+from toporlogy.core import tensor as T
+from toporlogy.core.material import OrthotropicStrength, Strength
 from toporlogy.references import cite
 
 __all__ = ["CRITERIA", "Criterion", "make_criterion", "expand_plane", "rotate_stress_to_material",
@@ -56,27 +57,17 @@ def expand_plane(s3: torch.Tensor, szz: torch.Tensor | None = None) -> torch.Ten
 
 def rotate_stress_to_material(s: torch.Tensor, R: Any) -> torch.Tensor:
     """σ' = Rᵀ σ R for stresses (n, 6) in global axes; R's columns are the material axes. ``R`` (3, 3) for all
-    rows, or (n, 3, 3) one per row (per-element orientation)."""
+    rows, or (n, 3, 3) one per row (per-element orientation). Tensor algebra of :mod:`toporlogy.core.tensor`."""
     Rt = torch.as_tensor(np.asarray(R, float), dtype=s.dtype)
-    T = torch.zeros(s.shape[0], 3, 3, dtype=s.dtype)
-    for v, (i, j) in enumerate(VOIGT_3D):
-        T[:, i, j] = s[:, v]
-        T[:, j, i] = s[:, v]
-    if Rt.dim() == 3:
-        if Rt.shape[0] != s.shape[0]:
-            raise ValueError(f"per-row R has {Rt.shape[0]} rotations for {s.shape[0]} stresses")
-        Tm = torch.einsum("npi,npq,nqj->nij", Rt, T, Rt)
-    else:
-        Tm = torch.einsum("pi,npq,qj->nij", Rt, T, Rt)
-    return torch.stack([Tm[:, i, j] for i, j in VOIGT_3D], dim=1)
+    if Rt.dim() == 3 and Rt.shape[0] != s.shape[0]:
+        raise ValueError(f"per-row R has {Rt.shape[0]} rotations for {s.shape[0]} stresses")
+    Tm = T.rotate2(T.voigt_to_stress(s), Rt, inverse=True)
+    return T.stress_to_voigt(Tm, rtol=None)                # R^T sigma R is symmetric by construction
 
 
 def _invariants(s: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
     """I1 and 3 J2 (= σ_vM²) of stresses (n, 6)."""
-    sx, sy, sz, tyz, txz, txy = (s[:, k] for k in range(6))
-    I1 = sx + sy + sz
-    j2x3 = 0.5 * ((sx - sy) ** 2 + (sy - sz) ** 2 + (sz - sx) ** 2) + 3.0 * (tyz ** 2 + txz ** 2 + txy ** 2)
-    return I1, j2x3
+    return s[:, 0] + s[:, 1] + s[:, 2], T.von_mises_squared(s)
 
 
 def von_mises_equivalent(s: torch.Tensor, eps: float = 0.0) -> torch.Tensor:
@@ -86,12 +77,7 @@ def von_mises_equivalent(s: torch.Tensor, eps: float = 0.0) -> torch.Tensor:
 
 def tresca_equivalent(s: torch.Tensor) -> torch.Tensor:
     """σ_max − σ_min (principal stresses) of stresses (n, 6)."""
-    T = torch.zeros(s.shape[0], 3, 3, dtype=s.dtype)
-    for v, (i, j) in enumerate(VOIGT_3D):
-        T[:, i, j] = s[:, v]
-        T[:, j, i] = s[:, v]
-    w = torch.linalg.eigvalsh(T)
-    return w[:, 2] - w[:, 0]
+    return T.tresca(T.voigt_to_stress(s))
 
 
 class Criterion:

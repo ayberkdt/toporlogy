@@ -72,3 +72,19 @@ def backend_status() -> dict[str, dict[str, Any]]:
         out[b] = {"status": status, "passed": len(passed), "failed": len(failed), "skipped": len(skipped),
                   "reason": reason, "what": BACKENDS[b]}
     return out
+
+
+# ---------------------------------------------------------------------------------------------- collected items
+# Every collected item with its xfail / skipif markers, BEFORE the -m / -k deselection (conftest hook, tryfirst).
+# Read by tests/toporlogy/test_catalog_ledger.py (the strict-xfail ledger docs/vv_kutugu.json must match it).
+COLLECTED: list[dict[str, Any]] = []
+
+
+def item_record(item: Any) -> dict[str, Any]:
+    strict_default = bool(item.config.getini("xfail_strict"))
+    xf = [{"strict": bool(m.kwargs.get("strict", strict_default)), "reason": str(m.kwargs.get("reason", ""))}
+          for m in item.iter_markers("xfail")]
+    sk = [str(m.kwargs.get("reason", "")) for m in item.iter_markers("skipif")] + \
+         [str(m.kwargs.get("reason", "")) for m in item.iter_markers("skip")]
+    return {"nodeid": item.nodeid, "xfail": xf, "skip_markers": sk,
+            "slow": item.get_closest_marker("slow") is not None}

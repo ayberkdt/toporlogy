@@ -11,7 +11,9 @@
   Wilson et al. 1973), statically condensed exactly as H8IM; constant Jacobian, so the patch test holds. It
   represents pure bending of the square exactly (``tests/toporlogy/test_material.py``).
 
-Any other elasticity (orthotropic, rotated, plane strain; :mod:`toporlogy.core.material`) goes through
+The isotropic matrices ``D_iso``, ``D_plane_stress``, ``D_plane_strain`` are the unit-modulus (E = 1) cases of
+:mod:`toporlogy.core.linear_elastic` (one implementation). Any other elasticity (orthotropic, rotated, plane strain;
+:mod:`toporlogy.core.material`) goes through
 :func:`element_matrix_from_D`: the same 2×2(×2) Gauss rule with the given unit-modulus D (H8IM condensed as above).
 For the isotropic plane-stress D it reproduces ``ke_q4`` to rounding, for D_iso ``ke_h8`` exactly (same code path).
 A different D per element (fibre orientation field) goes through :func:`element_matrix_field`: the distinct D
@@ -33,6 +35,8 @@ import math
 
 import numpy as np
 
+from toporlogy.core.linear_elastic import (NotPositiveDefiniteError, check_positive_definite, isotropic_plane_strain,
+                                           isotropic_plane_stress, isotropic_stiffness)
 from toporlogy.references import cite
 
 __all__ = ["H8_CORNER", "Q4_CORNER", "D_iso", "D_plane_stress", "D_plane_strain", "ke_h8", "ke_h8_from_D", "ke_q4",
@@ -52,39 +56,30 @@ _GAUSS3 = np.array([[a, b, c] for a in (-_G, _G) for b in (-_G, _G) for c in (-_
 
 def D_iso(nu: float) -> np.ndarray:
     """Isotropic 3-D elasticity matrix for E = 1 (Voigt [εx, εy, εz, γyz, γxz, γxy])."""
-    if not -1 < nu < 0.5:
-        raise ValueError("-1 < nu < 0.5 is required")
-    c = 1.0 / ((1 + nu) * (1 - 2 * nu))
-    D = np.zeros((6, 6))
-    D[:3, :3] = c * nu
-    np.fill_diagonal(D[:3, :3], c * (1 - nu))
-    D[3:, 3:] = np.eye(3) / (2 * (1 + nu))
-    return D
+    return isotropic_stiffness(1.0, nu)
 
 
 def D_plane_stress(nu: float) -> np.ndarray:
     """Plane-stress elasticity matrix for E = 1 (Voigt [εx, εy, γxy])."""
-    if not -1 < nu < 0.5:
-        raise ValueError("-1 < nu < 0.5 is required")
-    return np.array([[1.0, nu, 0.0], [nu, 1.0, 0.0], [0.0, 0.0, (1 - nu) / 2]]) / (1 - nu ** 2)
+    return isotropic_plane_stress(1.0, nu)
 
 
 def D_plane_strain(nu: float) -> np.ndarray:
     """Plane-strain elasticity matrix for E = 1 (Voigt [εx, εy, γxy]; εz = 0)."""
-    if not -1 < nu < 0.5:
-        raise ValueError("-1 < nu < 0.5 is required")
-    c = 1.0 / ((1 + nu) * (1 - 2 * nu))
-    return c * np.array([[1 - nu, nu, 0.0], [nu, 1 - nu, 0.0], [0.0, 0.0, (1 - 2 * nu) / 2]])
+    return isotropic_plane_strain(1.0, nu)
 
 
 def _check_D(D: np.ndarray, n: int) -> np.ndarray:
+    """D (n, n) if symmetric and positive definite (:func:`toporlogy.core.linear_elastic.check_positive_definite`)."""
     D = np.asarray(D, float)
     if D.shape != (n, n):
         raise ValueError(f"D must be {n} x {n}, got {D.shape}")
-    if not np.allclose(D, D.T, rtol=1e-12, atol=1e-14 * np.abs(D).max()):
-        raise ValueError("D must be symmetric")
-    if not np.linalg.eigvalsh(0.5 * (D + D.T)).min() > 0:
-        raise ValueError("D must be positive definite")
+    try:
+        check_positive_definite(D, "stiffness", "D")
+    except NotPositiveDefiniteError as e:
+        raise ValueError(f"D must be positive definite: {e}") from None
+    except ValueError as e:
+        raise ValueError(f"D must be symmetric: {e}") from None
     return D
 
 
