@@ -13,7 +13,8 @@ unit, e.g. m; ``E0`` is force/length² (Pa with N and m); forces are force units
 
     name: mbb                      # [config file stem] run-folder suffix
     domain: {type: box, shape: [60, 20], h: 1.0}                    # *required*; also csg, stl (keep / void shapes)
-    material: {E0: 1.0, nu: 0.3, rho: 1.0}                          # [1.0, 0.3, 1.0]
+    material: {E0: 1.0, nu: 0.3, rho: 1.0}                          # [1.0, 0.3, 1.0]; also plane, orthotropic,
+                                                                    # strength (see below)
     physics: {type: elasticity, element: null, solver: direct}      # element null = H8 (3-D) / Q4 (2-D); or modal
     supports:                                                       # *required*, >= 1 (bc supports)
       - {type: fixed, where: {type: plane, axis: x, at: min}, dofs: x}
@@ -41,6 +42,13 @@ judged PASS (constraint verdict); ``seed`` seeds NumPy and torch; ``move_beta_re
 optimizer's move limit to move0 · min(1, move_beta_ref / β) after every β step of the schedule. The resolved
 config (all defaults filled, auto links explicit) is written as ``config.resolved.yaml`` with a ``provenance``
 block (git revision, time, source, overrides); loading it again builds the identical study.
+
+Material. ``plane`` (2-D only): ``stress`` [default] or ``strain``. ``orthotropic`` [null = isotropic E0, nu]:
+{E1, E2, E3, G12, G13, G23, nu12, nu13, nu23} in the material axes, oriented by ``angle`` (degrees about z) or
+``axes: [axis1, axis2]`` (3-D); E0 must then equal E1 (the modulus the interpolation scales). ``strength`` [null]:
+{tension, compression, shear, safety_factor} (isotropic) or {Xt, Xc, Yt, Yc, S12, Zt, Zc, S13, S23, f12,
+safety_factor} (orthotropic); used by the ``stress`` responses (``criterion``) and their default limit.
+(:mod:`toporlogy.core.material`, :mod:`toporlogy.optimization.strength`.)
 
 Boundary conditions. Supports and loads build a :class:`toporlogy.boundary.BoundaryConditions` (selectors, supports,
 loads, per-case supports, combinations); its ``check()`` runs in :func:`build` — an error (e.g. an unrestrained
@@ -80,7 +88,10 @@ _REQUIRED = ("domain", "supports")                     # load_cases too, unless 
 
 
 _MATERIAL = {"E0": Param("E0", 1.0, float, unit="force/length^2"), "nu": Param("nu", 0.3, float),
-             "rho": Param("rho", 1.0, float, unit="mass/length^3")}
+             "rho": Param("rho", 1.0, float, unit="mass/length^3"),
+             "plane": Param("plane", "stress", str),
+             "orthotropic": Param("orthotropic", None, None, nullable=True),
+             "strength": Param("strength", None, None, nullable=True, unit="force/length^2")}
 
 
 _RUN = {"max_iter": Param("max_iter", 100, int), "tol": Param("tol", 0.01, float),

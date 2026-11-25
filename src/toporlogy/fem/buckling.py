@@ -25,6 +25,23 @@ is to interpolate it WITHOUT the lower bound E_min of the stiffness (void elemen
 The element matrix is linear in u_e. For H8IM the incompatible modes are condensed in K only; K_G uses the compatible
 trilinear field (the same choice as for the mass matrix in :mod:`toporlogy.fem.modal`).
 
+Preload. With a load P0 that stays fixed and a load P1 that is scaled, buckling is
+``(K + K_G(u0) + λ K_G(u1)) φ = 0``; :meth:`LinearBuckling.modes` takes ``KG0 = K_G(u0)`` and solves
+``(−K_G(u1)) φ = μ (K + K_G(u0)) φ``. It requires K + K_G(u0) positive definite, i.e. the preload alone must not
+buckle (λ0 > 1), and checks that first (one extra eigenvalue).
+
+Diagnostics. :meth:`LinearBuckling.low_density_share` is the share of each mode's strain energy φᵀKφ held by
+elements below a density threshold; a share near 1 flags a spurious mode localised in grey or void material (the
+same measure as :meth:`toporlogy.fem.modal.Modal.low_density_share`). :class:`BucklingClusterWarning` is raised by
+the responses when the last aggregated mode and the next one form a (near-)repeated cluster, because aggregating a
+cut cluster is not differentiable.
+
+What the model does not contain: geometric non-linearity, imperfections and post-buckling (λ is the bifurcation
+load of the linearised problem); in 2-D, buckling out of the plane (the plane-stress model has in-plane DOFs only,
+so a thin plate's usually critical out-of-plane mode is not found); follower loads (the load is dead); material
+non-linearity — compare λ with the first-failure load factor of a strength criterion
+(:func:`toporlogy.optimization.buckling.first_failure_load_factor`).
+
 Verification (``tests/toporlogy/test_buckling.py``): the Gauss-point strain matrices reproduce the element
 stiffness; K_G vanishes for rigid-body displacement fields and scales linearly with the load; Euler columns in 2-D and
 3-D against π² E I / (K L)².
@@ -41,10 +58,14 @@ import scipy.sparse as sp
 import scipy.sparse.linalg as spla
 
 from toporlogy.fem.elastic import Elasticity
-from toporlogy.fem.elements import D_iso, D_plane_stress, H8_CORNER, Q4_CORNER
+from toporlogy.fem.elements import H8_CORNER, Q4_CORNER
 from toporlogy.references import cite
 
-__all__ = ["gauss_operators", "LinearBuckling", "voigt_pairs"]
+__all__ = ["gauss_operators", "LinearBuckling", "voigt_pairs", "BucklingClusterWarning"]
+
+
+class BucklingClusterWarning(UserWarning):
+    """The aggregated buckling modes end inside a (near-)repeated cluster: compute more modes."""
 
 _G = 1.0 / np.sqrt(3.0)
 
@@ -101,7 +122,7 @@ class LinearBuckling:
         d = model.domain
         self.dim = d.dim
         self.dN, self.B, self.w = gauss_operators(d.dim)
-        self.D = D_iso(model.nu) if d.dim == 3 else D_plane_stress(model.nu)
+        self.D = np.asarray(model.D, float)                                # unit-modulus D of the model
         self.DB = np.einsum("vw,gwk->gvk", self.D, self.B)                 # (ngp, nvoigt, nloc): σ per unit u_e
         self.scale = 1.0 if d.dim == 3 else d.thickness / d.h
         self.h = d.h
@@ -143,12 +164,14 @@ class LinearBuckling:
 
     # ------------------------------------------------------------------ eigenproblem
     def modes(self, E_active: np.ndarray, EG_active: np.ndarray, u: np.ndarray, k: int = 6,
-              tol: float = 1e-10) -> tuple[np.ndarray, np.ndarray]:
+              tol: float = 1e-10, KG0: sp.spmatrix | None = None) -> tuple[np.ndarray, np.ndarray]:
         """The ``k`` largest μ = 1/λ (descending) and their modes (ndof, k), K-normalised.
 
         ``u``: reference displacements (ndof,) of the SAME moduli ``E_active``. The model's factorisation is reused
         when it belongs to ``E_active``; otherwise K is factorised again. μ ≤ 0 means that mode does not buckle under
-        the reference load direction (tension).
+        the reference load direction (tension). ``KG0``: stress stiffness of a fixed preload on the free DOFs
+        (:meth:`geometric_matrix` of its displacements); the modes are then (K + KG0)-normalised and μ refers to the
+        scaled load only (module notes). Raises ValueError if the preload alone buckles.
         """
         m = self.model
         E = np.asarray(E_active, float)
@@ -164,6 +187,17 @@ class LinearBuckling:
         Minv = spla.LinearOperator((n, n), matvec=lambda b: np.asarray(m.solver.solve(b)).reshape(-1),
                                    dtype=float)
         v0 = np.random.default_rng(0).standard_normal(n)                     # fixed start: reproducible runs
+        if KG0 is not None:
+            KG0 = sp.csr_matrix(KG0)
+            if KG0.shape != (n, n):
+                raise ValueError(f"KG0 must be {n} x {n} (free DOFs)")
+            mu0 = spla.eigsh(-KG0, k=1, M=Kfull, Minv=Minv, which="LA", tol=tol, v0=v0,
+                             return_eigenvectors=False)[0]
+            if mu0 >= 1.0:
+                raise ValueError(f"the preload alone buckles (load factor 1/mu0 = {1 / mu0:.4g} <= 1)")
+            Kfull = (Kfull + KG0).tocsr()
+            lu = spla.splu(Kfull.tocsc())
+            Minv = spla.LinearOperator((n, n), matvec=lu.solve, dtype=float)
         mu, Phi = spla.eigsh(-KG, k=k, M=Kfull, Minv=Minv, which="LA", tol=tol, v0=v0,
                              ncv=min(n - 1, max(2 * k + 2, 24)), maxiter=20 * n)
         # Rayleigh–Ritz in the returned span: K-orthonormal modes and consistent μ to round-off
@@ -177,6 +211,15 @@ class LinearBuckling:
         full = np.zeros((m.domain.ndof, k))
         full[m.free] = Phi
         return mu, full
+
+    def low_density_share(self, E_active: np.ndarray, modes: np.ndarray, xphys_active: np.ndarray,
+                          threshold: float = 0.5) -> np.ndarray:
+        """(k,) share of each mode's strain energy φᵀKφ in active elements with x̄ < ``threshold`` (module notes)."""
+        _, kE = self.mode_forms(modes)
+        w = np.asarray(E_active, float)[:, None] * kE
+        low = np.asarray(xphys_active, float) < threshold
+        tot = w.sum(axis=0)
+        return np.where(tot > 0, w[low].sum(axis=0) / np.where(tot > 0, tot, 1.0), 0.0)
 
     # ------------------------------------------------------------------ pieces of the Rayleigh quotient
     def mode_forms(self, modes: np.ndarray) -> tuple[np.ndarray, np.ndarray]:

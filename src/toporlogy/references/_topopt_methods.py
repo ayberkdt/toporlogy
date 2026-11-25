@@ -40,6 +40,16 @@ REFERENCES: tuple[Reference, ...] = (
               note="comparison of aggregated and augmented-Lagrangian strategies; record"),
     Reference("bertsekas_1999", "D. P. Bertsekas", 1999, "Nonlinear Programming", "Athena Scientific", edition="2nd",
               note="augmented Lagrangian for inequality constraints; memory"),
+    # --- material interpolation bounds --------------------------------------------------------
+    Reference("hashin_shtrikman_1963", "Z. Hashin, S. Shtrikman", 1963,
+              "A variational approach to the theory of the elastic behaviour of multiphase materials",
+              "Journal of the Mechanics and Physics of Solids 11(2):127-140",
+              note="bounds on effective bulk and shear moduli; bibliographic details from memory, not checked; text "
+                   "not read (the bounds used are checked against exact solutions in test_material.py)"),
+    Reference("bendsoe_sigmund_1999", "M. P. Bendsøe, O. Sigmund", 1999,
+              "Material interpolation schemes in topology optimization", "Archive of Applied Mechanics 69:635-654",
+              note="SIMP admissibility p >= p*(nu) w.r.t. the HS bounds; bibliographic details from memory, not "
+                   "checked; text not read"),
     # --- buckling ---------------------------------------------------------------------------
     Reference("ferrari_sigmund_2019", "F. Ferrari, O. Sigmund", 2019,
               "Revisiting topology optimization with buckling constraints",

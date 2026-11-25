@@ -46,9 +46,10 @@ import torch
 from toporlogy.fem.elements import D_iso, D_plane_stress, b_centroid_h8, b_centroid_q4
 from toporlogy.optimization.local import LocalField
 from toporlogy.optimization.responses import EvalContext
+from toporlogy.optimization.strength import Criterion, expand_plane
 from toporlogy.references import cite
 
-__all__ = ["von_mises_matrix", "centroid_stress", "VonMises", "FORMS"]
+__all__ = ["von_mises_matrix", "centroid_stress", "VonMises", "FailureIndex", "FORMS"]
 
 FORMS = ("ratio", "margin", "polynomial")
 
@@ -181,3 +182,70 @@ class VonMises(LocalField):
         fr = torch.as_tensor(self.domain.frac.ravel()[self.elements], dtype=ctx.xphys.dtype)
         n_cases = (ctx.U.shape[1] if ctx.U is not None else 1) if self.cases is None else len(self.cases)
         return fr[:, None].expand(-1, n_cases)
+
+
+class FailureIndex(VonMises):
+    """Relaxed failure index of every active element and load case for any criterion of
+    :mod:`toporlogy.optimization.strength` (von Mises, Tresca, Drucker-Prager, Raghava, Tsai-Wu) and any elasticity
+    (orthotropic, rotated, plane strain).
+
+    The solid centroid stress is ``σ_e = E0 · D · (B_c / h) · u_e`` with the physics' unit-modulus ``D``; in 2-D it is
+    expanded to 3-D with σzz = E0 · ``szz_row`` · ε (plane strain; None = plane stress, σzz = 0). The local value is
+    the criterion's index I (1 at the allowable) relaxed exactly as :class:`VonMises` relaxes σ_vM / σ_lim
+    (``form``, ``q``, ``penal``); with ``criterion`` von Mises, isotropic D and plane stress it equals
+    :class:`VonMises` with σ_lim = the allowable tension (to rounding; ``tests/toporlogy/test_strength.py``).
+
+    Parameters
+    ----------
+    domain : Domain
+    criterion : Criterion
+        Failure criterion with its allowables.
+    D : array, optional
+        Unit-modulus elasticity matrix (``physics.D``); None = isotropic from ``nu``.
+    nu : float
+        Poisson's ratio when ``D`` is None.
+    szz_row : array (3,), optional
+        Plane-strain row of the unit-modulus 3-D stiffness (:func:`toporlogy.core.material.out_of_plane_row`).
+    E0, form, q, penal, exclude, cases : as for :class:`VonMises`.
+
+    :attr:`last_solid_ratio` is the largest unrelaxed index over the elements with x̄ > 0.5.
+    """
+
+    name = "failure_index"
+
+    def __init__(self, domain: Any, criterion: Criterion, D: Any = None, nu: float = 0.3, szz_row: Any = None,
+                 E0: float | None = None, form: str = "ratio", q: float = 0.5, penal: float = 3.0,
+                 exclude: Any = None, cases: Any = None) -> None:
+        super().__init__(domain, 1.0, nu=nu, E0=E0, form=form, q=q, penal=penal, exclude=exclude, cases=cases)
+        self.criterion = criterion
+        dim = domain.dim
+        nv = 6 if dim == 3 else 3
+        if D is None:
+            D = D_iso(nu) if dim == 3 else D_plane_stress(nu)
+        self.D = np.asarray(D, float)
+        if self.D.shape != (nv, nv):
+            raise ValueError(f"D must be {nv} x {nv} for a {dim}-D domain")
+        if szz_row is not None and dim == 3:
+            raise ValueError("szz_row is for 2-D plane strain only")
+        self.szz_row = None if szz_row is None else np.asarray(szz_row, float).reshape(3)
+        self._B = (b_centroid_h8() if dim == 3 else b_centroid_q4()) / domain.h
+
+    def solid_ratio(self, ctx: EvalContext) -> torch.Tensor:
+        """Unrelaxed failure index of the solid material, (n_elements, n_cases)."""
+        if ctx.U is None:
+            raise ValueError("FailureIndex needs U")
+        U = ctx.U if self.cases is None else ctx.U[:, self.cases]
+        U2 = U[:, None] if U.dim() == 1 else U
+        E0 = self._modulus(ctx)
+        ue = U2[torch.as_tensor(self.domain.edof[self.elements], dtype=torch.long)]       # (n, nloc, nc)
+        Bt = torch.as_tensor(self._B, dtype=U2.dtype)
+        eps_ = torch.einsum("vk,ekc->ecv", Bt, ue)                                       # strain (n, nc, nv)
+        sig = E0 * eps_ @ torch.as_tensor(self.D, dtype=U2.dtype).T
+        n, nc = sig.shape[0], sig.shape[1]
+        flat = sig.reshape(n * nc, -1)
+        if self.domain.dim == 2:
+            szz = None
+            if self.szz_row is not None:
+                szz = E0 * eps_.reshape(n * nc, 3) @ torch.as_tensor(self.szz_row, dtype=U2.dtype)
+            flat = expand_plane(flat, szz)
+        return self.criterion.index(flat).reshape(n, nc)

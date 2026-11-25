@@ -30,6 +30,7 @@ __all__ = ["Elasticity", "element_matrix", "RESIDUAL_TOL", "BACKWARD_TOL", "Resi
 
 
 from toporlogy.fem.elements import element_matrix  # noqa: E402  (re-exported)
+from toporlogy.fem.elements import D_iso, D_plane_stress, element_matrix_from_D  # noqa: E402
 
 
 class Elasticity:
@@ -46,14 +47,29 @@ class Elasticity:
         "H8" (default in 3-D), "H8IM", or "Q4" (2-D).
     solver : object with ``factor(A_upper)`` / ``solve(B)``, optional
         Default :class:`DirectSolver` ("auto").
+    elasticity : array, optional
+        Unit-modulus elasticity matrix D (6 × 6 in 3-D, 3 × 3 in 2-D; :func:`toporlogy.core.material.unit_elasticity`)
+        for orthotropic, rotated or plane-strain material. None = isotropic plane stress / 3-D from ``nu``; when it is
+        given, ``nu`` is not used and :attr:`nu` is None.
+
+    Attributes
+    ----------
+    D : numpy.ndarray
+        The unit-modulus elasticity matrix the element matrix was built from (stress and buckling use it).
     """
 
     def __init__(self, domain: Domain, fixed: Sequence[int] | np.ndarray, nu: float = 0.3, element: str | None = None,
-                 solver: Any = None) -> None:
+                 solver: Any = None, elasticity: np.ndarray | None = None) -> None:
         self.domain = domain
-        self.nu = float(nu)
         self.element = element or ("H8" if domain.dim == 3 else "Q4")
-        self.KE = element_matrix(domain.dim, self.element, nu)
+        if elasticity is None:
+            self.nu: float | None = float(nu)
+            self.D = D_iso(nu) if domain.dim == 3 else D_plane_stress(nu)
+            self.KE = element_matrix(domain.dim, self.element, nu)
+        else:
+            self.nu = None
+            self.D = np.asarray(elasticity, float).copy()
+            self.KE = element_matrix_from_D(domain.dim, self.element, self.D)
         self.geom = domain.h if domain.dim == 3 else domain.thickness
         self.elements = domain.active_elements
         self.edof = domain.edof[self.elements]                      # (na, nloc)

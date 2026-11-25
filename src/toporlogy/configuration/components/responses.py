@@ -8,7 +8,7 @@ from typing import Any
 import numpy as np
 
 from toporlogy.configuration.helpers import (
-    _case_weights, _field_source, _interfaces, _region_mask, _robust_set, _vector, checked_selector,
+    _case_weights, _field_source, _interfaces, _region_mask, _robust_set, _vector, checked_selector, material_model,
 )
 from toporlogy.configuration.registry import BuildContext, register
 
@@ -121,43 +121,72 @@ def register_responses() -> None:
         return r
 
     # ---------------------------------------------------------------- stress, buckling, displacement, algebra
-    def _von_mises(ctx: BuildContext, sigma_lim: float, form: str, q: float, penal: float, exclude: Any,
-                   cases: list | None) -> Any:
-        from toporlogy.optimization.stress import VonMises
+    def _von_mises(ctx: BuildContext, sigma_lim: float | None, form: str, q: float, penal: float, exclude: Any,
+                   cases: list | None, criterion: str | None = None) -> Any:
+        """The local stress field: VonMises (isotropic, plane stress / 3-D, no criterion: the original path) or
+        FailureIndex (any criterion, orthotropic or plane strain). The limit is sigma_lim or material.strength."""
+        from toporlogy.core.material import Strength
+        from toporlogy.optimization.strength import make_criterion
+        from toporlogy.optimization.stress import FailureIndex, VonMises
         mask = None if not exclude else _region_mask(exclude, ctx.domain)
-        return VonMises(ctx.domain, sigma_lim, nu=ctx.material["nu"], E0=ctx.material["E0"], form=form, q=q,
-                        penal=penal, exclude=mask, cases=cases)
+        mm = material_model(ctx)
+        if sigma_lim is not None and mm.strength is not None:
+            raise ValueError("give sigma_lim or material.strength, not both")
+        if criterion is None and mm.elasticity is None:
+            if sigma_lim is None:
+                if not isinstance(mm.strength, Strength):
+                    raise ValueError("stress: give sigma_lim or material.strength")
+                sigma_lim = mm.strength.allowable_tension
+            return VonMises(ctx.domain, sigma_lim, nu=ctx.material["nu"], E0=ctx.material["E0"], form=form, q=q,
+                            penal=penal, exclude=mask, cases=cases)
+        kind = criterion or ("tsai_wu" if mm.orthotropic else "von_mises")
+        strength = mm.strength
+        if strength is None:
+            if sigma_lim is None or kind not in ("von_mises", "tresca"):
+                raise ValueError(f"stress criterion {kind}: needs material.strength"
+                                 + ("" if kind in ("von_mises", "tresca") else " (sigma_lim is not enough)"))
+            strength = Strength(float(sigma_lim))
+        return FailureIndex(ctx.domain, make_criterion(kind, strength, mm.R), D=mm.elasticity, nu=ctx.material["nu"],
+                            szz_row=mm.szz_row, E0=ctx.material["E0"], form=form, q=q, penal=penal, exclude=mask,
+                            cases=cases)
 
-    def stress(ctx: BuildContext, sigma_lim: float, aggregate: str = "pnorm", parameter: float = 8.0,
-               q: float = 0.5, adaptive: float | None = 0.5, exclude: Any = None, cases: list | None = None) -> Any:
-        """Largest relaxed von Mises stress / sigma_lim (centroid, solid stress x^q), aggregated: max | pnorm |
-        pmean | ks | ks_lower | induced_exponential | induced_power with its parameter; adaptive: damping of the
-        scale that ties the aggregate to the true maximum (null = none). exclude: shapes whose elements are left
-        out (point loads, supports). Upper default 1."""
+    def stress(ctx: BuildContext, sigma_lim: float | None = None, aggregate: str = "pnorm", parameter: float = 8.0,
+               q: float = 0.5, adaptive: float | None = 0.5, exclude: Any = None, cases: list | None = None,
+               criterion: str | None = None) -> Any:
+        """Largest relaxed failure index (centroid, solid stress x^q), aggregated: max | pnorm | pmean | ks |
+        ks_lower | induced_exponential | induced_power with its parameter. The index is von Mises / sigma_lim, or
+        with criterion (von_mises | tresca | drucker_prager | raghava | tsai_wu) the criterion's index against
+        material.strength (sigma_lim null = the material's allowable). adaptive: damping of the scale that ties the
+        aggregate to the true maximum (null = none). exclude: shapes whose elements are left out (point loads,
+        supports). Upper default 1."""
         from toporlogy.optimization.local import Aggregated
-        r = Aggregated(_von_mises(ctx, sigma_lim, "ratio", q, 3.0, exclude, cases), aggregate, parameter, adaptive,
-                       name="stress")
+        r = Aggregated(_von_mises(ctx, sigma_lim, "ratio", q, 3.0, exclude, cases, criterion), aggregate, parameter,
+                       adaptive, name="stress")
         r.config_upper = 1.0
         r.config_scale = 1.0
         return r
 
-    def stress_augmented_lagrangian(ctx: BuildContext, objective: Any, sigma_lim: float, form: str = "polynomial",
-                                    mu0: float = 10.0, alpha: float = 1.1, mu_max: float = 1.0e4,
-                                    penal: float = 3.0, q: float = 0.5, exclude: Any = None,
-                                    cases: list | None = None, reference: Any = "first") -> Any:
+    def stress_augmented_lagrangian(ctx: BuildContext, objective: Any, sigma_lim: float | None = None,
+                                    form: str = "polynomial", mu0: float = 10.0, alpha: float = 1.1,
+                                    mu_max: float = 1.0e4, penal: float = 3.0, q: float = 0.5, exclude: Any = None,
+                                    cases: list | None = None, reference: Any = "first",
+                                    criterion: str | None = None) -> Any:
         """objective / reference + augmented Lagrangian of the local stress constraints (one per element and
-        case; form polynomial | margin). Use it as the objective with schedule multiplier_update."""
+        case; form polynomial | margin). Use it as the objective with schedule multiplier_update. sigma_lim and
+        criterion as for stress."""
         from toporlogy.optimization.local import AugmentedLagrangian
-        return AugmentedLagrangian(objective, _von_mises(ctx, sigma_lim, form, q, penal, exclude, cases), mu0, alpha,
-                                   mu_max, reference, name="stress_al")
+        return AugmentedLagrangian(objective, _von_mises(ctx, sigma_lim, form, q, penal, exclude, cases, criterion),
+                                   mu0, alpha, mu_max, reference, name="stress_al")
 
     def buckling(ctx: BuildContext, load_factor: float | None = None, n_modes: int = 6, rho: float = 50.0,
-                 case: int = 0, penal_g: float = 3.0, scale: float | None = None) -> Any:
-        """KS upper bound of 1 / lambda_1 (linear buckling of load case `case`); with load_factor the constraint
-        lambda_1 >= load_factor is this response <= 1 / load_factor (default upper and scale). Plain elasticity
-        physics with the direct solver only."""
+                 case: int = 0, penal_g: float = 3.0, scale: float | None = None,
+                 preload_case: int | None = None) -> Any:
+        """KS upper bound of 1 / lambda_1 (linear buckling of load case `case`; preload_case: a case whose load
+        stays fixed while `case` is scaled); with load_factor the constraint lambda_1 >= load_factor is this
+        response <= 1 / load_factor (default upper and scale). Plain elasticity physics with the direct solver
+        only."""
         from toporlogy.optimization.buckling import BucklingKS
-        r = BucklingKS(n_modes, rho, case, penal_g, scale, E0=ctx.material["E0"])
+        r = BucklingKS(n_modes, rho, case, penal_g, scale, E0=ctx.material["E0"], preload_case=preload_case)
         if load_factor is not None:
             if not load_factor > 0:
                 raise ValueError("load_factor > 0 is required")

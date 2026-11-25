@@ -8,7 +8,7 @@ from typing import Any
 import numpy as np
 
 from toporlogy.configuration.helpers import (
-    SpreadForce, _axis, _case_weights, _coord, _directions, _nonempty, _region_mask, checked_selector,
+    SpreadForce, _axis, _case_weights, _coord, _directions, _nonempty, _region_mask, checked_selector, material_model,
 )
 from toporlogy.configuration.registry import BuildContext, REGISTRY, join, register
 
@@ -117,15 +117,25 @@ def register_core() -> None:
         """RAMP (experimental); E0 from material.E0."""
         return RAMP(ctx.domain, E0=ctx.material["E0"], q=q, emin_ratio=emin_ratio)
 
+    def hashin_shtrikman(ctx: BuildContext, emin_ratio: float = 1e-6) -> Any:
+        """Young's modulus of the Hashin-Shtrikman upper bound of a porous solid (grey = porous material; does not
+        penalise grey: for judging a design, not for driving one); E0, nu from material (isotropic only)."""
+        from toporlogy.design.interp import HashinShtrikman
+        if ctx.material.get("orthotropic") is not None:
+            raise ValueError("hashin_shtrikman: isotropic material only")
+        return HashinShtrikman(ctx.domain, E0=ctx.material["E0"], nu=ctx.material["nu"], emin_ratio=emin_ratio)
+
     register("interpolation", "simp", simp)
     register("interpolation", "ramp", ramp)
+    register("interpolation", "hashin_shtrikman", hashin_shtrikman)
 
     # ---------------------------------------------------------------- solver and physics
     register("solver", "direct", DirectSolver)
 
     def elasticity(ctx: BuildContext, element: str | None = None, solver: Any = "direct") -> Any:
-        """Static linear elasticity; nu from material.nu; element null = H8 (3-D) / Q4 (2-D). Oblique supports and
-        springs use bc.ConstrainedElasticity, load cases with their own supports bc.PerCaseSupports."""
+        """Static linear elasticity; nu, plane, orthotropic from material; element null = H8 (3-D) / Q4 (2-D).
+        Oblique supports and springs use bc.ConstrainedElasticity, load cases with their own supports
+        bc.PerCaseSupports."""
         spec = (ctx.config.get("physics") or {}).get("solver")
         made = [0]
 
@@ -135,7 +145,8 @@ def register_core() -> None:
                 return solver
             return REGISTRY.build("solver", spec, ctx, join(ctx.path, "solver"))
 
-        return ctx.bc.physics(nu=ctx.material["nu"], element=element, solver_factory=factory)
+        return ctx.bc.physics(nu=ctx.material["nu"], element=element, solver_factory=factory,
+                              elasticity=material_model(ctx).elasticity)
 
     register("physics", "elasticity", elasticity, nested={"solver": "solver"})
 

@@ -132,8 +132,8 @@ class ConstrainedElasticity(Elasticity):
     """
 
     def __init__(self, domain: Domain, constraints: ConstraintSet, nu: float = 0.3, element: str | None = None,
-                 solver: Any = None) -> None:
-        super().__init__(domain, constraints.fixed, nu=nu, element=element, solver=solver)
+                 solver: Any = None, elasticity: np.ndarray | None = None) -> None:
+        super().__init__(domain, constraints.fixed, nu=nu, element=element, solver=solver, elasticity=elasticity)
         dim = domain.dim
         nf = len(self.free)
         gmap = np.full(domain.ndof, -1, np.int64)
