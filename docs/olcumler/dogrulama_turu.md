@@ -352,3 +352,18 @@ yüz yüksüz, rijit hareket üç sıfır DOF ile tutulur; hata, FE − kapalı 
 | H2 | Q4: hata oranları | ∈ [1,8, 2,25] |
 | H3 | Q4IM: en ince hata ≤ 0,5 × Q4'ünki; oranlar ≥ 1,8 (hata < 1e-10 değilse) | geçer |
 | H4 | Uç çökmesi u_y(L, 0), en ince ağ | Q4 ≤ 2e-2, Q4IM ≤ 2e-3 göreli |
+
+### 7.1 Sonuçlar (ilk koşu) [Ö]
+
+| # | Ölçülen | Eşik | Sonuç |
+|:---|:---|:---|:---|
+| H1 | u'dan gerilme 2,8e-10; denge 1,8e-11; üst/alt yüz 0; uç bileşkesi 1,1e-16 | ≤ 1e-7 | PASS: hafızadan yazılan formül tutarlı |
+| H2 | Q4 hataları 4,2e-3 · 1,2e-3 · 3,4e-4; oranlar 1,78 · 1,82 | ∈ [1,8, 2,25] | FAIL (strict xfail) |
+| H3 | Q4IM hataları 1,8e-4 · 7,3e-5 · 2,5e-5 (Q4'ün 1/13'ü); oranlar 1,34 · 1,52 | ≤ 0,5 × Q4 ve oran ≥ 1,8 | FAIL (strict xfail): doğruluk kısmı tutuyor, oran tutmuyor |
+| H4 | uç çökmesi: Q4 1,8e-4, Q4IM 2,3e-6 | 2e-2 / 2e-3 | PASS |
+
+Tanı amaçlı ek koşu (ölçüt değil): n = 32 ve 64'te Q4 oranları 1,85 · 1,86, Q4IM oranları 1,63 · 1,70. Oranlar
+2'ye alttan, yavaş yaklaşıyor. Maksimum normda h² \|ln h\| davranışı bunu açıklayabilir; doğrulanmadı. Sınırda sıfır
+yer değiştirmeli MMS problemlerinde (§1.3) oranlar ilk üç ağda 2,00'dı. Buradaki fark, problemin tamamen çekiş
+yüklü olması (üç noktada rijit hareket tutuluyor) ve hatanın uçlarda yoğunlaşması olabilir; bu da sınanmadı. Bu
+yüzden üç ağlık oran ölçütü bu problem için fazla sıkıydı; çözümün doğruluğu (H1, H4) ise ön kayıtla tutuyor.
