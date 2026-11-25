@@ -15,7 +15,7 @@ import numpy as np
 from toporlogy.geometry import write_stl
 from toporlogy.references import cite
 
-__all__ = ["write_ply", "write_obj", "write_json", "export_result"]
+__all__ = ["write_ply", "write_obj", "write_json", "export_result", "voxel_surface", "export_phase_surfaces"]
 
 
 def _stl(path: str | Path, V: np.ndarray, F: np.ndarray) -> str:
@@ -94,4 +94,53 @@ def export_result(res: Any, folder: str | Path, name: str = "part", formats: tup
     if extra:
         rep.update(extra)
     out["report"] = write_json(folder / f"{name}_report.json", rep)
+    return out
+
+
+def voxel_surface(mask: np.ndarray, h: float = 1.0, origin: Any = None) -> tuple[np.ndarray, np.ndarray]:
+    """Boundary of the voxel set ``mask`` (3-D bool array) as triangles (V, F), outward normals, two per exposed
+    cell face; no smoothing. Every directed edge has its reverse (closed), so the divergence-theorem volume is
+    exactly ``mask.sum() · h³``. Vertices are not merged across faces."""
+    m = np.asarray(mask, bool)
+    if m.ndim != 3:
+        raise ValueError("voxel_surface needs a 3-D mask")
+    o = np.zeros(3) if origin is None else np.asarray(origin, float).reshape(3)
+    tris: list[np.ndarray] = []
+    for a in range(3):
+        b, c = (a + 1) % 3, (a + 2) % 3
+        pad = [(0, 0)] * 3
+        pad[a] = (1, 1)
+        mp = np.pad(m, pad)
+        lo = np.take(mp, np.arange(0, mp.shape[a] - 1), axis=a)
+        hi = np.take(mp, np.arange(1, mp.shape[a]), axis=a)
+        for sign, faces in ((1, lo & ~hi), (-1, ~lo & hi)):
+            idx = np.argwhere(faces).astype(float)          # face at coordinate idx[a] (cell index k → plane k)
+            if not len(idx):
+                continue
+            eb, ec = np.eye(3)[b], np.eye(3)[c]
+            p0 = idx
+            p1, p2, p3 = p0 + eb, p0 + eb + ec, p0 + ec
+            t1 = np.stack([p0, p1, p2], 1) if sign > 0 else np.stack([p0, p2, p1], 1)
+            t2 = np.stack([p0, p2, p3], 1) if sign > 0 else np.stack([p0, p3, p2], 1)
+            tris += [t1, t2]
+    if not tris:
+        return np.zeros((0, 3)), np.zeros((0, 3), np.int64)
+    T = np.concatenate(tris)
+    V = o + h * T.reshape(-1, 3)
+    return V, np.arange(len(V), dtype=np.int64).reshape(-1, 3)
+
+
+def export_phase_surfaces(labels: np.ndarray, names: list[str], folder: str | Path, h: float = 1.0,
+                          origin: Any = None, prefix: str = "phase") -> dict[str, str]:
+    """One binary STL per solid phase of a 3-D label field (0 void, i ≥ 1 phase ``names[i - 1]``, −1 outside):
+    ``<prefix>_<name>.stl``, the voxel boundary of that phase (:func:`voxel_surface`). Phases with no element are
+    skipped."""
+    lab = np.asarray(labels)
+    out: dict[str, str] = {}
+    for i, nm in enumerate(names, start=1):
+        mask = lab == i
+        if not mask.any():
+            continue
+        V, F = voxel_surface(mask, h, origin)
+        out[nm] = _stl(Path(folder) / f"{prefix}_{nm}.stl", V, F)
     return out

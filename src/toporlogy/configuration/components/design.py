@@ -50,5 +50,39 @@ def register_design() -> None:
     register("link", "extrusion", MF.ExtrusionTying, context=("domain",), types={"axis": None})
     register("link", "pattern", pattern, types={"axis": None}, units={"offset": length, "center": length})
     register("link", "group_average", group_average)
+    # ---------------------------------------------------------------- several phases (material.phases)
+    def phase_report_step(ctx: BuildContext, surfaces: bool = True) -> Any:
+        """Several phases: label field (0 void, i phase i, -1 outside) and fractions to phases.npz, per-phase
+        volume fraction / volume / mass / cost and grey share to phases.json; in 3-D one voxel-boundary STL per
+        phase (surfaces true). Information only: no verdict."""
+        def step(res: Any, study: Any, folder: Any) -> dict[str, Any]:
+            from pathlib import Path
+
+            import numpy as np
+            import torch
+
+            from toporlogy.design.phases import phase_labels, phase_report
+            from toporlogy.post.export import export_phase_surfaces, write_json
+            interp, d = study.interp, study.domain
+            if not hasattr(interp, "fractions"):
+                raise ValueError("phase_report needs interpolation multiphase_simp (material.phases)")
+            rep = phase_report(interp, res.xphys, d)
+            lab = phase_labels(interp, res.xphys, d.active)
+            with torch.no_grad():
+                eta = interp.fractions(torch.as_tensor(np.asarray(res.xphys, float))).numpy()
+            np.savez_compressed(Path(folder) / "phases.npz", labels=lab, fractions=eta,
+                                names=np.array(rep["names"]))
+            files = {"npz": str(Path(folder) / "phases.npz")}
+            if surfaces and d.dim == 3:
+                files.update(export_phase_surfaces(lab, rep["names"][1:], folder, d.h, d.origin))
+            files["json"] = write_json(Path(folder) / "phases.json", rep)
+            rep["files"] = files
+            vols = ", ".join(f"{n} {v['volume_fraction']:.4f}" for n, v in rep["phases"].items())
+            rep["summary"] = (f"{vols} (volume fraction); mass {rep['mass']:.6g}, cost {rep['cost']:.6g}, "
+                              f"grey {rep['grey_fraction']:.3f}")
+            return rep
+        return step
+
+    register("post", "phase_report", phase_report_step)
     register("link", "helmholtz_filter", "toporlogy.design.pde_filter:HelmholtzFilter", context=("domain",),
              types={"rmin": float}, units={"rmin": "elements"})

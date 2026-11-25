@@ -357,6 +357,14 @@ def build(resolved: dict[str, Any]) -> Setup:
             ctx.chain.find(HeavisideProjection) is None:
         warnings.append("schedule beta_continuation finds no heaviside_projection link; beta stays fixed")
     post = [(p["type"], B("post", p, ctx, join("post", i))) for i, p in enumerate(r["post"])]
+    phases = ctx.material.get("phases")
+    if phases and r["interpolation"]["type"] != "multiphase_simp":
+        raise ConfigError("material.phases needs interpolation multiphase_simp", "interpolation")
+    if phases and len(phases) > 1:
+        other = [p["type"] for p in r["post"] if p["type"] != "phase_report"]
+        if other:                     # these steps read one density field (toporlogy.design.phases)
+            raise ConfigError(f"with several phases only the phase_report post step is available, got {other}",
+                              "post")
     try:
         study = Study(d, ctx.physics, F, ctx.chain, ctx.interp, objective, constraints, optimizer, schedule,
                       move_beta_ref=r["run"].get("move_beta_ref"))

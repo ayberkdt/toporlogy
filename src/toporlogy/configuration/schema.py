@@ -53,6 +53,14 @@ data, not a design variable. ``strength`` [null]:
 safety_factor} (orthotropic); used by the ``stress`` responses (``criterion``) and their default limit.
 (:mod:`toporlogy.core.material`, :mod:`toporlogy.optimization.strength`.)
 
+Several phases. ``material.phases`` [null = one material]: ``[{name, E, density, cost}, ...]`` in increasing E
+(density [1.0] mass/length³, cost [1.0] per unit volume of dense phase); the phases share ν (and the orthotropic
+axes), so E scales one unit elasticity matrix. Needs ``interpolation: multiphase_simp``; the embed link then makes
+one design field per phase (design vector field-major). Objective / constraints: ``compliance``, ``phase_volume``
+(``phases``: null = solid, a name or a list), ``mass``, ``cost``; optimizer ``mma`` or ``gcmma``; chain links
+``density_filter``, ``heaviside_projection``; post step ``phase_report`` (label field, per-phase volumes / mass /
+cost, voxel surfaces per phase in 3-D). (:mod:`toporlogy.design.phases`.)
+
 Boundary conditions. Supports and loads build a :class:`toporlogy.boundary.BoundaryConditions` (selectors, supports,
 loads, per-case supports, combinations); its ``check()`` runs in :func:`build` — an error (e.g. an unrestrained
 rigid-body mode) is a :class:`ConfigError`; warnings are kept in :attr:`Setup.bc_report`. The physics comes from it
@@ -94,7 +102,8 @@ _MATERIAL = {"E0": Param("E0", 1.0, float, unit="force/length^2"), "nu": Param("
              "rho": Param("rho", 1.0, float, unit="mass/length^3"),
              "plane": Param("plane", "stress", str),
              "orthotropic": Param("orthotropic", None, None, nullable=True),
-             "strength": Param("strength", None, None, nullable=True, unit="force/length^2")}
+             "strength": Param("strength", None, None, nullable=True, unit="force/length^2"),
+             "phases": Param("phases", None, None, nullable=True)}
 
 
 _RUN = {"max_iter": Param("max_iter", 100, int), "tol": Param("tol", 0.01, float),

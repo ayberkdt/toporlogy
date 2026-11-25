@@ -102,7 +102,13 @@ def register_core() -> None:
     register("load", "force", force, nested={"where": "selector"}, units={"force": "force (total)"})
 
     # ---------------------------------------------------------------- chain links
-    register("link", "embed", Embed, context=("domain",))
+    def embed(ctx: BuildContext) -> Embed:
+        """Design vector → element grid (keep 1, void 0, outside 0); one design field per entry of
+        material.phases (field-major), else one."""
+        ph = ctx.material.get("phases")
+        return Embed(ctx.domain, n_fields=len(ph) if ph else 1)
+
+    register("link", "embed", embed)
     register("link", "density_filter", DensityFilter, context=("domain",), types={"rmin": float},
              units={"rmin": "elements"})
     register("link", "heaviside_projection", HeavisideProjection)
@@ -125,7 +131,19 @@ def register_core() -> None:
             raise ValueError("hashin_shtrikman: isotropic material only")
         return HashinShtrikman(ctx.domain, E0=ctx.material["E0"], nu=ctx.material["nu"], emin_ratio=emin_ratio)
 
+    def multiphase_simp(ctx: BuildContext, penal: float = 3.0, emin_ratio: float = 1e-6) -> Any:
+        """Recursive multi-phase SIMP over material.phases [{name, E, density, cost}] in increasing E
+        (arXiv:2605.11994 Sec. 6.1, box fields t_j); Emin = emin_ratio x the largest E; the phases share nu."""
+        from toporlogy.design.phases import MultiPhaseSIMP
+        ph = ctx.material.get("phases")
+        if not ph:
+            raise ValueError("multiphase_simp needs material.phases: [{name, E, density, cost}, ...]")
+        if not isinstance(ph, list):
+            raise ValueError("material.phases must be a list of {name, E, density, cost}")
+        return MultiPhaseSIMP(ctx.domain, ph, penal=penal, emin_ratio=emin_ratio)
+
     register("interpolation", "simp", simp)
+    register("interpolation", "multiphase_simp", multiphase_simp)
     register("interpolation", "ramp", ramp)
     register("interpolation", "hashin_shtrikman", hashin_shtrikman)
 
@@ -157,6 +175,26 @@ def register_core() -> None:
 
     register("response", "compliance", compliance)
     register("response", "volume", Volume)
+
+    def phase_volume(ctx: BuildContext, phases: Any = None, weighted: bool = False) -> Any:
+        """Volume fraction of phases (material.phases): null = all solid phases, a name, or a list of names; mean
+        over the part as volume (weighted: by frac)."""
+        from toporlogy.optimization.responses import PhaseVolume
+        return PhaseVolume(phases, weighted)
+
+    def mass(ctx: BuildContext) -> Any:
+        """Total mass sum_e v_e sum_i density_i eta_ie (material.phases densities; absolute, mass units)."""
+        from toporlogy.optimization.responses import Mass
+        return Mass()
+
+    def cost(ctx: BuildContext) -> Any:
+        """Total cost sum_e v_e sum_i cost_i eta_ie (material.phases cost per unit volume; absolute)."""
+        from toporlogy.optimization.responses import Cost
+        return Cost()
+
+    register("response", "phase_volume", phase_volume, types={"phases": None})
+    register("response", "mass", mass)
+    register("response", "cost", cost)
 
     # ---------------------------------------------------------------- optimizers
     def oc(ctx: BuildContext, move: float = 0.2, l1: float = 0.0, l2: float = 1e9, bisection_tol: float = 1e-4,

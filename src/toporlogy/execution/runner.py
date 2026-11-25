@@ -51,6 +51,10 @@ def run_setup(setup: Setup, folder: str | Path, progress: Callable[[int, dict[st
     res = st.run(max_iter=int(run["max_iter"]), tol=float(run["tol"]), callback=cb,
                  feasibility_tol=float(run["feasibility_tol"]))
     ftol = float(run["feasibility_tol"])
+    phases = None
+    if int(getattr(st.interp, "n_fields", 1)) > 1:      # several phases: grey share and volumes from the fractions
+        from toporlogy.design.phases import phase_report
+        phases = phase_report(st.interp, res.xphys, st.domain)
     final = res.constraint_values               # returned design, as res.objective (history[-1] is the step before)
     cons = [constraint_entry(n, float(final[c.key]), c.upper, ftol, RETURNED_DESIGN)
             for c, n in zip(st.constraints, setup.constraint_names, strict=True)]
@@ -59,9 +63,12 @@ def run_setup(setup: Setup, folder: str | Path, progress: Callable[[int, dict[st
         "objective_source": RETURNED_DESIGN, "constraints": cons, "iterations": res.iterations,
         "max_iter": int(run["max_iter"]), "converged": bool(res.converged), "termination": res.termination,
         "max_violation": res.max_violation, "kkt_residual": res.kkt_residual, "seconds": res.seconds,
-        "grey_fraction": grey_fraction(res.xphys, st.domain.active), "tol": float(run["tol"]),
+        "grey_fraction": grey_fraction(res.xphys, st.domain.active) if phases is None else phases["grey_fraction"],
+        "tol": float(run["tol"]),
         "config": "config.resolved.yaml", "source": source, "created": time.strftime("%Y-%m-%dT%H:%M:%S"),
         "post": {}}
+    if phases is not None:
+        summary["phases"] = phases
     rep = setup.bc_report
     if rep is not None:
         summary["bc_check"] = {"errors": len(rep.errors), "warnings": len(rep.warnings),

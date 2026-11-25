@@ -75,6 +75,12 @@ REFERENCES: tuple[Reference, ...] = (
               "Analysis of the SiMPL method for density-based topology optimization",
               "SIAM Journal on Optimization; arXiv:2409.19341", url="https://arxiv.org/abs/2409.19341",
               note="convergence analysis, Armijo and Bregman backtracking; record of the arXiv entry"),
+    # --- multi-material ---------------------------------------------------------------------
+    Reference("gangl_2026", "P. Gangl, B. Keith, D. Kim, B. S. Lazarov, T. M. Surowiec", 2026,
+              "The SiMPL method for density-based multi-material topology optimization", "arXiv:2605.11994",
+              url="https://arxiv.org/abs/2605.11994",
+              note="recursive multi-phase SIMP E^(j) = E^(j-1)[1 - (eta_j/S_j)^p] + E_j (eta_j/S_j)^p (Sec. 6.1); "
+                   "HTML v2 read by a sub-agent on 25 Nov 2026 (docs/olcumler/cok_malzeme.md)"),
     # --- filters ----------------------------------------------------------------------------
     Reference("lazarov_sigmund_2011", "B. S. Lazarov, O. Sigmund", 2011,
               "Filters in topology optimization based on Helmholtz-type differential equations",
