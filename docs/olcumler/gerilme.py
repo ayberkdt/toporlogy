@@ -5,6 +5,10 @@
 
 The problems are the ones of the tests (``tests/toporlogy/_stress_cases.py``, ``_lbracket_stress.py``), so a number
 in the record and the number a test checks come from one implementation. About two minutes.
+
+The L-bracket part of ``gerilme.json`` was written at ``8d1f83e``, before the examples got the load pad and the
+one-body protection (gerilme_onkayit.md §7); re-running this script now measures the current examples under the
+same keys. Their load-path record is ``gerilme_yukyolu.py`` / ``gerilme_yukyolu.json``.
 """
 from __future__ import annotations
 

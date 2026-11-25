@@ -16,6 +16,10 @@ from functools import cache
 from pathlib import Path
 from typing import Any
 
+import json
+import tempfile
+import types
+
 import numpy as np
 import torch
 import yaml
@@ -213,3 +217,33 @@ def refinement(which: str) -> dict[str, Any]:
     levels = [refined(design * _base_domain().active, k) for k in LEVELS]
     a = assess_peak([r["h"] for r in levels], [r["peak_centroid"]["ratio"] for r in levels])
     return {"levels": levels, "status": a.status, "slopes": list(a.slopes), "increment_ratio": a.increment_ratio}
+
+
+# ----------------------------------------------------------------------------------------------- load path (§7)
+@cache
+def _setup(method: str) -> Any:
+    raw = yaml.safe_load((REPO / "examples" / "research" / f"{METHODS[method]}.yaml").read_text(encoding="utf-8"))
+    return build_setup(raw)
+
+
+def gate(method: str, x: np.ndarray) -> dict[str, Any]:
+    """The example's own one-body gate (``connectivity: {gate: true}``) applied to a design ``x``."""
+    setup = _setup(method)
+    step = dict(setup.post)["connectivity_gate"]
+    with tempfile.TemporaryDirectory() as folder:
+        return dict(step(types.SimpleNamespace(xphys=np.asarray(x, float)), setup.study, folder))
+
+
+@cache
+def solid_compliance(method: str) -> float:
+    """Compliance of the full bracket (x̄ = 1) on the example's mesh and load."""
+    st = _setup(method).study
+    d = st.domain
+    E = st.interp(torch.ones(d.shape, dtype=torch.float64)).numpy().ravel()[d.active_elements]
+    return float((np.asarray(st.F) * st.physics.solve_numpy(E, st.F)).sum())
+
+
+def old_design(method: str) -> np.ndarray:
+    """The 0/1 design of the example before the load pad and the one-body protection (§3.2), as recorded."""
+    rec = json.loads((REPO / "docs" / "olcumler" / "gerilme_alanlar.json").read_text(encoding="utf-8"))
+    return np.asarray(rec[method]["x_binary"], float).reshape(_setup(method).study.domain.shape)

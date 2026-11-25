@@ -288,42 +288,12 @@
    "slow": false
   },
   {
-   "nodeid": "tests/toporlogy/test_stress_lbracket.py::test_k1_historical_ratios[aggregated]",
+   "nodeid": "tests/toporlogy/test_stress_lbracket.py::test_y2_one_body_gate_on_the_returned_design[augmented_lagrangian]",
    "kind": "pre-registered check failed",
-   "model_backend": "stress_lbracket2d, GCMMA (CPU)",
-   "reason": "§6 düzeltmesinden sonra örnek koşuyor; gri ham oran farkı (0,098 / 0,066) ±0,05 eşiğini aşıyor",
-   "risk": "medium",
-   "resolution": "yok (tarihsel değer; ortam ve konveks olmayan optimizasyon farkı); örnek değişirse test kalkar",
-   "record": "docs/olcumler/gerilme.md",
-   "slow": true
-  },
-  {
-   "nodeid": "tests/toporlogy/test_stress_lbracket.py::test_k1_historical_ratios[augmented_lagrangian]",
-   "kind": "pre-registered check failed",
-   "model_backend": "stress_al_lbracket2d, MMA (CPU)",
-   "reason": "§6 düzeltmesinden sonra örnek koşuyor; gri ham oran farkı (0,098 / 0,066) ±0,05 eşiğini aşıyor",
-   "risk": "medium",
-   "resolution": "yok (tarihsel değer; ortam ve konveks olmayan optimizasyon farkı); örnek değişirse test kalkar",
-   "record": "docs/olcumler/gerilme.md",
-   "slow": true
-  },
-  {
-   "nodeid": "tests/toporlogy/test_stress_lbracket.py::test_posthoc_returned_design_carries_its_load_through_solid_material[aggregated]",
-   "kind": "post-hoc finding",
-   "model_backend": "stress_lbracket2d returned design",
-   "reason": "yük düğümleri boş elemanlarda; study feasible diyor",
-   "risk": "high",
-   "resolution": "örneğe yük bölgesi keep ya da bağlantı/uyum kısıtı; yük yolu kontrolü",
-   "record": "docs/olcumler/gerilme.md",
-   "slow": true
-  },
-  {
-   "nodeid": "tests/toporlogy/test_stress_lbracket.py::test_posthoc_returned_design_carries_its_load_through_solid_material[augmented_lagrangian]",
-   "kind": "post-hoc finding",
-   "model_backend": "stress_al_lbracket2d returned design",
-   "reason": "yük düğümleri boş elemanlarda; study feasible diyor",
-   "risk": "high",
-   "resolution": "örneğe yük bölgesi keep ya da bağlantı/uyum kısıtı; yük yolu kontrolü",
+   "model_backend": "stress_al_lbracket2d + connectivity (MMA, CPU)",
+   "reason": "tek parça kapısı FAIL: gövdeden kopuk iki 8 hücrelik ada; mesnet ve yük aynı gövdede (Y3 geçiyor)",
+   "risk": "low",
+   "resolution": "ada temizliği (bridge/drop floating) ya da robust iletim kısıtıyla yeniden koşu; yeni ön kayıt",
    "record": "docs/olcumler/gerilme.md",
    "slow": true
   }

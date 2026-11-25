@@ -197,6 +197,39 @@ Sonuç: K1, öngörüldüğü gibi kendi eşiğinde FAIL (gri farklar 0,098 ve 0
 ölçülen fark. Deney koduna özgü `ZeroSafeVonMises` kaldırıldı (kütüphane aynı şeyi yapıyor). Yük yolu bulgusu
 (§3.2) bu düzeltmeyle değişmedi.
 
+### 3.6 Yük yolu: yük bölgesi ve tek parça koruması (Y1–Y5, ön kayıt §7)
+
+İki örneğe `domain.keep` (yük düğümleri altındaki 4 × 4 eleman) ve `connectivity: {ties: 1, constraint:
+conduction, gate: true}` eklendi; kütüphane değişmedi. Ön kayıt `1bb8d40`, ilk koşudan önce. Ham veri
+`gerilme_yukyolu.json` (`python docs/olcumler/gerilme_yukyolu.py`); testler `test_stress_lbracket.py` (Y, yavaş).
+
+| # | Kontrol | toplulaştırılmış (GCMMA) | augmented Lagrangian (MMA) |
+|:---|:---|:---|:---|
+| Y1 | hatasız tamamlanır | PASS (120 it, 560 durum çözümü) | PASS (600 it, 601) |
+| Y2 | tek parça kapısı PASS/FRAGILE | PASS (1 gövde) | **FAIL** (3 gövde: kopuk iki 8 hücrelik ada; mesnet ve yük gövde 1'de) |
+| Y3 | yük, mesnede katı gövdeyle bağlı (gri ve 0/1) | PASS | PASS |
+| Y4 | 0/1 uyum / dolu parça ≤ 10 | PASS (2,50) | PASS (4,32) |
+| Y5 | eski tasarımlar kapıdan FAIL ile döner | PASS (yük bağlı değil, 5 gövde) | PASS (yük bağlı değil) |
+
+Eşiksiz rapor:
+
+| | toplulaştırılmış gri | 0/1 | AL gri | 0/1 |
+|:---|---:|---:|---:|---:|
+| Hacim | 0,365 | 0,374 | 0,206 | 0,215 |
+| Ham tepe gerilme / σ_lim | 1,021 | 1,039 | 1,103 | 1,016 |
+| Uyum / dolu parça | 2,73 | 2,50 | 5,82 | 4,32 |
+
+* Yük artık katı malzemeyle taşınıyor (önce uyum dolu parçanın 280–15 000 katıydı, şimdi 2,5–5,8 katı).
+* Gerilme açısından iki tasarım da sınırın hemen üstünde (1,02–1,10). Toplulaştırılmış koşu `feasible` = False
+  diyor ve CLI exit 1 ile bitiyor (kısıt 1,020 > 1, 0/1 denetimi başarısız): sonuç artık kendini doğru raporluyor.
+  AL koşusu yerel kısıtları izleme kısıtıyla raporladığı için `feasible` = True; tek parça kapısı FAIL verdiği için
+  CLI yine exit 1.
+* L köşesi tekil (§3.4): 0/1 tasarımların inceltmede tepe oranı yine büyüyor (K4 post-hoc, `singular`). Gerilme
+  uygunluğu bu ağda bir yakınsama iddiası değildir.
+* Y2'nin AL başarısızlığı strict xfail. Adalar 8'er hücre ve yük yolunda değil; temizlik (bridge / drop floating)
+  ya da robust iletim kısıtı yeni bir ön kayıt ister.
+* K1 (tarihsel oranlar) eski örneklere aitti; örnekler değişince test kaldırıldı, FAIL sonucu §3.5'te kayıtlı.
+
 ## Ön kayıttan sapmalar
 
 * §2 "beş çıktı türü" diyor ama §1 altı tür sayıyor; altısı da sınandı (daha sıkı).

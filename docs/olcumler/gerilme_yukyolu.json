@@ -1,0 +1,89 @@
+{
+ "aggregated": {
+  "iterations": 120,
+  "state_solves": 560,
+  "termination": "max_iter",
+  "feasible_flag": false,
+  "objective": 0.3653153425697011,
+  "optimizer_constraint_values": {
+   "stress": 1.0201533373958898,
+   "connectivity": 6.166938074980466
+  },
+  "compliance_solid": 106.17114939405936,
+  "Y2_gate": "PASS",
+  "Y2_reasons": [],
+  "Y5_old_design_gate": "FAIL",
+  "Y5_reasons": [
+   "not attached: L1 force",
+   "4 floating bodies without interface"
+  ],
+  "grey": {
+   "volume": 0.3653153425697011,
+   "raw_solid_max": 1.0211718418832194,
+   "relaxed_qp_max": 1.0211718418832194,
+   "load_path": {
+    "compliance": 290.0836974436929,
+    "max_density_at_load": 1.0,
+    "elements_at_load": 4,
+    "load_attached_to_supported_solid": true
+   },
+   "compliance_over_solid": 2.7322271549216564
+  },
+  "binary": {
+   "volume": 0.3740234375,
+   "raw_solid_max": 1.0385532132726538,
+   "relaxed_qp_max": 1.0385532132726538,
+   "load_path": {
+    "compliance": 265.114879037063,
+    "max_density_at_load": 1.0,
+    "elements_at_load": 4,
+    "load_attached_to_supported_solid": true
+   },
+   "compliance_over_solid": 2.497051982107459
+  }
+ },
+ "augmented_lagrangian": {
+  "iterations": 600,
+  "state_solves": 601,
+  "termination": "max_iter",
+  "feasible_flag": true,
+  "objective": 0.4045691034774381,
+  "optimizer_constraint_values": {
+   "stress": 1.0103364971454072,
+   "connectivity": 10.90608009327908
+  },
+  "compliance_solid": 106.17114939405936,
+  "Y2_gate": "FAIL",
+  "Y2_reasons": [
+   "2 floating bodies without interface"
+  ],
+  "Y5_old_design_gate": "FAIL",
+  "Y5_reasons": [
+   "not attached: L1 force"
+  ],
+  "grey": {
+   "volume": 0.20614355719097344,
+   "raw_solid_max": 1.1032478903527145,
+   "relaxed_qp_max": 1.0103364971449105,
+   "load_path": {
+    "compliance": 617.6169005617414,
+    "max_density_at_load": 1.0,
+    "elements_at_load": 4,
+    "load_attached_to_supported_solid": true
+   },
+   "compliance_over_solid": 5.817182013066717
+  },
+  "binary": {
+   "volume": 0.21484375,
+   "raw_solid_max": 1.016279001901737,
+   "relaxed_qp_max": 1.016279001901737,
+   "load_path": {
+    "compliance": 458.4998302489992,
+    "max_density_at_load": 1.0,
+    "elements_at_load": 4,
+    "load_attached_to_supported_solid": true
+   },
+   "compliance_over_solid": 4.318497377731637
+  }
+ }
+}

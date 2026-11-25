@@ -8,7 +8,7 @@ the module tests). Sizes are small so that each runs in well under a minute on a
 
 | File | Shows |
 |:---|:---|
-| `stress_lbracket2d.yaml` | volume minimisation of the L-bracket with an aggregated von Mises constraint (P-norm, adaptive scale), GCMMA |
+| `stress_lbracket2d.yaml` | volume minimisation of the L-bracket with an aggregated von Mises constraint (P-norm, adaptive scale), GCMMA; solid load pad and one-body protection (without them the design drops the load into void, `docs/olcumler/gerilme.md` §3.6) |
 | `stress_al_lbracket2d.yaml` | the same problem with local stress constraints by an augmented Lagrangian |
 | `buckling_column2d.yaml` | compliance with a lower bound on the linear buckling load factor |
 | `inverter2d.yaml` | compliant force inverter: output displacement as objective, springs at input and output |
