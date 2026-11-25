@@ -167,8 +167,9 @@ T1_CASES = [
     pytest.param(_compliance_3d_gmg, id="compliance_3d_gmg"),
 ]
 # T2 is the same list; the cases marked xfail below fail the pre-registered negative control (see _T2_NOTE).
-_T2_NOTE = ("pre-registered T2 FAILED (the control, not the gradient: T1 passes): the 1 % error h*0.01*g only "
-            "overtakes the curvature term c*h^2 below h = 0.01*|g|/c, which is under the smallest h = 7.8e-4 here")
+_T2_NOTE = ("pre-registered T2 FAILED (the control, not the gradient: T1 passes): the wrong remainder is first "
+            "order only well below h* = 0.01*|g|/c (c*h^2 = the true remainder); h* = 1e-3 .. 1e-2 here, and the "
+            "fixed T2 steps end at 7.8e-4, too close to h* (T3, with steps h*/8 .. h*/64, passes)")
 T2_CASES = [
     pytest.param(_compliance_2d, id="compliance_2d"),
     pytest.param(_compliance_3d, id="compliance_3d"),
@@ -227,7 +228,8 @@ def _measure(builder, tmp_path_factory) -> list[dict]:
         g = float(np.dot(grad, d))
         fs = np.array([float(_pick(e, kd, ix)[0]) for e in evs])
         r1, r2 = np.abs(fs - f0 - hs * g), np.abs(fs - f0 - hs * 1.01 * g)
-        res = {"label": f"{kd}{ix if kd == 'g' else ''}", "r": r1, "r2": r2, "p": _orders(r1), "p2": _orders(r2)}
+        res = {"label": f"{kd}{ix if kd == 'g' else ''}", "r": r1, "r2": r2, "p": _orders(r1), "p2": _orders(r2),
+               "study": st, "x": x, "d": d, "target": (kd, ix), "f0": float(f0), "g": g, "fs": fs, "hs": hs}
         print(f"\n  [{res['label']}] n={n} f={float(f0):.6e} grad.d={g:.6e}")
         print(f"    r_k  = {np.array2string(r1, precision=3)}")
         print(f"    p_k  = {np.array2string(res['p'], precision=3)}   (T1: two consecutive in {T1_BAND})")
@@ -250,3 +252,40 @@ def test_t2_negative_control(builder, tmp_path_factory):
            if not np.all(r["p2"][-2:] <= T2_MAX)]
     assert not bad, "T2 failed: " + "; ".join(bad)
 
+
+# ------------------------------------------- T3, T4 (docs/olcumler/dogrulama_turu.md §5.1, pre-registered 22:46)
+T3_BAND = (0.8, 1.2)
+
+
+@pytest.mark.parametrize("builder", T1_CASES)
+def test_t3_negative_control_below_the_crossover(builder, tmp_path_factory):
+    """Steps placed below h* = 0.01 |g| / c, where the 1 % error term h 0.01 |g| overtakes the true remainder c h²
+    (c from T1's asymptotic range): the wrong gradient's remainder must then be first order."""
+    bad = []
+    for r in _measure(builder, tmp_path_factory):
+        c = r["r"][3] / r["hs"][3] ** 2
+        hstar = 0.01 * abs(r["g"]) / c
+        hj = hstar * 2.0 ** -np.arange(3, 7)
+        kd, ix = r["target"]
+        fs = np.array([float(_pick(r["study"].evaluate(r["x"] + h * r["d"], gradients=False), kd, ix)[0])
+                       for h in hj])
+        rt = np.abs(fs - r["f0"] - hj * r["g"])
+        rb = np.abs(fs - r["f0"] - hj * 1.01 * r["g"])
+        pb = _orders(rb)
+        print(f"\n  T3 [{r['label']}] h* = {hstar:.3e}: orders {np.round(pb, 3).tolist()}, "
+              f"true/wrong {np.round(rt / rb, 3).tolist()}")
+        if not (np.all((pb >= T3_BAND[0]) & (pb <= T3_BAND[1])) and np.all(rt / rb <= 0.2)):
+            bad.append(f"{r['label']}: orders {np.round(pb, 3).tolist()}, ratio {np.round(rt / rb, 3).tolist()}")
+    assert not bad, "T3 failed: " + "; ".join(bad)
+
+
+def test_t4_buckling_ks_cancellation_explains_t2(tmp_path_factory):
+    """T2's jump for buckling KS: the signed remainder s(h) = c_s h² and the 1 % term have the same sign, so the
+    wrong remainder s − 0.01 h g crosses zero at h_c = 0.01 g / c_s, inside the step interval of the jump."""
+    (r,) = _measure(_buckling_ks_2d, tmp_path_factory)
+    hs = r["hs"]
+    s3 = r["fs"][3] - r["f0"] - hs[3] * r["g"]
+    cs = s3 / hs[3] ** 2
+    hc = 0.01 * r["g"] / cs
+    print(f"\n  T4: c_s = {cs:.3e}, 0.01 g = {0.01 * r['g']:.3e}, h_c = {hc:.3e} (interval {hs[6]:.2e} .. {hs[4]:.2e})")
+    assert np.sign(cs) == np.sign(r["g"]) and hs[6] <= hc <= hs[4]

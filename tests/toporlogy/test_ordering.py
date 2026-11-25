@@ -211,3 +211,29 @@ def test_o9_modal_same_eigenvalues(shape, sigma):
     assert (sa._order is None) == (sigma > 0)
     if sigma > 0:
         assert np.array_equal(a, b)
+
+
+def test_o12_gmg_direct_coarse_solve_same_result(monkeypatch):
+    """O12 (docs/olcumler/dogrulama_turu.md §5.2): the "direct" coarse solve of the multigrid factorises with the
+    nested dissection order; the solution equals the one with the previous (MMD) coarse factorisation to 1e-12."""
+    from toporlogy.fem.elastic_gmg import ElasticityGMG
+    from toporlogy.solvers.direct import DirectSolver
+    d = T.Domain((16, 8, 8))
+    X = d.node_coords()
+    fixed = d.dofs(np.flatnonzero(X[:, 0] < 1e-9))
+    F = np.zeros((d.ndof, 1))
+    F[d.dim * np.flatnonzero(X[:, 0] > X[:, 0].max() - 1e-9) + 2, 0] = -1.0
+    E = 1e-3 + np.random.default_rng(4).random(d.n_active) ** 3
+
+    def run():
+        g = ElasticityGMG(d, fixed, tol=1e-10, direct_below=0, coarse="direct", n_geometric=2)
+        return g.solve_numpy(E, F), g
+    U_nd, g = run()
+    assert g.n_fallbacks == 0 and g.solver.coarse._ds._order is not None
+    factor = DirectSolver.factor
+    monkeypatch.setattr(DirectSolver, "factor", lambda self, A, order=None: factor(self, A))
+    U_old, g2 = run()
+    assert g2.solver.coarse._ds._order is None
+    rel = float(np.abs(U_nd - U_old).max() / np.abs(U_old).max())
+    print(f"\n  O12: {rel:.2e}")
+    assert rel <= 1e-12

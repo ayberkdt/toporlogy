@@ -175,9 +175,10 @@ On bir yanıtın hepsinde T1 tuttu: p_k 1,93 … 2,04'ten 2,00'ye gidiyor (`test
 | doğrusal olmayan son uyum | 2,01 → 2,00 | −2,85 · 0,38 | PASS |
 | GMG 3-B uyum | 1,97 → 2,00 | 1,25 · 1,15 | PASS |
 
-T2'nin neden tutmadığı: %1'lik gradyan hatası h · 0,01 · \|∇f·d\| ancak h < 0,01 \|∇f·d\| / c iken (c: eğrilik
-terimi) kalıntıya baskın çıkar. Beş yanıtta bu sınır en küçük adımın (7,8e-4) altında; p* 1'e doğru iniyor ama son
-iki adımda 1,3'ün altına inmiyor. Burkulma KS'de %1'lik hata işaretli kalıntıyı h ≈ 1,6e-3 yakınında sıfırlıyor (p* = 4,14,
+T2'nin neden tutmadığı: %1'lik gradyan hatası h · 0,01 · \|∇f·d\|, doğru kalıntı c h²; ikisi h* = 0,01 \|∇f·d\| / c'de
+eşit ve bozuk kalıntı ancak h ≪ h* iken birinci mertebe. İlk yazımda h*'ın en küçük adımın (7,8e-4) altında olduğunu
+sanmıştım; T3'ün ölçümü (§6) h* = 1,1e-3 … 1,2e-2 verdi: sabit adımlar h*'a fazla yakın bitiyor, p* 1'e doğru iniyor
+ama son iki adımda 1,3'ün altına inmiyor. Burkulma KS'de %1'lik hata işaretli kalıntıyı h ≈ 1,6e-3 yakınında sıfırlıyor (p* = 4,14,
 sonra −0,53). Ölçüt h aralığına bakılmadan yazıldı; ön kaydın hatası budur. Gradyanın kendisi T1'de doğrulanıyor.
 Sonradan bir "en küçük h'de bozuk kalıntı ≥ 10 × doğru kalıntı" ölçütü denendi, ölçülen oranlar 2,9–9,5 çıktı.
 Eşiği ölçüme göre seçmek ön kaydı boşa çıkaracağı için o ölçüt eklenmedi.
@@ -285,7 +286,7 @@ izdüşürülmüş durağanlık (göreli, max \|∇f\|'e bölünmüş) ile kıs�
 Bir iterasyonluk tasarımda ölçünün tam 1 çıkması: hacim kısıtı henüz etkin değil (g < −1e-3), λ = 0 ve iç
 noktalarda izdüşürülmüş gradyan gradyanın kendisi.
 
-## 5. Ek ön kayıt (2026-11-25 22:58 +0300, yeni testlerin ve ölçümlerin ilk koşusundan önce)
+## 5. Ek ön kayıt (2026-11-25 22:46 +0300, commit `72a632e`, yeni testlerin ve ölçümlerin ilk koşusundan önce; ilk yazımda saat yanlışlıkla 22:58)
 
 ### 5.1 T3 — eşiğe göre adımlanan negatif kontrol, T4 — burkulma KS'de işaret iptali
 
@@ -305,3 +306,29 @@ j = 3 … 6.
 süresi. **Karar kuralı:** temsilî boyutta (PDE filtresi 3-B 60 × 30 × 30; GMG kaba ızgarası `direct_below` = 4000
 elemana karşılık gelen en büyük kaba ızgara) hızlanma ≥ 1,3× ise sıra uygulanır ve sonuç eski yolla ≤ 1e-12 göreli
 aynı olmalı; değilse değişmez ve ölçüm kayda geçer.
+
+## 6. §5'in sonuçları (ilk koşu) [Ö]
+
+| # | Ölçülen | Eşik | Sonuç |
+|:---|:---|:---|:---|
+| T3a | 13 nicelik (11 yanıt; çok fazda üçü): h* = 1,1e-3 … 1,2e-2; bozuk gradyanla mertebeler 0,90 … 1,08 | ∈ [0,8, 1,2] | PASS (hepsi) |
+| T3b | doğru / bozuk kalıntı, en büyüğü (h*/8'de) | ≤ 0,2 | PASS (0,14) |
+| T4 | c_s = 5,6e-3 ve 0,01 g = 7,6e-6 aynı işaretli; h_c = 1,36e-3 | [7,8e-4, 3,1e-3] | PASS |
+| O11 | PDE filtresi 3-B 60 × 30 × 30 (54 000 bilinmeyen): MMD 5,20 s, iç içe bölme 4,84 s, 1,07×; çözüm farkı 7,6e-15 | ≥ 1,3× ise uygula | uygulanmadı |
+| O12 | GMG kaba ızgarası 10 × 10 × 10 (3630 serbest DOF): MMD 0,466 s, iç içe bölme 0,092 s, 5,1×; çözüm farkı 0 | ≥ 1,3× ise uygula; sonuç ≤ 1e-12 | uygulandı, PASS |
+
+Ölçümler `docs/olcumler/dogrulama_turu_o11_o12.py` → `dogrulama_turu_o11_o12.json` (en iyi 3 / 5 tekrar).
+
+Ön kayıttan iki sapma:
+
+1. **O12'nin kapsamı.** Ön kayıt "`direct_below` = 4000 elemana karşılık gelen en büyük kaba ızgara" diyordu. Kodda
+   kaba ızgaranın sınırı `max_coarse_dof` = 4000 DOF [O: `elastic_gmg.py:145-151`]. Ayrıca GMG'nin varsayılan kaba
+   çözümü cihazda yoğun Cholesky (`coarse="dense"`), SuperLU değil [O: `gmg.py:215`, `:334-337`]. Değişiklik yalnız
+   tanı amaçlı `coarse="direct"` yolunu etkiliyor (o yolda kaba ızgara `amg_max_dof` = 60 000 DOF'a kadar
+   büyüyebilir); varsayılan GMG yolu değişmedi. Ölçüm 4000 DOF sınırının altındaki 10 × 10 × 10 ızgarada yapıldı.
+2. **O12'de farkın tam 0 çıkması** büyük olasılıkla V-döngüsünün düşük duyarlıklı veri türünden (kaba çözüm
+   sonucu o türe yuvarlanıyor); doğrulanmadı. Testte iki yolun gerçekten koştuğu (`_order` var / yok) ayrıca sınanıyor.
+
+T3 ile T2'nin beş xfail'i açıklanmış oldu: gradyanlar doğru (T1), negatif kontrol de h*'ın altında doğru çalışıyor
+(T3); T2'nin sabit adım aralığı bu yanıtlar için h*'a fazla yakın bitiyordu. T2'nin xfail'leri ön kaydın sonucu olarak
+yerinde kalıyor.
