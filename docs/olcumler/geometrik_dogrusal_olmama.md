@@ -273,3 +273,23 @@ ifadesi doğrusal burkulma için doğru kalır. Önerilen yeni madde (Limitation
 >   pre-registered check (three-point Newton order, neo-Hooke) failed and is recorded
 >   ([`docs/olcumler/geometrik_dogrusal_olmama.md`](docs/olcumler/geometrik_dogrusal_olmama.md)). No plasticity,
 >   contact, follower loads, incompatible-mode elements or non-linear stress/buckling responses.
+
+## 8. Birleştirme sonrası: eleman başına D ile SVK (koordinatör)
+
+A dalı (elemana göre malzeme yönü) ile birleşince `nonlinear_elasticity` eleman başına bir D alanını
+"elasticity must be 3 x 3" hatasıyla reddediyordu (yanlış sonuç yoktu). SVK yasası her elemanın kendi D'siyle
+genişletildi; küçük yer değiştirme matrisi K0, `Elasticity` gibi farklı D başına bir kez kurulur.
+
+Ön kayıt (2026-11-25 19:53 +0300, ilk koşudan önce; eşikler C'nin V1, V3, V6 eşikleri):
+
+| # | Kontrol | Eşik |
+|:---|:---|:---|
+| N1 | Her yerde aynı D'li alan = tek D (iç kuvvet, tanjant, son uyum) | ≤ 1e-13 göreli |
+| N2 | Küçük yük: değişken açı alanında ‖u_NL − u_L‖/‖u_L‖, u_L aynı alanla `Elasticity` | ≤ 1e-6 |
+| N3 | Tutarlı tanjant, değişken açı alanı (merkezi fark) | ≤ 1e-6 |
+| N4 | Son uyum gradyanı, değişken açı alanı (sonlu fark) | ≤ 1e-5 |
+| N5 | YAML: `angle_field` + `nonlinear_elasticity` kuruluyor, değerlendirme sonlu | geçer |
+
+İlk koşu (`python -m pytest tests/toporlogy/test_nonlinear_orientation.py -s`, 2026-11-25) [Ö]: N1 kuvvet 3,4e-16,
+tanjant 1,2e-16, enerji 0; N2 7,8e-10; N3 3,3e-11; N4 1,1e-8 (en büyük yer değiştirme açıklığın %54'ü); N5 geçti.
+Hepsi PASS. Tek D yolu değişmedi (o dalda aynı ifadeler korunuyor).

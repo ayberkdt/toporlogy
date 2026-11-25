@@ -78,7 +78,8 @@ import torch
 
 from toporlogy.core.domain import Domain
 from toporlogy.fem.elastic import checked_residual, matrix_norm1
-from toporlogy.fem.elements import H8_CORNER, Q4_CORNER, D_iso, D_plane_strain, D_plane_stress
+from toporlogy.core.material import unique_matrices
+from toporlogy.fem.elements import H8_CORNER, Q4_CORNER, D_iso, D_plane_strain, D_plane_stress, indexed_matmul
 from toporlogy.fem.mechanisms import SolveResidualError, check_moduli, check_supports, fixed_dof_rows
 from toporlogy.references import cite
 from toporlogy.solvers.direct import DirectSolver
@@ -234,20 +235,28 @@ class _Material:
     displacement gradient H (n, dim, dim)."""
 
     def __init__(self, kind: str, dim: int, D: np.ndarray, nu: float | None, plane: str) -> None:
+        # D: one unit D (nv, nv), or the distinct matrices (m, nv, nv) of a per-element field (``which`` picks)
         self.kind, self.dim, self.D, self.plane = kind, dim, D, plane
         if kind == "neo_hooke":
             assert nu is not None
             self.kappa = 1.0 / (3.0 * (1.0 - 2.0 * nu))
             self.mu = 1.0 / (2.0 * (1.0 + nu))
 
-    def __call__(self, H: np.ndarray, energy: bool = False) -> tuple[np.ndarray, np.ndarray, np.ndarray | None]:
+    def __call__(self, H: np.ndarray, energy: bool = False,
+                 which: np.ndarray | None = None) -> tuple[np.ndarray, np.ndarray, np.ndarray | None]:
         dim = self.dim
         Eg = _green(H)
         if self.kind == "svk":
             Ev = _voigt(Eg, dim)
-            S = Ev @ self.D
+            if self.D.ndim == 2:
+                S = Ev @ self.D
+                C = np.broadcast_to(self.D, (len(H),) + self.D.shape)
+            else:
+                assert which is not None
+                C = self.D[which]
+                S = (C @ Ev[:, :, None])[:, :, 0]                      # D symmetric: S = D E
             psi = 0.5 * np.einsum("nv,nv->n", Ev, S) if energy else None
-            return S, np.broadcast_to(self.D, (len(H),) + self.D.shape), psi
+            return S, C, psi
         a = _det_minus_one(H)
         if dim == 3:
             S3, C6, psi = neo_hooke_response(Eg, a, self.kappa, self.mu, energy)
@@ -330,8 +339,9 @@ class NonlinearElasticity:
         Default Q4 in 2-D, H8 in 3-D.
     elasticity : array, optional
         Unit-modulus D for ``"svk"`` (orthotropic, rotated, plane strain;
-        :func:`toporlogy.core.material.unit_elasticity`); ``nu`` and ``plane`` are then not used. Not accepted
-        with ``"neo_hooke"``.
+        :func:`toporlogy.core.material.unit_elasticity`), or one per active element (n_active, nv, nv;
+        :func:`toporlogy.core.material.unit_elasticity_field`); ``nu`` and ``plane`` are then not used. Not
+        accepted with ``"neo_hooke"``.
     energy_interpolation : EnergyInterpolation, optional
         Low-density remedy (module notes). None = every element fully non-linear.
     load_steps, max_iter, rtol, min_step : Newton–Raphson controls (module notes).
@@ -367,12 +377,19 @@ class NonlinearElasticity:
             self.nu: float | None = None
             self.D = np.asarray(elasticity, float).copy()
             nv = 6 if dim == 3 else 3
-            if self.D.shape != (nv, nv):
-                raise ValueError(f"elasticity must be {nv} x {nv}")
+            if self.D.shape != (nv, nv) and self.D.shape != (domain.n_active, nv, nv):
+                raise ValueError(f"elasticity must be {nv} x {nv} or one per active element "
+                                 f"({domain.n_active}, {nv}, {nv}), got {self.D.shape}")
         else:
             self.nu = float(nu)
             self.D = D_iso(nu) if dim == 3 else (D_plane_strain(nu) if plane == "strain" else D_plane_stress(nu))
-        self._law = _Material(material, dim, self.D, self.nu, self.plane)
+        # per-element D: the distinct matrices and each element's index (as Elasticity.ke_index); None = one D
+        self.d_index: np.ndarray | None = None
+        if self.D.ndim == 3:
+            Du, self.d_index = unique_matrices(self.D)
+            self._law = _Material(material, dim, Du, self.nu, self.plane)
+        else:
+            self._law = _Material(material, dim, self.D, self.nu, self.plane)
         self.interpolation = energy_interpolation
         self.load_steps, self.max_iter, self.rtol, self.min_step = int(load_steps), int(max_iter), float(rtol), \
             float(min_step)
@@ -403,9 +420,11 @@ class NonlinearElasticity:
         self._inv = inv.astype(np.int64)
         self._P = sp.csr_matrix((np.zeros(len(ukey)), (ukey // nf, ukey % nf)), shape=(nf, nf))
         self.solver = solver if solver is not None else DirectSolver()
-        K0 = self._unit_state(np.zeros((1, nl)), np.ones(1), need_K=True)[1]
+        m = 1 if self.d_index is None else len(self._law.D)
+        K0 = self._unit_state(np.zeros((m, nl)), np.ones(m), need_K=True, which=np.arange(m))[1]
         assert K0 is not None
-        self.K0: np.ndarray = K0[0]                                    # small-displacement element matrix
+        # small-displacement element matrix; per-element D: the distinct matrices (m, nloc, nloc), K0[d_index[e]]
+        self.K0: np.ndarray = K0[0] if self.d_index is None else K0
         self._kinematics_checked = False
         self.n_solves = 0
         self.n_adjoint_solves = 0
@@ -428,10 +447,13 @@ class NonlinearElasticity:
         self._kinematics_checked = True
 
     # ------------------------------------------------------------------ element level
-    def _unit_state(self, Ue: np.ndarray, gam: np.ndarray, need_K: bool,
-                    energy: bool = False) -> tuple[np.ndarray, np.ndarray | None, np.ndarray | None]:
+    def _unit_state(self, Ue: np.ndarray, gam: np.ndarray, need_K: bool, energy: bool = False,
+                    which: np.ndarray | None = None) -> tuple[np.ndarray, np.ndarray | None, np.ndarray | None]:
         """Unit-modulus non-linear element force f_NL(γ u_e) (n, nloc), tangent K_NL(γ u_e) (n, nloc, nloc) and
-        energy ψ_NL(γ u_e) (n,) of the elements' displacements ``Ue`` (n, nloc) scaled by ``gam`` (n,)."""
+        energy ψ_NL(γ u_e) (n,) of the elements' displacements ``Ue`` (n, nloc) scaled by ``gam`` (n,).
+        ``which``: per-element D, index of each row's D (default: the active elements' :attr:`d_index`)."""
+        if which is None:
+            which = self.d_index
         dim = self.dim
         n, nl = Ue.shape
         nn = nl // dim
@@ -445,7 +467,7 @@ class NonlinearElasticity:
         for dN in self._dN:                                            # (dim, nn)
             Hg = Ut @ dN.T
             F = eye + Hg
-            S, C, ps = self._law(Hg, energy)
+            S, C, ps = self._law(Hg, energy, which)
             B = np.zeros((n, len(pairs), nn, dim))
             for v, (j, k) in enumerate(pairs):
                 B[:, v] = dN[k][None, :, None] * F[:, :, j][:, None, :]
@@ -467,6 +489,12 @@ class NonlinearElasticity:
                     K4[:, :, i, :, i] += Gm
         return f, K, psi
 
+    def _k0_times(self, Ue: np.ndarray) -> np.ndarray:
+        """(n_active, nloc) K0_e u_e (K0 symmetric)."""
+        if self.d_index is None:
+            return Ue @ self.K0
+        return indexed_matmul(self.K0, self.d_index, Ue[:, :, None])[:, :, 0]
+
     def _gamma(self, E: np.ndarray, cutoff: float | None) -> tuple[np.ndarray, np.ndarray]:
         if self.interpolation is None:
             return np.ones(len(E)), np.zeros(len(E))
@@ -483,12 +511,13 @@ class NonlinearElasticity:
         fN, KN, _ = self._unit_state(Ue, gam, need_K or (need_dE and interp))
         out: dict[str, np.ndarray] = {}
         if interp:
-            k0u = Ue @ self.K0
+            k0u = self._k0_times(Ue)
             g2 = gam ** 2
             f_unit = gam[:, None] * fN + (1.0 - g2)[:, None] * k0u
             if need_K:
                 assert KN is not None
-                out["K"] = E[:, None, None] * (g2[:, None, None] * KN + (1.0 - g2)[:, None, None] * self.K0)
+                K0 = self.K0 if self.d_index is None else self.K0[self.d_index]
+                out["K"] = E[:, None, None] * (g2[:, None, None] * KN + (1.0 - g2)[:, None, None] * K0)
             if need_dE:
                 assert KN is not None
                 dfg = fN + gam[:, None] * np.einsum("epq,eq->ep", KN, Ue) - 2.0 * gam[:, None] * k0u
@@ -509,7 +538,10 @@ class NonlinearElasticity:
         gam, _ = self._gamma(np.asarray(E, float), cutoff)
         _f, _K, psi = self._unit_state(Ue, gam, need_K=False, energy=True)
         assert psi is not None
-        lin = 0.5 * np.einsum("ep,pq,eq->e", Ue, self.K0, Ue)
+        if self.d_index is None:
+            lin = 0.5 * np.einsum("ep,pq,eq->e", Ue, self.K0, Ue)
+        else:
+            lin = 0.5 * np.einsum("ep,ep->e", Ue, self._k0_times(Ue))
         return float(np.sum(np.asarray(E, float) * (psi + (1.0 - gam ** 2) * lin)))
 
     # ------------------------------------------------------------------ assembly
