@@ -120,3 +120,26 @@ durum çözümü sayısı, optimizerin gördüğü kısıt değeri.
 
 Tek problemden yöntemler arası genelleme yapılmaz. Kısıtı gri tasarımda sağlayan bir sonuç, ham ya da 0/1 oranı
 1'i aşıyorsa "gerilme açısından uygun" sayılmaz.
+
+## 6. qp gevşetmesinin x̄ = 0 türevi: kütüphane düzeltmesi (F1–F5)
+
+Ön kayıt 2026-11-26 01:32 +0300, `optimization/stress.py` değişmeden önce (entegrasyon dalı
+`integrate/research-round-1`, `f75303a`).
+
+**Değişiklik.** `VonMises.__call__` (ve onu miras alan `FailureIndex`) x̄^a çarpanını (a = q, "ratio"/"margin";
+a = penal, "polynomial") 0 < a < 1 olduğunda şöyle hesaplar: x̄ > 0'da x̄^a, x̄ ≤ 0'da 0; türev x̄ ≤ 0'da **0**
+(x̄^a'nın tek yönlü türevi orada +∞'dur). Bu bir uzlaşımdır, x̄^a'nın türevi değildir. p-norm toplulaştırmasıyla
+(üs P, q·P > 1) bileşik fonksiyonun x̄ = 0'daki türevi gerçekten 0'dır (v^P ~ x̄^(qP)); KS ya da yerel kısıtta
+gerçek türev +∞'dur ve 0 yalnız uzlaşımdır. a ≥ 1 ve a = 0 değişmez (türev zaten sonlu).
+
+| # | Kontrol | Eşik |
+|:---|:---|:---|
+| F1 | `test_relaxed_stress_gradient_is_finite_at_zero_density` (§5'teki kusur testi) | bütün gradyan sonlu |
+| F2 | Rastgele x̄ ∈ [0, 1] (tam sıfırlar dahil), üç biçim, q ∈ {0.5, 0.25}, `VonMises` ve `FailureIndex`: değerler eski formülle (`x.clamp_min(0) ** q * r`, `x ** penal * Λ(Λ²+1)`) | bit düzeyinde aynı |
+| F3 | Aynı girdide gradyan: x̄ > 0 olan girdiler eski formülün gradyanıyla; x̄ = 0 olanlar | bit düzeyinde aynı; tam 0 |
+| F4 | q = 1 ve penal = 3: x̄ = 0'daki türev değişmez (q = 1'de r, penal = 3'te 0) | bit düzeyinde aynı |
+| F5 | İki örnek değiştirilmeden kütüphaneyle koşulur: `InvalidModuliError` yok; iterasyon ve durum çözümü sayısı ile dört ham oran, §3.2 post-hoc kaydıyla (`gerilme.json` `lbracket.posthoc`: 120/752, 600/601; 1,22853 / 1,74355 / 1,16919 / 1,02525) | sayılar eşit; oranlar ≤ 1e-9 göreli |
+
+**K1 için öngörü (eşik değişmez, ±0,05).** F5 tutarsa K1'in sonucu §3.2'deki farklarla aynıdır: 0,098 ve 0,066
+(gri) eşiği aşar, K1 FAIL kalır. Bu durumda K1 strict xfail olarak kalır; nedeni `InvalidModuliError` değil
+ölçülen fark olur. Yük yolu post-hoc bulgusu (§3.2) bu düzeltmeyle ilgisizdir ve strict xfail kalır.
