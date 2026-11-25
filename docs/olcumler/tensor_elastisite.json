@@ -1,7 +1,7 @@
 {
  "environment": {
-  "git": "dbd26bb151a3c6b4d9ff2d4a1de6be029e615370",
-  "dirty": true,
+  "git": "098a5ae34ea490108491b0c20e62c7a2c651d20b",
+  "dirty": false,
   "python": "3.12.1",
   "numpy": "2.2.6",
   "scipy": "1.14.1",
