@@ -1,0 +1,561 @@
+{
+ "meta": {
+  "started": "2026-11-26T00:49:45+0300",
+  "finished": "2026-11-26T00:55:40+0300",
+  "command": "python docs/olcumler/baseline_ornekler.py docs/olcumler/baseline_ornekler.json",
+  "repeats": 1,
+  "machine_load": "not controlled (other sessions may run)"
+ },
+ "environment": {
+  "git_sha": "4629a997842932f6f94b713d7fea277868f1a370",
+  "git_branch": "claude/vv-infra-6ff2f9",
+  "git_dirty": false,
+  "python": "3.12.1",
+  "implementation": "CPython",
+  "system": "Windows",
+  "platform": "Windows-11-10.0.26200-SP0",
+  "arch": "AMD64",
+  "processor": "Intel64 Family 6 Model 158 Stepping 10, GenuineIntel",
+  "cpu_count_logical": 12,
+  "memory_total_bytes": 17085681664,
+  "numpy": "2.2.6",
+  "scipy": "1.14.1",
+  "torch": "2.5.1+cu121",
+  "cuda_available": true,
+  "cuda_device": "NVIDIA GeForce GTX 1660 Ti",
+  "numpy_blas": {
+   "name": "scipy-openblas",
+   "found": true,
+   "version": "0.3.29",
+   "detection method": "pkgconfig",
+   "include directory": "C:/Users/runneradmin/AppData/Local/Temp/cibw-run-ll3k360g/cp312-win_amd64/build/venv/Lib/site-packages/scipy_openblas64/include",
+   "lib directory": "C:/Users/runneradmin/AppData/Local/Temp/cibw-run-ll3k360g/cp312-win_amd64/build/venv/Lib/site-packages/scipy_openblas64/lib",
+   "openblas configuration": "OpenBLAS 0.3.29  USE64BITINT DYNAMIC_ARCH NO_AFFINITY Haswell MAX_THREADS=24",
+   "pc file directory": "C:/a/numpy/numpy/.openblas"
+  },
+  "numpy_lapack": {
+   "name": "scipy-openblas",
+   "found": true,
+   "version": "0.3.29",
+   "detection method": "pkgconfig",
+   "include directory": "C:/Users/runneradmin/AppData/Local/Temp/cibw-run-ll3k360g/cp312-win_amd64/build/venv/Lib/site-packages/scipy_openblas64/include",
+   "lib directory": "C:/Users/runneradmin/AppData/Local/Temp/cibw-run-ll3k360g/cp312-win_amd64/build/venv/Lib/site-packages/scipy_openblas64/lib",
+   "openblas configuration": "OpenBLAS 0.3.29  USE64BITINT DYNAMIC_ARCH NO_AFFINITY Haswell MAX_THREADS=24",
+   "pc file directory": "C:/a/numpy/numpy/.openblas"
+  },
+  "torch_threads": 6,
+  "torch_interop_threads": 6,
+  "torch_parallel_info": [
+   "ATen/Parallel:",
+   "\tat::get_num_threads() : 6",
+   "\tat::get_num_interop_threads() : 6",
+   "OpenMP 2019",
+   "\tomp_get_max_threads() : 6",
+   "Intel(R) oneAPI Math Kernel Library Version 2024.2.2-Product Build 20240823 for Intel(R) 64 architecture applications",
+   "\tmkl_get_max_threads() : 6",
+   "Intel(R) MKL-DNN v3.5.3 (Git Hash 66f0cb9eb66affd2da3bf5f8d897376f04aae6af)",
+   "std::thread::hardware_concurrency() : 12",
+   "Environment variables:",
+   "\tOMP_NUM_THREADS : [not set]",
+   "\tMKL_NUM_THREADS : [not set]"
+  ],
+  "thread_env": {
+   "OMP_NUM_THREADS": null,
+   "MKL_NUM_THREADS": null,
+   "OPENBLAS_NUM_THREADS": null,
+   "NUMEXPR_NUM_THREADS": null,
+   "TOPORLOGY_PYLIB": null
+  },
+  "packages": {
+   "pyyaml": "6.0.1",
+   "pypardiso": null,
+   "mkl": null,
+   "gmsh": null,
+   "pyvista": "0.46.5",
+   "vtk": "9.5.2",
+   "numba": "0.63.1",
+   "scikit-fem": "12.0.2",
+   "matplotlib": "3.9.0",
+   "pytest": "9.0.2",
+   "hypothesis": "6.155.2",
+   "mypy": "2.1.0",
+   "ruff": "0.17.2",
+   "psutil": "5.9.8"
+  },
+  "solver": "SuperLU (torch imported before toporlogy; PARDISO not loaded)",
+  "float_dtype": "float64"
+ },
+ "examples": {
+  "cantilever3d": {
+   "status": "not converged",
+   "termination": "max_iter",
+   "iterations": 150,
+   "max_iter": 150,
+   "converged": false,
+   "objective_name": "compliance",
+   "objective": 252.82842188287066,
+   "max_violation": 6.320458485105837e-06,
+   "kkt_residual": 0.7039249046197931,
+   "stationarity": 0.4963560285217739,
+   "grey_fraction": 0.036458333333333336,
+   "verdict": "PASS",
+   "flags": [
+    "not_converged"
+   ],
+   "constraints": [
+    {
+     "name": "volume",
+     "value": 0.3000018961375455,
+     "upper": 0.3,
+     "verdict": "PASS"
+    }
+   ],
+   "post": {},
+   "physics": "Elasticity",
+   "optimizer": "OC",
+   "n_active": 768,
+   "ndof": 3375,
+   "state_residual": 1.8758962651379613e-12,
+   "design": {
+    "xphys_sha256": "47d3e2da9adae5b8499c25be4e335325b800df2976227a17dd347ee96cb85ad3",
+    "xphys_mean": 0.30000189613754547,
+    "n_design": 768
+   },
+   "optimizer_seconds": 21.862407400003576,
+   "wall_seconds": 30.604394600006344,
+   "peak_memory_bytes": 467787776,
+   "peak_memory_method": "psutil peak_wset (Windows peak working set)",
+   "process_seconds": 31.28404070000397,
+   "source": "examples/cantilever3d.yaml",
+   "config_sha256": "69e1ae13302326e4c44faf43b27095699fb0aec1b89edf9522c541b35fd28a19"
+  },
+  "eigenfrequency2d": {
+   "status": "not converged",
+   "termination": "max_iter",
+   "iterations": 60,
+   "max_iter": 60,
+   "converged": false,
+   "objective_name": "neg_min_eigenvalue_ks",
+   "objective": -0.00010172715813267236,
+   "max_violation": 0.0,
+   "kkt_residual": 0.0023133014170806953,
+   "stationarity": 0.0023545567162567642,
+   "grey_fraction": 0.7053571428571429,
+   "verdict": "PASS",
+   "flags": [
+    "not_converged"
+   ],
+   "constraints": [
+    {
+     "name": "volume",
+     "value": 0.49999983424424715,
+     "upper": 0.5,
+     "verdict": "PASS"
+    }
+   ],
+   "post": {},
+   "physics": "Modal",
+   "optimizer": "MMA",
+   "n_active": 448,
+   "ndof": 1026,
+   "state_residual": null,
+   "design": {
+    "xphys_sha256": "c0d9c54cab58b7d6d805fb40e89a403d9732a34c4fd4c054178a1e2dfffd9124",
+    "xphys_mean": 0.49999983424424715,
+    "n_design": 448
+   },
+   "optimizer_seconds": 3.967957100001513,
+   "wall_seconds": 11.858567100003711,
+   "peak_memory_bytes": 444862464,
+   "peak_memory_method": "psutil peak_wset (Windows peak working set)",
+   "process_seconds": 12.425076999999874,
+   "source": "examples/eigenfrequency2d.yaml",
+   "config_sha256": "f53868c3346f745731d0e1d23bdf466bb07e2780dcdff60ee6f4e0ac321fe196"
+  },
+  "lbracket_bore3d": {
+   "status": "not converged",
+   "termination": "max_iter",
+   "iterations": 40,
+   "max_iter": 40,
+   "converged": false,
+   "objective_name": "robust_compliance",
+   "objective": 666.9013788954024,
+   "max_violation": 0.0,
+   "kkt_residual": 0.3921070480798558,
+   "stationarity": 0.37621204307288847,
+   "grey_fraction": 0.38578869047619047,
+   "verdict": "PASS",
+   "flags": [
+    "not_converged"
+   ],
+   "constraints": [
+    {
+     "name": "volume_dilated",
+     "value": 0.5090501217042233,
+     "upper": 0.6127847563983831,
+     "verdict": "PASS"
+    },
+    {
+     "name": "local_volume",
+     "value": 0.3466386607043699,
+     "upper": 0.34684466019417476,
+     "verdict": "PASS"
+    },
+    {
+     "name": "connectivity",
+     "value": 9.757737533910586,
+     "upper": 20.0,
+     "verdict": "PASS"
+    }
+   ],
+   "post": {
+    "connectivity_gate": true,
+    "measure_lengthscale": null,
+    "finalize": null,
+    "manufacturing_checks": true,
+    "export": null
+   },
+   "physics": "Elasticity",
+   "optimizer": "MMA",
+   "n_active": 2688,
+   "ndof": 20181,
+   "state_residual": 1.7456959440965573e-11,
+   "design": {
+    "xphys_sha256": "e00d2a59169da9ac5482c77ed0b84095ea4dbeb049c6d186e9b5768fa91f982b",
+    "xphys_mean": 0.165907898133446,
+    "n_design": 5400
+   },
+   "optimizer_seconds": 90.82949579999695,
+   "wall_seconds": 113.41415679999773,
+   "peak_memory_bytes": 846454784,
+   "peak_memory_method": "psutil peak_wset (Windows peak working set)",
+   "process_seconds": 114.3434544000047,
+   "source": "examples/lbracket_bore3d.yaml",
+   "config_sha256": "874b9627a377cd1f306581f5140b6a5983798607637132e279eb8b26f6c8fa9a"
+  },
+  "mbb2d": {
+   "status": "ok",
+   "termination": "design_change",
+   "iterations": 158,
+   "max_iter": 300,
+   "converged": true,
+   "objective_name": "compliance",
+   "objective": 219.7496083540957,
+   "max_violation": 1.1115241219661343e-05,
+   "kkt_residual": 0.014702802745859733,
+   "stationarity": 0.011978685630634428,
+   "grey_fraction": 0.295,
+   "verdict": "PASS",
+   "flags": [],
+   "constraints": [
+    {
+     "name": "volume",
+     "value": 0.5000055576206098,
+     "upper": 0.5,
+     "verdict": "PASS"
+    }
+   ],
+   "post": {},
+   "physics": "Elasticity",
+   "optimizer": "OC",
+   "n_active": 1200,
+   "ndof": 2562,
+   "state_residual": 1.3925353904469392e-12,
+   "design": {
+    "xphys_sha256": "1200eea64c91c7f0499ae7f43ce59cff1b2f9c41c5c8f972b5dc4139890dfd20",
+    "xphys_mean": 0.5000055576206098,
+    "n_design": 1200
+   },
+   "optimizer_seconds": 7.341975699993782,
+   "wall_seconds": 14.59146999999939,
+   "peak_memory_bytes": 446607360,
+   "peak_memory_method": "psutil peak_wset (Windows peak working set)",
+   "process_seconds": 15.316720800001349,
+   "source": "examples/mbb2d.yaml",
+   "config_sha256": "7d335a49848c205549e49df9eea6d8aeb867701a95e5d18da4d7a7bb5154d504"
+  },
+  "multiload3d": {
+   "status": "ok",
+   "termination": "design_change",
+   "iterations": 79,
+   "max_iter": 80,
+   "converged": true,
+   "objective_name": "compliance",
+   "objective": 165.9946812865786,
+   "max_violation": 0.0,
+   "kkt_residual": 0.003843175703339034,
+   "stationarity": 0.0037055253218036574,
+   "grey_fraction": 0.53125,
+   "verdict": "PASS",
+   "flags": [],
+   "constraints": [
+    {
+     "name": "volume",
+     "value": 0.24999983014618313,
+     "upper": 0.25,
+     "verdict": "PASS"
+    }
+   ],
+   "post": {},
+   "physics": "Elasticity",
+   "optimizer": "MMA",
+   "n_active": 960,
+   "ndof": 3969,
+   "state_residual": 1.7792034154684605e-13,
+   "design": {
+    "xphys_sha256": "e46265005a865da065b8017bbdfa5dfd6e55c4087ebd8e0168e6b21318ee9460",
+    "xphys_mean": 0.24999983014618313,
+    "n_design": 960
+   },
+   "optimizer_seconds": 11.492255199998908,
+   "wall_seconds": 20.03697419999662,
+   "peak_memory_bytes": 475738112,
+   "peak_memory_method": "psutil peak_wset (Windows peak working set)",
+   "process_seconds": 20.66610059999948,
+   "source": "examples/multiload3d.yaml",
+   "config_sha256": "1ba8b84de6cf4d93b3ee23d3069e55011d7689125bede5f13947698e88338d46"
+  },
+  "split_connectivity2d": {
+   "status": "not converged",
+   "termination": "max_iter",
+   "iterations": 120,
+   "max_iter": 120,
+   "converged": false,
+   "objective_name": "compliance",
+   "objective": 4.180970092691928,
+   "max_violation": 0.0,
+   "kkt_residual": 0.006322919842960515,
+   "stationarity": 0.006252338864552324,
+   "grey_fraction": 0.0006944444444444445,
+   "verdict": "PASS",
+   "flags": [
+    "not_converged"
+   ],
+   "constraints": [
+    {
+     "name": "volume",
+     "value": 0.14999993959928612,
+     "upper": 0.15,
+     "verdict": "PASS"
+    },
+    {
+     "name": "connectivity",
+     "value": 18.515424045761947,
+     "upper": 20.0,
+     "verdict": "PASS"
+    }
+   ],
+   "post": {
+    "connectivity_gate": true
+   },
+   "physics": "Elasticity",
+   "optimizer": "MMA",
+   "n_active": 1440,
+   "ndof": 3050,
+   "state_residual": 3.5480882247380756e-14,
+   "design": {
+    "xphys_sha256": "4a25d6328b94dd78b4252575793d095cba31dc5809ac9a9c64b81e4ec8a65cc9",
+    "xphys_mean": 0.1499999395992861,
+    "n_design": 1440
+   },
+   "optimizer_seconds": 3.75067300000228,
+   "wall_seconds": 11.118429100002686,
+   "peak_memory_bytes": 451985408,
+   "peak_memory_method": "psutil peak_wset (Windows peak working set)",
+   "process_seconds": 11.66306920000352,
+   "source": "examples/split_connectivity2d.yaml",
+   "config_sha256": "4593c5cf7acf050c091ab8fdfd416d6205bb9acb17022b98776b7ac39e71faee"
+  },
+  "symmetric_am3d": {
+   "status": "not converged",
+   "termination": "schedule_step_at_max_iter",
+   "iterations": 60,
+   "max_iter": 60,
+   "converged": false,
+   "objective_name": "compliance",
+   "objective": 1.1596458926724833,
+   "max_violation": 0.0,
+   "kkt_residual": 0.5527815814541387,
+   "stationarity": 0.44199384013961873,
+   "grey_fraction": 0.027777777777777776,
+   "verdict": "PASS",
+   "flags": [
+    "not_converged",
+    "schedule_step_at_max_iter"
+   ],
+   "constraints": [
+    {
+     "name": "volume",
+     "value": 0.1977668470274552,
+     "upper": 0.2,
+     "verdict": "PASS"
+    }
+   ],
+   "post": {},
+   "physics": "Elasticity",
+   "optimizer": "OC",
+   "n_active": 2304,
+   "ndof": 8775,
+   "state_residual": 2.86509525777477e-14,
+   "design": {
+    "xphys_sha256": "73b00e23149d7c50b306b2b0f685bcfe456dfc70f060e348d7ada79d7922f581",
+    "xphys_mean": 0.1977668470274552,
+    "n_design": 2304
+   },
+   "optimizer_seconds": 39.81534599999577,
+   "wall_seconds": 47.15901930000109,
+   "peak_memory_bytes": 534118400,
+   "peak_memory_method": "psutil peak_wset (Windows peak working set)",
+   "process_seconds": 47.76284189999569,
+   "source": "examples/symmetric_am3d.yaml",
+   "config_sha256": "d2a00b01cb123e2d94c6e1e128a69f1067868716e23c02ac36f021a8e93d1750"
+  },
+  "buckling_column2d": {
+   "status": "not converged",
+   "termination": "max_iter",
+   "iterations": 80,
+   "max_iter": 80,
+   "converged": false,
+   "objective_name": "compliance",
+   "objective": 12.871942250311648,
+   "max_violation": 0.0,
+   "kkt_residual": 0.03908743775244306,
+   "stationarity": 0.035925793000620924,
+   "grey_fraction": 0.3283333333333333,
+   "verdict": "PASS",
+   "flags": [
+    "not_converged"
+   ],
+   "constraints": [
+    {
+     "name": "volume",
+     "value": 0.3499746981049944,
+     "upper": 0.35,
+     "verdict": "PASS"
+    },
+    {
+     "name": "buckling",
+     "value": 45.80927001144672,
+     "upper": 50.0,
+     "verdict": "PASS"
+    }
+   ],
+   "post": {},
+   "physics": "Elasticity",
+   "optimizer": "MMA",
+   "n_active": 1200,
+   "ndof": 2562,
+   "state_residual": 1.2850035007314516e-14,
+   "design": {
+    "xphys_sha256": "eb03ae969c4ea16f4ba9f55f65d0502f7c3f55f8f53d12b0a57f69ae40693fca",
+    "xphys_mean": 0.34997469810499443,
+    "n_design": 1200
+   },
+   "optimizer_seconds": 20.683043899996846,
+   "wall_seconds": 28.033661000001302,
+   "peak_memory_bytes": 454172672,
+   "peak_memory_method": "psutil peak_wset (Windows peak working set)",
+   "process_seconds": 28.635926899994956,
+   "source": "examples/research/buckling_column2d.yaml",
+   "config_sha256": "42817341889b7a914e8bcda3cd9ea65af13de5e72080d92d98062fffb5f28c35"
+  },
+  "inverter2d": {
+   "status": "not converged",
+   "termination": "max_iter",
+   "iterations": 100,
+   "max_iter": 100,
+   "converged": false,
+   "objective_name": "displacement",
+   "objective": -1.2028750749908672,
+   "max_violation": 0.0,
+   "kkt_residual": 0.03823788383367674,
+   "stationarity": 0.03583059793681236,
+   "grey_fraction": 0.15333333333333332,
+   "verdict": "PASS",
+   "flags": [
+    "not_converged"
+   ],
+   "constraints": [
+    {
+     "name": "volume",
+     "value": 0.29998540903892945,
+     "upper": 0.3,
+     "verdict": "PASS"
+    }
+   ],
+   "post": {},
+   "physics": "ConstrainedElasticity",
+   "optimizer": "MMA",
+   "n_active": 1800,
+   "ndof": 3782,
+   "state_residual": 7.463320169560777e-14,
+   "design": {
+    "xphys_sha256": "13bae24d0f0628b3c0c79c48ab3ca3432ff1ca63ca9daace08e50dc278694ab3",
+    "xphys_mean": 0.29998540903892945,
+    "n_design": 1800
+   },
+   "optimizer_seconds": 7.170310899993638,
+   "wall_seconds": 14.574532200000249,
+   "peak_memory_bytes": 452521984,
+   "peak_memory_method": "psutil peak_wset (Windows peak working set)",
+   "process_seconds": 15.526789300005476,
+   "source": "examples/research/inverter2d.yaml",
+   "config_sha256": "f67da58122878da5fba24326e845c01977cd1b18bc33a286c3ce91817c03c40f"
+  },
+  "mbb_simpl2d": {
+   "status": "not converged",
+   "termination": "max_iter",
+   "iterations": 150,
+   "max_iter": 150,
+   "converged": false,
+   "objective_name": "compliance",
+   "objective": 225.72569618886232,
+   "max_violation": 0.0,
+   "kkt_residual": null,
+   "stationarity": 0.0077244806848727485,
+   "grey_fraction": 0.32,
+   "verdict": "PASS",
+   "flags": [
+    "not_converged"
+   ],
+   "constraints": [
+    {
+     "name": "volume",
+     "value": 0.49999999999977207,
+     "upper": 0.5,
+     "verdict": "PASS"
+    }
+   ],
+   "post": {
+    "discrete_check": true
+   },
+   "physics": "Elasticity",
+   "optimizer": "SiMPL",
+   "n_active": 1200,
+   "ndof": 2562,
+   "state_residual": 1.4899366833315947e-12,
+   "design": {
+    "xphys_sha256": "25fabc9d65b66b0d14745e3495ff39f07da92b97b4f4724576ee79fe7559fedd",
+    "xphys_mean": 0.49999999999977207,
+    "n_design": 1200
+   },
+   "optimizer_seconds": 15.814900999997917,
+   "wall_seconds": 29.671859299996868,
+   "peak_memory_bytes": 445607936,
+   "peak_memory_method": "psutil peak_wset (Windows peak working set)",
+   "process_seconds": 30.375810600002296,
+   "source": "examples/research/mbb_simpl2d.yaml",
+   "config_sha256": "4ff4e6e36b29798fa320ffe55ec86d0d3870b7b5f9b9a11fe7f1ebf0b83ee812"
+  },
+  "stress_al_lbracket2d": {
+   "error": "exit 1",
+   "stderr_tail": "Traceback (most recent call last):\n  File \"<string>\", line 14, in <module>\n  File \"D:\\Masaustu\\Topology Optimization\\.claude\\worktrees\\vv-infra-6ff2f9\\src\\toporlogy\\execution\\runner.py\", line 51, in run_setup\n    res = st.run(max_iter=int(run[\"max_iter\"]), tol=float(run[\"tol\"]), callback=cb,\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"D:\\Masaustu\\Topology Optimization\\.claude\\worktrees\\vv-infra-6ff2f9\\src\\toporlogy\\optimization\\study.py\", line 377, in run\n    ev = self.evaluate(x)\n         ^^^^^^^^^^^^^^^^\n  File \"D:\\Masaustu\\Topology Optimization\\.claude\\worktrees\\vv-infra-6ff2f9\\src\\toporlogy\\optimization\\study.py\", line 242, in evaluate\n    ctx = self.context(xt, \"u\" in self._needs(rs))\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"D:\\Masaustu\\Topology Optimization\\.claude\\worktrees\\vv-infra-6ff2f9\\src\\toporlogy\\optimization\\study.py\", line 232, in context\n    U = self.physics.solve(E.reshape(-1)[self._active], self.F) if need_u else None\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"D:\\Masaustu\\Topology Optimization\\.claude\\worktrees\\vv-infra-6ff2f9\\src\\toporlogy\\fem\\elastic.py\", line 266, in solve\n    return _LinearSolve.apply(E_active, self, F2)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\ayber\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\site-packages\\torch\\autograd\\function.py\", line 575, in apply\n    return super().apply(*args, **kwargs)  # type: ignore[misc]\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"D:\\Masaustu\\Topology Optimization\\.claude\\worktrees\\vv-infra-6ff2f9\\src\\toporlogy\\fem\\elastic.py\", line 359, in forward\n    U = model.solve_numpy(E_np, F)\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"D:\\Masaustu\\Topology Optimization\\.claude\\worktrees\\vv-infra-6ff2f9\\src\\toporlogy\\fem\\elastic.py\", line 239, in solve_numpy\n    self.factor(E_active)\n  File \"D:\\Masaustu\\Topology Optimization\\.claude\\worktrees\\vv-infra-6ff2f9\\src\\toporlogy\\fem\\elastic.py\", line 215, in factor\n    E_active = check_moduli(E_active, self.n_elements)        # before the support check: it assumes E > 0\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"D:\\Masaustu\\Topology Optimization\\.claude\\worktrees\\vv-infra-6ff2f9\\src\\toporlogy\\fem\\mechanisms.py\", line 107, in check_moduli\n    raise InvalidModuliError(f\"{what}: {int(bad.sum())} value(s) not finite (first at active element \"\ntoporlogy.fem.mechanisms.InvalidModuliError: modulus: 240 value(s) not finite (first at active element 0)\n",
+   "process_seconds": 9.715230499998142
+  },
+  "stress_lbracket2d": {
+   "error": "exit 1",
+   "stderr_tail": "  File \"<string>\", line 14, in <module>\n  File \"D:\\Masaustu\\Topology Optimization\\.claude\\worktrees\\vv-infra-6ff2f9\\src\\toporlogy\\execution\\runner.py\", line 51, in run_setup\n    res = st.run(max_iter=int(run[\"max_iter\"]), tol=float(run[\"tol\"]), callback=cb,\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"D:\\Masaustu\\Topology Optimization\\.claude\\worktrees\\vv-infra-6ff2f9\\src\\toporlogy\\optimization\\study.py\", line 381, in run\n    xnew = self.optimizer.step(x, ev.f0, ev.df0, ev.g, ev.dg, cfn)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"D:\\Masaustu\\Topology Optimization\\.claude\\worktrees\\vv-infra-6ff2f9\\src\\toporlogy\\optimizers\\gcmma.py\", line 202, in step\n    f0n, gn = self.value_fn(xnew)\n              ^^^^^^^^^^^^^^^^^^^\n  File \"D:\\Masaustu\\Topology Optimization\\.claude\\worktrees\\vv-infra-6ff2f9\\src\\toporlogy\\optimization\\study.py\", line 369, in value_fn\n    e = self.evaluate(xc, gradients=False)\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"D:\\Masaustu\\Topology Optimization\\.claude\\worktrees\\vv-infra-6ff2f9\\src\\toporlogy\\optimization\\study.py\", line 242, in evaluate\n    ctx = self.context(xt, \"u\" in self._needs(rs))\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"D:\\Masaustu\\Topology Optimization\\.claude\\worktrees\\vv-infra-6ff2f9\\src\\toporlogy\\optimization\\study.py\", line 232, in context\n    U = self.physics.solve(E.reshape(-1)[self._active], self.F) if need_u else None\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"D:\\Masaustu\\Topology Optimization\\.claude\\worktrees\\vv-infra-6ff2f9\\src\\toporlogy\\fem\\elastic.py\", line 266, in solve\n    return _LinearSolve.apply(E_active, self, F2)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\ayber\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\site-packages\\torch\\autograd\\function.py\", line 575, in apply\n    return super().apply(*args, **kwargs)  # type: ignore[misc]\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"D:\\Masaustu\\Topology Optimization\\.claude\\worktrees\\vv-infra-6ff2f9\\src\\toporlogy\\fem\\elastic.py\", line 359, in forward\n    U = model.solve_numpy(E_np, F)\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"D:\\Masaustu\\Topology Optimization\\.claude\\worktrees\\vv-infra-6ff2f9\\src\\toporlogy\\fem\\elastic.py\", line 239, in solve_numpy\n    self.factor(E_active)\n  File \"D:\\Masaustu\\Topology Optimization\\.claude\\worktrees\\vv-infra-6ff2f9\\src\\toporlogy\\fem\\elastic.py\", line 215, in factor\n    E_active = check_moduli(E_active, self.n_elements)        # before the support check: it assumes E > 0\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"D:\\Masaustu\\Topology Optimization\\.claude\\worktrees\\vv-infra-6ff2f9\\src\\toporlogy\\fem\\mechanisms.py\", line 107, in check_moduli\n    raise InvalidModuliError(f\"{what}: {int(bad.sum())} value(s) not finite (first at active element \"\ntoporlogy.fem.mechanisms.InvalidModuliError: modulus: 1024 value(s) not finite (first at active element 0)\n",
+   "process_seconds": 10.346034599999257
+  }
+ }
+}
