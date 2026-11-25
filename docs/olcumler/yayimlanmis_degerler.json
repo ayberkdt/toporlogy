@@ -1,0 +1,67 @@
+{
+ "phase": "PR-09 continued: published values (stress, buckling)",
+ "date": "2026-11-25",
+ "branch": "claude/loving-williams-d5be4a",
+ "tests": "tests/toporlogy/test_published_values.py",
+ "references_code": "tests/toporlogy/published_codes.py (TopBuck250, DENG_B, deng_pnorm)",
+ "command": "python -m pytest tests/toporlogy/test_published_values.py -s  (slow wall tests: add -m slow)",
+ "preregistration": "docs/olcumler/yayimlanmis_degerler.md section 1 (written 2026-11-25T14:37+03:00, before any run)",
+ "sources": {
+  "FSG21": "Ferrari, Sigmund, Guest. Topology Optimization with linearized buckling criteria in 250 lines of Matlab. arXiv:2101.02973v1 (SMO 63:3045-3066, 2021). Full text read: Appendix C code, section 5.2 p.11-12.",
+  "DVT21": "Deng, Vulimiri, To. An efficient 146-line 3D sensitivity analysis code of stress-based topology optimization written in MATLAB. arXiv:2104.01210v1. Full text read: Appendix A code, section 6.2."
+ },
+ "cases": [
+  {
+   "id": "B-wall",
+   "physics": "linear buckling",
+   "published_value": {"quantity": "lambda1, solid initial wall, 320x320", "value": 3.15, "source": "FSG21 section 5.2, p.12"},
+   "verdict_vs_published": "FAIL",
+   "checks": {
+    "B1_transcription_centroid_vs_published": {"bound": "|lambda1-3.15| <= 0.0051", "measured": 1.303072, "verdict": "FAIL"},
+    "B2_toporlogy_vs_published": {"bound": "rel <= 1e-2", "measured": 1.201863, "rel": 0.618, "verdict": "FAIL"},
+    "B3_toporlogy_vs_transcription_gauss": {"bound": "rel <= 1e-8", "measured_rel": 8.92e-11, "verdict": "PASS"},
+    "centroid_vs_gauss_rel": -7.77e-2
+   },
+   "post_hoc_probe": {"load_reversed_lambda1": 0.862797, "lambda1_4_as_printed": [1.303072, 1.592311, 1.696670, 1.795156], "note": "not pre-registered; not adopted"},
+   "runtime_s": 162
+  },
+  {
+   "id": "B-column",
+   "physics": "linear buckling, code to code (no published number)",
+   "setup": "topBuck250 lines 64-69, 60x30, Lx=2, pK=pG=3",
+   "verdict": "PASS",
+   "solid": {"c_rel": 1.46e-13, "sigma_rel": 1.93e-13, "KG_rel": 1.25e-13, "lambda_rel_gauss": 4.39e-13,
+             "lambda_toporlogy": [42.979818, 166.17157, 167.091061, 172.653524],
+             "lambda_published_code_centroid": [42.984981, 166.957958, 167.982352, 173.085682]},
+   "random": {"c_rel": 1.43e-13, "sigma_rel": 1.72e-13, "KG_rel": 1.04e-13, "lambda_rel_gauss": 1.70e-13,
+              "lambda_toporlogy": [10.679143, 47.155975, 51.419111, 60.043001],
+              "lambda_published_code_centroid": [10.68015, 47.172544, 51.670443, 60.055941]},
+   "bounds": "c 1e-9, sigma 1e-9, K_G 1e-10, lambda 1e-8 (pre-registered)"
+  },
+  {
+   "id": "S-cantilever",
+   "physics": "von Mises stress p-norm (p=10, q=0.5, pl=3), H8, 200x60x1",
+   "published_value": {"quantity": "initial p-norm stress", "value": 33.17, "source": "DVT21 section 6.2"},
+   "assumption": "initial design x = volfrac = 0.3 uniform (driver not printed)",
+   "verdict_vs_published": "FAIL",
+   "checks": {
+    "S1_transcription_vs_published": {"bound": "|pn-33.17| <= 0.01", "measured": 68.447505, "verdict": "FAIL"},
+    "S2_U_toporlogy_vs_transcription": {"bound": "<= 1e-9", "measured": 9.68e-8, "verdict": "FAIL",
+       "cause_post_hoc": "cond(K_ff) ~ 5.4e9; residuals 5.4e-12 (toporlogy), 1.1e-11 (transcription); vs refined solution 7.6e-9 / 5.1e-8"},
+    "S3_printed_B_is_one_gauss_point": {"bound": "exactly one of 8 within 1e-5", "measured": "Gauss point 7 (+g,+g,+g), 3.33e-6; others >= 0.455", "verdict": "PASS"},
+    "S3_toporlogy_vs_published": {"bound": "|pn-33.17| <= 0.006", "measured": 68.447056, "verdict": "FAIL"},
+    "S3_toporlogy_vs_transcription": {"bound": "rel <= 2e-4", "measured_rel": 6.56e-6, "verdict": "PASS"},
+    "S4_toporlogy_VonMises_centroid": {"bound": "none (different evaluation point)", "measured": 52.711275}
+   },
+   "post_hoc_probe": {"load_one_node": 17.264902, "uniform_x_0.4": 33.343470, "uniform_x_0.5": 19.086916, "uniform_x_1.0": 3.374122,
+                      "note": "not pre-registered; none adopted"}
+  }
+ ],
+ "not_attempted": {
+  "top99neo_table2": "UNVERIFIED: MBB 300x100, c = 252.7 after 2500 it; OC bracket [0, mean(ocP)/volfrac] tol 1e-4, symmetric filter BC, stop on ||dx||2/sqrt(m); toporlogy's filter BC differs; not the same problem",
+  "PolyStress": "UNVERIFIED: not on arXiv, text not read; polygonal mesh",
+  "GCMMA_Svanberg_2007_note": "UNVERIFIED: people.kth.se/~krille/mmagcmma.pdf now returns a 'page no longer in use' HTML",
+  "FSG21_column_numbers": "UNVERIFIED: lambda1 0.75 / 8.53, c 8.57e-6 need the full optimisation history",
+  "DVT21_final_values_and_L_bracket": "UNVERIFIED: 3.31 / 5.51 / 4.72 need MMA runs; 2-D L-bracket 56.23 passive/filter order not printed"
+ }
+}
