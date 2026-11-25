@@ -367,3 +367,18 @@ Tanı amaçlı ek koşu (ölçüt değil): n = 32 ve 64'te Q4 oranları 1,85 · 
 yer değiştirmeli MMS problemlerinde (§1.3) oranlar ilk üç ağda 2,00'dı. Buradaki fark, problemin tamamen çekiş
 yüklü olması (üç noktada rijit hareket tutuluyor) ve hatanın uçlarda yoğunlaşması olabilir; bu da sınanmadı. Bu
 yüzden üç ağlık oran ölçütü bu problem için fazla sıkıydı; çözümün doğruluğu (H1, H4) ise ön kayıtla tutuyor.
+
+### 7.2 H2/H3'ün nedeni (tanı, post hoc) [Ö]
+
+En büyük düğüm hatası her ağda yüklü bir uç yüzün köşesinde: Q4'te x = 0, y = ±D/2; Q4IM'de x = L, y = −D/2. Köşeden
+uzakta oranlar ikinci mertebe:
+
+| Eleman | Maksimum (H2/H3) | RMS, bütün düğümler | Maksimum, açıklığın orta yarısı |
+|:---|:---|:---|:---|
+| Q4 | 1,78 · 1,82 | 2,06 · 2,05 | 2,06 · 2,04 |
+| Q4IM | 1,34 · 1,52 | 2,14 · 2,13 | 2,00 · 2,01 |
+
+Yani H2/H3'ün tutmaması çözücünün genel doğruluğuyla ilgili değil, yüklü köşelerdeki yerel bir etki. Q4IM'de etkinin
+daha güçlü olması için aday: yüklü kenar boyunca sıfır olmayan uyumsuz modlara düşen yük payı ihmal ediliyor
+(yoğunlaştırılmış eleman yalnız düğüm yüklerini alıyor); bu sınanmadı. Tanı `test_h5_..._post_hoc` olarak testte
+(ön kayıtlı değil, bu ölçümden sonra yazıldı; eşik H2'nin aralığı).

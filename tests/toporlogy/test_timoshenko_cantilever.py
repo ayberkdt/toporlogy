@@ -90,10 +90,13 @@ def solve(n, element):
     R[0::2, 0], R[1::2, 1], R[0::2, 2], R[1::2, 2] = 1.0, 1.0, -y, x
     a, *_ = np.linalg.lstsq(R, (U - ue).ravel(), rcond=None)
     Uc = (U.ravel() - R @ a).reshape(-1, 2)
-    err = float(np.abs(Uc - ue).max() / np.abs(ue).max())
+    En = np.abs(Uc - ue).max(1) / np.abs(ue).max()
+    err = float(En.max())
     tip = mid1
     tip_err = float(abs(Uc[tip, 1] - ue[tip, 1]) / abs(ue[tip, 1]))
-    return err, tip_err
+    middle = (x > L / 4) & (x < 3 * L / 4)
+    return err, tip_err, float(np.sqrt(np.mean(En ** 2))), float(En[middle].max()), (float(x[En.argmax()]),
+                                                                                   float(y[En.argmax()]))
 
 
 NS = (4, 8, 16)
@@ -132,3 +135,16 @@ def test_h4_tip_deflection(results):
     q4, im = results["Q4"][-1][1], results["Q4IM"][-1][1]
     print(f"\n  H4 tip deflection error: Q4 {q4:.2e}, Q4IM {im:.2e}")
     assert q4 <= 2e-2 and im <= 2e-3
+
+
+@pytest.mark.parametrize("element", ["Q4", "Q4IM"])
+def test_h5_second_order_away_from_the_loaded_corners_post_hoc(results, element):
+    """Post hoc (written after H2 and H3 failed; not pre-registered): the largest nodal error sits at a corner of a
+    loaded end face, and away from it the rate is second order: RMS over all nodes and max over the middle half
+    of the span, both in H2's band [1.8, 2.25]. Measured on the diagnosis run: RMS 2.03-2.14, middle 2.00-2.06."""
+    r = results[element]
+    corner = [(round(c[0], 9) in (0.0, L)) and (round(abs(c[1]), 9) == D / 2) for c in (v[4] for v in r)]
+    rms, mid = _rates([v[2] for v in r]), _rates([v[3] for v in r])
+    print(f"\n  H5 {element}: max at {[v[4] for v in r]}, RMS rates {rms}, middle-half rates {mid}")
+    assert all(corner)
+    assert all(1.8 <= v <= 2.25 for v in rms + mid)
