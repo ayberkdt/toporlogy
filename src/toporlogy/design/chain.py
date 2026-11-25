@@ -1,8 +1,8 @@
-"""Design-variable chain x → x̄ (docs/mimari_plan.md §3): each link is a ``torch.nn.Module`` on element grids.
+"""Design-variable chain x → x̄ (docs/mimari_plan.md §2): each link is a ``torch.nn.Module`` on element grids.
 
 The usual chain (the order of the legacy voxel driver, which ``tests/toporlogy`` keeps as a regression oracle):
 
-``Embed`` (design vector → grid, keep = 1, void = 0, outside = 0) → ``DensityFilter`` → [AM filter, phase A3] →
+``Embed`` (design vector → grid, keep = 1, void = 0, outside = 0) → ``DensityFilter`` → [AM filter] →
 ``HeavisideProjection`` → ``Passive`` (keep = 1, void = 0, outside = 0 again).
 
 Gradients come from autograd; every link has a finite-difference test (``tests/toporlogy``). Links that change during a

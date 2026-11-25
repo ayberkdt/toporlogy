@@ -1,8 +1,9 @@
 """Command line: ``python -m toporlogy <command>``.
 
 Commands: ``run``, ``validate``, ``show``, ``compare``, ``list`` (``python -m toporlogy <command> -h``).
-Exit codes: 0 = ok; 1 = run finished but not converged, a constraint violated or a post step failed (connectivity
-verdict FAIL, manufacturing checks); 2 = config or input error (incl. boundary-condition check errors).
+Exit codes: 0 = ok; 1 = run finished but not converged, a constraint violated or unverified, an objective unverified
+or a post step failed (connectivity verdict FAIL, manufacturing checks); 2 = config or input error (incl.
+boundary-condition check errors).
 Output is plain ASCII (safe on any console code page); errors go to stderr.
 """
 from __future__ import annotations
@@ -509,7 +510,8 @@ def cmd_list(a: argparse.Namespace) -> int:
 def parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(prog=PROG, description="Density-based topology optimisation from a YAML/JSON "
                                 "config.", epilog=f"example: {PROG} run study.yaml --set run.max_iter=50   "
-                                "| exit codes: 0 ok, 1 not converged / constraint violated / post check failed, "
+                                "| exit codes: 0 ok, 1 not converged / constraint violated or unverified / "
+                                "objective unverified / post check failed, "
                                 "2 config error")
     sub = p.add_subparsers(dest="command", required=True, metavar="command")
     r = sub.add_parser("run", help="run a config (one run folder; with --sweep one subfolder per combination)")

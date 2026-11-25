@@ -10,9 +10,10 @@ constructor's signature, so registering a new component is one line (see ``docs/
 Kinds (:data:`KINDS`): ``domain``, ``shape``, ``selector``, ``support``, ``load``, ``link``, ``interpolation``,
 ``solver``, ``physics``, ``response``, ``optimizer``, ``schedule``, ``post``.
 
-Core components are registered by ``_register_core``; the feature modules (:mod:`toporlogy.boundary`, ``geometry``,
-``robust``, ``lengthscale``, ``connectivity``, ``manufacturing``, ``dynamics``, ``fem.modal``, ``post``) by
-``_register_features`` (``post`` is imported only when one of its steps is used).
+The built-in components are registered by :func:`toporlogy.configuration.components.register_all`, one module per
+area (``core``, ``geometry``, ``boundary``, ``design``, ``physics``, ``responses``, ``schedules`` and the post steps
+of :mod:`toporlogy.configuration.post_steps`); the ``toporlogy.post`` package is imported only when one of its steps
+is used.
 
 Constructor conventions
 -----------------------

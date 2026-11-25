@@ -3,8 +3,8 @@
 Matrix-free fine level (shared 24×24 element matrix times a per-element modulus), element-level Galerkin coarse
 levels with trilinear prolongation (exact ``P̃ᵀ K P̃`` with the masked prolongation, see
 :mod:`toporlogy.solvers.gmg_kernels`), Chebyshev smoothing, and a coarse solve that is either a dense Cholesky
-inverse on the device (``coarse="dense"``), a smoothed-aggregation AMG V-cycle on the CPU (``coarse="amg"``, pyamg,
-rigid-body near-null space) or an exact sparse factorisation (``coarse="direct"``, diagnostics). The outer Krylov
+factorisation on the device (``coarse="dense"``), a smoothed-aggregation AMG V-cycle on the CPU (``coarse="amg"``,
+pyamg, rigid-body near-null space) or an exact sparse factorisation (``coarse="direct"``, diagnostics). The outer Krylov
 method is flexible (Polak–Ribière) CG in float64; the V-cycle may run in float32 (``vcycle_dtype``). On CUDA the
 outer operator and the V-cycle are captured as CUDA graphs and replayed; :meth:`GMGSolver.update` writes the new
 hierarchy into the same buffers, so a graph is captured once per problem structure.

@@ -1,4 +1,4 @@
-"""A1 acceptance (docs/mimari_plan.md §5, A1 (1) and (2)): the new core reproduces the old drivers.
+"""A1 acceptance (docs/mimari_plan.md §3, A1): the new core reproduces the old drivers.
 
 Oracles (unchanged modules):
 

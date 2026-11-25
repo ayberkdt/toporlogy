@@ -1,4 +1,4 @@
-"""Run folder: settings, git revision, environment, per-iteration history, final design (docs/mimari_plan.md §3)."""
+"""Run folder: settings, git revision, environment, per-iteration history, final design (docs/mimari_plan.md §2)."""
 from __future__ import annotations
 
 import json

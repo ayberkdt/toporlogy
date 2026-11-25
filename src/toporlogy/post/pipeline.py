@@ -2,14 +2,14 @@
 
 Stages and defaults (h = element size of the optimisation grid, h_f = h / upsample):
 
-1. **Fine grid** h_f = h/4 (``upsample=4``), padded by the largest morphology radius + 2 h_f.
+1. **Fine grid** h_f = h/4 (``upsample=4``), padded by the largest morphology radius + h + 2 h_f.
 2. **Density → field**: normalised trilinear interpolation (``interp_order=1``; 3 = cubic B-spline, smoother), then
    normalised Gaussian blur(ρ·w)/blur(w) over the *care* region w = inside the Bounds and outside the Cuts
    (σ = h/2 by default: removes the C⁰ creases of the trilinear interpolant at the element faces, keeps skins at
    the envelope, which a plain Gaussian over the empty exterior would dilute). Outside the care region the field
    takes the value of the nearest care sample (EDT feature transform): members continue straight through envelope
    faces and holes are bridged, so the later morphology does not round the edges that the exact re-imposition creates.
-3. **Volume-preserving threshold**: bisection on the level so that the finished part (exact interfaces included)
+3. **Volume-preserving threshold**: Brent root search on the level so that the finished part (exact interfaces included)
    has the optimised volume Σ frac·x̄·h³; sub-voxel volume from the partial-volume estimate.
 4. **Signed distance**: sub-voxel redistancing (:func:`toporlogy.post.sdf.redistance`).
 5. **Islands** (bodies without load path: neither largest nor touching a Keep) removed.

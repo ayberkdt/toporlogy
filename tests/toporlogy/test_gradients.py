@@ -1,4 +1,4 @@
-"""Finite-difference gradient checks of every chain link, interpolation and response (docs/mimari_plan.md §3.1).
+"""Finite-difference gradient checks of every chain link, interpolation and response (docs/mimari_plan.md §2).
 
 Pre-registered threshold: relative error ≤ 1e-6 (float64, CPU) of the directional derivative along random unit
 directions, :func:`toporlogy.optimization.diagnostics.gradcheck`. Designs are random interior points (x ∈ [0.2, 0.8]) so no

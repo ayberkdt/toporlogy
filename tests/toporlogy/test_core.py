@@ -1,4 +1,4 @@
-"""Unit tests of the A1 core (docs/mimari_plan.md §3, §5 A1): Domain numbering, element physics (patch test),
+"""Unit tests of the A1 core (docs/mimari_plan.md §3, row A1): Domain numbering, element physics (patch test),
 direct solvers, filter against the old implementations, Study input checks and the Recorder run folder."""
 from __future__ import annotations
 

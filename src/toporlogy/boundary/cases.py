@@ -255,7 +255,7 @@ class BoundaryConditions:
         return out
 
     def check(self, rtol: float = 1e-9) -> CheckReport:
-        """All checks (see module notes); the report lists errors, warnings and infos."""
+        """All checks (listed in the :mod:`toporlogy.boundary` notes); the report lists errors, warnings and infos."""
         rep = CheckReport()
         d, info = self.domain, self.info
         dim = d.dim

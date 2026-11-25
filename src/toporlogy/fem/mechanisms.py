@@ -26,9 +26,9 @@ positive, finite modulus (:func:`check_moduli`, called before every factorisatio
 modal paths); the support set of a physics object is frozen (``fixed`` and ``free`` are read-only), so the result
 computed once per object stays valid when only the moduli change. It does not detect ill-conditioning (very small
 but positive moduli, thin necks), constitutive instability or buckling; ill-conditioning is left to the per-load-case
-residual check (``fem.elastic.checked_residual``). The three failures carry distinct codes: ``mechanism``
-(:class:`MechanismError`), ``invalid_moduli`` (:class:`InvalidModuliError`), ``solve_residual``
-(:class:`SolveResidualError`).
+residual check (``fem.elastic.checked_residual``). The four failures carry distinct codes: ``mechanism``
+(:class:`MechanismError`), ``mechanism_indeterminate`` (:class:`MechanismCheckIndeterminate`), ``invalid_moduli``
+(:class:`InvalidModuliError`), ``solve_residual`` (:class:`SolveResidualError`).
 """
 from __future__ import annotations
 
@@ -52,7 +52,8 @@ class MechanismError(ValueError):
 
 
 class SolveResidualError(RuntimeError):
-    """A linear solve returned x with ‖K x − b‖ / ‖b‖ above the tolerance (singular or unsolvable system)."""
+    """A linear solve failed its residual check: a non-finite solution, or a load case with both the relative residual
+    and the backward error above their tolerances (singular or unsolvable system); see ``checked_residual``."""
 
     code = "solve_residual"
 

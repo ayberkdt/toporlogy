@@ -4,9 +4,9 @@
 2. Finite-difference gradients (threshold 1e-6, float64) of RobustCompliance (KS, p-norm), DilatedVolume and the
    bound-formulation constraints, through the three realisation solves. Responses through the linear solve use the
    Richardson-extrapolated difference of tests/toporlogy/test_gradients.py (h = 1e-3 and 2e-3; reason documented there).
-3. 2-D half MBB 90 × 30: robust run with minimum solid and void size b → measured blueprint sizes vs b, compared
+3. 2-D half MBB 60 × 20: robust run with minimum solid and void size b = 3 → measured blueprint sizes, compared
    with non-robust runs (all numbers printed).
-4. 3-D robust cantilever 30 × 10 × 6 runs and ends crisp (grey fraction < 5 %).
+4. 3-D robust cantilever 24 × 8 × 6 runs and ends crisp (grey fraction < 5 %).
 """
 from __future__ import annotations
 
