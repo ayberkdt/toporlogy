@@ -48,7 +48,10 @@ def read_config(path: str | Path) -> dict[str, Any]:
         raise ConfigError(f"config file not found: {p}")
     text = p.read_text(encoding="utf-8")
     try:
-        data = json.loads(text, object_pairs_hook=_no_duplicates) if p.suffix.lower() == ".json" else             yaml.load(text, Loader=_UniqueKeyLoader)  # noqa: S506 - a SafeLoader subclass
+        if p.suffix.lower() == ".json":
+            data = json.loads(text, object_pairs_hook=_no_duplicates)
+        else:
+            data = yaml.load(text, Loader=_UniqueKeyLoader)  # noqa: S506 - a SafeLoader subclass
     except (yaml.YAMLError, json.JSONDecodeError) as e:
         raise ConfigError(f"cannot parse {p.name}: {e}") from None
     if data is None:
