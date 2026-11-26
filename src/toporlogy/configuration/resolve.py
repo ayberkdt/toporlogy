@@ -244,7 +244,15 @@ def _resolve(raw: dict[str, Any]) -> dict[str, Any]:
     R = REGISTRY.resolve
 
     r["domain"] = R("domain", raw["domain"], "domain", errors) if "domain" in raw else None
-    r["material"] = _section(raw.get("material"), _MATERIAL, "material", errors, "material")
+    mat = raw.get("material")
+    if isinstance(mat, dict) and "catalog" in mat:
+        from toporlogy.configuration.catalog import material_section
+        try:
+            mat = material_section(mat, U.active())
+        except ValueError as e:
+            errors.append(("material.catalog", str(e)))
+            mat = {k: v for k, v in mat.items() if k != "catalog"}
+    r["material"] = _section(mat, _MATERIAL, "material", errors, "material")
     r["physics"] = R("physics", raw.get("physics", _DEFAULTS["physics"]), "physics", errors)
     modal = r["physics"] is not None and r["physics"]["type"] == "modal"
     for k in _REQUIRED + (() if modal else ("load_cases",)):

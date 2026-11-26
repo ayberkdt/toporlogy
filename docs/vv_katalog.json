@@ -1,5 +1,5 @@
 {
- "schema_version": "1.0.0",
+ "schema_version": "1.1.0",
  "statuses": [
   "SUPPORTED",
   "EXPERIMENTAL",
@@ -658,12 +658,125 @@
     "nu": 0.3,
     "rho": 1.0
    },
-   "units": "dimensionless (consistent user units)",
+   "units": "dimensionless",
    "source": "schema default (configuration/schema.py _MATERIAL)",
    "used_by": [
     "examples/*.yaml without a material block"
    ],
-   "note": "not a real material; the default of every config"
+   "note": "not a real material; the default of every config",
+   "grade": "",
+   "condition": "",
+   "temperature": "",
+   "uncertainty": {},
+   "page_or_table": "",
+   "licence": "",
+   "applicability": ""
+  },
+  {
+   "id": "synthetic_auxetic_isotropic",
+   "kind": "synthetic",
+   "family": "isotropic",
+   "values": {
+    "E0": 1.0,
+    "nu": -0.5,
+    "rho": 1.0
+   },
+   "units": "dimensionless",
+   "source": "chosen for tests (docs/olcumler/malzeme_katalog_onkayit.md C4)",
+   "used_by": [
+    "tests/toporlogy/test_material_catalog.py"
+   ],
+   "note": "not a real material: a negative Poisson ratio inside (-1, 1/2)",
+   "grade": "",
+   "condition": "",
+   "temperature": "",
+   "uncertainty": {},
+   "page_or_table": "",
+   "licence": "",
+   "applicability": ""
+  },
+  {
+   "id": "synthetic_orthotropic_ply",
+   "kind": "synthetic",
+   "family": "orthotropic",
+   "values": {
+    "E1": 40.0,
+    "E2": 9.0,
+    "E3": 9.0,
+    "G12": 4.0,
+    "G13": 4.0,
+    "G23": 3.2,
+    "nu12": 0.28,
+    "nu13": 0.28,
+    "nu23": 0.4,
+    "rho": 1.0
+   },
+   "units": "dimensionless",
+   "source": "the README physics example (round numbers)",
+   "used_by": [
+    "README.md"
+   ],
+   "note": "not a real material: ratios of the order of a fibre ply",
+   "grade": "",
+   "condition": "",
+   "temperature": "",
+   "uncertainty": {},
+   "page_or_table": "",
+   "licence": "",
+   "applicability": ""
+  },
+  {
+   "id": "synthetic_orthotropic_high_nu23",
+   "kind": "synthetic",
+   "family": "orthotropic",
+   "values": {
+    "E1": 10.0,
+    "E2": 1.0,
+    "E3": 1.0,
+    "G12": 0.5,
+    "G13": 0.5,
+    "G23": 0.3,
+    "nu12": 0.05,
+    "nu13": 0.05,
+    "nu23": 0.65,
+    "rho": 1.0
+   },
+   "units": "dimensionless",
+   "source": "chosen for tests (docs/olcumler/malzeme_katalog_onkayit.md C4)",
+   "used_by": [
+    "tests/toporlogy/test_material_catalog.py"
+   ],
+   "note": "not a real material: positive definite with nu23 > 1/2 (anisotropic bounds differ from isotropic)",
+   "grade": "",
+   "condition": "",
+   "temperature": "",
+   "uncertainty": {},
+   "page_or_table": "",
+   "licence": "",
+   "applicability": ""
+  },
+  {
+   "id": "synthetic_si_isotropic",
+   "kind": "synthetic",
+   "family": "isotropic",
+   "values": {
+    "E0": 200000000000.0,
+    "nu": 0.3,
+    "rho": 8000.0
+   },
+   "units": "SI",
+   "source": "chosen for tests (docs/olcumler/malzeme_katalog_onkayit.md C6)",
+   "used_by": [
+    "tests/toporlogy/test_material_catalog.py"
+   ],
+   "note": "not a real material: round numbers of the order of a steel, in Pa and kg/m^3",
+   "grade": "",
+   "condition": "",
+   "temperature": "",
+   "uncertainty": {},
+   "page_or_table": "",
+   "licence": "",
+   "applicability": ""
   }
  ],
  "compatibility": {

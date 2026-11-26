@@ -1879,9 +1879,16 @@
    "class": "Element"
   },
   "MATERIALS": "<tuple>",
+  "MATERIAL_KINDS": "<tuple>",
   "MaterialRecord": {
    "attrs": [
+    "applicability",
+    "condition",
+    "grade",
+    "licence",
     "note",
+    "page_or_table",
+    "temperature",
     "used_by"
    ],
    "class": "MaterialRecord"
@@ -1914,8 +1921,10 @@
   "UNSUPPORTED": "<str>",
   "as_dict": "as_dict()",
   "check_build": "check_build(resolved,physics,responses)",
+  "material_section": "material_section(raw,system)",
   "render_markdown": "render_markdown(data)",
   "status": "status(physics,response)",
+  "validate_material": "validate_material(m)",
   "write": "write(folder)"
  },
  "toporlogy.configuration.components": {

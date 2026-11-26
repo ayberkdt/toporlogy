@@ -1,6 +1,6 @@
 # Bilimsel kataloglar ve uyumluluk matrisi (üretilmiş dosya, elle düzenleme)
 
-Şema sürümü 1.0.0. Kaynak: `src/toporlogy/configuration/catalog.py` (ve `_catalog_benchmarks.py`); yeniden üretim: `python -m toporlogy.configuration.catalog --write docs`. Bileşen adları registry'den, kaynak anahtarları `toporlogy.references`'tan gelir; `tests/toporlogy/test_catalog.py` ikisini ve bu dosyanın güncelliğini denetler.
+Şema sürümü 1.1.0. Kaynak: `src/toporlogy/configuration/catalog.py` (ve `_catalog_benchmarks.py`); yeniden üretim: `python -m toporlogy.configuration.catalog --write docs`. Bileşen adları registry'den, kaynak anahtarları `toporlogy.references`'tan gelir; `tests/toporlogy/test_catalog.py` ikisini ve bu dosyanın güncelliğini denetler.
 
 Durumlar: **SUPPORTED** hızlı pakette bir referansa ya da sonlu farka karşı geçen test var; **EXPERIMENTAL** koşuyor, denetim kısmi; **UNSUPPORTED** reddediliyor (`enforced`: bileşen, katalog ya da ilk değerlendirme); **NOT VERIFIED** kurulum kabul ediyor, bilinen test yok. Registry'de olmak desteklenmek değildir.
 
@@ -70,11 +70,15 @@ Deney verisiyle doğrulama (validation) yok: her satır code/solution verificati
 
 ## 4. Malzeme veri kataloğu
 
-Bu dilimde yalnız sentetik kayıt var; kaynağı, sayfası ve lisansı izlenemeyen gerçek malzeme değeri girilmez.
+Yalnız sentetik kayıt var; kaynağı, sayfası ve lisansı bu çalışmada okunmamış gerçek malzeme değeri girilmez. YAML: `material: {catalog: <kimlik>}` (SI kayıt `units` bölümü ister ve ona çevrilir; `docs/olcumler/malzeme_katalog_onkayit.md`).
 
-| Kimlik | Tür | Aile | Değerler | Birim | Kaynak |
-|:---|:---|:---|:---|:---|:---|
-| synthetic_unit_isotropic | synthetic | isotropic | E0 = 1, nu = 0.3, rho = 1 | dimensionless (consistent user units) | schema default (configuration/schema.py _MATERIAL) |
+| Kimlik | Tür | Aile | Değerler | Birim | Kaynak | Lisans | Not |
+|:---|:---|:---|:---|:---|:---|:---|:---|
+| synthetic_unit_isotropic | synthetic | isotropic | E0 = 1, nu = 0.3, rho = 1 | dimensionless | schema default (configuration/schema.py _MATERIAL) | — | not a real material; the default of every config |
+| synthetic_auxetic_isotropic | synthetic | isotropic | E0 = 1, nu = -0.5, rho = 1 | dimensionless | chosen for tests (docs/olcumler/malzeme_katalog_onkayit.md C4) | — | not a real material: a negative Poisson ratio inside (-1, 1/2) |
+| synthetic_orthotropic_ply | synthetic | orthotropic | E1 = 40, E2 = 9, E3 = 9, G12 = 4, G13 = 4, G23 = 3.2, nu12 = 0.28, nu13 = 0.28, nu23 = 0.4, rho = 1 | dimensionless | the README physics example (round numbers) | — | not a real material: ratios of the order of a fibre ply |
+| synthetic_orthotropic_high_nu23 | synthetic | orthotropic | E1 = 10, E2 = 1, E3 = 1, G12 = 0.5, G13 = 0.5, G23 = 0.3, nu12 = 0.05, nu13 = 0.05, nu23 = 0.65, rho = 1 | dimensionless | chosen for tests (docs/olcumler/malzeme_katalog_onkayit.md C4) | — | not a real material: positive definite with nu23 > 1/2 (anisotropic bounds differ from isotropic) |
+| synthetic_si_isotropic | synthetic | isotropic | E0 = 2e+11, nu = 0.3, rho = 8000 | SI | chosen for tests (docs/olcumler/malzeme_katalog_onkayit.md C6) | — | not a real material: round numbers of the order of a steel, in Pa and kg/m^3 |
 
 ## 5. Uyumluluk: fizik × yanıt
 

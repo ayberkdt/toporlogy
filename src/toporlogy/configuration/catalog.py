@@ -28,18 +28,19 @@ from __future__ import annotations
 import argparse
 import json
 from collections.abc import Iterable, Mapping, Sequence
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any
 
 from toporlogy.configuration.registry import ConfigError
 
 __all__ = ["SCHEMA_VERSION", "STATUSES", "SUPPORTED", "EXPERIMENTAL", "UNSUPPORTED", "NOT_VERIFIED", "Element",
-           "Physics", "Solver", "Benchmark", "MaterialRecord", "Cell", "Rule", "ELEMENTS", "PHYSICS", "SOLVERS",
+           "Physics", "Solver", "Benchmark", "MaterialRecord", "MATERIAL_KINDS", "validate_material",
+           "material_section", "Cell", "Rule", "ELEMENTS", "PHYSICS", "SOLVERS",
            "BENCHMARKS", "MATERIALS", "RESPONSE_MATRIX", "RULES", "PHYSICS_INDEPENDENT", "COMPOSITE_RESPONSES",
            "status", "check_build", "as_dict", "render_markdown", "write"]
 
-SCHEMA_VERSION = "1.0.0"         # semantic version of the catalog layout (fields), not of its content
+SCHEMA_VERSION = "1.1.0"         # semantic version of the catalog layout (fields), not of its content
 
 SUPPORTED, EXPERIMENTAL, UNSUPPORTED, NOT_VERIFIED = "SUPPORTED", "EXPERIMENTAL", "UNSUPPORTED", "NOT VERIFIED"
 STATUSES = (SUPPORTED, EXPERIMENTAL, UNSUPPORTED, NOT_VERIFIED)
@@ -551,10 +552,12 @@ BENCHMARKS: tuple[Benchmark, ...] = tuple(Benchmark(r[0], r[1], T + r[2], *r[3:]
 # ---------------------------------------------------------------------------------------------- materials
 @dataclass(frozen=True)
 class MaterialRecord:
-    """A material data record. ``kind``: synthetic | nominal | typical | test_measured | design_allowable.
+    """A material data record (08 §3). ``kind``: synthetic | nominal | typical | test_measured | design_allowable;
+    ``family``: isotropic (values E0, nu, rho) | orthotropic (E1 … nu23, rho); ``units``: "dimensionless" (consistent
+    user units, copied as they are) or "SI" (Pa, kg/m^3; converted into the config's ``units`` section).
 
-    Only synthetic (dimensionless example) records exist in this slice: no real material value is entered without a
-    traceable source, page and licence (08 §3).
+    A record that is not synthetic needs a source, a page or table and a licence (:func:`validate_material`). No
+    real material value is entered without having read its source and licence; the records below are synthetic.
     """
 
     id: str
@@ -565,14 +568,110 @@ class MaterialRecord:
     source: str
     used_by: tuple[str, ...] = ()
     note: str = ""
+    grade: str = ""
+    condition: str = ""
+    temperature: str = ""
+    uncertainty: Mapping[str, str] = field(default_factory=dict)
+    page_or_table: str = ""
+    licence: str = ""
+    applicability: str = ""
 
+
+MATERIAL_KINDS = ("synthetic", "nominal", "typical", "test_measured", "design_allowable")
+MATERIAL_UNITS = ("dimensionless", "SI")
+_ISO_KEYS, _ORTHO_KEYS = ("E0", "nu"), ("E1", "E2", "E3", "G12", "G13", "G23", "nu12", "nu13", "nu23")
+_MODULI = {"E0", "E1", "E2", "E3", "G12", "G13", "G23"}
+_PRESSURE_DIM, _DENSITY_DIM = (-1, 1, -2, 0), (-3, 1, 0, 0)
 
 MATERIALS: tuple[MaterialRecord, ...] = (
     MaterialRecord("synthetic_unit_isotropic", "synthetic", "isotropic", {"E0": 1.0, "nu": 0.3, "rho": 1.0},
-                   "dimensionless (consistent user units)", "schema default (configuration/schema.py _MATERIAL)",
+                   "dimensionless", "schema default (configuration/schema.py _MATERIAL)",
                    ("examples/*.yaml without a material block",),
                    "not a real material; the default of every config"),
+    MaterialRecord("synthetic_auxetic_isotropic", "synthetic", "isotropic", {"E0": 1.0, "nu": -0.5, "rho": 1.0},
+                   "dimensionless", "chosen for tests (docs/olcumler/malzeme_katalog_onkayit.md C4)",
+                   (T + "test_material_catalog.py",), "not a real material: a negative Poisson ratio inside (-1, 1/2)"),
+    MaterialRecord("synthetic_orthotropic_ply", "synthetic", "orthotropic",
+                   {"E1": 40.0, "E2": 9.0, "E3": 9.0, "G12": 4.0, "G13": 4.0, "G23": 3.2, "nu12": 0.28, "nu13": 0.28,
+                    "nu23": 0.4, "rho": 1.0}, "dimensionless", "the README physics example (round numbers)",
+                   ("README.md",), "not a real material: ratios of the order of a fibre ply"),
+    MaterialRecord("synthetic_orthotropic_high_nu23", "synthetic", "orthotropic",
+                   {"E1": 10.0, "E2": 1.0, "E3": 1.0, "G12": 0.5, "G13": 0.5, "G23": 0.3, "nu12": 0.05, "nu13": 0.05,
+                    "nu23": 0.65, "rho": 1.0}, "dimensionless",
+                   "chosen for tests (docs/olcumler/malzeme_katalog_onkayit.md C4)", (T + "test_material_catalog.py",),
+                   "not a real material: positive definite with nu23 > 1/2 (anisotropic bounds differ from isotropic)"),
+    MaterialRecord("synthetic_si_isotropic", "synthetic", "isotropic", {"E0": 2.0e11, "nu": 0.3, "rho": 8000.0},
+                   "SI", "chosen for tests (docs/olcumler/malzeme_katalog_onkayit.md C6)",
+                   (T + "test_material_catalog.py",),
+                   "not a real material: round numbers of the order of a steel, in Pa and kg/m^3"),
 )
+
+
+def validate_material(m: MaterialRecord) -> None:
+    """Refuse a record that is incomplete or physically inadmissible; the message names the field."""
+    from toporlogy.core.linear_elastic import isotropic_moduli
+    from toporlogy.core.material import Orthotropic
+    if m.kind not in MATERIAL_KINDS:
+        raise ValueError(f"{m.id}: kind {m.kind!r} (one of {', '.join(MATERIAL_KINDS)})")
+    if m.units not in MATERIAL_UNITS:
+        raise ValueError(f"{m.id}: units {m.units!r} (one of {', '.join(MATERIAL_UNITS)})")
+    if not m.source:
+        raise ValueError(f"{m.id}: source is required")
+    if m.kind != "synthetic":
+        for f in ("page_or_table", "licence"):
+            if not getattr(m, f):
+                raise ValueError(f"{m.id}: a {m.kind} record needs {f} (08 §3: traceable source, page and licence)")
+    v = dict(m.values)
+    if "rho" in v and not v["rho"] > 0:
+        raise ValueError(f"{m.id}: rho > 0 is required")
+    if m.family == "isotropic":
+        if [k for k in _ISO_KEYS if k not in v] or set(v) - {*_ISO_KEYS, "rho"}:
+            raise ValueError(f"{m.id}: isotropic values are E0, nu (and rho), got {sorted(v)}")
+        try:
+            isotropic_moduli(E=float(v["E0"]), nu=float(v["nu"]))
+        except ValueError as e:
+            raise ValueError(f"{m.id}: E0 / nu not admissible: {e}") from None
+    elif m.family == "orthotropic":
+        if [k for k in _ORTHO_KEYS if k not in v] or set(v) - {*_ORTHO_KEYS, "rho"}:
+            raise ValueError(f"{m.id}: orthotropic values are {', '.join(_ORTHO_KEYS)} (and rho), got {sorted(v)}")
+        try:
+            Orthotropic(*(float(v[k]) for k in _ORTHO_KEYS))
+        except ValueError as e:
+            raise ValueError(f"{m.id}: orthotropic constants not admissible: {e}") from None
+    else:
+        raise ValueError(f"{m.id}: family {m.family!r} (isotropic or orthotropic)")
+
+
+def material_section(raw: Mapping[str, Any], system: Any) -> dict[str, Any]:
+    """The ``material`` section with ``catalog: <id>`` replaced by the record's values: E0 / nu / rho (isotropic) or
+    E0 = E1 and an ``orthotropic`` block. An SI record needs the config's ``units`` section (``system``, a
+    :class:`~toporlogy.configuration.units.UnitSystem`) and is converted into it. A key given beside ``catalog`` that
+    the record also sets is refused (one source per value)."""
+    ids = {m.id: m for m in MATERIALS}
+    rid = str(raw["catalog"])
+    if rid not in ids:
+        from toporlogy.configuration.registry import suggest
+        raise ValueError(f'no material "{rid}" in the catalog{suggest(rid, list(ids)) or ""} '
+                         f"(ids: {', '.join(ids)})")
+    m = ids[rid]
+    v = dict(m.values)
+    if m.units == "SI":
+        if system is None:
+            raise ValueError(f"{rid} is in SI units: add a top-level units section, e.g. units: {{length: mm, "
+                             f"force: N}}")
+        v = {k: (system.from_si(x, _PRESSURE_DIM) if k in _MODULI else
+                 system.from_si(x, _DENSITY_DIM) if k == "rho" else x) for k, x in v.items()}
+    out: dict[str, Any] = {k: x for k, x in raw.items() if k != "catalog"}
+    if m.family == "isotropic":
+        sets: dict[str, Any] = {k: v[k] for k in ("E0", "nu", "rho") if k in v}
+    else:
+        sets = {"E0": v["E1"], "orthotropic": {k: v[k] for k in _ORTHO_KEYS}}
+        if "rho" in v:
+            sets["rho"] = v["rho"]
+    clash = sorted(set(sets) & set(out))
+    if clash:
+        raise ValueError(f"{', '.join(clash)} given both by catalog {rid} and in the config")
+    return {**out, **sets}
 
 
 # ---------------------------------------------------------------------------------------------- compatibility
@@ -861,11 +960,16 @@ def render_markdown(data: Mapping[str, Any]) -> str:
     L += ["", "Deney verisiyle doğrulama (validation) yok: her satır code/solution verification. Aynı yazarın "
               "ikinci uygulaması (`independent_same_author`) dış ekip doğrulaması sayılmaz.",
           "", "## 4. Malzeme veri kataloğu", "",
-          "Bu dilimde yalnız sentetik kayıt var; kaynağı, sayfası ve lisansı izlenemeyen gerçek malzeme değeri "
-          "girilmez.", "", "| Kimlik | Tür | Aile | Değerler | Birim | Kaynak |", "|:---|:---|:---|:---|:---|:---|"]
+          "Yalnız sentetik kayıt var; kaynağı, sayfası ve lisansı bu çalışmada okunmamış gerçek malzeme değeri "
+          "girilmez. YAML: `material: {catalog: <kimlik>}` (SI kayıt `units` bölümü ister ve ona çevrilir; "
+          "`docs/olcumler/malzeme_katalog_onkayit.md`).", "",
+          "| Kimlik | Tür | Aile | Değerler | Birim | Kaynak | Lisans | Not |",
+          "|:---|:---|:---|:---|:---|:---|:---|:---|"]
     for m in data["materials"]:
         vals = ", ".join(f"{k} = {v:g}" for k, v in m["values"].items())
-        L.append(f"| {m['id']} | {m['kind']} | {m['family']} | {vals} | {m['units']} | {m['source']} |")
+        L.append(f"| {m['id']} | {m['kind']} | {m['family']} | {vals} | {m['units']} | {m['source']}"
+                 f"{' (' + m['page_or_table'] + ')' if m['page_or_table'] else ''} | {m['licence'] or '—'} | "
+                 f"{m['note']} |")
     comp = data["compatibility"]
     phys = comp["physics"]
     L += ["", "## 5. Uyumluluk: fizik × yanıt", "", "| Yanıt | " + " | ".join(phys) + " |",

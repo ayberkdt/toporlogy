@@ -19,3 +19,15 @@ YAML'da `material: {catalog: <id>}` kaydın değerlerini `material` bölümüne 
 | C5 | `material: {catalog: <sentetik id>}` çözümlenmiş `material` bölümü, değerleri elle yazmakla aynı | eşit (dict) |
 | C6 | SI kayıt + `units: {length: mm, force: N}`: E0 `units.convert` ile aynı sayı | bit düzeyinde aynı |
 | C7 | Bilinmeyen kimlik (öneriyle), `catalog` ile aynı anahtarın elle de verilmesi, `units` olmadan SI kayıt | her biri `ConfigError` |
+
+## Sonuç (2026-11-26, ilk koşu)
+
+Komut: `python -m pytest tests/toporlogy/test_material_catalog.py tests/toporlogy/test_catalog.py -q -p no:randomly`
+→ 29 passed. C1–C7 PASS.
+
+* Beş sentetik kayıt: birim izotrop (varsayılan), auxetic izotrop (ν = −0,5), README'deki ortotrop kat, ν23 = 0,65
+  olan pozitif tanımlı ortotrop, SI birimli izotrop. Gerçek malzeme kaydı yok (NOT VERIFIED: bu oturumda kaynağı
+  ve lisansı okunmuş açık veri yok).
+* Katalog düzeni sürümü 1.0.0 → 1.1.0 (yeni alanlar: sınıf, durum, sıcaklık, belirsizlik, sayfa/tablo, lisans,
+  uygulanabilirlik; eklemeli). `docs/vv_katalog.{md,json}` yeniden üretildi.
+* YAML: `material: {catalog: <id>}`; SI kayıt `units` bölümüne çevrilir (mm/N ile 2e11 Pa → 200000).
