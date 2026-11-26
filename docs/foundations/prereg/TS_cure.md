@@ -76,3 +76,43 @@ Run: `python -m pytest tests/toporlogy/test_cure.py -q -p no:randomly -p no:cach
 `.claude/tmp-toporlogy/TS_cure`).
 
 First result (append after run): see below.
+
+## First result
+
+**First run, 2026-11-27 02:01 +0300** (`tests/toporlogy/test_cure.py`, after the prereg commit 5003f24): 32 passed, 1 failed.
+The failure was `test_ts1a_closed_form`, on an assertion that is NOT in the preregistered table: I had added
+`isothermal_first_order(0.2, 0.1, 0.0) == 0.2` (exact equality at t = 0). The production form
+`1 − (1 − α0) exp(−k t)` returned 0.19999999999999996. This is a production-code weakness (1 ulp at t = 0, and
+cancellation for small k t), so it was fixed in the code (`α0 + (1 − α0)(−expm1(−k t))`, in `isothermal_first_order`
+and the n = 1 branch of `isothermal_nth_order`), not by loosening anything. The preregistered value check of TS1a
+(rel ≤ 1e-14) passed in both runs. Two further additions that are not in the table, both set-up level: a batch-vs-scalar
+regression of `advance` (labelled same kernel, tolerance 1e-14 abs, because bitwise equality of numpy scalar and array
+`exp` is not guaranteed) and a ruff clean-up (line length, one unused variable).
+
+**Second run, 2026-11-27 02:01 +0300 (same minute): 33 passed. Final run 2026-11-27 02:05 +0300 together with
+`test_properties.py` and `test_material_contract.py`: 65 passed** (33 in `test_cure.py`). No threshold was changed, no
+check xfailed, no ledger additions. Measured values (script outside the repo, same inputs as the tests, 02:04 +0300):
+
+- TS1a: rel error 0.0 (1 − 0.8e^{−1}).
+- TS1d: errors 2.72e-2, 1.41e-2, 7.21e-3, 3.64e-3, 1.83e-3, 9.17e-4 for Δt = 2 … 0.0625; observed orders 0.945, 0.971,
+  0.985, 0.993, 0.996 (window [0.9, 1.1] for Δt ≤ 1); err(0.0625) = 9.17e-4 (limit 1.2e-3); ratio to the derived
+  0.0147Δt: 0.9974.
+- TS1e: explicit Euler gives 8.2; production stays in [0.2, 1].
+- TS2a (max-over-steps error vs `solve_ivp`): α0 = 0: 2.73e-3, 1.37e-3, 6.88e-4 for N = 240, 480, 960, orders 0.994 and
+  0.997; α0 = 0.1: 1.23e-3, 6.19e-4, 3.10e-4, orders 0.991 and 0.996 (window [0.8, 1.2]; limit 2e-2 at N = 960).
+  Reference end conversions 0.9641 and 0.9648.
+- TS2b, TS2c, TS2d, TS3: pass (rate derivatives vs FD ≤ 1e-6 relative; DiBenedetto values and derivatives to 1e-14).
+- TS4a: 350 K (rel ≤ 1e-14). TS4b: ΔT = 52.4937810560445 K equal to the closed form; against the coupled `solve_ivp`
+  (α reaches 0.9969, T 441.35 K) worst relative difference of the rise 5.6e-14 (limit 1e-9). TS4c pass.
+- TS5a pass. TS5b: strain deviation 6.9e-18, max stress 4.7e-11 Pa (limit 1e-5). TS5c: stress rel 1.9e-15 (limit 1e-12),
+  end stress 7.25e7 Pa tension (synthetic). TS5d: tangent vs dense and FD within thresholds.
+- TS6a-d pass (committed α bitwise unchanged before commit and after rollback; restart bitwise; ramp-then-hold vs
+  hold-then-ramp differ by more than 1e-3; recurrence agreement ≤ 1e-12).
+- TP3a, TP3b: rel 0.0 and ≤ 1e-13. TP4a ≤ 1e-13. TP4b: max |X − X_ode| = 2.0e-15 (limit 1e-10), X(20 s) = 0.8057.
+  TP4c pass (limit 1e-8). TP4d: the naive X form stays at exactly 0 (miss 0.632 > 0.5).
+
+Limitations: synthetic numbers only; first-order accuracy only; TP4b is exact in θ by design, so 2e-15 is expected and not
+a sign of sensitivity; the order windows were met with margin. Only `test_cure.py` and the directly related
+`test_properties.py`, `test_material_contract.py` were run. Not verified: TS5d FD/dense values beyond pass/fail (not
+measured separately). `mypy src/toporlogy/core/cure.py` reports 3 errors, all in the existing `properties.py`
+(lines 277-278), none in `cure.py`; `ruff check` is clean for `cure.py` and `test_cure.py`.
