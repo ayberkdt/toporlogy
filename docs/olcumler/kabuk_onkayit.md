@@ -129,3 +129,40 @@ değer değil; eğri kabukta sonuç α'ya karşı ayrıca denetlenmeli.
 **Görev metnindeki eşleme örneği.** Görevde örnek olarak verilen βx = θy, βy = −θx bu işaret kuralıyla yanlış:
 KB2'nin negatif kontrolünde rijit dönme zar + eğilme ölçeğinin 0,90'ı kadar kesme enerjisi üretti. Modül
 βx = −θy, βy = θx kullanır; KB2, KB3 ve KB4 bunu doğrular.
+
+## Ek ön kayıt: kabuk `Study` içinde (KS1–KS5)
+
+Ön kayıt 2026-11-26 17:05 +0300, kod yazılmadan önce. Örnek `optimization/mesh_study.py` (MD1–MD5): `Study`
+değişmeden kalır; kabuğun parçaları 1-B bir "ızgara" olarak girer. Yeni modül `optimization/shell_study.py`
+(`fem` katmanı `optimization` / `design`'ı içe aktarmaz, `test_architecture.py`):
+
+* `ShellDomain(mesh)`: `ShellMesh` parçaları, `shape = (ne,)`, hepsi aktif ve dolu (`frac = 1`), `ndof = 6 nn`;
+  `cell_volume` = parça alanı a b, `centroids` = dört köşenin ortalaması.
+* Filtre: `MeshDensityFilter` merkezleri doğrudan da kabul edecek biçimde genelleştirilir (bir `Mesh` verilince
+  davranışı aynı). Filtre halkası ve hacim yanıtı için yeni ad açılmaz: `MeshFilterLink` ve `MeshVolume` alanın
+  `centroids` / `cell_volume` özniteliklerini okuyacak hâle getirilir, böylece `ShellDomain` ile de çalışır.
+  Mesafe 3-B kiriş (Öklid) mesafesidir, yüzey üzerindeki jeodezik değil; hafif eğri dilimde fark küçük, ölçülmez.
+  Kalınlık sabit olduğundan alanla ağırlıklı oran hacim oranıdır.
+* `ShellPhysics(shell)`: `FlatShell` sarmalayıcısı, `solve(E, F)` → U (6 nn, n_yük), E'ye göre türevlenebilir
+  (her yük sütunu `FlatShell.solve`; aynı E için çarpanlara ayırma önbellekte), `state_dofs = 6 nn`.
+
+Ortak kurulum: R = 1, 90° açık dilim, L = 1, t = 0,05, ν = 0,3, ilk halka (z = 0) altı DOF ile ankastre;
+zincir `Chain([Embed, MeshFilterLink, Passive])`, `SIMP(p = 3, E_min = 1e-9)`, `Compliance()`,
+`Constraint(MeshVolume, 0,4)`, `MMA()`.
+
+| # | Kontrol | Eşik |
+|:---|:---|:---|
+| KS1 | 8 × 6 dilim, iki yük durumu (basınç; serbest uç orta düğümünde nokta kuvveti), x ∈ [0,2; 0,9] rastgele: `Study.evaluate` değeri = doğrudan zincir (filtre matrisi `MeshDensityFilter(merkezler)` ile x̃ = H x, E = E_min + x̃³ (1 − E_min), u_c = `FlatShell.solve(E, F_c)`, c = Σ F_cᵀ u_c); hacim değeri = Σ A_e x̃_e / Σ A_e; Σ A_e = 8 · 2R sin(π/32) · L (çokgen dilimin alanı) | değer ≤ 1e-12 göreli; hacim ≤ 1e-12 göreli; alan ≤ 1e-12 göreli |
+| KS2 | Aynı kurulum, `Study` gradyanı (filtre rmin = 0,3 + SIMP + kabuk, iki yük) rastgele yönde; dördüncü mertebe merkezi fark [f(−2s) − 8f(−s) + 8f(s) − f(2s)]/(12s), s = 1e-3 | ≤ 1e-6 göreli |
+| KS3 | 16 × 12 dilim, serbest uç orta düğümünde içe radyal birim kuvvet, rmin = 0,15, hacim ≤ 0,4, 30 MMA iterasyonu | son uyum < ilk uyum; alanla ağırlıklı hacim ≤ 0,4 (1 + 1e-3) |
+| KS4 | Yanlış satırlı yük (3 nn satır, plaka gibi): `Study` reddeder, ileti 6 nn durum DOF'unu adlandırır; `ShellPhysics.solve` da reddeder, ileti "6 per node" içerir | açık hata |
+| KS5 | var olan kod: `MeshDensityFilter(mesh)` = `MeshDensityFilter(mesh.cell_centroids())` (bozulmuş Q4 ağı); `test_mesh_topology.py` değişmeden geçer; `pytest -m baseline` | filtre matrisleri bit düzeyinde eşit; MS/MD testleri geçer; baseline 8 passed bit düzeyinde |
+
+Gerekçeler. KS2'de dördüncü mertebe fark: KB10 ve PL6'da ikinci mertebe merkezi farkla 1e-6 sınıra yakındı
+(PL6: 8,8e-7); KB10 aynı kabukta dördüncü mertebeyle 1,8e-11 verdi. KS1 aynı sayıların iki yoldan hesabı olduğu
+için eşik yuvarlama düzeyinde. KS3 yalnızca zincirin çalıştığını ve kısıtın tuttuğunu ölçer; tasarımın kalitesini
+ölçmez.
+
+Kurallar: ilk koşuda tutmayan kontrol, ölçülen değeriyle `xfail(strict=True)` olur ve `docs/vv_kutugu.json`'a girer;
+eşik gevşetilmez; test kurulum hatası (ölçüm değil) düzeltilebilir ama burada yazılır; ilk koşudan sonra eklenen kontrol
+"post hoc" diye işaretlenir.
