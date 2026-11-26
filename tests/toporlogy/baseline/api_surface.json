@@ -4653,6 +4653,46 @@
   "min_frequency_constraint": "min_frequency_constraint(f_min,n_modes,rho,E_unit,rho_unit,length_unit)",
   "omega_squared_factor": "omega_squared_factor(E_unit,rho_unit,length_unit)"
  },
+ "toporlogy.optimization.implicit": {
+  "ImplicitSolveError": {
+   "attrs": [
+    "add_note",
+    "args",
+    "with_traceback"
+   ],
+   "class": "ImplicitSolveError"
+  },
+  "ImplicitState": {
+   "attrs": [
+    "solve"
+   ],
+   "class": "ImplicitState"
+  },
+  "NonFiniteResidual": {
+   "attrs": [
+    "add_note",
+    "args",
+    "with_traceback"
+   ],
+   "class": "NonFiniteResidual"
+  },
+  "NotConverged": {
+   "attrs": [
+    "add_note",
+    "args",
+    "with_traceback"
+   ],
+   "class": "NotConverged"
+  },
+  "SingularJacobian": {
+   "attrs": [
+    "add_note",
+    "args",
+    "with_traceback"
+   ],
+   "class": "SingularJacobian"
+  }
+ },
  "toporlogy.optimization.lengthscale": {
   "GreyLevel": {
    "attrs": [

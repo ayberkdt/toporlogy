@@ -246,6 +246,16 @@
    "resolution": "yok (ölçütün adım seçimi); post hoc asimptotik aralıkta 2,05–2,01",
    "record": "docs/olcumler/homojenlestirme_onkayit.md",
    "slow": false
+  },
+  {
+   "nodeid": "tests/toporlogy/test_implicit.py::test_i3_taylor_remainder_order",
+   "kind": "pre-registered check failed",
+   "model_backend": "optimization.implicit, dense autograd Jacobian (CPU)",
+   "reason": "Taylor kalanı mertebesi 2,91–3,14: bu yönde vᵀHv = 0,006, üçüncü türev −16,4; kübik terim baskın. Gradyan merkezi farkla geçiyor",
+   "risk": "low",
+   "resolution": "yok (ölçütün yön/adım seçimi); post hoc küçük adımlarda 1,92–1,98",
+   "record": "docs/olcumler/ortuk_turev_onkayit.md",
+   "slow": false
   }
  ],
  "skips": [
