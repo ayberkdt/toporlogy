@@ -40,3 +40,16 @@ testte bir sonraki terim bloğuyla ölçülüp kaydedilir.
 
 Navier serisinin kesilmesi (eşiksiz kayıt ölçümü): 399 → 799 terimde değişim 1,2e-9 (a/t = 10), 1,3e-11 (100),
 4,3e-13 (1000); karşılaştırma hatalarının çok altında.
+
+## Ek ön kayıt: plaka `Study` fiziği olarak (PQ1–PQ4)
+
+Ön kayıt 2026-11-26 13:58 +0300, kod yazılmadan önce. `fem.plate.PlatePhysics(plate)`: `solve(E, F)` → U (3 nn, n_cases);
+`state_dofs` = 3 nn. `Study` yük satırlarını `physics.state_dofs` varsa ona, yoksa `domain.ndof`'a göre denetler
+(bugünkü fiziklerin hiçbiri `state_dofs` tanımlamıyor). YAML bağlantısı (plaka DOF'larında yük ve mesnet) bu turda yok.
+
+| # | Kontrol | Eşik |
+|:---|:---|:---|
+| PQ1 | Study uyumu = doğrudan `MindlinPlate.solve` ile Fᵀw (SIMP + yoğunluk filtresi) | ≤ 1e-12 göreli |
+| PQ2 | Study gradyanı merkezi farkla | ≤ 1e-6 göreli |
+| PQ3 | 24 × 24 sert basit mesnetli plaka, düzgün basınç, hacim ≤ 0,4, 30 MMA iterasyonu | son uyum < ilk uyum; hacim ≤ 0,4 (1 + 1e-3) |
+| PQ4 | elastik çalışmalar etkilenmez; yanlış satırlı yük | `pytest -m baseline` bit düzeyinde; açık hata `state_dofs` sayısını söyler |
