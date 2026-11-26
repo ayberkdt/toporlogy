@@ -50,6 +50,7 @@ from typing import Any
 import numpy as np
 import torch
 
+from toporlogy.core.domain import require_grid
 from toporlogy.fem.elements import D_iso, D_plane_stress, b_centroid_h8, b_centroid_q4
 from toporlogy.optimization.local import LocalField
 from toporlogy.optimization.responses import EvalContext
@@ -139,6 +140,7 @@ class VonMises(LocalField):
     def __init__(self, domain: Any, sigma_lim: float, nu: float = 0.3, E0: float | None = None,
                  form: str = "ratio", q: float = 0.5, penal: float = 3.0, exclude: Any = None,
                  cases: Any = None, eps: float = 1e-6) -> None:
+        require_grid(domain, type(self).__name__)
         if not sigma_lim > 0:
             raise ValueError("sigma_lim > 0 is required")
         if form not in FORMS:

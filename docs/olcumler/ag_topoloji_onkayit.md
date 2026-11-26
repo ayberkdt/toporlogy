@@ -110,3 +110,29 @@ almayanlar), `OrientedEmbed` (filtresiz hâli bir `Embed`; filtresi `PeriodicAng
 | RF2 | "çalışmaya devam etmesi gerekenler" listesi, üç alanda | hatasız çalışır; MD1–MD5 ve KS1–KS5 geçer |
 | RF3 | `is_grid` doğruluk tablosu: 1-B, 2-B, 3-B `Domain` (boşluk / koruma / kısmi `frac` dâhil) doğru; 2-B ve 3-B `MeshDomain`, `ShellDomain` yanlış | tablonun tamamı |
 | RF4 | ızgara davranışı | `pytest -m baseline` 8 passed bit düzeyinde; dokunulan modüllerin test dosyaları ve mimari / API yüzeyi testleri geçer |
+
+### RF1–RF4 sonucu (2026-11-26)
+
+`tests/toporlogy/test_grid_refusals.py` (145 test: RF1 35 bileşen × 3 alan, RF2 13 × 3, RF3 1). Ortak denetim
+`toporlogy.core.domain.is_grid` / `require_grid`; ileti biçimi "`<bileşen>` needs a structured element grid (Domain),
+not a non-grid `<MeshDomain|ShellDomain>` (n cells as a 1-D list); use `<karşılık>` instead" ya da "… it has no mesh
+or shell counterpart yet". Ret, alanı kurucuda alan bileşenlerde kurucuda (çözümden önce), alanı yalnız bağlamdan
+okuyan yanıtlarda (`Volume`, `Mass`, `Cost`, `LocalVolume`, `CentreOfMass`, `InertiaComponent`, `RobustSet`) ilk
+değerlendirmede atılır.
+
+| # | Durum | Ölçülen |
+|:---|:---|:---|
+| RF1 | PASS | 105 / 105 durumda `ValueError`, iletide bileşen adı, "grid", alan türü; ağ karşılığı olanlarda `MeshFilterLink` (`DensityFilter`, `HelmholtzFilter`), "a Chain of Embed, MeshFilterLink, Passive" (`standard_chain`, `manufacturing_chain`), `MeshVolume` (`Volume`), "a Tying with explicit element maps" (simetri / desen / ekstrüzyon) |
+| RF2 | PASS | 39 / 39 durumda hatasız, sonlu çıktı; MD1–MD5 ve KS1–KS5 geçti |
+| RF3 | PASS | 2-B, 3-B ve boşluk / koruma / kısmi `frac`'lı 2-B `Domain` doğru; 2-B ve 3-B `MeshDomain`, `ShellDomain` yanlış |
+| RF4 | PASS | `pytest -m baseline` 8 passed, en büyük bağıl fark 0,00e+00; dokunulan modüllerin test dosyaları + mimari / API yüzeyi / kütük: 525 passed, 6 xfailed (önceden var olan strict xfail'ler) |
+
+Notlar. (1) RF3 satırı ön kayıtta "1-B `Domain`" de sayıyordu; `Domain` 1-B şekli kabul etmiyor (`len(shape) ∈ {2, 3}`),
+o satır kurulamadığı için tabloda yok (kurulum düzeltmesi, eşik değil). (2) İlk iki koşuda dört RF1 durumu düştü
+(ilk koşu `-x` ile ilk hatada durdu) ve düzeltildi: `StressRecovery`-kabuk testi `MeshElasticity`'yi bir `ShellMesh` ile kurmaya çalışıyordu (kurulum
+hatası; kabukta `ShellPhysics` verilir, `domain` özniteliği olmadığından ret iletisi `ShellPhysics`'i adlandırır);
+üç alanda `phase_report`: ret, çok fazlı enterpolasyon çağrısından sonra yazılmıştı (uygulama sırası; denetim fonksiyonun
+başına alındı). Eşik değişmedi. (3) `Mass` / `Cost` ret denetimi fraksiyon çağrısından önce, yanıtın başında. (4)
+`HelmholtzFilter` ön kayıttaki tek "sessizce yanlış" bileşendi; artık reddediyor. Ağ karşılığı olmayanlar için
+(`PeriodicAngleFilter`, AM, döküm, çok fazlı, gerilme, bağlantılılık, kütle özellikleri, sağlam gerçekleşmeler)
+ileti bunu açıkça söylüyor. Izgara fizikleri (`Elasticity`, `HeatConduction` …) kapsam dışı kaldı.

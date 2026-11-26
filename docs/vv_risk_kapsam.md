@@ -4,7 +4,7 @@ Kaynak: `tests/toporlogy/_vv_layers.py` (dosya → katman sınıflaması elle, d
 
 | Katman | core | geometry | boundary | design | fem | solvers | optimization | optimizers | configuration | execution | post | references |
 |:---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| U unit / property | 19/255 | 3/30 | — | 10/125 | 14/197 | 4/65 | 18/235 | 5/83 | 6/80 | 3/19 | 5/68 | — |
+| U unit / property | 20/258 | 3/30 | — | 11/128 | 15/200 | 4/65 | 19/238 | 5/83 | 6/80 | 3/19 | 5/68 | — |
 | MP material point | 17/217 | — | — | 9/138 | 12/166 | 1/25 | 14/175 | 6/103 | 7/97 | 1/13 | 4/55 | — |
 | EL element patch / quadrature | 8/89 | — | — | 2/19 | 11/118 | 1/14 | 5/61 | 2/23 | 1/17 | — | 3/40 | — |
 | AS assembly / BC / reactions | 5/111 | 1/23 | 5/62 | 2/59 | 8/127 | 6/78 | 3/82 | 2/59 | 1/34 | — | 1/20 | — |
@@ -12,7 +12,7 @@ Kaynak: `tests/toporlogy/_vv_layers.py` (dosya → katman sınıflaması elle, d
 | IS independent solver / implementation | 9/118 | — | 1/14 | 3/73 | 15/209 | 4/73 | 8/136 | 3/73 | 4/76 | — | 1/24 | — |
 | OG optimization / KKT / gradient | 21/253 | — | 1/14 | 15/187 | 27/337 | 6/87 | 35/387 | 22/265 | 17/198 | 3/34 | 3/54 | — |
 | E2E end-to-end geometry | 2/38 | 5/39 | — | 2/13 | 3/62 | — | 8/85 | 1/21 | 4/38 | 1/10 | 11/91 | — |
-| IC integration / compatibility | 7/74 | 2/34 | — | 7/92 | 10/105 | — | 12/130 | 6/84 | 21/199 | 12/95 | 1/8 | 1/11 |
+| IC integration / compatibility | 8/77 | 2/34 | — | 8/95 | 11/108 | — | 13/133 | 6/84 | 21/199 | 12/95 | 1/8 | 1/11 |
 | PF performance | — | — | 2/25 | 1/14 | 3/37 | 3/37 | 2/15 | 1/14 | 1/14 | 1/1 | — | — |
 
 Boş hücreler (açık risk adayı; her biri bir risk değildir, örn. `references` için çoğu katman anlamsız):
@@ -66,6 +66,7 @@ Katman sınıflaması (dosya → katmanlar):
 - `test_geometry.py`: U, E2E
 - `test_gmg.py`: IS, OG, PF
 - `test_gradients.py`: OG
+- `test_grid_refusals.py`: U, IC
 - `test_heat.py`: EL, AN, OG
 - `test_homogenization.py`: AN, OG
 - `test_identification.py`: MP, OG

@@ -39,7 +39,7 @@ import scipy.sparse as sp
 import scipy.sparse.linalg as spla
 import torch
 
-from toporlogy.core.domain import Domain
+from toporlogy.core.domain import Domain, require_grid
 from toporlogy.references import cite
 
 __all__ = ["HelmholtzFilter", "helmholtz_matrix"]
@@ -83,6 +83,7 @@ class HelmholtzFilter(torch.nn.Module):
 
     def __init__(self, domain: Domain, rmin: float) -> None:
         super().__init__()
+        require_grid(domain, "HelmholtzFilter", "MeshFilterLink")
         if not rmin > 0:
             raise ValueError("rmin > 0 is required")
         self.rmin = float(rmin)

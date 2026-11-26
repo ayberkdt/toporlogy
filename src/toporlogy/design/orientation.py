@@ -56,7 +56,7 @@ from typing import Any
 import numpy as np
 import torch
 
-from toporlogy.core.domain import Domain
+from toporlogy.core.domain import Domain, require_grid
 from toporlogy.core.material_field import rotate_in_plane
 from toporlogy.design.chain import DensityFilter, Embed
 
@@ -113,6 +113,7 @@ class PeriodicAngleFilter(torch.nn.Module):
 
     def __init__(self, domain: Domain, rmin: float, period: float = math.pi, backend: str = "auto") -> None:
         super().__init__()
+        require_grid(domain, "PeriodicAngleFilter")
         if not period > 0:
             raise ValueError("period > 0 is required")
         self.period, self.k = float(period), 2.0 * math.pi / float(period)

@@ -2573,7 +2573,9 @@
     "uniform_start"
    ],
    "class": "Domain"
-  }
+  },
+  "is_grid": "is_grid(domain)",
+  "require_grid": "require_grid(domain,component,alternative)"
  },
  "toporlogy.core.laminate": {
   "Laminate": {

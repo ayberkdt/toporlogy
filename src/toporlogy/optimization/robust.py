@@ -58,6 +58,7 @@ from typing import Any
 import numpy as np
 import torch
 
+from toporlogy.core.domain import require_grid
 from toporlogy.references import cite
 from toporlogy.design.chain import Chain, DensityFilter, HeavisideProjection, Passive
 from toporlogy.optimizers.schedule import Schedule
@@ -275,6 +276,7 @@ class RobustSet:
         """``{"xphys", "E", "U"}`` of one realisation (U only when ``need_u``); cached in ``ctx.extra``."""
         if name not in REALISATIONS:
             raise ValueError(f"realisation: one of {REALISATIONS}")
+        require_grid(ctx.domain, "RobustSet")
         extra: dict[Any, Any] = ctx.extra                  # keyed by ("robust", id) tuples as well
         cache = extra.setdefault(("robust", id(self)), {})
         st = cache.get(name)

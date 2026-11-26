@@ -13,7 +13,8 @@ As with :class:`~toporlogy.optimization.mesh_study.MeshDomain`, the facets are p
 * :class:`ShellPhysics`: ``solve(E, F)`` → U (6 nn, n_cases) of a :class:`~toporlogy.fem.shell.FlatShell`,
   differentiable in E, with ``state_dofs`` = 6 nn.
 
-Grid-only links and responses are not for a ``ShellDomain``. No YAML yet.
+Grid-only links and responses refuse a ``ShellDomain`` with a ``ValueError``
+(:func:`toporlogy.core.domain.require_grid`; ``docs/olcumler/ag_topoloji_onkayit.md``, RF1-RF3). No YAML yet.
 """
 from __future__ import annotations
 

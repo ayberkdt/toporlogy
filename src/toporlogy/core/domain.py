@@ -21,7 +21,7 @@ from typing import Any, cast
 
 import numpy as np
 
-__all__ = ["Domain"]
+__all__ = ["Domain", "is_grid", "require_grid"]
 
 _CORNERS_3D = np.array([[0, 0, 0], [1, 0, 0], [1, 1, 0], [0, 1, 0],
                         [0, 0, 1], [1, 0, 1], [1, 1, 1], [0, 1, 1]], dtype=np.int64)
@@ -199,3 +199,22 @@ class Domain:
     def __repr__(self) -> str:
         return (f"Domain(shape={self.shape}, h={self.h:g}, active={self.n_active}, design={self.n_design}, "
                 f"keep={int(self.keep.sum())}, void={int(self.void.sum())})")
+
+
+def is_grid(domain: Any) -> bool:
+    """True for a structured element grid (a :class:`Domain`: one ``shape`` axis per space dimension). False for a
+    non-grid domain that presents its cells as a 1-D list, ``shape = (n_cells,)`` with ``dim`` the space dimension
+    (:class:`~toporlogy.optimization.mesh_study.MeshDomain`, :class:`~toporlogy.optimization.shell_study.ShellDomain`).
+    An object without ``dim`` counts as a grid."""
+    dim = getattr(domain, "dim", None)
+    return dim is None or len(tuple(domain.shape)) == int(dim)
+
+
+def require_grid(domain: Any, component: str, alternative: str | None = None) -> None:
+    """Refuse a non-grid domain (:func:`is_grid`) for the grid-only ``component``: a ``ValueError`` that names it and
+    ``alternative``, the component to use on a mesh or shell domain (None: there is none yet)."""
+    if is_grid(domain):
+        return
+    hint = f"use {alternative} instead" if alternative else "it has no mesh or shell counterpart yet"
+    raise ValueError(f"{component} needs a structured element grid (Domain), not a non-grid "
+                     f"{type(domain).__name__} ({tuple(domain.shape)[0]} cells as a 1-D list); {hint}")

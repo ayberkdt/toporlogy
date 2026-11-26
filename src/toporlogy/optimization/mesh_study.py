@@ -13,8 +13,10 @@ a 1-D "grid" of ``n_cells`` (all active and full, no keep or void cells), so ``S
 :class:`MeshFilterLink` and :class:`MeshVolume` read only the domain's ``centroids`` and ``cell_volume``, so they also
 serve the shell facets of :class:`~toporlogy.optimization.shell_study.ShellDomain`.
 
-Grid-only links and responses (projection filters on the grid, AM, symmetry, stress recovery, connectivity) are not
-for a ``MeshDomain``; they are not checked here. No YAML yet.
+Grid-only links and responses (the grid filters, AM, casting, symmetry tying, multi-phase interpolations, plain
+``Volume``, local volume, stress, stress recovery, connectivity, mass properties, robust realisations) refuse a
+``MeshDomain`` with a ``ValueError`` naming the component and its mesh counterpart where one exists
+(:func:`toporlogy.core.domain.require_grid`; ``docs/olcumler/ag_topoloji_onkayit.md``, RF1-RF3). No YAML yet.
 """
 from __future__ import annotations
 
