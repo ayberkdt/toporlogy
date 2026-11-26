@@ -48,3 +48,8 @@ etkin özellik hedefli tasarım örneği (ör. negatif Poisson), lattice/dehomoj
 |:---|:---|:---|
 | H10 | Periyodik hücreyi k × k kopyalamak (k = 2, 3; rastgele tasarım, 2-B) C_eff'i değiştirmez | ≤ 1e-11 göreli |
 | H11 | Kare delikli hücre (delik kenarı hücrenin yarısı, ızgaraya hizalı), n = 8, 16, 32, 64: C11 dizisi monoton, son iki farkın oranından gözlenen mertebe; Richardson değeri raporlanır | gözlenen mertebe ∈ [0,5; 2,5] (köşeli delik: tekillik nedeniyle 2'den düşük beklenir) ve son göreli değişim ≤ %2 |
+
+### H10–H11 sonucu (ilk koşu)
+
+H10 PASS (2 × 2 ve 3 × 3 kopya). H11 PASS: C11 / E0 = 0,57910, 0,56858, 0,56384, 0,56168 (n = 8 … 64, monoton
+azalan); gözlenen mertebe 1,13 (köşeli delik), Richardson kestirimi 0,55987, son göreli değişim %0,38.

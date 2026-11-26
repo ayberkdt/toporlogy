@@ -187,3 +187,29 @@ def test_h9_refuses_a_cell_that_is_not_the_full_box() -> None:
     with pytest.raises(ValueError, match="at least 2"):
         d = Domain((4, 1))
         homogenize_elasticity(d, np.ones(d.n_active), NU)
+
+
+def test_h10_tiling_the_periodic_cell_changes_nothing() -> None:
+    grid = 0.05 + np.random.default_rng(7).random((5, 4))
+    C1 = homogenize_elasticity(Domain((5, 4)), grid.ravel(), NU).C
+    for k in (2, 3):
+        Ck = homogenize_elasticity(Domain((5 * k, 4 * k)), np.tile(grid, (k, k)).ravel(), NU).C
+        assert _rel(Ck, C1) <= 1e-11
+
+
+def _hole_cell(n: int) -> np.ndarray:
+    g = np.ones((n, n))
+    g[n // 4:3 * n // 4, n // 4:3 * n // 4] = 1e-9
+    return g.ravel()
+
+
+def test_h11_mesh_sensitivity_of_a_holed_cell() -> None:
+    ns = (8, 16, 32, 64)
+    c = [homogenize_elasticity(Domain((n, n), h=1.0 / n), _hole_cell(n), NU).C[0, 0] for n in ns]
+    d1, d2 = c[1] - c[2], c[2] - c[3]
+    order = float(np.log2(d1 / d2))
+    rich = c[3] - d2 / (2 ** order - 1)
+    print(f"\n  H11 C11 {c}, observed order {order:.3f}, Richardson {rich:.6f}")
+    assert all(np.diff(c) < 0) or all(np.diff(c) > 0)
+    assert 0.5 <= order <= 2.5
+    assert abs(d2) / abs(c[3]) <= 0.02
