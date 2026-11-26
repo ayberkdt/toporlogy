@@ -7140,6 +7140,10 @@
    ],
    "class": "ArcLengthSettings"
   },
+  "BranchSwitch": {
+   "attrs": [],
+   "class": "BranchSwitch"
+  },
   "ContinuationError": {
    "attrs": [
     "add_note",
@@ -7157,7 +7161,10 @@
    "class": "ContinuationPath"
   },
   "ContinuationPoint": {
-   "attrs": [],
+   "attrs": [
+    "eigenvalues",
+    "index"
+   ],
    "class": "ContinuationPoint"
   },
   "ContinuationProblem": {
@@ -7166,6 +7173,24 @@
     "solve"
    ],
    "class": "ContinuationProblem"
+  },
+  "CriticalPoint": {
+   "attrs": [
+    "multiplicity"
+   ],
+   "class": "CriticalPoint"
+  },
+  "CriticalSettings": {
+   "attrs": [
+    "bifurcation_tol",
+    "eig_tol",
+    "eta_tol",
+    "max_evaluations",
+    "max_iter",
+    "rtol",
+    "t_tol"
+   ],
+   "class": "CriticalSettings"
   },
   "IndefiniteDirectSolver": {
    "attrs": [
@@ -7180,9 +7205,31 @@
    "attrs": [],
    "class": "LoadControlResult"
   },
-  "arc_length": "arc_length(problem,x0,lam0,settings,stop)",
-  "displacement_control": "displacement_control(problem,x0,lam0,dof,targets,max_iter,rtol,eta_tol,max_bisections)",
-  "load_control": "load_control(attempt,x0,start,end,max_step,min_step,commit,keep_points)"
+  "Spectrum": {
+   "attrs": [
+    "offset",
+    "position"
+   ],
+   "class": "Spectrum"
+  },
+  "TangentSpectrum": {
+   "attrs": [
+    "dense_limit",
+    "k",
+    "keep",
+    "method",
+    "storage"
+   ],
+   "class": "TangentSpectrum"
+  },
+  "arc_length": "arc_length(problem,x0,lam0,settings,stop,spectrum,start_tangent,stop_at_critical)",
+  "displacement_control": "displacement_control(problem,x0,lam0,dof,targets,max_iter,rtol,eta_tol,max_bisections,spectrum)",
+  "find_critical": "find_critical(path)",
+  "full_tangent": "full_tangent(matrix,storage)",
+  "load_control": "load_control(attempt,x0,start,end,max_step,min_step,commit,keep_points)",
+  "locate_critical": "locate_critical(problem,path,i,spectrum,settings)",
+  "sparse_inertia": "sparse_inertia(A)",
+  "switch_branch": "switch_branch(problem,critical,xi,settings,stop,spectrum,critical_settings,stop_at_critical)"
  },
  "toporlogy.solvers.direct": {
   "DirectSolver": {

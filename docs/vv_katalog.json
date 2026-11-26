@@ -1001,6 +1001,39 @@
    "runtime": "fast",
    "validation": "code verification",
    "note": ""
+  },
+  {
+   "id": "spring_bar_symmetric_bifurcation",
+   "kind": "analytic",
+   "test": "tests/toporlogy/test_bifurcation.py::test_s1_s2_symmetric_bifurcation_located_and_classified",
+   "quantity": "located critical load and classification of a spring-bar model (symmetric bifurcation)",
+   "reference": "closed form lambda_c = k_a (L - sqrt(L^2 - 4 k_r / k_a)) / 2 (docs/olcumler/catallanma_onkayit.md)",
+   "tolerance": "relative <= 1e-8; |phi^T q| / |q| <= 1e-8",
+   "runtime": "fast",
+   "validation": "code verification",
+   "note": ""
+  },
+  {
+   "id": "spring_bar_secondary_branch",
+   "kind": "analytic",
+   "test": "tests/toporlogy/test_bifurcation.py::test_s3_symmetric_branch_switch",
+   "quantity": "secondary branch after switching at the spring-bar bifurcation",
+   "reference": "closed form lambda_S(theta) (docs/olcumler/catallanma_onkayit.md)",
+   "tolerance": "<= 1e-9 lambda_c",
+   "runtime": "fast",
+   "validation": "code verification",
+   "note": ""
+  },
+  {
+   "id": "truss_limit_point_location",
+   "kind": "analytic",
+   "test": "tests/toporlogy/test_bifurcation.py::test_t1_t2_truss_limit_points",
+   "quantity": "located limit points of the shallow two-bar truss",
+   "reference": "closed form P_max, w_1,2 = h (1 -/+ 1/sqrt 3) (tests/toporlogy/_truss.py)",
+   "tolerance": "|lambda -/+ 1| <= 1e-8; |w - w_1,2| <= 1e-6 h",
+   "runtime": "fast",
+   "validation": "code verification",
+   "note": ""
   }
  ],
  "materials": [

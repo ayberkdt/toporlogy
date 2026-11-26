@@ -96,3 +96,93 @@ w₁,₂ = h (1 ∓ 1/√3), λ = P/P_max = ±1; simetrik yolda K_uv = 0, kritik
 
 Başarısız kontrol strict xfail olur (ölçülen değerle), eşik gevşetilmez; ilk koşudan sonra eklenen kontrol "post hoc"
 etiketlidir.
+
+## 4. Sonuç (2026-11-26)
+
+Testler: `tests/toporlogy/test_bifurcation.py` (değerler `-s` çıktısından; son kodda `-m "slow or not slow"`: 22 passed,
+4 xfailed, 105 s). Kod: `solvers/continuation.py` (`TangentSpectrum`, `Spectrum`, `full_tangent`, `sparse_inertia`,
+`find_critical`, `locate_critical`, `CriticalSettings`, `CriticalPoint`, `switch_branch`, `BranchSwitch`;
+`arc_length(..., spectrum, start_tangent, stop_at_critical)`, `displacement_control(..., spectrum)`). `newton.py`
+değişmedi. Ortam: Python 3.12.1, numpy 2.2.6, scipy 1.14.1, Windows 11, CPU.
+
+### Özet
+
+| Grup | PASS | FAIL (strict xfail, ölçülen değerle) | Not |
+|:---|:---|:---|:---|
+| M | M0 | — | |
+| S simetrik | S1, S2, S3 | — | |
+| A asimetrik | A1, A2 post hoc (ds = 0,0137) | A1, A2 (±) ön kayıtlı ds = 0,01 | yol tam tekil noktaya düşüyor |
+| T limit | T1, T2, T3, T4, T5 | — | |
+| FC / FB FE kolon | FC1, FC2, FC3, FB1, FB2, FB3; FC4 indeks maddesi (post hoc) | FC4 yük maddesi (1,4e-9 > 1e-9) | |
+| FA kemer (yavaş) | FA1, FA2, FA3 | — | A6b'nin çatallanması bulunuyor ve dal değiştiriliyor |
+| B, C | B1 (3/3), B2, B3, C1, C2 | — | |
+
+### Ölçülen değerler
+
+- **M0** teğet ↔ merkezi FD: S 7,5e-11, A 1,7e-11 (eşik 1e-6).
+- **S1/S2** 3 yol noktası, aralık [1]; λ_c = 1,010205144336429 (kapalı form 1,010205144336440), bağıl 1,1e-14;
+  \|v + λ_c/k_a\| 1,2e-16 L, \|u\| = 0; 4 değerlendirme, \|μ\| 9,1e-15; çatallanma, φᵀq/‖q‖ = 0; indeks 0 → 1.
+- **S3** dal değiştirme 2 Newton iterasyonu (u = 0,0200, λ = 1,01027247); 30 nokta, 0 ret; en kötü bağıl kalıntı
+  1,6e-14; \|u\| 0,0200 → 0,3050 monoton; λ 1,010272 … 1,026556 (kararlı simetrik: artıyor); \|λ − λ_S(θ)\|/λ_c ≤ 1,6e-13.
+- **A1/A2 FAIL (ön kayıtlı ds = 0,01)**: birincil yolda \|dx/dλ\| = 1/k_a = 0,01, ilk adım Δλ = 1 ve kabul edilen
+  nokta tam λ = 1,0 = λ_c (doğrulandı: kabul noktaları λ = 0,0 ve 1,0, orada K = diag(0, 100)). Sonraki tahmin çözümü
+  K⁻¹q tekil (`LinAlgError`), 11 ret, `ContinuationError` step_limit / singular_tangent. Yerleştirmenin değil
+  `arc_length`'in kusuru: tam tekil kabul noktasından tahmin üretemiyor. **Post hoc** (aynı eşikler, ds = 0,0137):
+  A1 aralık [0], λ = 1,000000000000000 (hata 0), 1 değerlendirme (μ(t) doğrusal), çatallanma, φᵀq = 0; A2 +ξ: başlangıç
+  u = +0,02, λ = 1,03, 20 nokta, kalıntı ≤ 4,9e-16, λ 1,0300 … 1,3123 (> λ_c), \|λ − λ_A(u)\| ≤ 1,6e-15; −ξ: u = −0,02,
+  λ = 0,97, λ 0,6868 … 0,9700 (< λ_c), ≤ 5,6e-16.
+- **T1/T2** aralıklar [8, 31]; iki limit noktası, φᵀq/‖q‖ = −1,000 (φ = (0, 1), q = (0, −P̂)); λ = +1 ve −1 basılan
+  12 basamakta tam (hata < 5e-13); w/h = 0,422649731 ve 1,577350269 (kapalı form 1 ∓ 1/√3 = 0,4226497308 /
+  1,5773502692); 5'er değerlendirme.
+- **T3** yer değiştirme kontrolü yolunda aynı aralıklar ve aynı değerler. **T4** det işaretiyle [8, 31] = indeksle
+  [8, 31]. **T5**, **C1** `ValueError`. **C2** yol 10 noktada duruyor (son w/h 0,4500 > w₁/h 0,4226), son iki indeks
+  [0, 1].
+- **FC1/FC3** (4 × 80, sparse spektrum) 14 nokta, aralık [10]; λ_nl = 2,1158066780e-3, λ_lin = 2,1169285613e-3,
+  **λ_nl/λ_lin − 1 = −5,300e-4** (= −1,031 ε_c, ε_c = π²/(48 · 20²)); 2 değerlendirme; çatallanma, φᵀq/‖q‖ = 2,2e-16;
+  antisimetrik pay 1,000000000000.
+- **FC2** d(80) = 5,2996e-4, d(160) = 1,3313e-4, **oran 3,981** (beklenen 4); d/ε_c = 1,031 ve 1,036: ön burkulma
+  düzeltmesi bu SVK kolonda ≈ −ε_c.
+- **FC4** indeks dizileri aynı (dense eigh ↔ sparse LDLᵀ: 11 × 0, 3 × 1). **Yük maddesi FAIL**: yerleşen λ bağıl
+  farkı 1,435e-9 (eşik 1e-9). İki konum da 2 değerlendirmede ilk koşudan sonra eklenen özdeğer doğruluk tabanında
+  (§5, madde 2) duruyor; bu tabanda yük ~1e-9 çözünürlükte. Post hoc: yalnız indeks maddesi (geçiyor).
+- **FB** ξ = 0,7730 (ξ · max\|φ_x(üst)\| = 1e-3 L); dal değiştirme 1 iterasyon; 20 nokta, 0 ret; en kötü bağıl kalıntı
+  3,3e-11 (rtol 1e-10); üst yanal yer değiştirme 1,00e-3 L → 0,0501 L monoton; λ/λ_c 1,00000035 … 1,00076372 (FB3: hep
+  ≥ 1 − 1e-6, artıyor); birincil yolda üst yanal ≤ 1,1e-14 L; son noktada x − x_c'nin antisimetrik payı 0,999225.
+- **FA** (yavaş, dense) 83 nokta, aralıklar [60, 65]. FA1: çatallanma λ_b = 4,3827388938e-3 (tepe çökmesi 2,2724),
+  φᵀq/‖q‖ = −4,2e-9, antisimetrik pay 1,000000000. FA2: limit noktası λ_lim = 4,3989643824e-3 (w 2,4556),
+  φᵀq/‖q‖ = −0,139; λ_lim / ayrık max − 1 = +2,60e-5; **λ_b/λ_lim = 0,996312**. FA3: 41 nokta, λ 3,78458e-3 …
+  4,38272e-3 (ikincil dal düşüyor: kararsız), en kötü bağıl kalıntı 8,3e-14, son antisimetrik norm 8,242 (≥ 0,5);
+  birincil yolda ≤ 9,3e-13. Not: `nonlineer_cozucu.md` A6b'deki "0,9972 λ_max" ilk det K < 0 ayrık noktasının oranıydı
+  (tanım farklı); burada iki nokta da yerleştirildi.
+- **B1** `catallanma_parmakizi.py --check` son kodda: 3/3 bit düzeyinde eşit (kafes yay boyu 51 nokta, kafes yer
+  değiştirme kontrolü 51, FE konsol 14). **B2** kafes ve S: spektrumlu ve spektrumsuz yollar bit düzeyinde aynı.
+  **B3** `test_nonlinear_solvers.py` (yavaşlar dahil): 28 passed, 6 xfailed; `pytest -m baseline`: 8 passed, bütün
+  örneklerde en büyük bağıl fark 0,00e+00.
+
+## 5. İlk koşudan sonra değişenler (eşikler değişmedi)
+
+1. **Dense spektrum maliyeti**: 4 × 80 kolonda tek `numpy.linalg.eigh` (800 × 800) bu makinede 20 s (aynı anda çok
+   oturum koşarken; tek iş parçacığıyla 0,34 s, `OPENBLAS_NUM_THREADS=1`) — OpenBLAS iş parçacığı aşırı aboneliği; ilk
+   FE testi pytest zaman aşımına (900 s) takıldı. Kütüphane iş parçacığı ayarına dokunmuyor.
+2. **Konum durma ölçütü**: ilk koşuda dense konum μ = −7,9e-17'ye indi ama \|μ\| ≤ 1e-10 · max(\|μ(0)\|, \|μ(1)\|)
+   (≈ 1e-17) hiç sağlanmadı, t aralığı ölçütüyle 16 değerlendirmede durdu (yük doğrusal burkulmadan −5,30e-4, sonuçla
+   aynı). Ölçüte geriye kararlı özdeğer çözücüsünün mutlak doğruluğu eklendi: \|μ\| ≤ max(…, 16 ε ‖K‖₁). FC4 yük
+   maddesinin başarısızlığı bu tabandan.
+3. **Sparse spektrum** (§1'deki tanımdan sapma): indeks artık pencere sayımı değil, SuperLU'nun simetrik modda
+   köşegen pivotlu ayrışımından (P K Pᵀ = L D Lᵀ, U = D Lᵀ) Sylvester ataleti — kesin; köşegen dışı pivot alınırsa
+   `LinearSolveFailure`. Pencere (sıfıra en yakın k özdeğer) sıralı spektrumda ardışık olduğundan küresel konumu
+   (`Spectrum.offset`) biliniyor; konumda dense ile aynı konumsal kural (j = min(m_A, m_B)) kullanılıyor, özvektör
+   izleme kaldırıldı. Post hoc sözleşme testi: rastgele belirsiz matrislerde (n = 50, 300; 21 ve 139 negatif) ve
+   kaydırılmış FE kolon teğetlerinde atalet = `eigvalsh` sayımı, pencere değerleri küresel konumlarında ≤ 1e-12.
+   Kolon testleri (FC1–FC3, FB) sparse spektrumla, FC4 ve FA dense ile koşuyor.
+4. Test kodu: `_mirror_share` sıfır vektörde 0/0 uyarısı veriyordu (yalnız norm kullanılıyordu), korundu.
+
+## 6. Kapsam ve sınırlar
+
+- Yol bağımlı problemler (`store` taşıyan, ör. J2) için `locate_critical` ve `switch_branch` reddediyor: kabul
+  noktaları arasındaki deneme noktaları yanlış durumla değerlendirilirdi.
+- Çok katlı kritik nokta (`CriticalPoint.multiplicity` > 1) raporlanıyor ama dal değiştirme yalnız konumsal j'inci
+  vektör boyunca; çok katlı dallar (ör. kare kesitli 3-B kolon) sınanmadı.
+- `arc_length` tam tekil bir kabul noktasından ilerleyemiyor (A1/A2); önceki artış yönünü tahmin olarak kullanmak
+  sonraki iş.
+- Elastika ikincil yolunun kapalı formla karşılaştırması yapılmadı (FB3 yalnız kararlılık beklentisi).

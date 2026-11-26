@@ -4,12 +4,12 @@ Kaynak: `tests/toporlogy/_vv_layers.py` (dosya → katman sınıflaması elle, d
 
 | Katman | core | geometry | boundary | design | fem | solvers | optimization | optimizers | configuration | execution | post | references |
 |:---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| U unit / property | 16/205 | 3/30 | — | 9/111 | 11/147 | 3/43 | 17/221 | 4/69 | 5/66 | 3/19 | 5/68 | — |
+| U unit / property | 17/227 | 3/30 | — | 9/111 | 12/169 | 4/65 | 17/221 | 4/69 | 5/66 | 3/19 | 5/68 | — |
 | MP material point | 16/205 | — | — | 8/126 | 11/154 | 1/25 | 13/163 | 5/91 | 7/97 | 1/13 | 4/55 | — |
 | EL element patch / quadrature | 7/80 | — | — | 1/10 | 10/109 | 1/14 | 4/52 | 1/14 | 1/17 | — | 3/40 | — |
 | AS assembly / BC / reactions | 5/111 | 1/23 | 5/62 | 2/59 | 8/127 | 6/78 | 3/82 | 2/59 | 1/34 | — | 1/20 | — |
-| AN analytical / MMS | 17/219 | — | — | 5/94 | 23/282 | 1/25 | 19/275 | 5/100 | 7/106 | 1/13 | 3/44 | — |
-| IS independent solver / implementation | 8/96 | — | 1/14 | 3/73 | 13/173 | 3/51 | 7/122 | 3/73 | 3/62 | — | 1/24 | — |
+| AN analytical / MMS | 18/241 | — | — | 5/94 | 24/304 | 2/47 | 19/275 | 5/100 | 7/106 | 1/13 | 3/44 | — |
+| IS independent solver / implementation | 9/118 | — | 1/14 | 3/73 | 14/195 | 4/73 | 7/122 | 3/73 | 3/62 | — | 1/24 | — |
 | OG optimization / KKT / gradient | 16/194 | — | 1/14 | 10/137 | 20/259 | 6/87 | 29/323 | 17/215 | 14/160 | 3/34 | 3/54 | — |
 | E2E end-to-end geometry | 2/38 | 5/39 | — | 2/13 | 3/62 | — | 8/85 | 1/21 | 4/38 | 1/10 | 11/91 | — |
 | IC integration / compatibility | 5/52 | 2/34 | — | 4/65 | 6/64 | — | 8/89 | 3/57 | 19/175 | 12/95 | 1/8 | 1/11 |
@@ -39,6 +39,7 @@ Katman sınıflaması (dosya → katmanlar):
 - `test_baseline_policy.py`: IC
 - `test_bc.py`: AS
 - `test_benchmark.py`: OG
+- `test_bifurcation.py`: U, AN, IS
 - `test_buckling.py`: EL, AN, OG
 - `test_buckling_geometry.py`: U, AN, IS, OG, E2E
 - `test_buckling_physics.py`: AN, OG
