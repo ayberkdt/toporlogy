@@ -4962,6 +4962,31 @@
   "navier_deflection": "navier_deflection(a,b,t,E,nu,q,x,y,terms,kirchhoff)",
   "plate_element_matrix": "plate_element_matrix(h,t,nu,shear)"
  },
+ "toporlogy.fem.shell": {
+  "DRILL": "<float>",
+  "FlatShell": {
+   "attrs": [
+    "pressure_load",
+    "solve",
+    "stiffness"
+   ],
+   "class": "FlatShell"
+  },
+  "ShellMesh": {
+   "attrs": [
+    "ne",
+    "nn"
+   ],
+   "class": "ShellMesh"
+  },
+  "bending_matrix": "bending_matrix(a,b,t,nu)",
+  "cylinder_surface": "cylinder_surface(radius,length,n_theta,n_z,angle)",
+  "drilling_matrix": "drilling_matrix(a,b,t,nu,drill)",
+  "facet_frame": "facet_frame(X)",
+  "facet_matrix": "facet_matrix(X,t,nu,drill)",
+  "flat_rectangle": "flat_rectangle(lx,ly,nx,ny)",
+  "membrane_matrix": "membrane_matrix(a,b,t,nu)"
+ },
  "toporlogy.fem.tensor_elastic": {
   "TENSOR_ELEMENTS": "<dict>",
   "TensorElasticity": {

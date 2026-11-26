@@ -85,3 +85,47 @@ için.
 Kurallar: ilk koşuda tutmayan kontrol, ölçülen değeriyle `xfail(strict=True)` olur ve `docs/vv_kutugu.json`'a girer;
 eşik gevşetilmez; test kurulum hatası (ölçüm değil) düzeltilebilir ama burada yazılır; ilk koşudan sonra eklenen kontrol
 "post hoc" diye işaretlenir.
+
+## Sonuç (ilk ölçüm, 2026-11-26)
+
+`tests/toporlogy/test_shell.py`. On bir kontrolden onu ilk koşuda geçti; KB3'ün eğilme yaması tutmadı (strict xfail,
+`docs/vv_kutugu.json`). Değerler testlerin `-s` çıktısından.
+
+| # | Durum | Ölçülen |
+|:---|:---|:---|
+| KB1 | PASS | {u, v, θz}–{w, θx, θy} bloğu tam 0; eğilme − `plate_element_matrix` 0,0; zar − t·`ke_q4` 2,8e-16 (drilling 0 iken global zar bloğu da 2,8e-16) |
+| KB2 | PASS | üç eksen etrafında rijit dönme ≤ 5,7e-17; negatif kontrol (βx = +θy, βy = −θx): enerji / ölçek 0,90 |
+| KB3 | **zar PASS, eğilme xfail** | zar yaması 1,6e-15; eğilme yaması **1,12e-12 > 1e-12** |
+| KB4 | PASS | rijit artık ≤ 8,9e-18; 1e-10 λ_max altında tam 6 özdeğer; 7. özdeğer / λ_max 2,0e-7 |
+| KB5 | PASS | enerji farkı 6,1e-13 göreli |
+| KB6 | PASS | ayrık kapalı form (B): 4,2e-11 / 9,9e-11 / 6,2e-10 (N_θ = 16 / 32 / 64) |
+| KB7 | PASS | zar çözümüne göre hata 1,92e-2 / 4,82e-3 / 1,20e-3 (= 1 − cos(π/N_θ) dört basamakta); mertebe 32 → 64: 1,9991 |
+| KB8 | PASS | işaretli hata −9,70e-2 / −2,47e-2 / −6,09e-3 (N_θ = 16 / 32 / 64; eleman daha rijit, işaret değiştirmedi); mertebe 32 → 64: 2,02 (kayıt) |
+| KB9 | PASS | kare, a/t = 10: 8,9e-4 / 2,2e-4 (n = 16 / 32), mertebe 2,00; a/t = 100: 1,26e-3 / 3,14e-4, mertebe 2,01; 2 × 1 dikdörtgen (a ≠ b): 3,4e-4; `MindlinPlate` ile n = 16 merkez çökmesi farkı 6,3e-14 |
+| KB10 | PASS | 1,8e-11 göreli |
+| KB11 | PASS | t = 0, ν = 0,5 ve −1, sıfır kenar, çarpık ve düzlem dışı parça, aralık dışı düğüm, α < 0, yanlış boyutlu E, açı 0 ve 2π: beklenen iletiyle açık hata |
+
+**KB3 eğilme yaması (xfail).** Ölçülen 1,12e-12, eşik 1e-12; eşik değişmedi. Test bölündü: zar yaması
+(`test_kb3_membrane_patch_on_unequal_rectangles`) zorunlu PASS olarak kaldı, eğilme yaması
+(`test_kb3_bending_patch_on_unequal_rectangles`) ölçülen değerle strict xfail. Yorum (kanıtı aşağıda, nedeni
+kesinleştirilmedi): t = 0,04 ve parça boyu 0,15–0,45 iken kesme rijitliği eğilmeden ~(a/t)² kat büyük; enerji
+uᵀKu karesel formuyla, büyük terimlerin sadeleşmesiyle hesaplanıyor, yuvarlama tabanı 1e-12 civarında. Tanı ölçümleri
+(eşiksiz, scratch betiği, ilk koşudan sonra): aynı yama dönmeden xy düzleminde global karesel formla 5,1e-13, parça parça
+toplamla 7,4e-14; dönmüş düzlemde parça parça 2,7e-13.
+
+**Post hoc (ilk koşudan sonra eklendi).** KB3b: aynı eğilme yaması t = 0,1 (a/t ≤ 12, PL2 gibi): 7,5e-14 (eşik 1e-12,
+PASS). Bu, ön kayıtlı KB3'ün yerine geçmez.
+
+**Kayıt ölçümü (eşiksiz): drilling ölçeği.** Ankastre 8 × 6 dilim, uç düğümde birim düşey kuvvet, uyum:
+α = 1e-4: 184,90; 1e-3: 177,27; 1e-2: 175,33; 1e-4 ile 1e-2 arası fark uyumun %5,4'ü. Bu kaba eğri ağda drilling
+cezası sonucu ihmal edilemeyecek ölçüde etkiliyor (α küçüldükçe yapı yumuşuyor). KB1–KB11'den hiçbiri bu etkiyi ölçmüyor:
+basınçlı boru, halka ve düz plakada drilling enerjisi sıfır ya da ayrık. Varsayılan α = 1e-3 bir seçim, doğrulanmış bir
+değer değil; eğri kabukta sonuç α'ya karşı ayrıca denetlenmeli.
+
+**Kurulum notları.** Test kurulumunda ölçüm öncesi düzeltme yok. Testler ilk koşudan önce derlenip temizlendi: kullanılmayan
+`K` parametresi ve ölü kod satırları kaldırıldı, davranış değişmedi. İlk koşudan sonra yalnız mypy tip notları eklendi
+(`r: np.ndarray`, `u: np.ndarray`); bunlar sayıları değiştirmez.
+
+**Görev metnindeki eşleme örneği.** Görevde örnek olarak verilen βx = θy, βy = −θx bu işaret kuralıyla yanlış:
+KB2'nin negatif kontrolünde rijit dönme zar + eğilme ölçeğinin 0,90'ı kadar kesme enerjisi üretti. Modül
+βx = −θy, βy = θx kullanır; KB2, KB3 ve KB4 bunu doğrular.

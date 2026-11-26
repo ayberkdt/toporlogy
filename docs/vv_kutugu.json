@@ -596,6 +596,16 @@
    "resolution": "kontrolün kendisi (ayırt edicilik); yol adjoint'i PS2a/PS4'te FD ile doğrulandı; post hoc tam gradyan vektöründe son tanjant hatası 1,3e-2–2,3e-2",
    "record": "docs/olcumler/plastik_duyarlilik_onkayit.md",
    "slow": false
+  },
+  {
+   "nodeid": "tests/toporlogy/test_shell.py::test_kb3_bending_patch_on_unequal_rectangles",
+   "kind": "pre-registered check failed",
+   "model_backend": "fem.shell FlatShell, 3 × 2 eşit olmayan dikdörtgen, dönmüş düzlem (CPU, numpy)",
+   "reason": "sabit eğrilik yaması enerjisi bağıl hata 1,12e-12 > 1e-12 (t = 0,04); yorum: ince parçada kesme rijitliği eğilmeden ~(a/t)² büyük, uᵀKu karesel formunun yuvarlama tabanı (xy düzleminde 5,1e-13; post hoc t = 0,1'de 7,5e-14)",
+   "risk": "low",
+   "resolution": "yok (karesel formun yuvarlama tabanı; eşik değişmez); post hoc KB3b t = 0,1'de geçiyor, zar yaması 1,6e-15",
+   "record": "docs/olcumler/kabuk_onkayit.md",
+   "slow": false
   }
  ],
  "skips": [
