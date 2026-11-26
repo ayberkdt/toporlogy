@@ -1,4 +1,5 @@
-"""History-dependent small-strain solid on a general mesh (WP17 minimal slice; ``docs/foundations/prereg/H_history.md``).
+"""History-dependent small-strain solid on a general mesh (WP17 minimal slice;
+``docs/foundations/prereg/H_history.md``).
 
 One material state per quadrature point, physical time steps, Newton with the material's algorithmic tangent and
 commit-after-convergence:
@@ -90,7 +91,7 @@ class HistoryProblem:
         else:
             for a in range(3):
                 H[:, a, a] = eps[:, a]
-            for v, (i, j) in zip((3, 4, 5), ((1, 2), (0, 2), (0, 1))):
+            for v, (i, j) in zip((3, 4, 5), ((1, 2), (0, 2), (0, 1)), strict=True):
                 H[:, i, j] = H[:, j, i] = 0.5 * eps[:, v]
         return H
 

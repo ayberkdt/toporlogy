@@ -315,8 +315,8 @@ class NortonCreep(_IsotropicCreep):
         self._needs_temperature = arrhenius is not None
         self._avg_cache: tuple[tuple[bytes, bytes], np.ndarray] | None = None     # memo of the last step average
 
-    def _rate_factory(self, committed: Mapping[str, np.ndarray], step: TimeStep, n: int):  # type: ignore[override]
-        F = 1.0
+    def _rate_factory(self, committed: Mapping[str, np.ndarray], step: TimeStep, n: int):  # noqa: ANN202
+        F: Any = 1.0
         if self.arrhenius is not None:
             key = (np.asarray(step.temperature_prev, float).tobytes(), np.asarray(step.temperature, float).tobytes())
             if self._avg_cache is None or self._avg_cache[0] != key:        # the Newton loops of one step repeat it
@@ -370,7 +370,7 @@ class NortonBaileyCreep(_IsotropicCreep):
     def _next_extra_state(self, committed: Mapping[str, np.ndarray], step: TimeStep) -> dict[str, np.ndarray]:
         return {"t_load": np.asarray(committed["t_load"]) + step.dt}
 
-    def _rate_factory(self, committed: Mapping[str, np.ndarray], step: TimeStep, n: int):  # type: ignore[override]
+    def _rate_factory(self, committed: Mapping[str, np.ndarray], step: TimeStep, n: int):  # noqa: ANN202
         m, tref, dt = self.m, self.t_ref, step.dt
         if self.hardening == "time":
             dphi = _power_increment(np.asarray(committed["t_load"], float) / tref, np.full(n, dt / tref), m)
@@ -490,7 +490,7 @@ def integrate_creep(model: Any, control: Sequence[bool], segments: Sequence[Load
     e = np.zeros(6) if strain0 is None else np.asarray(strain0, float).reshape(6).copy()
     # temperature bookkeeping: T at the start and end of each segment
     T_start, T_end = [], []
-    Tc = None if isothermal else float(temperature0)
+    Tc: float | None = None if isothermal else float(temperature0)  # type: ignore[arg-type]
     for s in segs:
         T_start.append(Tc)
         Tc = Tc if (s.temperature is None or Tc is None) else float(s.temperature)
@@ -505,7 +505,7 @@ def integrate_creep(model: Any, control: Sequence[bool], segments: Sequence[Load
     if not (math.isfinite(dtp) and dtp > 0.0):
         raise ValueError("the first step proposal must be finite and > 0")
     t = t0
-    Tcur = None if isothermal else float(temperature0)
+    Tcur: float | None = None if isothermal else float(temperature0)  # type: ignore[arg-type]
     rec: dict[str, list] = {k: [] for k in ("t", "e", "s", "ecr", "p", "d", "et", "st", "T")}
     n_acc = n_rej = attempts = 0
     eps_f = np.finfo(float).eps
@@ -513,9 +513,11 @@ def integrate_creep(model: Any, control: Sequence[bool], segments: Sequence[Load
     def T_at(i: int, tau: float) -> float | None:
         if isothermal:
             return None
+        a, b = T_start[i], T_end[i]
         if tau >= float(ends[i]):
-            return T_end[i]
-        return T_start[i] + (T_end[i] - T_start[i]) * (tau - t_start[i]) / (float(ends[i]) - t_start[i])
+            return b
+        assert a is not None and b is not None
+        return a + (b - a) * (tau - t_start[i]) / (float(ends[i]) - t_start[i])
 
     while t < t_final:
         attempts += 1

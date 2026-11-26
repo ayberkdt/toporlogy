@@ -698,7 +698,7 @@ def test_V6_energy_and_dissipation_against_augmented_oracle_and_closure(name):
         tt, ee = _refine(times, ev, mm)
         h = run(model(name), ee, tt)
         psi, D = h.energy[-1], h.dissipation.sum()
-        assert psi == pytest.approx(psi_o, rel=1e-8) and D == pytest.approx(D_o, rel=1e-8), mm
+        assert psi == pytest.approx(psi_o, rel=1e-8) and pytest.approx(D_o, rel=1e-8) == D, mm
         assert np.all(np.isfinite(h.energy)) and np.all(np.isfinite(h.dissipation))
         assert np.all(h.energy >= 0.0) and np.all(h.dissipation >= -1e-12 * h.energy.max())
         sig = np.vstack([np.zeros((1, 6)), h.stress])
@@ -804,7 +804,6 @@ def test_V7d_shifted_model_against_oracles():
     nodes_l = np.array([0.5, 1.0, 1.0, 1.0, 0.2, 0.2, 0.0])
     T_start, l_start = 300.0, 0.0
     errs = {}
-    ref_nodes = None
     for mm in (4, 8, 16, 32, 64):
         tt, TT, ll = [], [], []
         pt, pT, pl = 0.0, T_start, l_start

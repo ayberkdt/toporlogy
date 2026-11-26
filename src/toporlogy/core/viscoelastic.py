@@ -2,14 +2,17 @@
 
 Physical units throughout (SI: Pa, Pa·s, s, K, J/mol); every parameter here is a material input, never a design
 variable scaled by an element modulus. The models set ``physical = True`` and need a :class:`TimeStep`
-(``docs/foundations/MATERIAL_CONTRACT.md``). Derivations and the list of what is verified: ``docs/foundations/RHEOLOGY.md``;
+(``docs/foundations/MATERIAL_CONTRACT.md``). Derivations and the list of what is verified:
+``docs/foundations/RHEOLOGY.md``;
 preregistration: ``docs/foundations/prereg/V_viscoelastic.md``.
 
 Scalar reference functions (closed forms, **reference functions** for tests and calibration; not constitutive models)
-distinguish the creep compliance J(t) [1/Pa] (strain under σ0 H(t)) from the relaxation modulus E_R(t) [Pa] (stress under
+distinguish the creep compliance J(t) [1/Pa] (strain under σ0 H(t)) from the relaxation modulus E_R(t) [Pa] (stress
+under
 ε0 H(t)); J is not 1/E_R. t ≥ 0 is the time after the step; the value at t = 0 is the one at t = 0+.
 
-:class:`PronySeries` M(t) = M∞ + Σ M_i e^{-t/τ_i} (shear G or bulk K). :class:`GeneralizedMaxwell` combines an independent
+:class:`PronySeries` M(t) = M∞ + Σ M_i e^{-t/τ_i} (shear G or bulk K). :class:`GeneralizedMaxwell` combines an
+independent
 shear and bulk series in 3-D small strain, σ = 2G∞ e + Σ s_i + (K∞ θ + Σ p_i) 1, with the update that is exact for a
 strain that is piecewise linear in (reduced) time. Shift factors (:class:`WLFShift`, :class:`ArrheniusShift`) act as a
 horizontal shift of the relaxation times (fixed amplitudes) through the reduced time ξ = ∫dt/a_T. :func:`dma_moduli`
@@ -103,7 +106,8 @@ def sls_creep(t: Any, E_inf: float, E1: float, tau: float) -> np.ndarray:
 
 
 def burgers_creep(t: Any, E_M: float, eta_M: float, E_K: float, eta_K: float) -> np.ndarray:
-    """Burgers (Maxwell E_M, η_M in series with Kelvin–Voigt E_K, η_K) creep J = 1/E_M + t/η_M + (1 − e^{-tE_K/η_K})/E_K."""
+    """Burgers (Maxwell E_M, η_M in series with Kelvin–Voigt E_K, η_K) creep J = 1/E_M + t/η_M + (1 −
+    e^{-tE_K/η_K})/E_K."""
     E_M, eta_M, E_K, eta_K = _pos("E_M", E_M), _pos("eta_M", eta_M), _pos("E_K", E_K), _pos("eta_K", eta_K)
     tt = _time(t)
     return 1.0 / E_M + tt / eta_M - np.expm1(-tt * (E_K / eta_K)) / E_K
@@ -147,7 +151,8 @@ def recovery_strain(creep: Any, t: Any, sigma0: float, t_unload: float) -> np.nd
 class PronySeries:
     """M(t) = ``inf`` + Σ ``amplitudes``_i e^{-t/``taus``_i} [Pa] (a shear or a bulk relaxation modulus).
 
-    ``inf`` ≥ 0 (0: a fluid in that mode, flagged by :attr:`is_fluid`; the quasistatic stiffness is then singular and is not
+    ``inf`` ≥ 0 (0: a fluid in that mode, flagged by :attr:`is_fluid`; the quasistatic stiffness is then singular and
+    is not
     hidden by a numerical stiffness), amplitudes ≥ 0 (zero allowed), τ > 0 [s], instantaneous modulus
     M0 = inf + Σ amplitudes > 0. All values finite; invalid input raises."""
 
@@ -178,7 +183,7 @@ class PronySeries:
         object.__setattr__(self, "taus", tau)
 
     @classmethod
-    def from_weights(cls, instantaneous: float, weights: Any, taus: Any) -> "PronySeries":
+    def from_weights(cls, instantaneous: float, weights: Any, taus: Any) -> PronySeries:
         """Normalised convention: M0 = ``instantaneous`` [Pa], branch weights g_i = M_i/M0 with Σ g_i ≤ 1, equilibrium
         M∞ = M0 (1 − Σ g_i). Σ g_i > 1 is refused (never mixed with the physical-modulus convention)."""
         M0 = _pos("instantaneous", instantaneous)
@@ -212,9 +217,9 @@ class PronySeries:
 
 
 # ----------------------------------------------------------------------------------------------- shift factors
-_GL5_X, _GL5_W = np.polynomial.legendre.leggauss(5)
-_GL5_X = 0.5 * (_GL5_X + 1.0)                          # nodes on [0, 1]
-_GL5_W = 0.5 * _GL5_W
+_GL5_XR, _GL5_WR = np.polynomial.legendre.leggauss(5)
+_GL5_X: np.ndarray = 0.5 * (_GL5_XR + 1.0)             # nodes on [0, 1]
+_GL5_W: np.ndarray = 0.5 * _GL5_WR
 _MAX_DLN_PER_SUB = 0.5                                 # |Δ ln a_T| per quadrature sub-interval
 _MAX_SUB = 200000
 
@@ -229,7 +234,7 @@ class _Shift:
     def _check_range(self, T: np.ndarray) -> None:
         if not (np.all(np.isfinite(T)) and np.all(T > 0.0)):
             raise ValueError("shift factor: temperatures are absolute (kelvin) and must be finite and > 0")
-        if self.T_min is not None and np.any(T < self.T_min) or self.T_max is not None and np.any(T > self.T_max):
+        if self.T_min is not None and np.any(self.T_min > T) or self.T_max is not None and np.any(self.T_max < T):
             raise ValueError(f"shift factor: temperature outside the calibrated range [{self.T_min}, {self.T_max}] K")
 
     def ln_aT(self, T: Any) -> np.ndarray:  # pragma: no cover - abstract
@@ -241,7 +246,8 @@ class _Shift:
             return np.exp(self.ln_aT(T))
 
     def reduced_time_increment(self, T_prev: Any, T_next: Any, dt: Any) -> np.ndarray:
-        """Δξ = ∫₀^Δt ds/a_T(T(s)) for T varying **linearly** in the step from ``T_prev`` to ``T_next`` (kelvin, scalars or
+        """Δξ = ∫₀^Δt ds/a_T(T(s)) for T varying **linearly** in the step from ``T_prev`` to ``T_next`` (kelvin,
+        scalars or
         arrays that broadcast), Δt = ``dt`` s. Isothermal steps (T_prev == T_next): exactly Δt exp(−ln a_T). Otherwise
         Gauss–Legendre with 5 points on equal sub-intervals chosen so that |Δ ln a_T| ≤ 0.5 on each (error ≪ 1e-12
         relative for this smooth integrand); ln a_T is monotone in T, so the end values bound the variation. Refuses a
@@ -263,7 +269,7 @@ class _Shift:
         with np.errstate(over="ignore"):
             for k in range(nsub):
                 x = (k + _GL5_X) / nsub
-                for xi, wi in zip(x, _GL5_W):
+                for xi, wi in zip(x, _GL5_W, strict=True):
                     acc = acc + wi * np.exp(-self.ln_aT(T0b + (T1b - T0b) * xi))
             acc = acc * dtb / nsub
             iso = np.exp(-l0) * dtb
@@ -358,7 +364,8 @@ _G3_D = _g3_series()
 
 
 def _g3(a: np.ndarray) -> np.ndarray:
-    """g3(a) = (a − q − q²/2)/a² = a ∫₀¹ ((1 − e^{-ax})/a)² dx with q = −expm1(−a) (≈ a/3 for small a); Taylor series for
+    """g3(a) = (a − q − q²/2)/a² = a ∫₀¹ ((1 − e^{-ax})/a)² dx with q = −expm1(−a) (≈ a/3 for small a); Taylor series
+    for
     a < 1/4 (the direct form cancels as a³), closed form otherwise. g3(0) = 0."""
     a = np.asarray(a, float)
     out = np.zeros_like(a)
@@ -383,15 +390,21 @@ class GeneralizedMaxwell:
     Update over a step of reduced time Δξ (= Δt without ``shift``) for strain linear in the step, exact for that strain:
     a = Δξ/τ, r = e^{-a}, φ = (1 − e^{-a})/a:  s ← r s + 2G_i φ Δe,  p ← r p + K_j φ Δθ. Algorithmic tangent
     C = (K∞ + ΣK_jφ_j) 1⊗1 + 2(G∞ + ΣG_iφ_i) I_dev in the Voigt convention of :mod:`toporlogy.core.constitutive`
-    (= 2(G∞+ΣG_iφ_i) P_dev + 3(K∞+ΣK_jφ_j) P_vol); ``tangent_kind="continuum"`` returns the instantaneous tangent (φ = 1).
+    (= 2(G∞+ΣG_iφ_i) P_dev + 3(K∞+ΣK_jφ_j) P_vol); ``tangent_kind="continuum"`` returns the instantaneous tangent (φ =
+    1).
     Stored energy ψ = G∞ e:e + ½K∞θ² + Σ s_i:s_i/(4G_i) + Σ p_j²/(2K_j) (branches with zero amplitude contribute 0);
-    dissipation increment: the exact integral over the step of Σ s_i:s_i/(2G_iτ_i) + Σ p_j²/(K_jτ_j) along the exact branch
+    dissipation increment: the exact integral over the step of Σ s_i:s_i/(2G_iτ_i) + Σ p_j²/(K_jτ_j) along the exact
+    branch
     stresses of the linear strain (closed form, RHEOLOGY.md); ≥ 0 and computed without differencing work and energy.
 
-    ``shift`` (:class:`WLFShift` or :class:`ArrheniusShift`, None = isothermal) replaces Δt by the reduced increment Δξ of the
-    step with T linear between ``request.step.temperature_prev`` and ``temperature`` (horizontal shift, fixed amplitudes;
-    the strain is taken linear in ξ within the step, exact for constant T in the step). State: ``strain_prev`` (n, 3, 3),
-    ``s`` (n, nb_shear, 3, 3), ``p`` (n, nb_bulk). The initial state is a body at rest with zero strain at t = 0. Needs the
+    ``shift`` (:class:`WLFShift` or :class:`ArrheniusShift`, None = isothermal) replaces Δt by the reduced increment Δξ
+    of the
+    step with T linear between ``request.step.temperature_prev`` and ``temperature`` (horizontal shift, fixed
+    amplitudes;
+    the strain is taken linear in ξ within the step, exact for constant T in the step). State: ``strain_prev`` (n, 3,
+    3),
+    ``s`` (n, nb_shear, 3, 3), ``p`` (n, nb_bulk). The initial state is a body at rest with zero strain at t = 0. Needs
+    the
     time step (and the temperature with a shift). Diagnostics: ``reduced_time_increment`` (n,)."""
 
     name = "generalized_maxwell"
@@ -439,7 +452,8 @@ class GeneralizedMaxwell:
 
     def update(self, eps: np.ndarray, committed: Mapping[str, np.ndarray], request: MaterialRequest = _REQ
                ) -> HistoryUpdate:
-        """Stress (n, 3, 3), algorithmic tangent (n, 6, 6), trial state, stored energy and dissipation increment at the 3-D
+        """Stress (n, 3, 3), algorithmic tangent (n, 6, 6), trial state, stored energy and dissipation increment at the
+        3-D
         strains ``eps`` (n, 3, 3) for the step ``request.step``; ``committed`` is not modified."""
         if request.tangent_kind not in ("algorithmic", "continuum"):
             raise ValueError("tangent_kind: algorithmic | continuum")

@@ -274,8 +274,8 @@ class Polynomial(PropertyFunction):
             xs = [self.domain[0] - self.T_ref, self.domain[1] - self.T_ref]
             if len(c) > 2:
                 r = self._dpoly.roots()
-                xs += [float(z.real) for z in r if abs(z.imag) <= 1e-12 * max(1.0, abs(z))
-                       and xs[0] < z.real < xs[1]]
+                xs += [float(z.real) for z in r if abs(complex(z).imag) <= 1e-12 * max(1.0, abs(complex(z)))
+                       and xs[0] < float(z.real) < xs[1]]
             self._require_positive(float(min(self._poly(np.array(xs)))), "Polynomial")
 
     def _value(self, T: np.ndarray) -> np.ndarray:

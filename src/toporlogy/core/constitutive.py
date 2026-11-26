@@ -57,11 +57,12 @@ material point path with the model's tangent (the reference of the FE plasticity
 from __future__ import annotations
 
 import math
-from collections.abc import Callable, Mapping, Sequence
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field
 from typing import Any, Protocol
 
 import numpy as np
+from numpy.typing import ArrayLike
 
 from toporlogy.core import tensor as T
 from toporlogy.core.linear_elastic import isotropic_moduli
@@ -824,11 +825,10 @@ class MaterialPointHistory:
     diagnostics: list[dict[str, float]] = field(default_factory=list)
 
 
-def drive_material_point(model: Any, strain: Sequence[Sequence[float]], stress: Sequence[Sequence[float]],
-                         control: Sequence[bool], tol: float = 1e-14, max_iter: int = 25,
-                         times: Sequence[float] | None = None, temperatures: Sequence[float] | None = None,
+def drive_material_point(model: Any, strain: ArrayLike, stress: ArrayLike, control: ArrayLike, tol: float = 1e-14,
+                         max_iter: int = 25, times: ArrayLike | None = None, temperatures: ArrayLike | None = None,
                          t0: float = 0.0, temperature0: float | None = None,
-                         store: StateStore | None = None, strain0: Sequence[float] | None = None
+                         store: StateStore | None = None, strain0: ArrayLike | None = None
                          ) -> MaterialPointHistory:
     """Integrate a small-strain 3-D material point along a mixed path. ``control`` (6,) marks the Voigt components
     whose STRAIN is prescribed (True) — the others have their STRESS prescribed. ``strain`` / ``stress`` (k, 6):

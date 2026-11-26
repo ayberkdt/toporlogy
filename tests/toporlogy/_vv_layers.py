@@ -113,6 +113,19 @@ FILE_LAYERS: dict[str, tuple[str, ...]] = {
     "test_checkpoint.py": ("OG", "IC"),
     "test_yaml_research_responses.py": ("OG", "IC"),
     "test_cli_threads.py": ("IC", "PF"),
+    # Foundations II (docs/foundations)
+    "test_material_contract.py": ("U", "MP", "IC"),
+    "test_poisson_convention.py": ("U", "AN", "OG", "IC"),
+    "test_solver_diagnostics.py": ("U", "AN", "IS"),
+    "test_history_fem.py": ("MP", "AS", "AN", "IS"),
+    "test_properties.py": ("U", "MP", "AN"),
+    "test_viscoplastic.py": ("U", "MP", "AN"),
+    "test_spectral.py": ("U", "AN", "IS"),
+    "test_moduli_foundations.py": ("U", "AN"),
+    "test_creep.py": ("U", "MP", "AN"),
+    "test_viscoelastic.py": ("U", "MP", "AN"),
+    "test_cure.py": ("U", "MP", "AN"),
+    "test_viscoelastic_topology.py": ("MP", "AN", "IS", "OG"),
 }
 
 

@@ -2403,6 +2403,7 @@
  "toporlogy.core": {},
  "toporlogy.core.anisotropy": {
   "QUANTITIES": "<tuple>",
+  "aggregate_moduli": "aggregate_moduli(C6)",
   "cholesky_parameters": "cholesky_parameters(C6)",
   "compliance_derivative": "compliance_derivative(S6,dC6)",
   "directional_extrema": "directional_extrema(S6,quantity,n_samples,n_starts,refine)",
@@ -2416,9 +2417,11 @@
   "shear_extrema": "shear_extrema(S6,n)",
   "shear_modulus": "shear_modulus(S6,n,m)",
   "stiffness_from_cholesky": "stiffness_from_cholesky(theta)",
+  "universal_anisotropy_index": "universal_anisotropy_index(C6)",
   "volumetric_compressibility": "volumetric_compressibility(S6)",
   "young_modulus": "young_modulus(S6,n)",
-  "young_modulus_derivative": "young_modulus_derivative(S6,n,dS6)"
+  "young_modulus_derivative": "young_modulus_derivative(S6,n,dS6)",
+  "zener_ratio": "zener_ratio(C6,rtol)"
  },
  "toporlogy.core.bodies": {
   "label_bodies": "label_bodies(solid,connectivity)",
@@ -2440,6 +2443,13 @@
     "initial_state"
    ],
    "class": "ConstitutiveModel"
+  },
+  "HistoryUpdate": {
+   "attrs": [
+    "dissipation",
+    "energy"
+   ],
+   "class": "HistoryUpdate"
   },
   "InadmissibleState": {
    "attrs": [
@@ -2488,12 +2498,16 @@
    "class": "LinearElastic"
   },
   "MaterialPointHistory": {
-   "attrs": [],
+   "attrs": [
+    "temperatures",
+    "times"
+   ],
    "class": "MaterialPointHistory"
   },
   "MaterialRequest": {
    "attrs": [
     "energy",
+    "step",
     "tangent",
     "tangent_kind"
    ],
@@ -2548,11 +2562,177 @@
    ],
    "class": "StateStore"
   },
-  "drive_material_point": "drive_material_point(model,strain,stress,control,tol,max_iter)",
+  "TimeStep": {
+   "attrs": [
+    "t_next",
+    "temperature",
+    "temperature_prev"
+   ],
+   "class": "TimeStep"
+  },
+  "drive_material_point": "drive_material_point(model,strain,stress,control,tol,max_iter,times,temperatures,t0,temperature0,store,strain0)",
   "energy_oracle": "energy_oracle(psi,Ev)",
   "neo_hooke_energy_torch": "neo_hooke_energy_torch(kappa,mu)",
   "neo_hooke_response": "neo_hooke_response(E,Jm1,kappa,mu,energy)",
+  "require_step": "require_step(model,request,temperature)",
+  "small_strain_history_evaluate": "small_strain_history_evaluate(model,kin,committed,request)",
   "svk_energy_torch": "svk_energy_torch(D6)"
+ },
+ "toporlogy.core.creep": {
+  "ArrheniusFactor": {
+   "attrs": [
+    "dfactor",
+    "factor",
+    "log_factor",
+    "step_average"
+   ],
+   "class": "ArrheniusFactor"
+  },
+  "CreepRun": {
+   "attrs": [],
+   "class": "CreepRun"
+  },
+  "CreepStepLimit": {
+   "attrs": [
+    "add_note",
+    "args",
+    "code",
+    "with_traceback"
+   ],
+   "class": "CreepStepLimit"
+  },
+  "LoadSegment": {
+   "attrs": [
+    "strain",
+    "stress",
+    "temperature"
+   ],
+   "class": "LoadSegment"
+  },
+  "NOT_IMPLEMENTED": "<tuple>",
+  "NortonBaileyCreep": {
+   "attrs": [
+    "conservative",
+    "evaluate",
+    "initial_state",
+    "kinematics",
+    "name",
+    "physical",
+    "reset_load_time",
+    "state_fields",
+    "update"
+   ],
+   "class": "NortonBaileyCreep"
+  },
+  "NortonCreep": {
+   "attrs": [
+    "conservative",
+    "evaluate",
+    "initial_state",
+    "kinematics",
+    "name",
+    "physical",
+    "state_fields",
+    "update"
+   ],
+   "class": "NortonCreep"
+  },
+  "R_GAS": "<float>",
+  "integrate_creep": "integrate_creep(model,control,segments,output_times,t0,temperature0,rtol,atol,dt0,dt_next,dt_max,max_steps,stress_tol,safety,store,strain0)"
+ },
+ "toporlogy.core.cure": {
+  "Arrhenius": {
+   "attrs": [
+    "dk_dT",
+    "from_reference",
+    "k"
+   ],
+   "class": "Arrhenius"
+  },
+  "ChemicalShrinkage": {
+   "attrs": [
+    "alpha_gel",
+    "linear",
+    "linear_increment",
+    "volumetric",
+    "volumetric_increment"
+   ],
+   "class": "ChemicalShrinkage"
+  },
+  "CureKinetics": {
+   "attrs": [
+    "advance",
+    "drate_dT",
+    "drate_dalpha",
+    "rate"
+   ],
+   "class": "CureKinetics"
+  },
+  "CuringThermoElasticPoint": {
+   "attrs": [
+    "conservative",
+    "evaluate",
+    "initial_state",
+    "kinematics",
+    "name",
+    "physical",
+    "state_fields",
+    "update"
+   ],
+   "class": "CuringThermoElasticPoint"
+  },
+  "DiBenedetto": {
+   "attrs": [
+    "Tg",
+    "alpha_at_Tg",
+    "dTg_dalpha"
+   ],
+   "class": "DiBenedetto"
+  },
+  "KamalSourour": {
+   "attrs": [
+    "advance",
+    "drate_dT",
+    "drate_dalpha",
+    "rate"
+   ],
+   "class": "KamalSourour"
+  },
+  "Nakamura": {
+   "attrs": [
+    "X_of_theta",
+    "advance",
+    "advance_theta",
+    "rate",
+    "theta_increment",
+    "theta_of_X"
+   ],
+   "class": "Nakamura"
+  },
+  "NthOrder": {
+   "attrs": [
+    "advance",
+    "drate_dT",
+    "drate_dalpha",
+    "rate"
+   ],
+   "class": "NthOrder"
+  },
+  "R_GAS": "<float>",
+  "ReactionHeat": {
+   "attrs": [
+    "adiabatic_temperature",
+    "heat",
+    "power_density"
+   ],
+   "class": "ReactionHeat"
+  },
+  "avrami": "avrami(t,k,n)",
+  "avrami_time": "avrami_time(X,k,n)",
+  "finite_completion_time": "finite_completion_time(alpha0,k,n)",
+  "isothermal_first_order": "isothermal_first_order(alpha0,k,t)",
+  "isothermal_nth_order": "isothermal_nth_order(alpha0,k,n,t)",
+  "nakamura_K_from_avrami": "nakamura_K_from_avrami(k,n)"
  },
  "toporlogy.core.domain": {
   "Domain": {
@@ -2684,6 +2864,7 @@
   "isotropic_stiffness": "isotropic_stiffness(E,nu)",
   "orthotropic_compliance": "orthotropic_compliance(E1,E2,E3,G12,G13,G23,nu12,nu13,nu23)",
   "plane_bulk_modulus": "plane_bulk_modulus(E,nu,plane)",
+  "poisson_uniaxial": "poisson_uniaxial(C,load,transverse)",
   "strong_ellipticity": "strong_ellipticity(C6,n_directions,refine)",
   "symmetry_class": "symmetry_class(C6,rtol)",
   "transversely_isotropic_compliance": "transversely_isotropic_compliance(E_p,E_t,nu_p,nu_pt,G_t,axis)",
@@ -2779,6 +2960,120 @@
   "rotate_in_plane_derivative": "rotate_in_plane_derivative(D,theta)",
   "stiffness_coefficients": "stiffness_coefficients(C)",
   "symmetric_basis": "symmetric_basis(k)"
+ },
+ "toporlogy.core.properties": {
+  "Constant": {
+   "attrs": [
+    "derivative",
+    "integral",
+    "nonsmooth",
+    "smoothness",
+    "value"
+   ],
+   "class": "Constant"
+  },
+  "Enthalpy": {
+   "attrs": [
+    "H"
+   ],
+   "class": "Enthalpy"
+  },
+  "IsotropicModuliOfT": {
+   "attrs": [
+    "E",
+    "G",
+    "K",
+    "derivative",
+    "dmoduli",
+    "dstiffness",
+    "lam",
+    "moduli",
+    "nu",
+    "stiffness",
+    "value"
+   ],
+   "class": "IsotropicModuliOfT"
+  },
+  "ModuliAtT": {
+   "attrs": [],
+   "class": "ModuliAtT"
+  },
+  "Pchip": {
+   "attrs": [
+    "derivative",
+    "integral",
+    "nonsmooth",
+    "smoothness",
+    "value"
+   ],
+   "class": "Pchip"
+  },
+  "PiecewiseLinear": {
+   "attrs": [
+    "derivative",
+    "integral",
+    "nonsmooth",
+    "smoothness",
+    "value"
+   ],
+   "class": "PiecewiseLinear"
+  },
+  "Polynomial": {
+   "attrs": [
+    "derivative",
+    "integral",
+    "nonsmooth",
+    "smoothness",
+    "value"
+   ],
+   "class": "Polynomial"
+  },
+  "PropertyFunction": {
+   "attrs": [
+    "derivative",
+    "integral",
+    "nonsmooth",
+    "smoothness",
+    "value"
+   ],
+   "class": "PropertyFunction"
+  },
+  "ThermalExpansion": {
+   "attrs": [
+    "alpha",
+    "from_secant",
+    "secant",
+    "strain"
+   ],
+   "class": "ThermalExpansion"
+  },
+  "ThermalExpansionTensor": {
+   "attrs": [
+    "alpha",
+    "strain"
+   ],
+   "class": "ThermalExpansionTensor"
+  },
+  "ThermoElasticPoint": {
+   "attrs": [
+    "conservative",
+    "evaluate",
+    "initial_state",
+    "kinematics",
+    "name",
+    "physical",
+    "state_fields",
+    "thermal_strain_tensor",
+    "update"
+   ],
+   "class": "ThermoElasticPoint"
+  }
+ },
+ "toporlogy.core.spectral": {
+  "SPECTRAL_FUNCTIONS": "<tuple>",
+  "spectral_frechet": "spectral_frechet(A,H,f,p)",
+  "spectral_function": "spectral_function(A,f,p)",
+  "spectral_vjp": "spectral_vjp(A,G,f,p)"
  },
  "toporlogy.core.tensor": {
   "DeformationError": {
@@ -2886,6 +3181,129 @@
   "combine": "combine(verdicts)",
   "constraint_entry": "constraint_entry(name,value,upper,tol,source)",
   "constraint_verdict": "constraint_verdict(value,upper,tol,source)"
+ },
+ "toporlogy.core.viscoelastic": {
+  "ArrheniusShift": {
+   "attrs": [
+    "T_max",
+    "T_min",
+    "aT",
+    "ln_aT",
+    "reduced_time_increment"
+   ],
+   "class": "ArrheniusShift"
+  },
+  "DMAResult": {
+   "attrs": [],
+   "class": "DMAResult"
+  },
+  "GeneralizedMaxwell": {
+   "attrs": [
+    "conservative",
+    "equilibrium_moduli",
+    "evaluate",
+    "initial_state",
+    "instantaneous_moduli",
+    "instantaneous_tangent",
+    "is_fluid",
+    "kinematics",
+    "name",
+    "physical",
+    "state_fields",
+    "update"
+   ],
+   "class": "GeneralizedMaxwell"
+  },
+  "PronySeries": {
+   "attrs": [
+    "complex_modulus",
+    "from_weights",
+    "instantaneous",
+    "is_fluid",
+    "relaxation",
+    "viscosity"
+   ],
+   "class": "PronySeries"
+  },
+  "R_GAS": "<float>",
+  "WLFShift": {
+   "attrs": [
+    "T_max",
+    "T_min",
+    "aT",
+    "ln_aT",
+    "reduced_time_increment"
+   ],
+   "class": "WLFShift"
+  },
+  "burgers_creep": "burgers_creep(t,E_M,eta_M,E_K,eta_K)",
+  "burgers_relaxation": "burgers_relaxation(t,E_M,eta_M,E_K,eta_K)",
+  "complex_modulus": "complex_modulus(series,omega)",
+  "dma_moduli": "dma_moduli(shear,bulk,omega)",
+  "frequency_hz_to_rad": "frequency_hz_to_rad(f_hz)",
+  "kelvin_voigt_creep": "kelvin_voigt_creep(t,E,eta)",
+  "kelvin_voigt_relaxation": "kelvin_voigt_relaxation(t,E,eta)",
+  "maxwell_creep": "maxwell_creep(t,E,eta)",
+  "maxwell_relaxation": "maxwell_relaxation(t,E,eta)",
+  "recovery_strain": "recovery_strain(creep,t,sigma0,t_unload)",
+  "sls_creep": "sls_creep(t,E_inf,E1,tau)",
+  "sls_creep_time": "sls_creep_time(E_inf,E1,tau)",
+  "sls_relaxation": "sls_relaxation(t,E_inf,E1,tau)",
+  "storage_loss_tan": "storage_loss_tan(M)"
+ },
+ "toporlogy.core.viscoplastic": {
+  "AVOGADRO": "<float>",
+  "BOLTZMANN": "<float>",
+  "DruckerPrager": {
+   "attrs": [
+    "b",
+    "conservative",
+    "evaluate",
+    "initial_state",
+    "kinematics",
+    "name",
+    "physical",
+    "state_fields",
+    "update"
+   ],
+   "class": "DruckerPrager"
+  },
+  "GAS_CONSTANT": "<float>",
+  "Perzyna": {
+   "attrs": [
+    "conservative",
+    "evaluate",
+    "initial_state",
+    "kinematics",
+    "name",
+    "physical",
+    "state_fields",
+    "update"
+   ],
+   "class": "Perzyna"
+  },
+  "PhysicalJ2": {
+   "attrs": [
+    "conservative",
+    "dkappa",
+    "evaluate",
+    "hardening_energy",
+    "initial_state",
+    "kappa",
+    "kinematics",
+    "name",
+    "physical",
+    "state_fields",
+    "update"
+   ],
+   "class": "PhysicalJ2"
+  },
+  "eyring_log_rate": "eyring_log_rate(tau,A,V_act,T)",
+  "eyring_rate": "eyring_rate(tau,A,V_act,T)",
+  "eyring_rate_molar": "eyring_rate_molar(tau,A,V_molar,T)",
+  "eyring_stress": "eyring_stress(rate,A,V_act,T)",
+  "eyring_stress_from_log_rate": "eyring_stress_from_log_rate(log_rate,A,V_act,T)",
+  "eyring_stress_molar": "eyring_stress_molar(rate,A,V_molar,T)"
  },
  "toporlogy.core.vtu": {
   "VOIGT_CONVENTION": "<str>",
@@ -4656,6 +5074,26 @@
   "mms_case": "mms_case(method,n,nu,fixed,variant,distort,seed,dim,plane)",
   "moduli": "moduli(nu,fixed)"
  },
+ "toporlogy.fem.mesh.history": {
+  "HistoryProblem": {
+   "attrs": [
+    "step"
+   ],
+   "class": "HistoryProblem"
+  },
+  "StepRejected": {
+   "attrs": [
+    "add_note",
+    "args",
+    "with_traceback"
+   ],
+   "class": "StepRejected"
+  },
+  "StepResult": {
+   "attrs": [],
+   "class": "StepResult"
+  }
+ },
  "toporlogy.fem.mesh.kernels": {
   "DETJ_TOL": "<float>",
   "DegenerateElementError": {
@@ -4704,7 +5142,8 @@
   "Factorization": {
    "attrs": [
     "fill_nnz",
-    "solve"
+    "solve",
+    "solve_transpose"
    ],
    "class": "Factorization"
   },
@@ -5621,6 +6060,7 @@
    ],
    "class": "EffectiveStiffness"
   },
+  "POISSON_CONVENTIONS": "<tuple>",
   "effective_stiffness_tensor": "effective_stiffness_tensor(ctx,nu,D)"
  },
  "toporlogy.optimization.identification": {
@@ -6458,6 +6898,19 @@
   "risk_measure": "risk_measure(values,measure,k,alpha)",
   "sobol_indices": "sobol_indices(model,space,n_base,seed)",
   "variance_estimate": "variance_estimate(y,level)"
+ },
+ "toporlogy.optimization.viscoelastic_topology": {
+  "ViscoelasticResult": {
+   "attrs": [],
+   "class": "ViscoelasticResult"
+  },
+  "ViscoelasticStructure": {
+   "attrs": [
+    "response"
+   ],
+   "class": "ViscoelasticStructure"
+  },
+  "optimize_viscoelastic": "optimize_viscoelastic(structure,volume,rmin,step_index,penal,emin,max_iter,move,x0)"
  },
  "toporlogy.optimizers": {
   "BetaContinuation": {
@@ -7458,6 +7911,35 @@
   "locate_critical": "locate_critical(problem,path,i,spectrum,settings)",
   "sparse_inertia": "sparse_inertia(A)",
   "switch_branch": "switch_branch(problem,critical,xi,settings,stop,spectrum,critical_settings,stop_at_critical)"
+ },
+ "toporlogy.solvers.diagnostics": {
+  "FORWARD_TOL": "<float>",
+  "KRYLOV": "<dict>",
+  "KrylovResult": {
+   "attrs": [
+    "converged"
+   ],
+   "class": "KrylovResult"
+  },
+  "RefinementResult": {
+   "attrs": [],
+   "class": "RefinementResult"
+  },
+  "SYMMETRY_TOL": "<float>",
+  "SolveReport": {
+   "attrs": [
+    "forward_bound",
+    "forward_error"
+   ],
+   "class": "SolveReport"
+  },
+  "check_compatible": "check_compatible(A,b,N,rtol)",
+  "condition_1norm_estimate": "condition_1norm_estimate(A)",
+  "inertia": "inertia(A,zero_tol)",
+  "krylov_solve": "krylov_solve(A,b,method,structure,M,rtol,maxiter,x0)",
+  "refine": "refine(A,b,solve,x0,max_iter)",
+  "solve_report": "solve_report(A,x,b,condition,reference)",
+  "solve_with_gauge": "solve_with_gauge(A,b,N,rtol)"
  },
  "toporlogy.solvers.direct": {
   "DirectSolver": {

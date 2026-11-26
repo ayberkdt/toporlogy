@@ -78,7 +78,8 @@ class Factorization:
             return self.solve(B)
         B = np.asarray(B, float)
         Bm = B.reshape(self.n, -1)
-        X = np.asarray(self.solver.solve(np.ascontiguousarray(Bm), trans="T")).reshape(Bm.shape)
+        slv: Any = self.solver                            # SuperLU (the general path), not DirectSolver
+        X = np.asarray(slv.solve(np.ascontiguousarray(Bm), trans="T")).reshape(Bm.shape)
         self.n_solves += 1
         if not np.isfinite(X).all():
             raise SolveResidualError("the solution is not finite")

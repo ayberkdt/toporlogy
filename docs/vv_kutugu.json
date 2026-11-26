@@ -706,6 +706,56 @@
    "resolution": "yok bu turda: ön kayıtlı karar kuralı uygulanmadı, varsayılan drilling 1e-1 kaldı; katman düzeltmesi düzlem içi ağla birlikte küçülüyor (etkileşim hatası), toplanabilir düzeltme varsayımı tutmuyor; 64 × 48 × 2 ya da daha ince ağda katman ölçümü (bellek) ya da başka bir referans gerekir",
    "record": "docs/olcumler/kabuk_onkayit.md",
    "slow": true
+  },
+  {
+   "nodeid": "tests/toporlogy/test_history_fem.py::test_h2_series_bar_two_materials",
+   "kind": "pre-registered check failed",
+   "model_backend": "fem.mesh.history.HistoryProblem H8 + legacy J2 (two yield stresses), CPU",
+   "reason": "end displacement 2.777e-3 vs 4.200e-3 from the sum of uniaxial-stress material points at F = 1.1e-3: the 1-D series reference does not hold in 3-D, the interface nodes constrain the different lateral contraction of the two materials",
+   "risk": "low",
+   "resolution": "hypothesis wrong, not the code; the post hoc H2b (lateral DOFs held, uniaxial strain) passes to 1e-8",
+   "record": "docs/foundations/prereg/H_history.md",
+   "slow": false
+  },
+  {
+   "nodeid": "tests/toporlogy/test_solver_diagnostics.py::test_l2c_spd_path_does_not_return_silently_on_indefinite",
+   "kind": "pre-registered check failed",
+   "model_backend": "fem.mesh.linear.Factorization structure spd (DirectSolver SuperLU, CPU)",
+   "reason": "the SPD path solved a symmetric indefinite 6x6 block matrix without an error (relative residual 9.3e-17, solution correct to 2.2e-16): it does not detect that the matrix is not SPD",
+   "risk": "low",
+   "resolution": "the returned solution is residual-checked, so the defect is an unverified structural claim, not a wrong answer; an opt-in SPD verification (inertia or pivot signs) is the follow-up; callers that need definiteness use solvers.diagnostics.inertia",
+   "record": "docs/foundations/prereg/L_solver.md",
+   "slow": false
+  },
+  {
+   "nodeid": "tests/toporlogy/test_viscoplastic.py::test_R3a_time_convergence_against_ode[0.001]",
+   "kind": "pre-registered check failed",
+   "model_backend": "numpy",
+   "reason": "Preregistered time-convergence hypothesis (error falls by a factor >= 1.5 per doubling of the increments, err(200) <= err(25)/5) does not apply at the rate 1e-3 1/s: end-stress errors against the ODE are 1.9e-8, 3.7e-8, 3.7e-8, 1.5e-8 Pa for n = 25, 50, 100, 200 (1 ulp of 2.2e7 Pa), because after the yield transient the response is on the quasi-static steady state, which backward Euler integrates exactly. The production code agrees with the ODE to roundoff; the hypothesis is wrong for this rate. Rates 0.1 and 1 1/s pass the same check.",
+   "risk": "low",
+   "resolution": "Kept as xfail(strict) with the measured values; a post hoc, clearly labelled check asserts agreement with the ODE to 1e-12 relative at this rate.",
+   "record": "docs/foundations/prereg/R_rate.md",
+   "slow": false
+  },
+  {
+   "nodeid": "tests/toporlogy/test_creep.py::test_c3g_prereg_full_relaxation_claim",
+   "kind": "pre-registered check failed",
+   "model_backend": "numpy",
+   "reason": "Preregistered claim for n = 20, q_tr = 10 sigma_ref, dt = 1 s: q_new < 1e-3 q_tr. Measured q_new/q_tr = 0.1505 (q_new = 1.505e7 Pa). The production root agrees with an independent scipy brentq root of dt A (q/sigma_ref)^n = (q_tr - q)/(3G) to 1e-10, so the claim itself was wrong (creep stops relaxing where the rate balances the elastic unloading), not the code.",
+   "risk": "low",
+   "resolution": "Hypothesis was wrong; kept as strict xfail. Replaced by the post hoc check test_c3g_post_hoc_high_stress_root_against_brentq (labelled post hoc) and the residual checks of C3f/C3g that passed.",
+   "record": "docs/foundations/prereg/C_creep.md",
+   "slow": false
+  },
+  {
+   "nodeid": "tests/toporlogy/test_creep.py::test_c6a_prereg_global_accuracy_rtol_1e4",
+   "kind": "pre-registered check failed",
+   "model_backend": "numpy",
+   "reason": "Preregistered global accuracy of the adaptive driver for the 1e-6..1e8 s relaxation with rtol = 1e-4: eps_cr relative error <= 1e-3 and |q - q_ref|/q0 <= 1e-3 at all 29 outputs. Measured max eps_cr relative error 2.10e-3 (t = 100 s) and max |q - q_ref|/q0 = 1.16e-3; 325 accepted steps (the step-count bound passed). Step doubling controls the local error only; the global error scales as ~0.2 sqrt(rtol) (2.1e-3, 6.7e-4, 2.1e-4 for rtol 1e-4, 1e-5, 1e-6).",
+   "risk": "low",
+   "resolution": "Threshold not loosened; strict xfail. Post hoc characterisation test_c6a_post_hoc_global_error_decreases_with_rtol (error at rtol 1e-5 <= half the error at 1e-4) passes. The doc states that rtol is a local tolerance.",
+   "record": "docs/foundations/prereg/C_creep.md",
+   "slow": false
   }
  ],
  "skips": [

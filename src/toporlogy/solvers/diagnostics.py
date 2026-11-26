@@ -6,7 +6,8 @@ check their residual. This module reports what a residual does and does not say 
 the general-mesh and mixed paths need:
 
 * :func:`solve_report`: residual on the original A, normwise backward error η_N = ‖r‖∞ / (‖A‖∞‖x‖∞ + ‖b‖∞),
-  componentwise (Oettli–Prager) ω = maxᵢ |rᵢ| / (|A||x| + |b|)ᵢ, a condition estimate (labelled an estimate) and
+  componentwise (Oettli–Prager) ω = maxᵢ |rᵢ| / (|A||x| + |b|)ᵢ, a condition estimate (labelled an estimate,
+  :func:`condition_1norm_estimate`) and
   ``forward_established`` = κ η_N ≤ :data:`FORWARD_TOL`. A small residual with κ η_N above that is reported as
   "forward accuracy not established", never as accurate.
 * :func:`inertia`: (n₊, n₋, n₀) of a small dense symmetric matrix from the Bunch–Kaufman LDLᵀ (1×1 and 2×2 pivots).
@@ -28,8 +29,9 @@ import scipy.linalg as sla
 import scipy.sparse as sp
 import scipy.sparse.linalg as spla
 
-__all__ = ["FORWARD_TOL", "SYMMETRY_TOL", "SolveReport", "solve_report", "inertia", "KrylovResult", "KRYLOV",
-           "krylov_solve", "check_compatible", "solve_with_gauge", "RefinementResult", "refine"]
+__all__ = ["FORWARD_TOL", "SYMMETRY_TOL", "SolveReport", "solve_report", "condition_1norm_estimate", "inertia",
+           "KrylovResult", "KRYLOV", "krylov_solve", "check_compatible", "solve_with_gauge", "RefinementResult",
+           "refine"]
 
 #: κ · η_N at or below which the forward error is reported as established (first-order bound κ η_N)
 FORWARD_TOL = 1e-8
@@ -68,8 +70,8 @@ class SolveReport:
 
 def solve_report(A: Any, x: np.ndarray, b: np.ndarray, condition: float | None = None,
                  reference: np.ndarray | None = None) -> SolveReport:
-    """Diagnostics of x for A x = b (one right-hand side). ``condition``: a known κ∞ (kind "given"); else the 1-norm
-    estimate of :func:`toporlogy.fem.mesh.linear.condition_1norm` (kind "1-norm estimate"). ``reference``: a solution
+    """Diagnostics of x for A x = b (one right-hand side). ``condition``: a known κ∞ (kind "given"); else
+    :func:`condition_1norm_estimate` (kind "1-norm estimate"). ``reference``: a solution
     of independent accuracy for the forward error."""
     A = _mat(A)
     x = np.asarray(x, float).reshape(-1)
@@ -86,8 +88,7 @@ def solve_report(A: Any, x: np.ndarray, b: np.ndarray, condition: float | None =
     if condition is not None:
         kappa, kind = float(condition), "given"
     else:
-        from toporlogy.fem.mesh.linear import condition_1norm
-        kappa, kind = condition_1norm(sp.csr_matrix(A)), "1-norm estimate"
+        kappa, kind = condition_1norm_estimate(A), "1-norm estimate"
     fe = None
     if reference is not None:
         ref = np.asarray(reference, float).reshape(-1)
@@ -96,13 +97,24 @@ def solve_report(A: Any, x: np.ndarray, b: np.ndarray, condition: float | None =
                        bool(np.isfinite(kappa) and kappa * eta <= FORWARD_TOL), fe)
 
 
+def condition_1norm_estimate(A: Any) -> float:
+    """Estimate of κ₁(A) = ‖A‖₁ ‖A⁻¹‖₁ (Higham–Tisseur block estimator :func:`scipy.sparse.linalg.onenormest` on
+    A and on a pivoted sparse LU of A; an estimate, not a bound)."""
+    As = sp.csc_matrix(A)
+    lu = spla.splu(As, permc_spec="COLAMD")
+    n = As.shape[0]
+    inv = spla.LinearOperator((n, n), matvec=lambda v: lu.solve(np.asarray(v, float)),
+                              rmatvec=lambda v: lu.solve(np.asarray(v, float), trans="T"))
+    return float(spla.onenormest(As) * spla.onenormest(inv))
+
+
 def inertia(A: Any, zero_tol: float | None = None) -> tuple[int, int, int]:
     """(positive, negative, zero) eigenvalue counts of a small dense symmetric A by Sylvester's law of inertia on the
     Bunch–Kaufman factorisation A = L D Lᵀ (``scipy.linalg.ldl``; D has 1×1 and 2×2 blocks, each block's eigenvalues
     counted). ``zero_tol`` (default n · eps · ‖A‖₂ estimate) separates zero from nonzero."""
     A = np.asarray(A.toarray() if sp.issparse(A) else A, float)
     n = A.shape[0]
-    if A.shape != (n, n) or np.linalg.norm(A - A.T) > SYMMETRY_TOL * max(np.linalg.norm(A), 1e-300):
+    if A.shape != (n, n) or float(np.linalg.norm(A - A.T)) > SYMMETRY_TOL * max(float(np.linalg.norm(A)), 1e-300):
         raise ValueError("inertia needs a square symmetric matrix")
     _L, D, _p = sla.ldl(A, lower=True)
     tol = n * np.finfo(float).eps * max(np.abs(A).sum(axis=1).max(), 1e-300) if zero_tol is None else float(zero_tol)
@@ -212,7 +224,7 @@ def check_compatible(A: Any, b: np.ndarray, N: np.ndarray, rtol: float = 1e-12) 
     if float(np.abs(A @ Q).max()) > rtol * max(nA, 1e-300):
         raise ValueError("N is not a null space of A")
     b = np.asarray(b, float).reshape(-1)
-    return bool(np.linalg.norm(Q.T @ b) <= rtol * max(np.linalg.norm(b), 1e-300))
+    return bool(float(np.linalg.norm(Q.T @ b)) <= rtol * max(float(np.linalg.norm(b)), 1e-300))
 
 
 def solve_with_gauge(A: Any, b: np.ndarray, N: np.ndarray, rtol: float = 1e-12) -> np.ndarray:

@@ -108,6 +108,8 @@ def _divided_differences(w: np.ndarray, f: str, p: float | None) -> np.ndarray:
         return np.where(eq, 1.0 / hi, np.log1p(ds / lo) / ds)
     if f == "exp":
         return np.exp(hi) * np.where(eq, 1.0, -np.expm1(-ds) / ds)
+    if p is None:
+        raise ValueError(f"spectral function {f!r}: unknown, or power without an exponent")
     ell = -np.log1p(np.where(eq, 1.0, d / lo))      # ℓ = log(lo/hi) < 0 (placeholder where equal, replaced below)
     return np.where(eq, p * hi ** (p - 1.0), hi ** (p - 1.0) * np.expm1(p * ell) / np.expm1(ell))
 
