@@ -59,3 +59,18 @@ Navier serisinin kesilmesi (eşiksiz kayıt ölçümü): 399 → 799 terimde de�
 Hepsi ilk koşuda geçti (`test_plate.py::test_pq1_pq2_…`, `::test_pq3_…`, `::test_pq4_…`). PQ1 ≤ 1e-12 (eşik
 geçildi; değer ayrıca yazdırılmadı); PQ2 2,6e-7 göreli; PQ3 24 × 24 plaka, uyum 3,62e4 → 1,58e4 (30 iterasyon), hacim
 0,3997; PQ4 baseline 8 passed bit düzeyinde, yanlış satırlı yük "48 state DOFs" iletisiyle reddedildi.
+
+## Ek ön kayıt: plakanın YAML bağlantısı (PY1–PY4)
+
+Ön kayıt 2026-11-26 15:19 +0300, kod yazılmadan önce. `physics: {type: plate, thickness, edge: simply_supported | clamped,
+pressure: q, force: P, at: <seçici>}`. Geçici ısı gibi `load_cases` almaz (`NO_LOAD_PHYSICS`); `supports` plakanın
+mesnet düğümlerini seçer (her bileşeni sabit `fixed` mesnet). `edge: simply_supported` bu düğümlerde w = 0 (yumuşak
+basit mesnet), `clamped` w = βx = βy = 0. Yük fizikten gelir: düzgün basınç q ve/veya `at` düğümlerine bölünen toplam
+düşey kuvvet P; `build` fizik kurulduktan sonra Study'nin yükünü `physics.state_loads` ile değiştirir.
+
+| # | Kontrol | Eşik |
+|:---|:---|:---|
+| PY1 | YAML plaka çalışması = aynı mesnet DOF'ları ve yükle Python'da kurulan `PlatePhysics` çalışması: değer ve gradyan | ≤ 1e-12 göreli |
+| PY2 | YAML: 16 × 16, kenarlar `clamped`, merkezde P, hacim ≤ 0,4, 15 MMA iterasyonu | son uyum < ilk uyum; hacim ≤ 0,4 (1 + 1e-3) |
+| PY3 | `load_cases` verilmesi, kısmi bileşenli mesnet, ne q ne P, t ≤ 0, 3-B alan, `at`'sız P | açık hata |
+| PY4 | var olan yapılandırmalar | `pytest -m baseline` bit düzeyinde; çözülmüş yapılandırma anlık görüntüsü değişmez |
