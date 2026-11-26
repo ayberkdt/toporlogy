@@ -16,7 +16,9 @@ serve the shell facets of :class:`~toporlogy.optimization.shell_study.ShellDomai
 Grid-only links and responses (the grid filters, AM, casting, symmetry tying, multi-phase interpolations, plain
 ``Volume``, local volume, stress, stress recovery, connectivity, mass properties, robust realisations) refuse a
 ``MeshDomain`` with a ``ValueError`` naming the component and its mesh counterpart where one exists
-(:func:`toporlogy.core.domain.require_grid`; ``docs/olcumler/ag_topoloji_onkayit.md``, RF1-RF3). No YAML yet.
+(:func:`toporlogy.core.domain.require_grid`; ``docs/olcumler/ag_topoloji_onkayit.md``, RF1-RF3), and so do the grid
+FE physics (GF1-GF3). YAML: a config with ``domain: {type: mesh}`` is built by
+:mod:`toporlogy.configuration.mesh_build` (AY1-AY6).
 """
 from __future__ import annotations
 

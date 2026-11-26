@@ -219,3 +219,29 @@ topladığı için etkilenmez.
 | AY4 | desteklenmeyen her anahtar (yukarıdaki liste; bilinmeyen küme adı, öğeye uymayan boyut, `n` / `size` uzunluğu yanlış, sıfır yük dâhil) | `ConfigError`; iletide anahtarın yolu ve "mesh"; desteklenmeyenlerde "not support"; başka tür istisna 0 |
 | AY5 | ızgara davranışı | `pytest -m baseline` 8 passed bit düzeyinde; U1 öngörüsü (yukarıda) tutar; `test_research_examples.py`, `test_cli.py`, `test_units.py`, `test_architecture.py`, `test_api_surface.py`, katalog testleri geçer |
 | AY6 | ızgara yolu dokunulmamış | `resolve.py` ve `build.py` farkı yalnız dağıtım satırları (ve içe aktarma); `boundary/*` farkı yok |
+
+### AY1–AY6 sonucu (2026-11-26)
+
+`src/toporlogy/configuration/mesh_build.py` (`is_mesh_config`, `resolve_mesh`, `build_mesh`); `resolve()` ve
+`build()` birer dağıtım satırıyla oraya yönlendiriyor. Testler `tests/toporlogy/test_mesh_yaml.py` (AY1 3, AY2 1 +
+1 sonradan, AY3 1, AY4 34). Ön kayıtta yazılmayan iki küçük ek: CLI `validate` ağ alanında ızgara satırları yerine
+ağ satırlarını basıyor (yoksa `d.h` okurken düşüyordu) ve `run`'ın "problem" satırı eleman adını ağdan alıyor
+(`execution/cli.py`); çözülmüş ağ yapılandırması CLI'ın okuduğu `schedule: null`'ı taşıyor.
+
+| # | Durum | Ölçülen |
+|:---|:---|:---|
+| AY1 | PASS | örnek (bozulmuş Q4), bozulmuş T3 (24 × 8), H8 kutu (6 × 3 × 3): değer, gradyan, hacim ve hacim gradyanı farkı 0,00e+00 (üçünde de bit düzeyinde aynı); varsayılan başlangıçlar eşit |
+| AY2 | **FAIL → strict xfail** | merkezler 0,00e+00; varsayılan başlangıçta değer 9,59e-13, gradyan **2,24e-12** (> 1e-12); rastgele x'te değer 1,97e-13, gradyan 5,79e-13; 10 MMA iterasyonu geçmişi **1,46e-8** (> 1e-8) |
+| AY3 | PASS | `validate` çıkış 0; `run` çıkış 0, status ok, 101 / 200 iterasyonda yakınsadı; uyum 1908,3 → 308,84; hacim 0,400000; `result.npz` x̄ (768,); `config.resolved.yaml` yeniden çözülünce kendisini veriyor ve aynı çalışmayı kuruyor (varsayılan başlangıçta amaç bit düzeyinde eşit); `show` da çalışıyor |
+| AY4 | PASS | 24 desteklenmeyen anahtar + 10 geçersiz giriş: 34 / 34 `ConfigError`, iletide yol ve "mesh"; desteklenmeyen 24'te "not supported by the mesh path (domain type mesh) yet"; başka tür istisna yok |
+| AY5 | PASS | `pytest -m baseline` 8 passed, en büyük bağıl fark 0,00e+00; U1 öngörüsü tuttu: yeni örnek U1'i `--write`'a kadar düşürdü ("examples added or removed"), `--write` sonrası `resolved_configs.json`'da yalnız `examples/research/mesh_cantilever2d.yaml` eklendi (107 satır ekleme, 0 silme; diğer 15 girdi aynı); `test_mesh_yaml`, `test_grid_refusals`, `test_mesh_topology`, `test_shell_study`, `test_api_surface`, `test_catalog`, `test_catalog_ledger`, `test_compatibility`, `test_units`, `test_research_examples`, `test_cli`, `test_architecture`, `test_config`: 457 passed, 2 xfailed (AY2 ve önceden var olan U8); ruff ve mypy temiz |
+| AY6 | PASS | `resolve.py` +2 / −1 satır (içe aktarma + dağıtım), `build.py` +3 satır (dağıtım); `boundary/*` farkı yok; `schema.py` yalnız belge satırı |
+
+AY2 notu. Fark iki farklı doğrudan çözücünün (ızgara `Elasticity`: SuperLU `splu`; ağ `MeshElasticity`:
+`fem.mesh` `Factorization`) yuvarlama düzeyinde: x = 0,4'te cond(K) = 3,0e4, eps · cond(K) = 6,8e-12. Sonradan
+(post hoc) eklenen `test_ay2_posthoc_differences_are_within_the_solve_roundoff_bound`: aynı x'te değer farkı 4,86e-13,
+gradyan farkı 1,49e-12, ikisi de eps · cond(K) altında (PASS). Ayrıca varsayılan başlangıçlar 1 ulp farklı (ızgara
+`Domain.uniform_start` 0,4000000000000001, `MeshDomain` 0,4); bu fark tek başına değeri ~1e-16 oynatır, ölçülen
+farkı açıklamaz. Eşikler değişmedi; kütük girdisi `docs/vv_kutugu.json` (risk low). Kurulum düzeltmesi: ilk
+koşudaki AY2 testinde ön kayıtta olmayan bir "varsayılan başlangıçlar bit düzeyinde eşit" iddiası vardı ve bu 1 ulp
+yüzünden ilk o düştü; çıkarıldı (ön kayıtlı ölçütlere dokunulmadı), ölçülen değerler yukarıda.

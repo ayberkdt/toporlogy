@@ -2182,6 +2182,12 @@
   "join": "join(path,key)",
   "material_model": "material_model(ctx)"
  },
+ "toporlogy.configuration.mesh_build": {
+  "MESH_KEYS": "<tuple>",
+  "build_mesh": "build_mesh(r)",
+  "is_mesh_config": "is_mesh_config(raw)",
+  "resolve_mesh": "resolve_mesh(raw)"
+ },
  "toporlogy.configuration.post_steps": {
   "BuildContext": {
    "attrs": [

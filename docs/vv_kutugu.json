@@ -646,6 +646,16 @@
    "resolution": "yok bu turda: varsayılan α = 1e-3 ön kayıtlı kural gereği değişmez; hangi α'nın doğru olduğunu söyleyecek drilling'den bağımsız bir referans çözüm gerekir (ayrı ön kayıt)",
    "record": "docs/olcumler/kabuk_onkayit.md",
    "slow": false
+  },
+  {
+   "nodeid": "tests/toporlogy/test_mesh_yaml.py::test_ay2_unperturbed_mesh_equals_grid_yaml",
+   "kind": "pre-registered check failed",
+   "model_backend": "configuration.mesh_build (MeshElasticity, fem.mesh Factorization) ve ızgara YAML (Elasticity, splu), 24 × 8 Q4 konsol, MMA (CPU, numpy)",
+   "reason": "AY2: merkezler 0, değer 9,6e-13 / 2,0e-13 ve rastgele x'te gradyan 5,8e-13 eşik içinde; varsayılan başlangıçta gradyan 2,2e-12 > 1e-12, 10 MMA iterasyonu geçmişi 1,46e-8 > 1e-8. cond(K) = 3,0e4, eps · cond = 6,7e-12: iki farklı doğrudan çözücünün yuvarlama düzeyi (sonradan: değer ve gradyan farkı eps · cond(K) altında)",
+   "risk": "low",
+   "resolution": "yok bu turda: eşik değişmez; iki yol aynı çözücüyle çözülürse (ayrı ön kayıt) ya da yuvarlama sınırına dayalı yeni bir ölçüt ön kayda alınırsa yeniden değerlendirilir",
+   "record": "docs/olcumler/ag_topoloji_onkayit.md",
+   "slow": false
   }
  ],
  "skips": [

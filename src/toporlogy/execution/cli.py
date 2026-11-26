@@ -24,6 +24,7 @@ from toporlogy.configuration.registry import KINDS, REGISTRY, ConfigError, sugge
 from toporlogy.configuration.resolve import (apply_overrides, combination_label, parse_sweep, read_config, resolve,
                                              sweep_combinations)
 from toporlogy.configuration.schema import STATUS_OK
+from toporlogy.core.domain import is_grid
 from toporlogy.execution.runner import run_setup
 from toporlogy.core.verdict import PASS, RETURNED_DESIGN, UNVERIFIED
 from toporlogy.execution.runs import read_run, write_sweep_csv
@@ -217,7 +218,7 @@ def _free_dofs(ph: Any) -> str:
 def _problem_line(s: Setup) -> str:
     st, d = s.study, s.study.domain
     grid = " x ".join(str(n) for n in d.shape)
-    el = getattr(_groups(st.physics)[0], "element", "?")
+    el = getattr(_groups(st.physics)[0], "element", None) or getattr(getattr(d, "mesh", None), "element", "?")
     nc = len(s.cases)
     cases = f"{nc} load case{'s' if nc != 1 else ''}" if nc else "modal"
     return (f"{grid} {el} | {d.n_design} design elements | {_free_dofs(st.physics)} free DOFs | "
@@ -387,13 +388,20 @@ def cmd_validate(a: argparse.Namespace) -> int:
     r, st = s.config, s.study
     d = st.domain
     ph = _groups(st.physics)[0]
-    size = " x ".join(fval(n * d.h) for n in d.shape)
     out(kv("CONFIG", f"{src}  valid"))
-    out(kv("grid", f"{' x '.join(str(n) for n in d.shape)} elements ({d.dim}-D, {getattr(ph, 'element', '?')}), "
-                   f"h = {fval(d.h)}, box {size}"))
-    out(kv("elements", f"{d.n_active} active | {d.n_design} design | {int(d.keep.sum())} keep | "
-                       f"{int(d.void.sum())} void"))
-    n_act = len(d.active_dofs)
+    if is_grid(d):
+        size = " x ".join(fval(n * d.h) for n in d.shape)
+        out(kv("grid", f"{' x '.join(str(n) for n in d.shape)} elements ({d.dim}-D, {getattr(ph, 'element', '?')}), "
+                       f"h = {fval(d.h)}, box {size}"))
+        out(kv("elements", f"{d.n_active} active | {d.n_design} design | {int(d.keep.sum())} keep | "
+                           f"{int(d.void.sum())} void"))
+        n_act = len(d.active_dofs)
+    else:                                         # domain type mesh (configuration/mesh_build.py)
+        dm = r["domain"]
+        out(kv("mesh", f"{dm['generator']} {' x '.join(str(n) for n in dm['n'])} {d.mesh.element} ({d.dim}-D), "
+                       f"size {' x '.join(fval(v) for v in dm['size'])}, perturb {fval(dm['perturb'])}"))
+        out(kv("elements", f"{d.mesh.n_cells} cells | {d.n_design} design | {d.mesh.n_nodes} nodes"))
+        n_act = d.ndof
     out(kv("DOFs", f"{n_act} in the part | {_free_dofs(st.physics)} free | {len(s.fixed)} fixed "
                    f"({len(r['supports'])} support{'s' if len(r['supports']) != 1 else ''})"))
     out(kv("load cases", str(len(s.cases)) if s.cases else "none (modal analysis)"))

@@ -227,8 +227,9 @@ def resolve(raw: dict[str, Any]) -> dict[str, Any]:
         system = None if raw.get("units") is None else U.UnitSystem.from_config(raw["units"])
     except U.UnitError as e:
         raise ConfigError(str(e), "units" if "units" in str(e) else "schema_version") from None
+    from toporlogy.configuration.mesh_build import is_mesh_config, resolve_mesh
     with U.use(system):
-        r = _resolve(raw)
+        r = resolve_mesh(raw) if is_mesh_config(raw) else _resolve(raw)   # domain type mesh: own path
     r["schema_version"] = version
     r["units"] = None if system is None else dict(zip(("length", "force", "temperature"), system.names,
                                                       strict=True))

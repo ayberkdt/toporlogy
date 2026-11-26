@@ -2,7 +2,7 @@
 
 `tests/toporlogy/test_catalog_ledger.py` bu kütüğü toplanan testlerle karşılaştırır: her xfail strict (XPASS koşuyu kırar), kütük toplanan strict xfail listesiyle ve test kaynaklarındaki atlama noktalarıyla birebir aynı. Beklenen başarısızlık PASS sayılmaz; atlanan bir arka ucun testi NOT VERIFIED'dır. Yeniden üretim: `python tests/toporlogy/test_catalog_ledger.py --write`.
 
-Toplam 64 strict xfail (17 tanesi yavaş pakette), 17 atlama noktası.
+Toplam 65 strict xfail (17 tanesi yavaş pakette), 17 atlama noktası.
 
 Risk düzeyleri: **low** ölçüt ya da kontrolün kendisi; kod sonucu başka testle doğrulanmış; **medium** açıklanmamış sayısal fark ya da referans yeniden üretilemiyor; **high** kullanıcıya görünen sessiz kabul (yanlış sonuç üretebilir).
 
@@ -74,6 +74,7 @@ Risk düzeyleri: **low** ölçüt ya da kontrolün kendisi; kod sonucu başka te
 | `test_shell_drilling.py::test_dr1_static_compliance_spread_on_16x12[0.05-corner]` | pre-registered check failed | fem.shell FlatShell, ankastre R = 1, 90°, L = 1 silindir dilimi, 16 × 12 parça (CPU, numpy) | t/R = 0,05, köşe z yükü: |c(1e-4) − c(1e-2)| / c(1e-3) = 5,57e-2 > 1e-2 (8 × 6 ve 32 × 24 ağda da ~5 %: ağ incelmesiyle küçülmüyor) | medium | yok bu turda: varsayılan α = 1e-3 ön kayıtlı kural gereği değişmez; hangi α'nın doğru olduğunu söyleyecek drilling'den bağımsız bir referans çözüm gerekir (ayrı ön kayıt) | docs/olcumler/kabuk_onkayit.md | — |
 | `test_shell_drilling.py::test_dr1_static_compliance_spread_on_16x12[0.05-radial]` | pre-registered check failed | fem.shell FlatShell, ankastre R = 1, 90°, L = 1 silindir dilimi, 16 × 12 parça (CPU, numpy) | t/R = 0,05, radyal yük: |c(1e-4) − c(1e-2)| / c(1e-3) = 2,13e-1 > 1e-2 (32 × 24 ağda 2,07e-1) | medium | yok bu turda: varsayılan α = 1e-3 ön kayıtlı kural gereği değişmez; hangi α'nın doğru olduğunu söyleyecek drilling'den bağımsız bir referans çözüm gerekir (ayrı ön kayıt) | docs/olcumler/kabuk_onkayit.md | — |
 | `test_shell_drilling.py::test_dr2_optimisation_spread[0.05]` | pre-registered check failed | fem.shell FlatShell + optimization.shell_study, KS3 kurulumu 16 × 12, MMA (CPU, numpy) | KS3 kurulumu (t = 0,05), 30 MMA iterasyonu: son uyum farkı |c(1e-4) − c(1e-2)| / c(1e-3) = 5,80e-2 > 2e-2; tasarım L1 farkı 1,35e-2 ≤ 0,05 tuttu | medium | yok bu turda: varsayılan α = 1e-3 ön kayıtlı kural gereği değişmez; hangi α'nın doğru olduğunu söyleyecek drilling'den bağımsız bir referans çözüm gerekir (ayrı ön kayıt) | docs/olcumler/kabuk_onkayit.md | — |
+| `test_mesh_yaml.py::test_ay2_unperturbed_mesh_equals_grid_yaml` | pre-registered check failed | configuration.mesh_build (MeshElasticity, fem.mesh Factorization) ve ızgara YAML (Elasticity, splu), 24 × 8 Q4 konsol, MMA (CPU, numpy) | AY2: merkezler 0, değer 9,6e-13 / 2,0e-13 ve rastgele x'te gradyan 5,8e-13 eşik içinde; varsayılan başlangıçta gradyan 2,2e-12 > 1e-12, 10 MMA iterasyonu geçmişi 1,46e-8 > 1e-8. cond(K) = 3,0e4, eps · cond = 6,7e-12: iki farklı doğrudan çözücünün yuvarlama düzeyi (sonradan: değer ve gradyan farkı eps · cond(K) altında) | low | yok bu turda: eşik değişmez; iki yol aynı çözücüyle çözülürse (ayrı ön kayıt) ya da yuvarlama sınırına dayalı yeni bir ölçüt ön kayda alınırsa yeniden değerlendirilir | docs/olcumler/ag_topoloji_onkayit.md | — |
 
 ## 2. Atlama noktaları
 

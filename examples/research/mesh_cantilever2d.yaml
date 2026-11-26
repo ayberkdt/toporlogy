@@ -1,0 +1,22 @@
+# A cantilever on a general (perturbed) Q4 mesh: domain type mesh takes its own build path
+# (src/toporlogy/configuration/mesh_build.py; docs/olcumler/ag_topoloji_onkayit.md, AY1-AY6).
+# The interior vertices of a 48 x 16 mesh of [0, 3] x [0, 1] (h = 0.0625) move by up to 0.01 (seed 0); the boundary
+# stays. Supports and loads name the mesh's node sets (left right bottom top) or a point (nearest node).
+# rmin is a LENGTH here (0.125 = 2 h); on the grid path it is in elements.
+#   python -m toporlogy validate examples/research/mesh_cantilever2d.yaml
+#   python -m toporlogy run examples/research/mesh_cantilever2d.yaml --out runs/mesh_cantilever2d
+name: mesh_cantilever2d
+domain: {type: mesh, generator: rectangle, n: [48, 16], size: [3.0, 1.0], element: Q4, perturb: 0.01, seed: 0}
+material: {E0: 1.0, nu: 0.3}
+supports:
+  - {set: left, fix: [x, y]}
+loads:
+  - {point: [3.0, 0.0], force: [0, -1]}
+chain:
+  - {type: density_filter, rmin: 0.125}
+interpolation: {type: simp, penal: 3.0, emin_ratio: 1.0e-9}
+objective: compliance
+constraints:
+  - {response: volume, upper: 0.4}
+optimizer: mma
+run: {max_iter: 200, tol: 0.01}

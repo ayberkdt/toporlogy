@@ -87,6 +87,9 @@ otherwise a void interface cell cuts the tie), ``constraint`` (conduction | coup
 [[x, 500], [y, mid]]: the frozen ties are placed together with their mirror images; null = the planes of a
 ``symmetry`` link in the chain, else none).
 
+A general mesh (``domain: {type: mesh, generator: rectangle | box, ...}``) has its own, smaller schema and build
+path: :mod:`toporlogy.configuration.mesh_build`.
+
 Public functions: :func:`read_config`, :func:`resolve`, :func:`build`, :func:`study_from_dict`, :func:`load_config`,
 :func:`apply_overrides`, :func:`parse_sweep`, :func:`sweep_combinations`, :func:`run_setup`, :func:`read_run`.
 """

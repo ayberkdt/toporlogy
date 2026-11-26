@@ -1817,6 +1817,113 @@
    }
   ]
  },
+ "examples/research/mesh_cantilever2d.yaml": {
+  "chain": [
+   {
+    "type": "embed"
+   },
+   {
+    "rmin": 0.125,
+    "type": "density_filter"
+   },
+   {
+    "type": "passive"
+   }
+  ],
+  "constraints": [
+   {
+    "name": null,
+    "response": {
+     "type": "volume"
+    },
+    "scale": null,
+    "upper": 0.4
+   }
+  ],
+  "domain": {
+   "element": "Q4",
+   "generator": "rectangle",
+   "n": [
+    48,
+    16
+   ],
+   "perturb": 0.01,
+   "seed": 0,
+   "size": [
+    3.0,
+    1.0
+   ],
+   "type": "mesh"
+  },
+  "interpolation": {
+   "emin_ratio": 1e-09,
+   "penal": 3.0,
+   "type": "simp"
+  },
+  "loads": [
+   {
+    "force": [
+     0.0,
+     -1.0
+    ],
+    "point": [
+     3.0,
+     0.0
+    ]
+   }
+  ],
+  "material": {
+   "E0": 1.0,
+   "nu": 0.3,
+   "plane": "stress"
+  },
+  "name": "mesh_cantilever2d",
+  "objective": {
+   "type": "compliance",
+   "weights": null
+  },
+  "optimizer": {
+   "albefa": 0.1,
+   "asydecr": 0.7,
+   "asyincr": 1.2,
+   "asyinit": 0.5,
+   "asymax": 10.0,
+   "asymin": 0.01,
+   "c": 1000.0,
+   "d": 1.0,
+   "move": 0.2,
+   "normalise": "first",
+   "raa0": 1e-05,
+   "type": "mma"
+  },
+  "output": {
+   "folder": "runs",
+   "snapshot_every": 0
+  },
+  "physics": {
+   "type": "elasticity"
+  },
+  "post": [],
+  "run": {
+   "checkpoint_every": 0,
+   "feasibility_tol": 0.001,
+   "max_iter": 200,
+   "move_beta_ref": null,
+   "seed": 0,
+   "start": null,
+   "tol": 0.01
+  },
+  "schedule": null,
+  "supports": [
+   {
+    "fix": [
+     "x",
+     "y"
+    ],
+    "set": "left"
+   }
+  ]
+ },
  "examples/research/stress_al_lbracket2d.yaml": {
   "chain": [
    {
