@@ -18,7 +18,8 @@ pieces:
 - **design:** a differentiable design chain with density, phase and fibre-angle blocks; four optimisers (OC, MMA,
   GCMMA, SiMPL);
 - **responses:** stress, buckling (with a reliability record), frequency, manufacturing and one-body constraints;
-  mass properties; scenario, Pareto and identification tools;
+  mass properties, centre of mass and inertia as constraints; scenario (robust) and per-case compliance for
+  robust and Pareto studies; identification tools;
 - **solvers:** direct solvers with a nested-dissection order (SuperLU, optional supernodal Cholesky), a GPU
   multigrid solver, and implicit differentiation of any residual;
 - **post-processing:** a pipeline that turns the density field into a checked, printable surface, VTU field
@@ -160,7 +161,7 @@ Six more are in `examples/research/`:
 - SiMPL with a PDE filter;
 - a fibre-angle design block on an orthotropic cantilever.
 
-109 components in 13 kinds can be used from YAML. `python -m toporlogy list` documents them, and
+113 components in 13 kinds can be used from YAML. `python -m toporlogy list` documents them, and
 [`docs/registry.md`](docs/registry.md) shows how to add one in a single line.
 
 **Units and schema.** A config may carry `schema_version: "1"` (another version is refused) and a `units` section.
@@ -200,7 +201,13 @@ result.objective, result.constraint_values, result.xphys   # all of the returned
 ```
 
 Each `run()` starts from the schedule's initial state and a fresh optimizer, so running a study twice gives the same
-result. To give boundary conditions by geometry instead of DOF numbers, use `toporlogy.boundary`
+result. `study.run(checkpoint=path, checkpoint_every=k)` writes the run state atomically (design, chain, schedule,
+optimizer, response scales, random states); `study.run(resume=path)` in a study built from the same configuration
+continues it, and the resumed MMA, GCMMA or OC run is bit for bit the uninterrupted one
+([`checkpoint_onkayit.md`](docs/olcumler/checkpoint_onkayit.md)). From YAML: `run: {checkpoint_every: k}` and
+`python -m toporlogy run CONFIG --out DIR --resume`. When the physics changes its model (the adaptive cutoff of the
+non-linear energy interpolation), `Study` resets the optimizer so that asymptotes of the old model are not reused
+(`reset_on_model_change`, default on; [`model_donemi_onkayit.md`](docs/olcumler/model_donemi_onkayit.md)). To give boundary conditions by geometry instead of DOF numbers, use `toporlogy.boundary`
 (`BoundaryConditions`, `OnCylinder`, `BearingLoad`, `RemoteForce`, `check()`). For surfaces, use
 `toporlogy.post.finalize(...)`.
 
@@ -530,8 +537,10 @@ Three categories are kept apart, as in 08 of the research plan:
   - The neo-Hooke plane-stress tangent condenses σzz only, which is right for the isotropic model it serves.
 - **Coupled and transient physics.** Thermoelasticity is one-way (temperature → displacement). Transient heat and
   Newmark dynamics keep the whole time history in the autograd graph, so memory grows with the number of steps.
-  These modules and the mass properties are Python API, not yet `Study` responses; the homogenisation is also a
-  post step.
+  These three are Python API, not yet `Study` physics; the homogenisation is also a post step, the mass properties
+  are `Study` responses (`centre_of_mass`, `inertia`).
+- **Checkpoints** hold the optimisation state, not the physics' own state (an adaptive cutoff, a material history):
+  resuming a run with such a physics is not guaranteed to be bit for bit.
 - **Optimisers.**
   - MMA has no global convergence guarantee: a variable with an interior optimum and no active constraint can end
     in a two-cycle (seen on the fibre angle); GCMMA removes it at the cost of extra solves.
