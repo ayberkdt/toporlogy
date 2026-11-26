@@ -1,6 +1,6 @@
 # VR — Robust (min–max over service times) viscoelastic topology optimisation (preregistration)
 
-Preregistered 2026-11-27 02:25 +0300 (clock), before the code change and the tests. Base `ca0c6cc`. Module
+Preregistered 2026-11-27 02:15 +0300 (clock; the first committed text said "02:25", typed before the clock output was read — corrected, the commit 56e23ab time is the evidence), before the code change and the tests. Base `ca0c6cc`. Module
 `optimization/viscoelastic_topology.py` (`optimize_viscoelastic` gains `steps=` for several service times with
 `objective="max"`, and a convergence stop `tol`). Follows the VO post hoc finding that 40 fixed iterations are not
 converged.
