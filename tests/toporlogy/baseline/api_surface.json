@@ -4920,6 +4920,19 @@
    "class": "NonlinearElasticity"
   }
  },
+ "toporlogy.fem.plate": {
+  "MindlinPlate": {
+   "attrs": [
+    "pressure_load",
+    "solve"
+   ],
+   "class": "MindlinPlate"
+  },
+  "SHEAR_FACTOR": "<float>",
+  "hard_simply_supported": "hard_simply_supported(domain)",
+  "navier_deflection": "navier_deflection(a,b,t,E,nu,q,x,y,terms,kirchhoff)",
+  "plate_element_matrix": "plate_element_matrix(h,t,nu,shear)"
+ },
  "toporlogy.fem.tensor_elastic": {
   "TENSOR_ELEMENTS": "<dict>",
   "TensorElasticity": {

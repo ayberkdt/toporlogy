@@ -23,3 +23,20 @@ testte bir sonraki terim bloğuyla ölçülüp kaydedilir.
 | PL5 | İnce sınır: a/t = 1000, n = 32, seçici integrasyon, Kirchhoff Navier'e göre | ≤ %2 |
 | PL6 | Tasarım gradyanı: c = Fᵀw, E_e = 1e-6 + x_e³ (rastgele x), merkezi fark | ≤ 1e-6 göreli |
 | PL7 | 3-B alan, t ≤ 0, ν ∉ (−1, 0,5) | açık hata |
+
+## Sonuç (ilk ölçüm, 2026-11-26)
+
+`tests/toporlogy/test_plate.py`; yedi kontrol ilk koşuda geçti.
+
+| # | Durum | Ölçülen |
+|:---|:---|:---|
+| PL1 | PASS | üç rijit mod ≤ 1e-12 ‖KE‖ |
+| PL2 | PASS | eleman enerjisi = D11 h² / 2, ≤ 1e-12 |
+| PL3 | PASS | a/t = 10: 3,6e-3 / 8,9e-4 / 2,2e-4 (n = 8 / 16 / 32), mertebe 2,00; a/t = 100: 5,1e-3 / 1,3e-3 / 3,1e-4, mertebe 2,01 |
+| PL4 | PASS | tam kesme integrasyonu: merkez çökmesi 0,0018 × Navier (kilitlenme) |
+| PL5 | PASS | a/t = 1000, n = 32: Kirchhoff Navier'e göre 3,1e-4 |
+| PL6 | PASS (sınıra yakın) | 8,8e-7 göreli (eşik 1e-6; adım 1e-6 merkezi fark) |
+| PL7 | PASS | 3-B alan, t = 0, ν = 0,5 için açık hata |
+
+Navier serisinin kesilmesi (eşiksiz kayıt ölçümü): 399 → 799 terimde değişim 1,2e-9 (a/t = 10), 1,3e-11 (100),
+4,3e-13 (1000); karşılaştırma hatalarının çok altında.
