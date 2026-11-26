@@ -14,3 +14,13 @@ new check of it.
 | TK5 | negative controls: a reflection (det −1) is refused by `rotvec_from_rotation`; cofactor of a non-square or wrong-shape input raises | — | ValueError |
 
 Run: `python -m pytest tests/toporlogy/test_tensor_cofactor.py -q -p no:randomly`. First result appended below.
+
+## First result (run 2026-11-27 02:31 +0300 by the clock)
+
+TK1, TK2, TK3, TK5 PASS. **TK4 FAILED on the first run, a production defect**: at θ = π − 1e-6 the existing
+`rotvec_from_rotation` reconstructed R only to 4.9e-7 (threshold 1e-12). Cause: the near-π branch (θ > π − 1e-3)
+took the axis from (R + I)/2, which assumes cos θ = −1 and keeps the skew part sin θ [a]×, an O(π − θ) error. Fixed
+in `core/tensor.py`: a aᵀ = (sym R − cos θ I)/(1 − cos θ) exactly. After the fix (02:33): reconstruction errors
+0, 6.8e-21, 2.2e-16, 4.4e-16, 4.4e-16, 6.7e-16 at θ = 1e-10, 1e-4, 0.8, π − 1e-6, π − 1e-3 + 1e-9, π − 1e-4;
+TK4 passes with the preregistered threshold. `rotvec_from_rotation` has no other caller in `src`; test_tensor,
+test_linear_elastic, test_material_design: 123 passed, 4 xfailed (historical).
