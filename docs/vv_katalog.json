@@ -2712,7 +2712,7 @@
      "physics": "tensor_elasticity"
     },
     "status": "SUPPORTED",
-    "reason": "density + fibre angle, 2-D, one phase",
+    "reason": "density + fibre angle, 2-D, one or several phases",
     "evidence": [
      "tests/toporlogy/test_material_design.py::test_a5_off_axis_tension_and_gradient",
      "tests/toporlogy/test_material_design.py::test_a8_yaml_example_runs"
@@ -2813,8 +2813,23 @@
      "link": "embed.angle",
      "interpolation": "tensor_phases with several phases"
     },
+    "status": "SUPPORTED",
+    "reason": "one angle field turns every phase with rotate true (docs/olcumler/faz_aci_onkayit.md)",
+    "evidence": [
+     "tests/toporlogy/test_phase_angle.py::test_ma1_two_phase_angle_study_reduces_to_one_phase",
+     "tests/toporlogy/test_phase_angle.py::test_ma2_gradients_finite_difference",
+     "tests/toporlogy/test_phase_angle.py::test_ma4_yaml_example_runs"
+    ],
+    "enforced": ""
+   },
+   {
+    "id": "angle_phases_no_density",
+    "when": {
+     "link": "embed.angle density false",
+     "interpolation": "tensor_phases with several phases"
+    },
     "status": "UNSUPPORTED",
-    "reason": "Study takes several design fields only through the plain embed link",
+    "reason": "which phase fills the part is undefined",
     "evidence": [],
     "enforced": "component"
    },

@@ -311,7 +311,7 @@ Gerekçe ve kanıt (yalnız boş olmayanlar):
 | mesh_nearly_incompressible_displacement_only | element = mesh:Q4|mesh:T3|mesh:H8|mesh:T4, material = nu_near_0.5 | EXPERIMENTAL | — | runs, but locks (L2 error 0.94-0.996 at nu = 0.4999): use the Taylor-Hood elements | test_mesh_locking.py::test_l1b_displacement_elements_lock |
 | mesh_incompressible_mixed | element = mesh:TH-*, material = nu_0.5 | SUPPORTED | — | lambda = inf exact; the zero-mean pressure gauge is added when the constant pressure is in the null space | test_mesh_locking.py::test_l1e_taylor_hood_converges_near_and_at_incompressibility |
 | tensor_phases_elasticity | interpolation = tensor_phases, physics = tensor_elasticity | SUPPORTED | — | phases with their own tensors, rules simplex and recursive | test_material_design.py::test_k7_independent_assembly<br>test_material_design.py::test_k6_series_parallel_bar |
-| angle_elasticity | link = embed.angle, physics = tensor_elasticity | SUPPORTED | — | density + fibre angle, 2-D, one phase | test_material_design.py::test_a5_off_axis_tension_and_gradient<br>test_material_design.py::test_a8_yaml_example_runs |
+| angle_elasticity | link = embed.angle, physics = tensor_elasticity | SUPPORTED | — | density + fibre angle, 2-D, one or several phases | test_material_design.py::test_a5_off_axis_tension_and_gradient<br>test_material_design.py::test_a8_yaml_example_runs |
 | tensor_responses | physics = tensor_elasticity, response = other_than_compliance_volume_phase_volume_mass_cost | UNSUPPORTED | catalog | only Compliance, Volume, PhaseVolume, Mass, Cost verified with tensor_elasticity | — |
 | tensor_interpolation | physics = tensor_elasticity, interpolation = other_than_tensor_phases | UNSUPPORTED | catalog | tensor_elasticity reads the material field of interpolation tensor_phases | — |
 | tensor_phases_physics | interpolation = tensor_phases, physics = other_than_tensor_elasticity | UNSUPPORTED | component | the scalar-modulus physics cannot take the element tensors | — |
@@ -320,7 +320,8 @@ Gerekçe ve kanıt (yalnız boş olmayanlar):
 | tensor_oblique_supports | physics = tensor_elasticity, supports = oblique_or_spring | UNSUPPORTED | component | axis-aligned fixed DOFs only | — |
 | tensor_post | physics = tensor_elasticity, post = other_than_phase_report | UNSUPPORTED | catalog | the other post steps assume a scalar modulus or an isotropic material | — |
 | angle_3d | link = embed.angle, dim = 3 | UNSUPPORTED | component | 3-D orientation is not implemented | — |
-| angle_phases | link = embed.angle, interpolation = tensor_phases with several phases | UNSUPPORTED | component | Study takes several design fields only through the plain embed link | — |
+| angle_phases | link = embed.angle, interpolation = tensor_phases with several phases | SUPPORTED | — | one angle field turns every phase with rotate true (docs/olcumler/faz_aci_onkayit.md) | test_phase_angle.py::test_ma1_two_phase_angle_study_reduces_to_one_phase<br>test_phase_angle.py::test_ma2_gradients_finite_difference<br>test_phase_angle.py::test_ma4_yaml_example_runs |
+| angle_phases_no_density | link = embed.angle density false, interpolation = tensor_phases with several phases | UNSUPPORTED | component | which phase fills the part is undefined | — |
 | angle_interpolation | link = embed.angle, interpolation = other_than_tensor_phases | UNSUPPORTED | component | the angle turns the phase tensors of tensor_phases | — |
 | angle_isotropic | link = embed.angle, material = isotropic phase | UNSUPPORTED | component | the material does not depend on the angle (zero gradient) | — |
 | angle_oc | link = embed.angle, optimizer = oc | UNSUPPORTED | catalog | OC assumes a constraint gradient positive in every variable; the angle has none | — |
