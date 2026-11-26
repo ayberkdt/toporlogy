@@ -53,3 +53,12 @@ etkin özellik hedefli tasarım örneği (ör. negatif Poisson), lattice/dehomoj
 
 H10 PASS (2 × 2 ve 3 × 3 kopya). H11 PASS: C11 / E0 = 0,57910, 0,56858, 0,56384, 0,56168 (n = 8 … 64, monoton
 azalan); gözlenen mertebe 1,13 (köşeli delik), Richardson kestirimi 0,55987, son göreli değişim %0,38.
+
+## Ek ön kayıt: post adımı `homogenize` (H12)
+
+Ön kayıt 2026-11-26 06:59 +0300, adım yazılmadan önce. `post: [{type: homogenize}]` döndürülen tasarımın (gri x̄, çalışmanın
+interpolasyonuyla E) periyodik etkin rijitliğini `summary.json`'a yazar; tam kutu olmayan alanda açık hata.
+
+| # | Kontrol | Eşik |
+|:---|:---|:---|
+| H12 | Düzgün tasarımı döndüren bir koşu (hacim kısıtı 1,0, x̄ ≡ 1): C_eff = E0 · D(ν) ve doğrudan `homogenize_elasticity` ile aynı | ≤ 1e-12 göreli; aynı sayılar |
