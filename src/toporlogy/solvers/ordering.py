@@ -19,7 +19,7 @@ import numpy as np
 
 from toporlogy.references import cite
 
-__all__ = ["LEAF_NODES", "nested_dissection_nodes", "nested_dissection_dofs"]
+__all__ = ["LEAF_NODES", "nested_dissection_nodes", "nested_dissection_dofs", "nested_dissection_blocks"]
 
 LEAF_NODES = 64
 """Boxes with at most this many nodes are not split further (16, 64 and 256 measured; 64 the fastest, 2-D and 3-D)."""
@@ -28,6 +28,11 @@ LEAF_NODES = 64
 @cite("george_1973")
 def nested_dissection_nodes(node_shape: Sequence[int], leaf: int = LEAF_NODES) -> np.ndarray:
     """Permutation of the C-order node numbers of a grid with ``node_shape`` nodes per axis (every node once)."""
+    return np.concatenate(_parts(node_shape, leaf))
+
+
+def _parts(node_shape: Sequence[int], leaf: int) -> list[np.ndarray]:
+    """The nested dissection as its parts in elimination order: leaf boxes and separator planes (node numbers)."""
     dims = tuple(int(n) for n in node_shape)
     if not dims or min(dims) < 1:
         raise ValueError(f"node_shape must be positive, got {node_shape}")
@@ -60,7 +65,7 @@ def nested_dissection_nodes(node_shape: Sequence[int], leaf: int = LEAF_NODES) -
         stack.append((los, his, True))      # popped last: the separator comes after both halves
         stack.append((lo2, hi, False))
         stack.append((lo, hi1, False))
-    return np.concatenate(parts)
+    return parts
 
 
 def nested_dissection_dofs(node_shape: Sequence[int], dofs_per_node: int, free: np.ndarray,
@@ -69,8 +74,17 @@ def nested_dissection_dofs(node_shape: Sequence[int], dofs_per_node: int, free: 
 
     DOF numbering as :class:`~toporlogy.Domain`: DOF ``dofs_per_node · node + d``; the DOFs of one node stay together.
     """
+    return nested_dissection_blocks(node_shape, dofs_per_node, free, leaf)[0]
+
+
+def nested_dissection_blocks(node_shape: Sequence[int], dofs_per_node: int, free: np.ndarray,
+                             leaf: int = LEAF_NODES) -> tuple[np.ndarray, np.ndarray]:
+    """:func:`nested_dissection_dofs` and the number of unknowns of each part (leaf box or separator plane) in that
+    order: consecutive groups, the dense blocks of :class:`~toporlogy.solvers.supernodal.SupernodalCholesky`. A part
+    without free DOFs has size 0."""
     free = np.asarray(free, np.int64)
-    nodes = nested_dissection_nodes(node_shape, leaf)
+    parts = _parts(node_shape, leaf)
+    nodes = np.concatenate(parts)
     dofs = (dofs_per_node * nodes[:, None] + np.arange(dofs_per_node, dtype=np.int64)[None, :]).ravel()
     n_total = int(np.prod([int(n) for n in node_shape], dtype=np.int64)) * dofs_per_node
     if free.size and (free.min() < 0 or free.max() >= n_total):
@@ -78,4 +92,7 @@ def nested_dissection_dofs(node_shape: Sequence[int], dofs_per_node: int, free: 
     pos = np.full(n_total, -1, np.int64)
     pos[free] = np.arange(len(free), dtype=np.int64)
     p = pos[dofs]
-    return p[p >= 0]
+    keep = p >= 0
+    part_of = np.repeat(np.arange(len(parts)), [dofs_per_node * len(q) for q in parts])
+    sizes = np.bincount(part_of[keep], minlength=len(parts)).astype(np.int64)
+    return p[keep], sizes

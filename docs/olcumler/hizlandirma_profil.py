@@ -136,9 +136,10 @@ def environment() -> dict[str, Any]:
                            "torch_threads": torch.get_num_threads(), "torch_interop": torch.get_num_interop_threads(),
                            "env_threads": {k: os.environ.get(k) for k in ("OMP_NUM_THREADS", "MKL_NUM_THREADS",
                                                                            "OPENBLAS_NUM_THREADS")}}
-    git = subprocess.run(["git", "-C", str(REPO), "rev-parse", "HEAD"], capture_output=True, text=True)
-    dirty = subprocess.run(["git", "-C", str(REPO), "status", "--porcelain", "--", "src"], capture_output=True,
-                           text=True)
+    git = subprocess.run(["git", "-C", str(REPO), "rev-parse", "HEAD"],  # noqa: S603, S607
+                         capture_output=True, text=True)
+    dirty = subprocess.run(["git", "-C", str(REPO), "status", "--porcelain", "--", "src"],  # noqa: S603, S607
+                           capture_output=True, text=True)
     env["git"] = git.stdout.strip()
     env["git_dirty_src"] = bool(dirty.stdout.strip())
     try:
@@ -147,15 +148,16 @@ def environment() -> dict[str, Any]:
         env["ram_available_gib_at_start"] = psutil.virtual_memory().available / 2 ** 30
     except ImportError:
         pass
+    import toporlogy
     from toporlogy.solvers.direct import DirectSolver
     env["direct_solver"] = DirectSolver().method
+    env["toporlogy_file"] = toporlogy.__file__              # which code ran (the base copy or this tree)
     return env
 
 
 def profile(path: Path, overrides: list[str], iters: int, warmup: int, repeats: int) -> dict[str, Any]:
     from toporlogy.configuration.build import build_setup
     from toporlogy.configuration.resolve import read_config
-    from toporlogy.optimization import study as stm
 
     t_build = time.perf_counter()
     setup = build_setup(read_config(str(path)), overrides)

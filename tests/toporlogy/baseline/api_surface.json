@@ -176,6 +176,7 @@
     "element_energy",
     "element_forces",
     "element_stiffness",
+    "elimination_blocks",
     "elimination_order",
     "factor",
     "matrix",
@@ -687,6 +688,7 @@
     "element_energy",
     "element_forces",
     "element_stiffness",
+    "elimination_blocks",
     "elimination_order",
     "factor",
     "matrix",
@@ -1004,6 +1006,7 @@
     "element_energy",
     "element_forces",
     "element_stiffness",
+    "elimination_blocks",
     "elimination_order",
     "factor",
     "matrix",
@@ -1053,6 +1056,7 @@
     "element_energy",
     "element_forces",
     "element_stiffness",
+    "elimination_blocks",
     "elimination_order",
     "factor",
     "matrix",
@@ -1127,6 +1131,7 @@
     "element_energy",
     "element_forces",
     "element_stiffness",
+    "elimination_blocks",
     "elimination_order",
     "factor",
     "matrix",
@@ -1176,6 +1181,7 @@
     "element_energy",
     "element_forces",
     "element_stiffness",
+    "elimination_blocks",
     "elimination_order",
     "factor",
     "matrix",
@@ -1292,6 +1298,7 @@
     "element_energy",
     "element_forces",
     "element_stiffness",
+    "elimination_blocks",
     "elimination_order",
     "factor",
     "matrix",
@@ -1853,6 +1860,70 @@
   "read_config": "read_config(path)",
   "resolve": "resolve(raw)",
   "study_from_dict": "study_from_dict(d,overrides)"
+ },
+ "toporlogy.configuration.catalog": {
+  "BENCHMARKS": "<tuple>",
+  "Benchmark": {
+   "attrs": [
+    "note",
+    "validation"
+   ],
+   "class": "Benchmark"
+  },
+  "COMPOSITE_RESPONSES": "<tuple>",
+  "Cell": {
+   "attrs": [
+    "enforced",
+    "evidence",
+    "reason"
+   ],
+   "class": "Cell"
+  },
+  "ELEMENTS": "<tuple>",
+  "EXPERIMENTAL": "<str>",
+  "Element": {
+   "attrs": [],
+   "class": "Element"
+  },
+  "MATERIALS": "<tuple>",
+  "MaterialRecord": {
+   "attrs": [
+    "note",
+    "used_by"
+   ],
+   "class": "MaterialRecord"
+  },
+  "NOT_VERIFIED": "<str>",
+  "PHYSICS": "<tuple>",
+  "PHYSICS_INDEPENDENT": "<dict>",
+  "Physics": {
+   "attrs": [],
+   "class": "Physics"
+  },
+  "RESPONSE_MATRIX": "<dict>",
+  "RULES": "<tuple>",
+  "Rule": {
+   "attrs": [
+    "enforced",
+    "evidence",
+    "reason"
+   ],
+   "class": "Rule"
+  },
+  "SCHEMA_VERSION": "<str>",
+  "SOLVERS": "<tuple>",
+  "STATUSES": "<tuple>",
+  "SUPPORTED": "<str>",
+  "Solver": {
+   "attrs": [],
+   "class": "Solver"
+  },
+  "UNSUPPORTED": "<str>",
+  "as_dict": "as_dict()",
+  "check_build": "check_build(resolved,physics,responses)",
+  "render_markdown": "render_markdown(data)",
+  "status": "status(physics,response)",
+  "write": "write(folder)"
  },
  "toporlogy.configuration.components": {
   "annotations": "<_Feature>",
@@ -3656,6 +3727,7 @@
     "element_energy",
     "element_forces",
     "element_stiffness",
+    "elimination_blocks",
     "elimination_order",
     "factor",
     "matrix",
@@ -3714,6 +3786,7 @@
     "element_energy",
     "element_forces",
     "element_stiffness",
+    "elimination_blocks",
     "elimination_order",
     "factor",
     "matrix",
@@ -4822,6 +4895,74 @@
   "centroid_stress": "centroid_stress(domain,U,nu,E0,elements)",
   "von_mises_matrix": "von_mises_matrix(dim)"
  },
+ "toporlogy.optimization.stress_recovery": {
+  "CornerField": {
+   "attrs": [
+    "kind",
+    "measure",
+    "von_mises"
+   ],
+   "class": "CornerField"
+  },
+  "ElementField": {
+   "attrs": [
+    "kind",
+    "measure",
+    "von_mises"
+   ],
+   "class": "ElementField"
+  },
+  "ElementMaximum": {
+   "attrs": [
+    "kind"
+   ],
+   "class": "ElementMaximum"
+  },
+  "NodalField": {
+   "attrs": [
+    "kind",
+    "measure",
+    "von_mises"
+   ],
+   "class": "NodalField"
+  },
+  "PointField": {
+   "attrs": [
+    "energy_density",
+    "kind",
+    "measure",
+    "von_mises"
+   ],
+   "class": "PointField"
+  },
+  "StressRecovery": {
+   "attrs": [
+    "centroids",
+    "extrapolated",
+    "integration_points",
+    "ip_maximum",
+    "nodal_averaged",
+    "patch_recovered"
+   ],
+   "class": "StressRecovery"
+  }
+ },
+ "toporlogy.optimization.stress_singularity": {
+  "CONVERGED": "<str>",
+  "NOT_CONVERGED": "<str>",
+  "NOT_VERIFIED": "<str>",
+  "PeakAssessment": {
+   "attrs": [],
+   "class": "PeakAssessment"
+  },
+  "RegionStress": {
+   "attrs": [],
+   "class": "RegionStress"
+  },
+  "SINGULAR": "<str>",
+  "assess_peak": "assess_peak(h,peak,rel_tol,ratio_min,noise)",
+  "region_stress": "region_stress(values,points,lo,hi,weights)"
+ },
  "toporlogy.optimization.study": {
   "Constraint": {
    "attrs": [
@@ -5745,7 +5886,8 @@
     "solve"
    ],
    "class": "DirectSolver"
-  }
+  },
+  "METHODS": "<tuple>"
  },
  "toporlogy.solvers.gmg": {
   "GMGConvergenceError": {
@@ -5822,6 +5964,7 @@
  },
  "toporlogy.solvers.ordering": {
   "LEAF_NODES": "<int>",
+  "nested_dissection_blocks": "nested_dissection_blocks(node_shape,dofs_per_node,free,leaf)",
   "nested_dissection_dofs": "nested_dissection_dofs(node_shape,dofs_per_node,free,leaf)",
   "nested_dissection_nodes": "nested_dissection_nodes(node_shape,leaf)"
  },
@@ -5829,5 +5972,23 @@
   "available": "available()",
   "load": "load()",
   "state": "state()"
+ },
+ "toporlogy.solvers.supernodal": {
+  "NotPositiveDefiniteError": {
+   "attrs": [
+    "add_note",
+    "args",
+    "with_traceback"
+   ],
+   "class": "NotPositiveDefiniteError"
+  },
+  "SupernodalCholesky": {
+   "attrs": [
+    "factor",
+    "matches",
+    "solve"
+   ],
+   "class": "SupernodalCholesky"
+  }
  }
 }
