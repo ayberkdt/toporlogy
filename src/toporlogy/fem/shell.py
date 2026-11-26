@@ -10,8 +10,9 @@ K_global = Tᵀ K_local T. In the facet frame:
   γ = ∇w − β, bending 2 × 2, transverse shear k_s G t with one point). The plate rotations are the slopes of the
   normal, βx = −θy and βy = θx (a rigid rotation θ moves r by θ × r, so it gives γ = 0 only with these signs);
 * drilling: Hughes–Brezzi type penalty ½ γ_d ∫ (θz − ω)² dA with ω = ½ (∂v/∂x − ∂u/∂y), bilinear θz, 2 × 2 Gauss,
-  γ_d = ``drill`` · G · t (G = 1/(2(1 + ν)), default ``drill`` = 1e-3). A rigid in-plane rotation (ω = θz) costs no
-  energy; the term keeps θz of a flat sheet from being singular.
+  γ_d = ``drill`` · G · t (G = 1/(2(1 + ν)), default ``drill`` = 1e-1: the value closest to a 3-D solid reference of a
+  clamped curved segment, DB0-DB5 in ``docs/olcumler/kabuk_onkayit.md``; it was 1e-3 before). A rigid in-plane rotation
+  (ω = θz) costs no energy; the term keeps θz of a flat sheet from being singular.
 
 Element matrices are for unit modulus; :class:`FlatShell` assembles K = Σ_e E_e K_e⁰ and solves with fixed DOFs as a
 torch autograd function (dc/dE_e = −λ_eᵀ K_e⁰ u_e), so a design gradient is available. Pre-registered checks:
@@ -33,7 +34,7 @@ from toporlogy.fem.plate import SHEAR_FACTOR
 __all__ = ["ShellMesh", "FlatShell", "facet_frame", "membrane_matrix", "bending_matrix", "drilling_matrix",
            "facet_matrix", "flat_rectangle", "cylinder_surface", "DRILL"]
 
-DRILL = 1e-3
+DRILL = 1e-1
 _CORNERS = np.array([[-1.0, -1.0], [1.0, -1.0], [1.0, 1.0], [-1.0, 1.0]])
 _G = 1.0 / np.sqrt(3.0)
 _GAUSS = [(p * _G, q * _G) for p in (-1, 1) for q in (-1, 1)]

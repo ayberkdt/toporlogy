@@ -91,6 +91,8 @@ eşik gevşetilmez; test kurulum hatası (ölçüm değil) düzeltilebilir ama b
 `tests/toporlogy/test_shell.py`. On bir kontrolden onu ilk koşuda geçti; KB3'ün eğilme yaması tutmadı (strict xfail,
 `docs/vv_kutugu.json`). Değerler testlerin `-s` çıktısından.
 
+> Not (2026-11-26, DB4 sonrası): aşağıdaki değerler o zamanki varsayılan α = 1e-3 ile ölçüldü ve öyle kalıyor. Varsayılan DB4'ün karar kuralıyla α = 1e-1 oldu; yeni varsayılanla ölçülen değerler "DB0–DB5 sonucu" bölümünde.
+
 | # | Durum | Ölçülen |
 |:---|:---|:---|
 | KB1 | PASS | {u, v, θz}–{w, θx, θy} bloğu tam 0; eğilme − `plate_element_matrix` 0,0; zar − t·`ke_q4` 2,8e-16 (drilling 0 iken global zar bloğu da 2,8e-16) |
@@ -170,6 +172,8 @@ eşik gevşetilmez; test kurulum hatası (ölçüm değil) düzeltilebilir ama b
 ### KS1–KS5 sonucu (ilk ölçüm, 2026-11-26)
 
 `tests/toporlogy/test_shell_study.py` (5 test); beşi de ilk koşuda geçti. Değerler testlerin `-s` çıktısından.
+
+> Not (2026-11-26, DB4 sonrası): aşağıdaki değerler o zamanki varsayılan α = 1e-3 ile ölçüldü ve öyle kalıyor. Varsayılan DB4'ün karar kuralıyla α = 1e-1 oldu; yeni varsayılanla ölçülen değerler "DB0–DB5 sonucu" bölümünde.
 
 | # | Durum | Ölçülen |
 |:---|:---|:---|
@@ -348,3 +352,77 @@ gevşetilmez); değişen ölçülen değerler burada yazılır, eski kayıtlar e
 Kurallar: ilk koşuda tutmayan kontrol, ölçülen değeriyle `xfail(strict=True)` olur ve `docs/vv_kutugu.json`'a girer;
 eşik gevşetilmez; test kurulum hatası (ölçüm değil) düzeltilebilir ama burada yazılır; ilk koşudan sonra eklenen kontrol
 "post hoc" diye işaretlenir. Uzun hesaplar (DB1–DB5) `@pytest.mark.slow`; DB0 varsayılan takımda.
+
+### DB0–DB5 sonucu (ilk ölçüm, 2026-11-26)
+
+`tests/toporlogy/test_shell_reference.py` (DB0 varsayılan takımda, DB1–DB5 `slow`). Değerler ilk koşunun `-s`
+çıktısından (`db_first_run.log`); DB4 ve DB5'in ikinci koşusu aşağıda. Ölçüm öncesi ya da sonrası referans / kabuk
+kurulumunda düzeltme yok. DB0–DB3 tuttu; **karar kuralı varsayılanın değişmesini istedi: α = 1e-3 → 1e-1**
+(`toporlogy.fem.shell.DRILL`). DB4 ilk koşuda bu yüzden başarısızdı (kural 1e-1 dedi, kod 1e-3 idi); ön kayıt bu
+durumda varsayılanın değişeceğini söylüyordu, değiştirildi, DB4 ikinci koşuda geçti. Strict xfail yok.
+
+| # | Durum | Ölçülen |
+|:---|:---|:---|
+| DB0 | PASS | hacim −1,9e-7 (iki t); yama hacmi −1,9e-7 (iki yama, iki t); bileşke hatası ≤ 3,3e-16 |
+| DB1 | PASS | ε_ref 3,9e-4 / 2,2e-3 / 2,2e-4 / 7,0e-4 (t = 0,01 köşe / radyal, t = 0,05 köşe / radyal), hepsi tek yönlü ve büzülen |
+| DB2 | PASS | nr = 2 ile fark 3,4e-6 / 1,2e-3 / 2,2e-4 / 3,0e-3 (aynı sıra) |
+| DB3 | PASS | 64 × 48 → 128 × 96 en büyük değişim (beş α içinde) 8,6e-4 / 4,9e-3 / 7,9e-4 / 2,1e-3 |
+| DB4 | ilk koşu FAIL, varsayılan değişince PASS | E(α): 1e-5 %30,13; 1e-4 %16,11; 1e-3 **%3,20** (> %3); 1e-2 %0,66; 1e-1 **%0,38**; E(1e-3) − min E = 2,82 puan (> 1) ⇒ α* = 1e-1 |
+| DB5 | kayıt | aşağıda |
+
+**Referans (T10, nr = 1, Richardson).** Uyum birim modül ve birim toplam kuvvetle.
+
+| t/R | Yük | 16 × 12 | 32 × 24 | 64 × 48 | p | c_∞ | ε_ref | nr = 2 (32 × 24) farkı |
+|---:|:---|---:|---:|---:|---:|---:|---:|---:|
+| 0,01 | köşe | 378,4289 | 380,0340 | 380,4519 | 1,94 | 380,5989 | 3,9e-4 | +3,4e-6 |
+| 0,01 | radyal | 27 400,0 | 29 791,8 | 30 157,2 | 2,71 | 30 223,1 | 2,2e-3 | +1,2e-3 |
+| 0,05 | köşe | 69,31535 | 69,45219 | 69,49090 | 1,82 | 69,50617 | 2,2e-4 | +2,2e-4 |
+| 0,05 | radyal | 1 134,328 | 1 147,083 | 1 149,907 | 2,18 | 1 150,710 | 7,0e-4 | +3,0e-3 |
+
+**Kabuk / referans − 1 (yüzde), 128 × 96.** Pozitif: kabuk katıdan yumuşak.
+
+| α | t = 0,01 köşe | t = 0,01 radyal | t = 0,05 köşe | t = 0,05 radyal | E(α) |
+|:---|---:|---:|---:|---:|---:|
+| 1e-5 | +0,38 | +6,18 | +3,59 | +30,13 | 30,13 |
+| 1e-4 | +0,07 | +0,92 | +2,19 | +16,11 | 16,11 |
+| 1e-3 | +0,02 | +0,05 | +0,54 | +3,20 | 3,20 |
+| 1e-2 | +0,02 | −0,04 | +0,17 | +0,66 | 0,66 |
+| 1e-1 | +0,01 | −0,05 | +0,13 | +0,38 | 0,38 |
+
+Kabuğun kendi Richardson değeri (64 × 48, 128 × 96 ve 32 × 24'ten; p 1,87–2,04) 128 × 96'ya göre en çok 0,17 puan
+farklı; α = 1e-1 için d = +0,05 / +0,12 / +0,16 / +0,45. Kabuk 16 × 12 … 128 × 96 değerleri test çıktısında.
+
+Okuma. Küçük α kabuğu yapay olarak yumuşatıyor ve fark yamalı yükte de ağ incelirken kaybolmuyor (DR3 ile aynı
+yön); α büyüdükçe kabuk katı çözüme yaklaşıyor ve 1e-2 ile 1e-1 arasında doyuyor. 1e-2 ile 1e-1 arasındaki E farkı
+(0,28 puan) referansın kendi belirsizliğiyle aynı mertebede: Richardson kestirimi düzlem içi ağ için en çok %0,22,
+kalınlık yönündeki tek T10 katmanı ise t = 0,05 radyalde %0,30 sert (DB2: nr = 2 daha yumuşak). Yani veri 1e-2 ile
+1e-1'i ayıramıyor; kural yazıldığı gibi uygulandı ve 1e-1 seçildi. (Post hoc, karar dışı: nr = 2'nin +%0,30'u
+referansa eklense d(1e-1) ≈ +0,08, d(1e-2) ≈ +0,36 olurdu; sıralama aynı kalır.) 1e-3'ü eleyen tek durum t = 0,05
+radyal yük (%3,20, eşik %3); diğer üç durumda 1e-3 de %0,6 içinde.
+
+**H8 kilitlenmesi (kayıt).** H8, nr = 2, 64 × 48: t = 0,01: köşe c / c_∞ = 0,988, radyal **0,631**; t = 0,05: köşe 0,996, radyal 0,970 (H8 her durumda sert; ince kabukta radyal yükte uyumun üçte birini kaybediyor, kesme kilitlenmesi). T10'un seçilme gerekçesi bu. Ön kayıttaki 128 × 96 × 2 H8 hesabı ilk koşuda
+SuperLU çarpanlamasında bellek sayfalamasıyla 900 s test sınırını aştı (o an boş bellek 0,5 GB); DB5 yalnız kayıt
+olduğu için bu ağ testten çıkarıldı (kurulum değişikliği, burada yazıldı).
+
+**Varsayılan değişikliğinin etkisi.** `test_shell.py`, `test_shell_study.py`, `test_shell_drilling.py` α = 1e-1 ile yeniden koşuldu
+(`shell_tests_drill01.log`): 23 passed, 4 xfailed (DR1 × 3, DR2 t = 0,05; açık α ile ölçtükleri için sayıları aynı),
+1 failed: **KB3 eğilme yaması artık tutuyor** (strict xfail XPASS oldu): 4,4e-13 ≤ 1e-12 (α = 1e-3'te 1,12e-12). Test
+α üzerinden parametrelendi: α = 1e-3 kolu eski ölçümüyle strict xfail kalır, varsayılan kolu geçer (eşik aynı).
+Değişen ölçülen değerler (eski α = 1e-3 → yeni α = 1e-1; eşiklerin hepsi tuttu):
+
+| # | α = 1e-3 (kayıt) | α = 1e-1 |
+|:---|:---|:---|
+| KB2 | rijit dönme ≤ 5,7e-17 | ≤ 4,6e-17 |
+| KB3 | zar 1,6e-15; eğilme 1,12e-12 (xfail) | zar 2,2e-15; eğilme 4,4e-13 (PASS) |
+| KB4 | rijit artık ≤ 8,9e-18; 7. özdeğer / λ_max 2,0e-7 | ≤ 8,2e-18; 3,8e-6 (tam 6 sıfır özdeğer yine) |
+| KB5 | 6,1e-13 | 2,3e-13 |
+| KB6 | 4,2e-11 / 9,9e-11 / 6,2e-10 | 2,5e-11 / 1,6e-10 / 5,1e-10 |
+| KB9 | `MindlinPlate` farkı 6,3e-14 | 5,5e-14 |
+| KB10 | 1,8e-11 | 1,2e-10 |
+| KS1 | 2,3e-14 (c = 9564,5) | 5,2e-14 (c = 9080,6) |
+| KS2 | 8,3e-11 | 8,9e-11 |
+| KS3 | 3,166e4 → 6,946e3, 27 iterasyon | 3,013e4 → 6,824e3, 28 iterasyon; hacim 0,40000 |
+
+KB1, KB7, KB8, KB9 (Navier hataları), KB11, KS4, KS5 ve DR0–DR3 değişmedi (α'ya bağlı değiller ya da α'yı açıkça
+veriyorlar). DR'nin "α = 1e-3 kabul edilebilir mi" sorusu bu referansla ön kayıtlı ölçüte göre yanıtlandı: hayır (t = 0,05
+radyal yükte %3,2 yumuşak, eşik %3); DR testleri olduğu gibi kalır (ölçtükleri α aralığının yayılımı).

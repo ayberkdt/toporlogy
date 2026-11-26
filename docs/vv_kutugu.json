@@ -598,12 +598,12 @@
    "slow": false
   },
   {
-   "nodeid": "tests/toporlogy/test_shell.py::test_kb3_bending_patch_on_unequal_rectangles",
+   "nodeid": "tests/toporlogy/test_shell.py::test_kb3_bending_patch_on_unequal_rectangles[0.001]",
    "kind": "pre-registered check failed",
    "model_backend": "fem.shell FlatShell, 3 × 2 eşit olmayan dikdörtgen, dönmüş düzlem (CPU, numpy)",
    "reason": "sabit eğrilik yaması enerjisi bağıl hata 1,12e-12 > 1e-12 (t = 0,04); yorum: ince parçada kesme rijitliği eğilmeden ~(a/t)² büyük, uᵀKu karesel formunun yuvarlama tabanı (xy düzleminde 5,1e-13; post hoc t = 0,1'de 7,5e-14)",
    "risk": "low",
-   "resolution": "yok (karesel formun yuvarlama tabanı; eşik değişmez); post hoc KB3b t = 0,1'de geçiyor, zar yaması 1,6e-15",
+   "resolution": "yok (karesel formun yuvarlama tabanı; eşik değişmez); post hoc KB3b t = 0,1'de geçiyor, zar yaması 1,6e-15; varsayılan α DB4 ile 1e-1 olunca aynı kontrol 4,4e-13 ile geçiyor (test α üzerinden parametreli, bu kayıt α = 1e-3 kolu)",
    "record": "docs/olcumler/kabuk_onkayit.md",
    "slow": false
   },

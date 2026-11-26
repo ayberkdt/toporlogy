@@ -110,10 +110,10 @@ _XS, _YS = np.array([0.0, 0.3, 0.75, 1.2]), np.array([0.0, 0.4, 0.55])      # 3 
 _AREA = 1.2 * 0.55
 
 
-def _patch(t: float, seed: int = 5) -> tuple[FlatShell, np.ndarray, np.ndarray]:
+def _patch(t: float, seed: int = 5, drill: float | None = None) -> tuple[FlatShell, np.ndarray, np.ndarray]:
     Q = _rotation(seed)
     mesh, loc = _plane_mesh(Q, np.array([0.3, 0.2, -0.4]), _XS, _YS)
-    return FlatShell(mesh, t, NU), loc, Q
+    return (FlatShell(mesh, t, NU) if drill is None else FlatShell(mesh, t, NU, drill=drill)), loc, Q
 
 
 def test_kb3_membrane_patch_on_unequal_rectangles() -> None:
@@ -134,8 +134,8 @@ def test_kb3_membrane_patch_on_unequal_rectangles() -> None:
     assert em <= 1e-12
 
 
-def _bending_patch_error(t: float) -> float:
-    sh, loc, Q = _patch(t)
+def _bending_patch_error(t: float, drill: float | None = None) -> float:
+    sh, loc, Q = _patch(t, drill=drill)
     K = sh.stiffness(np.ones(sh.mesh.ne))
     x = loc[:, 0]
     u: np.ndarray = np.zeros((sh.mesh.nn, 6))
@@ -146,11 +146,15 @@ def _bending_patch_error(t: float) -> float:
     return float(abs(0.5 * u @ (K @ u) - ref_b) / ref_b)
 
 
-@pytest.mark.xfail(strict=True, reason="pre-registered KB3 (bending patch) failed: measured 1.12e-12 > 1e-12; "
-                                       "rounding floor of the quadratic form at t = 0.04 (kabuk_onkayit.md)")
-def test_kb3_bending_patch_on_unequal_rectangles() -> None:
-    eb = _bending_patch_error(0.04)
-    print(f"KB3: bending patch {eb:.2e}")
+@pytest.mark.parametrize("drill", [
+    pytest.param(1e-3, marks=pytest.mark.xfail(strict=True, reason="pre-registered KB3 (bending patch) failed: "
+                                               "measured 1.12e-12 > 1e-12 with the then default drill 1e-3; rounding "
+                                               "floor of the quadratic form at t = 0.04 (kabuk_onkayit.md)")),
+    None,                                       # the default (1e-1 since DB4): 4.4e-13 (kabuk_onkayit.md, DB)
+])
+def test_kb3_bending_patch_on_unequal_rectangles(drill: float | None) -> None:
+    eb = _bending_patch_error(0.04, drill)
+    print(f"KB3: bending patch (drill {drill or 'default'}) {eb:.2e}")
     assert eb <= 1e-12
 
 
