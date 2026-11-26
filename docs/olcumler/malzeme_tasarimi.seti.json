@@ -1,0 +1,57 @@
+{
+ "_aciklama": "datawiz figür seti: bütün figürler bu sözleşmeyle üretilir. Elle düzenlenebilir; renk/birim değiştirirsen bütün figürleri yeniden üret.",
+ "surum": 1,
+ "dergi": "web",
+ "hedef": "web-640",
+ "ortam": "web",
+ "palet": "okabe-ito",
+ "koyu": false,
+ "etiket_bicimi": "parantez",
+ "cift_kodlama": true,
+ "ondalik_ayirici": ",",
+ "varliklar": {
+  "kapalı form": {
+   "renk": "#0072b2",
+   "baglam": false,
+   "isaret": "o",
+   "cizgi": "-",
+   "sira": 0
+  },
+  "sonlu eleman": {
+   "renk": "#d55e00",
+   "baglam": false,
+   "isaret": "s",
+   "cizgi": "--",
+   "sira": 1
+  },
+  "1° tarama": {
+   "renk": "#919191",
+   "baglam": true,
+   "isaret": null,
+   "cizgi": "-",
+   "sira": 2
+  },
+  "MMA sonucu": {
+   "renk": "#009e73",
+   "baglam": false,
+   "isaret": "^",
+   "cizgi": "-.",
+   "sira": 3
+  }
+ },
+ "nicelikler": {},
+ "siralar": {},
+ "haritalar": {},
+ "figurler": {
+  "malzeme_tasarimi_yonlu_modul": "malzeme_tasarimi_yonlu_modul.dw.json",
+  "malzeme_tasarimi_tarama": "malzeme_tasarimi_tarama.dw.json"
+ },
+ "kenar_mm": {
+  "640": [
+   8.7,
+   10.6,
+   3.2,
+   12.5
+  ]
+ }
+}
