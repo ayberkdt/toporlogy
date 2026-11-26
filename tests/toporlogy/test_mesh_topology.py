@@ -97,3 +97,73 @@ def test_ms5_refusals() -> None:
         optimize_mesh(m, D_plane_stress(NU), F, fixed, volume=1.2, rmin=0.2)
     with pytest.raises(ValueError, match="load"):
         MeshCompliance(ElasticProblem(m, D_plane_stress(NU)), F[:-1], fixed)
+
+
+# ============================================================================== MD: a general mesh inside Study
+def _studies_on_grid_mesh():
+    from toporlogy.design.chain import Chain, Embed, Passive
+    from toporlogy.design.interp import SIMP
+    from toporlogy.optimization.mesh_study import MeshDomain, MeshElasticity, MeshFilterLink, MeshVolume
+    from toporlogy.optimization.responses import Compliance, Volume
+    from toporlogy.optimization.study import Constraint, Study
+    from toporlogy.optimizers.mma import MMA
+    d, fixed, F = _grid()
+    grid = Study(d, Elasticity(d, fixed, nu=NU), F, Chain([Embed(d), DensityFilter(d, 1.5), Passive(d)]),
+                 SIMP(d, penal=3.0, emin_ratio=1e-9), Compliance(), [Constraint(Volume(), 0.4)], MMA())
+    md = MeshDomain(Mesh.from_domain(d))
+    mesh = Study(md, MeshElasticity(md, D_plane_stress(NU), fixed, thickness=d.thickness), F,
+                 Chain([Embed(md), MeshFilterLink(md, 1.5 * d.h), Passive(md)]),
+                 SIMP(md, penal=3.0, emin_ratio=1e-9), Compliance(), [Constraint(MeshVolume(md), 0.4)], MMA())
+    return grid, mesh
+
+
+def test_md1_mesh_study_equals_grid_study() -> None:
+    grid, mesh = _studies_on_grid_mesh()
+    x = 0.2 + 0.7 * np.random.default_rng(9).random(grid.n_var)
+    eg, em = grid.evaluate(x), mesh.evaluate(x)
+    print(f"MD1: value {abs(em.f0 - eg.f0) / abs(eg.f0):.2e}, grad {np.abs(em.df0 - eg.df0).max() / np.abs(eg.df0).max():.2e}, "
+          f"volume {abs(em.values['volume'] - eg.values['volume']):.2e}")
+    assert abs(em.f0 - eg.f0) <= 1e-12 * abs(eg.f0)
+    assert np.abs(em.df0 - eg.df0).max() <= 1e-12 * np.abs(eg.df0).max()
+
+
+def test_md2_histories_agree() -> None:
+    grid, mesh = _studies_on_grid_mesh()
+    hg, hm = grid.run(max_iter=10, tol=0.0).history["f0"], mesh.run(max_iter=10, tol=0.0).history["f0"]
+    rel = max(abs(a - b) / abs(a) for a, b in zip(hg, hm, strict=True))
+    print(f"MD2: max history difference {rel:.2e} over {len(hg)} iterations")
+    assert rel <= 1e-8
+
+
+def _mesh_study(element: str):
+    from toporlogy.design.chain import Chain, Embed, Passive
+    from toporlogy.design.interp import SIMP
+    from toporlogy.optimization.mesh_study import MeshDomain, MeshElasticity, MeshFilterLink, MeshVolume
+    from toporlogy.optimization.responses import Compliance
+    from toporlogy.optimization.study import Constraint, Study
+    from toporlogy.optimizers.mma import MMA
+    m, fixed, F = _cantilever(element, 0.03)
+    md = MeshDomain(m)
+    return Study(md, MeshElasticity(md, D_plane_stress(NU), fixed), F,
+                 Chain([Embed(md), MeshFilterLink(md, 0.2), Passive(md)]), SIMP(md, penal=3.0, emin_ratio=1e-9),
+                 Compliance(), [Constraint(MeshVolume(md), 0.4)], MMA())
+
+
+@pytest.mark.parametrize("element", ["Q4", "T3"])
+def test_md3_study_gradient_on_distorted_meshes(element) -> None:
+    st = _mesh_study(element)
+    x = 0.2 + 0.7 * np.random.default_rng(10).random(st.n_var)
+    v = np.random.default_rng(11).normal(size=st.n_var)
+    ev = st.evaluate(x)
+    s = 1e-6
+    fd = (st.evaluate(x + s * v, False).f0 - st.evaluate(x - s * v, False).f0) / (2 * s)
+    print(f"MD3 {element}: rel {abs(ev.df0 @ v - fd) / abs(fd):.2e}")
+    assert abs(ev.df0 @ v - fd) <= 1e-6 * abs(fd)
+
+
+def test_md4_study_run_on_a_distorted_mesh() -> None:
+    st = _mesh_study("Q4")
+    res = st.run(max_iter=30)
+    c0 = res.history["f0"][0]
+    print(f"MD4: compliance {c0:.4e} -> {res.objective:.4e}, volume {res.constraint_values['volume']:.4f}")
+    assert res.objective < c0 and res.constraint_values["volume"] <= 0.4 * (1 + 1e-3)

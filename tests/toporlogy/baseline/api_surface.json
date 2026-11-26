@@ -5769,6 +5769,87 @@
    "class": "InertiaComponent"
   }
  },
+ "toporlogy.optimization.mesh_study": {
+  "MeshDomain": {
+   "attrs": [
+    "uniform_start"
+   ],
+   "class": "MeshDomain"
+  },
+  "MeshElasticity": {
+   "attrs": [
+    "name",
+    "solve",
+    "solve_numpy"
+   ],
+   "class": "MeshElasticity"
+  },
+  "MeshFilterLink": {
+   "attrs": [
+    "T_destination",
+    "add_module",
+    "apply",
+    "bfloat16",
+    "buffers",
+    "call_super_init",
+    "children",
+    "compile",
+    "cpu",
+    "cuda",
+    "double",
+    "dump_patches",
+    "eval",
+    "extra_repr",
+    "float",
+    "forward",
+    "get_buffer",
+    "get_extra_state",
+    "get_parameter",
+    "get_submodule",
+    "half",
+    "ipu",
+    "load_state_dict",
+    "modules",
+    "mtia",
+    "named_buffers",
+    "named_children",
+    "named_modules",
+    "named_parameters",
+    "parameters",
+    "register_backward_hook",
+    "register_buffer",
+    "register_forward_hook",
+    "register_forward_pre_hook",
+    "register_full_backward_hook",
+    "register_full_backward_pre_hook",
+    "register_load_state_dict_post_hook",
+    "register_load_state_dict_pre_hook",
+    "register_module",
+    "register_parameter",
+    "register_state_dict_post_hook",
+    "register_state_dict_pre_hook",
+    "requires_grad_",
+    "set_extra_state",
+    "set_submodule",
+    "share_memory",
+    "state_dict",
+    "to",
+    "to_empty",
+    "train",
+    "type",
+    "xpu",
+    "zero_grad"
+   ],
+   "class": "MeshFilterLink"
+  },
+  "MeshVolume": {
+   "attrs": [
+    "name",
+    "needs"
+   ],
+   "class": "MeshVolume"
+  }
+ },
  "toporlogy.optimization.mesh_topology": {
   "MeshCompliance": {
    "attrs": [],

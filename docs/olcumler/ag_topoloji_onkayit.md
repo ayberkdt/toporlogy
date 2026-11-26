@@ -50,3 +50,18 @@ YAML bu adımda yok.
 | MD3 | bozulmuş Q4 ve T3 ağlarında `Study` gradyanı (amaç uyum) merkezi farkla | ≤ 1e-6 göreli |
 | MD4 | bozulmuş Q4 konsol, `MeshVolume` ≤ 0,4, 30 MMA iterasyonu | son uyum < ilk uyum; hacim ≤ 0,4 (1 + 1e-3) |
 | MD5 | var olan kod | `pytest -m baseline` bit düzeyinde |
+
+### MD1–MD5 sonucu (ilk ölçüm)
+
+Hepsi ilk koşuda geçti (`test_mesh_topology.py::test_md*`).
+
+| # | Durum | Ölçülen |
+|:---|:---|:---|
+| MD1 | PASS | değer 1,3e-14, gradyan 6,1e-14 göreli; hacim farkı 0 |
+| MD2 | PASS (sınıra yakın) | 10 iterasyonda en büyük fark 8,1e-9 (eşik 1e-8) |
+| MD3 | PASS | bozulmuş Q4: 1,4e-7; bozulmuş T3: 2,6e-7 |
+| MD4 | PASS | uyum 653 → 176 (30 iterasyon), hacim 0,4000 (`optimize_mesh`'in MS4 sonucuyla aynı sayılar) |
+| MD5 | PASS | baseline 8 passed bit düzeyinde; mimari (katman) testleri 9 passed |
+
+Kalan: YAML (`domain: {type: mesh}`, ağ etiketleriyle mesnet / yük), ızgaraya özgü bileşenlerin ağ alanında açık hatası
+(katalog kuralı), kabuk elemanı.
