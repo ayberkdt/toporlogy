@@ -256,6 +256,56 @@
    "resolution": "yok (ölçütün yön/adım seçimi); post hoc küçük adımlarda 1,92–1,98",
    "record": "docs/olcumler/ortuk_turev_onkayit.md",
    "slow": false
+  },
+  {
+   "nodeid": "tests/toporlogy/test_buckling_geometry.py::test_rl2b_whole_cluster_aggregate_is_differentiable",
+   "kind": "pre-registered check failed",
+   "model_backend": "BucklingKS over a double eigenvalue, 3-D square column (CPU)",
+   "reason": "tüm küme KS'inde tek taraflı türev asimetrisi 1,08e-5 (eşik 1e-5), AD–FD 1,16e-6 (eşik 1e-6); h = 1e-4'te FD gürültü sınırında",
+   "risk": "low",
+   "resolution": "yok (ölçütün adımı); post hoc h = 1e-3'te AD–FD 7,9e-8, kesik kümede asimetri her adımda 1,99",
+   "record": "docs/olcumler/burkulma_geometri.md",
+   "slow": false
+  },
+  {
+   "nodeid": "tests/toporlogy/test_buckling_geometry.py::test_a6_exclusion_result_depends_on_the_zone_size",
+   "kind": "pre-registered check failed",
+   "model_backend": "LinearBuckling, Ferrari-Sigmund-Guest wall 80², exclude mask (CPU)",
+   "reason": "dışlama yarıçapı 0,025 → 0,1: λ1 farkı 9,7e-5 (tahmin ≥ 0,10); mod açıklığın içbükey köşelerine taşınıyor",
+   "risk": "low",
+   "resolution": "yok (tahmin yanlıştı); dışlama yine çözüm değil: A5 NOT CONVERGED",
+   "record": "docs/olcumler/burkulma_geometri.md",
+   "slow": true
+  },
+  {
+   "nodeid": "tests/toporlogy/test_buckling_geometry.py::test_sp2_low_stress_exponent_produces_a_spurious_mode",
+   "kind": "pre-registered check failed",
+   "model_backend": "LinearBuckling, 16 × 48 compliance design, E_G = x^1 (CPU)",
+   "reason": "pozitif kontrol çıkmadı: pg = 1 λ1'i 0,768 katına indirdi ama 1. modun düşük yoğunluk payı 0,026",
+   "risk": "medium",
+   "resolution": "sahte modu gerçekten üreten bir tasarımla (gri bölgesi gerilme taşıyan) yeniden",
+   "record": "docs/olcumler/burkulma_geometri.md",
+   "slow": true
+  },
+  {
+   "nodeid": "tests/toporlogy/test_buckling_geometry.py::test_gc4_neck_thickness",
+   "kind": "pre-registered check failed",
+   "model_backend": "post.finalize + sdf_local_thickness, stepped bar 32 × 12 × 12 (CPU)",
+   "reason": "boyun orta hattında yerel kalınlık eşik adımında 4,08–4,57, son alanda 4,08–4,34 (sınır 4 ± 0,5)",
+   "risk": "low",
+   "resolution": "kalınlık ölçüsünün basamak yakınındaki davranışı incelenip ön kayıtlı yeni ölçütle",
+   "record": "docs/olcumler/burkulma_geometri.md",
+   "slow": true
+  },
+  {
+   "nodeid": "tests/toporlogy/test_buckling_geometry.py::test_gc8_staircase_compliance_against_the_nominal_series_bar",
+   "kind": "pre-registered check failed",
+   "model_backend": "post.reanalysis staircase voxels, ElasticityGMG (CPU)",
+   "reason": "h = 1/4 merdiven uyumu 0,6756, nominal seri çubuk 0,625 (+%8,1; sınır %5); ölçülen kesitlerle seri değer 0,6307",
+   "risk": "low",
+   "resolution": "gövdeye uyumlu T10 (gmsh) ya da basamak etkisini içeren referans",
+   "record": "docs/olcumler/burkulma_geometri.md",
+   "slow": true
   }
  ],
  "skips": [
@@ -362,6 +412,13 @@
    "site": "vtk = pytest.importorskip(\"vtk\")",
    "backend": "vtk (post extra)",
    "covers": "VTU dosyasının bağımsız okuyucuyla okunması ve hücre boyutları (W2, W3)",
+   "status_when_skipped": "NOT VERIFIED"
+  },
+  {
+   "file": "tests/toporlogy/test_buckling_geometry.py",
+   "site": "pytest.importorskip(\"skfem\")",
+   "backend": "scikit-fem (dev extra)",
+   "covers": "voksel yeniden analizinin bağımsız montajı (GC7, prizmatik çubuk)",
    "status_when_skipped": "NOT VERIFIED"
   }
  ]

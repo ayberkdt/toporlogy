@@ -2,7 +2,7 @@
 
 `tests/toporlogy/test_catalog_ledger.py` bu kütüğü toplanan testlerle karşılaştırır: her xfail strict (XPASS koşuyu kırar), kütük toplanan strict xfail listesiyle ve test kaynaklarındaki atlama noktalarıyla birebir aynı. Beklenen başarısızlık PASS sayılmaz; atlanan bir arka ucun testi NOT VERIFIED'dır. Yeniden üretim: `python tests/toporlogy/test_catalog_ledger.py --write`.
 
-Toplam 25 strict xfail (7 tanesi yavaş pakette), 15 atlama noktası.
+Toplam 30 strict xfail (11 tanesi yavaş pakette), 16 atlama noktası.
 
 Risk düzeyleri: **low** ölçüt ya da kontrolün kendisi; kod sonucu başka testle doğrulanmış; **medium** açıklanmamış sayısal fark ya da referans yeniden üretilemiyor; **high** kullanıcıya görünen sessiz kabul (yanlış sonuç üretebilir).
 
@@ -35,6 +35,11 @@ Risk düzeyleri: **low** ölçüt ya da kontrolün kendisi; kod sonucu başka te
 | `test_units.py::test_u8_compliance_in_mm_and_n_scales_exactly` | pre-registered check failed | mbb2d, Elasticity Q4 direct (CPU) | mm/N uyum oranı beklenen 1000²/210000'den 3,75e-12 göreli sapıyor, eşik 1e-12; girdiler bit düzeyinde doğru ölçekli (post hoc) | low | koşul sayısına ölçekli eşikle yeni ön kayıt | docs/olcumler/birimler_onkayit.md | — |
 | `test_homogenization.py::test_h7_taylor_remainder_order` | pre-registered check failed | fem.homogenization, periodic Q4 (CPU) | Taylor kalanı mertebesi ilk adım çiftinde 2,25 > 2,2 (sonra 2,10, 2,05); gradyan merkezi farkla ≤ 1e-6 | low | yok (ölçütün adım seçimi); post hoc asimptotik aralıkta 2,05–2,01 | docs/olcumler/homojenlestirme_onkayit.md | — |
 | `test_implicit.py::test_i3_taylor_remainder_order` | pre-registered check failed | optimization.implicit, dense autograd Jacobian (CPU) | Taylor kalanı mertebesi 2,91–3,14: bu yönde vᵀHv = 0,006, üçüncü türev −16,4; kübik terim baskın. Gradyan merkezi farkla geçiyor | low | yok (ölçütün yön/adım seçimi); post hoc küçük adımlarda 1,92–1,98 | docs/olcumler/ortuk_turev_onkayit.md | — |
+| `test_buckling_geometry.py::test_rl2b_whole_cluster_aggregate_is_differentiable` | pre-registered check failed | BucklingKS over a double eigenvalue, 3-D square column (CPU) | tüm küme KS'inde tek taraflı türev asimetrisi 1,08e-5 (eşik 1e-5), AD–FD 1,16e-6 (eşik 1e-6); h = 1e-4'te FD gürültü sınırında | low | yok (ölçütün adımı); post hoc h = 1e-3'te AD–FD 7,9e-8, kesik kümede asimetri her adımda 1,99 | docs/olcumler/burkulma_geometri.md | — |
+| `test_buckling_geometry.py::test_a6_exclusion_result_depends_on_the_zone_size` | pre-registered check failed | LinearBuckling, Ferrari-Sigmund-Guest wall 80², exclude mask (CPU) | dışlama yarıçapı 0,025 → 0,1: λ1 farkı 9,7e-5 (tahmin ≥ 0,10); mod açıklığın içbükey köşelerine taşınıyor | low | yok (tahmin yanlıştı); dışlama yine çözüm değil: A5 NOT CONVERGED | docs/olcumler/burkulma_geometri.md | evet |
+| `test_buckling_geometry.py::test_sp2_low_stress_exponent_produces_a_spurious_mode` | pre-registered check failed | LinearBuckling, 16 × 48 compliance design, E_G = x^1 (CPU) | pozitif kontrol çıkmadı: pg = 1 λ1'i 0,768 katına indirdi ama 1. modun düşük yoğunluk payı 0,026 | medium | sahte modu gerçekten üreten bir tasarımla (gri bölgesi gerilme taşıyan) yeniden | docs/olcumler/burkulma_geometri.md | evet |
+| `test_buckling_geometry.py::test_gc4_neck_thickness` | pre-registered check failed | post.finalize + sdf_local_thickness, stepped bar 32 × 12 × 12 (CPU) | boyun orta hattında yerel kalınlık eşik adımında 4,08–4,57, son alanda 4,08–4,34 (sınır 4 ± 0,5) | low | kalınlık ölçüsünün basamak yakınındaki davranışı incelenip ön kayıtlı yeni ölçütle | docs/olcumler/burkulma_geometri.md | evet |
+| `test_buckling_geometry.py::test_gc8_staircase_compliance_against_the_nominal_series_bar` | pre-registered check failed | post.reanalysis staircase voxels, ElasticityGMG (CPU) | h = 1/4 merdiven uyumu 0,6756, nominal seri çubuk 0,625 (+%8,1; sınır %5); ölçülen kesitlerle seri değer 0,6307 | low | gövdeye uyumlu T10 (gmsh) ya da basamak etkisini içeren referans | docs/olcumler/burkulma_geometri.md | evet |
 
 ## 2. Atlama noktaları
 
@@ -55,3 +60,4 @@ Risk düzeyleri: **low** ölçüt ya da kontrolün kendisi; kod sonucu başka te
 | test_symmetry.py | `pytest.importorskip("pyvista")` | pyvista | simetri son işlem denetimi | NOT VERIFIED |
 | test_t10_convergence.py | `pytest.importorskip("gmsh")` | gmsh | T10 ağ yakınsaması | NOT VERIFIED |
 | test_vtu.py | `vtk = pytest.importorskip("vtk")` | vtk (post extra) | VTU dosyasının bağımsız okuyucuyla okunması ve hücre boyutları (W2, W3) | NOT VERIFIED |
+| test_buckling_geometry.py | `pytest.importorskip("skfem")` | scikit-fem (dev extra) | voksel yeniden analizinin bağımsız montajı (GC7, prizmatik çubuk) | NOT VERIFIED |

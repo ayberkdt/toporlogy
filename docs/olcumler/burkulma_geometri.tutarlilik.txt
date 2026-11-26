@@ -1,0 +1,5 @@
+set tutarlılığı (2 figür): 0 HATA · 2 UYARI · 0 BİLGİ · SET TUTARLI
+  [UYARI] isaret-boyu        isaret boyu figürden figüre değişiyor — 6 pt: burkulma_yakinsama · 9.57 pt: hacim_esit
+          → aynı rol aynı kalınlık; vurgu/bağlam farkı figür içinde kalsın  [06 T6: APSStyleGuide §II.S.1 ('consistent line widths'); tolerans datawiz-secimi]
+  [UYARI] harf-bicimi        eksen adlarında harf düzeni karışık — Tek sözcük: burkulma_yakinsama, hacim_esit · küçük harfle: burkulma_yakinsama · Cümle düzeni: hacim_esit
+          → tek düzen: cümle düzeni ('Elapsed time'); Nature: ilk harf büyük, gerisi küçük  [06 T3/T16: AIAAFig; APSStyleGuide; Kosslyn2012]

@@ -3822,7 +3822,8 @@
     "localization",
     "low_density_share",
     "mode_forms",
-    "modes"
+    "modes",
+    "stress_energy_share"
    ],
    "class": "LinearBuckling"
   },
@@ -4303,7 +4304,8 @@
    "attrs": [
     "name",
     "needs",
-    "reset_scale"
+    "reset_scale",
+    "reset_tracking"
    ],
    "class": "BucklingKS"
   },
@@ -4314,8 +4316,17 @@
    ],
    "class": "BucklingLoadFactor"
   },
+  "BucklingReliability": {
+   "attrs": [
+    "as_dict"
+   ],
+   "class": "BucklingReliability"
+  },
+  "LOCALIZED_SHARE": "<float>",
+  "SPURIOUS_SHARE": "<float>",
   "first_failure_load_factor": "first_failure_load_factor(ctx,field,case,preload_case,threshold)",
-  "inverse_load_factors": "inverse_load_factors(ctx,n_modes,case,penal_g,E0,preload_case,cluster_tol,density_threshold,exclude)"
+  "inverse_load_factors": "inverse_load_factors(ctx,n_modes,case,penal_g,E0,preload_case,cluster_tol,density_threshold,exclude)",
+  "reliability": "reliability(mu,diag,spurious_share,localized_share)"
  },
  "toporlogy.optimization.compose": {
   "Displacement": {
@@ -5589,7 +5600,7 @@
   "assemble": "assemble(phi_free,roles,X,cache)",
   "element_fraction": "element_fraction(domain,shape,samples)",
   "export_result": "export_result(res,folder,name,formats,checks,print_stock,extra)",
-  "finalize": "finalize(domain,xphys,preserve,params,envelope,target_volume,log,part)",
+  "finalize": "finalize(domain,xphys,preserve,params,envelope,target_volume,log,part,keep_fields)",
   "manufacturing_checks": "manufacturing_checks(res,thresholds,kw)",
   "measure_interfaces": "measure_interfaces(V,F,roles,h,band,angle_deg)",
   "optimised_volume": "optimised_volume(domain,xphys)",
@@ -5603,6 +5614,26 @@
   "write_json": "write_json(path,data)",
   "write_obj": "write_obj(path,V,F)",
   "write_ply": "write_ply(path,V,F)"
+ },
+ "toporlogy.post.chain": {
+  "ChainRequirements": {
+   "attrs": [
+    "cad_tol",
+    "max_bodies",
+    "max_voids",
+    "min_wall",
+    "required",
+    "volume_tol"
+   ],
+   "class": "ChainRequirements"
+  },
+  "FAIL": "<str>",
+  "MEASURED": "<str>",
+  "NOT_VERIFIED": "<str>",
+  "PASS": "<str>",
+  "UNEVALUABLE": "<tuple>",
+  "UNVERIFIED": "<str>",
+  "record_chain": "record_chain(domain,xphys,res,requirements,tet_mesh,reverify,voxel_reanalysis)"
  },
  "toporlogy.post.checks": {
   "CheckResult": {
@@ -5706,7 +5737,7 @@
    ],
    "class": "PostResult"
   },
-  "finalize": "finalize(domain,xphys,preserve,params,envelope,target_volume,log,part)",
+  "finalize": "finalize(domain,xphys,preserve,params,envelope,target_volume,log,part,keep_fields)",
   "measure_interfaces": "measure_interfaces(V,F,roles,h,band,angle_deg)",
   "optimised_volume": "optimised_volume(domain,xphys)",
   "print_variant": "print_variant(res,log)",
@@ -5884,6 +5915,12 @@
   "assemble": "assemble(phi_free,roles,X,cache)",
   "element_fraction": "element_fraction(domain,shape,samples)",
   "oriented": "oriented(role,X)"
+ },
+ "toporlogy.post.reanalysis": {
+  "face_weights": "face_weights(solid,h,selected)",
+  "solve_voxels": "solve_voxels(solid,origin,h,supports,loads,E,nu,backends,solver,tol)",
+  "staircase_series": "staircase_series(phi,lo,hi,sizes,supports,loads,E,nu,backends,volume_reference,solver)",
+  "voxelize": "voxelize(phi,lo,hi,h)"
  },
  "toporlogy.post.regularize": {
   "adaptive_closing": "adaptive_closing(phi,combine,h,r_start,max_gain,factor,n_trials)",
