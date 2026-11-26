@@ -84,12 +84,14 @@ def register_physics() -> None:
                              energy_interpolation: bool = True, beta: float = 120.0, cutoff: float = 0.1,
                              cutoff_step: float = 0.02, cutoff_max: float = 1.0, density_exponent: float = 3.0,
                              load_steps: int = 10, max_iter: int = 30, rtol: float = 1e-9, min_step: float = 1e-4,
-                             warm_start: bool = False, solver: Any = "direct") -> Any:
+                             warm_start: bool = False, solver: Any = "direct", cutoff_policy: str = "adaptive",
+                             line_search: str = "none", merit: str = "residual") -> Any:
         """Static geometrically non-linear elasticity (large displacements, Total Lagrangian, Newton-Raphson, dead
         loads; Q4 / H8). material svk (any material D) | neo_hooke (isotropic); nu, plane, E0 from material.
         energy_interpolation: void elements linear (Wang et al. 2014 scheme; beta, cutoff, cutoff_step, cutoff_max,
-        density_exponent). Raises when Newton does not reach the full load. Supports: zero displacements along
-        x / y / z only, one support set."""
+        density_exponent; cutoff_policy adaptive | monotone). line_search none | backtracking, merit residual |
+        energy (fem.nonlinear, docs/olcumler/nonlineer_cozucu.md). Raises when Newton does not reach the full load.
+        Supports: zero displacements along x / y / z only, one support set."""
         from toporlogy.fem.nonlinear import EnergyInterpolation, NonlinearElasticity
         bcs, d = ctx.bc, ctx.domain
         if len({id(bcs.constraints(i)) for i in range(len(bcs.cases))}) > 1:
@@ -104,12 +106,13 @@ def register_physics() -> None:
         ei = None
         if energy_interpolation:
             ei = EnergyInterpolation(E0=float(ctx.material["E0"]), beta=beta, cutoff=cutoff, cutoff_step=cutoff_step,
-                                     cutoff_max=cutoff_max, density_exponent=density_exponent)
+                                     cutoff_max=cutoff_max, density_exponent=density_exponent, policy=cutoff_policy)
         return NonlinearElasticity(d, cs.fixed, nu=ctx.material["nu"], material=material,
                                    plane=str(ctx.material.get("plane", "stress")) if d.dim == 2 else "stress",
                                    element=element, elasticity=mm.elasticity if material == "svk" else None,
                                    energy_interpolation=ei, load_steps=load_steps, max_iter=max_iter, rtol=rtol,
-                                   min_step=min_step, warm_start=warm_start, solver=solver)
+                                   min_step=min_step, warm_start=warm_start, solver=solver, line_search=line_search,
+                                   merit=merit)
 
     register("physics", "nonlinear_elasticity", nonlinear_elasticity, nested={"solver": "solver"},
              units={"min_step": "load factor"})

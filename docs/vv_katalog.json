@@ -1436,6 +1436,40 @@
      "enforced": ""
     }
    },
+   "end_strain_energy": {
+    "elasticity": {
+     "status": "UNSUPPORTED",
+     "evidence": [],
+     "reason": "needs physics nonlinear_elasticity",
+     "enforced": "component"
+    },
+    "elasticity_gmg": {
+     "status": "UNSUPPORTED",
+     "evidence": [],
+     "reason": "needs physics nonlinear_elasticity",
+     "enforced": "component"
+    },
+    "modal": {
+     "status": "UNSUPPORTED",
+     "evidence": [],
+     "reason": "needs physics nonlinear_elasticity",
+     "enforced": "component"
+    },
+    "nonlinear_elasticity": {
+     "status": "SUPPORTED",
+     "evidence": [
+      "tests/toporlogy/test_nonlinear_solvers.py::test_t1_t2_end_strain_energy_taylor_remainder"
+     ],
+     "reason": "hyperelastic materials only (svk, neo_hooke); a stateful law is refused",
+     "enforced": ""
+    },
+    "tensor_elasticity": {
+     "status": "UNSUPPORTED",
+     "evidence": [],
+     "reason": "needs physics nonlinear_elasticity",
+     "enforced": "component"
+    }
+   },
    "frequency": {
     "elasticity": {
      "status": "UNSUPPORTED",

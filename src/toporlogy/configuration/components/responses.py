@@ -223,6 +223,17 @@ def register_responses() -> None:
         return EndCompliance(_case_weights(ctx, weights))
 
     register("response", "end_compliance", end_compliance)
+
+    def end_strain_energy(ctx: BuildContext, weights: list | None = None) -> Any:
+        """Weighted stored energy sum_c w_c W(u_c) at the converged non-linear equilibrium (physics
+        nonlinear_elasticity, hyperelastic material); weights null = 1 per case (docs/olcumler/nonlineer_cozucu.md)."""
+        from toporlogy.fem.nonlinear import NonlinearElasticity
+        from toporlogy.optimization.nonlinear import EndStrainEnergy
+        if not isinstance(ctx.physics, NonlinearElasticity):
+            raise ValueError("end_strain_energy needs physics nonlinear_elasticity")
+        return EndStrainEnergy(weights)
+
+    register("response", "end_strain_energy", end_strain_energy)
     register("response", "stress", stress, nested={"exclude": "shape[]"}, units={"sigma_lim": "force/length^2"})
     register("response", "stress_augmented_lagrangian", stress_augmented_lagrangian,
              nested={"objective": "response", "exclude": "shape[]"}, types={"reference": None},

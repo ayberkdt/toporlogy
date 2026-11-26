@@ -877,6 +877,14 @@ RESPONSE_MATRIX: dict[str, dict[str, Cell]] = {
         modal=_NO_STATE,
         nonlinear_elasticity=Cell(UNSUPPORTED, reason="linear buckling about a linear prestress; not defined on the "
                                                       "non-linear state", enforced="catalog")),
+    "end_strain_energy": _row(
+        elasticity=Cell(UNSUPPORTED, reason="needs physics nonlinear_elasticity", enforced="component"),
+        elasticity_gmg=Cell(UNSUPPORTED, reason="needs physics nonlinear_elasticity", enforced="component"),
+        modal=Cell(UNSUPPORTED, reason="needs physics nonlinear_elasticity", enforced="component"),
+        nonlinear_elasticity=Cell(SUPPORTED, (T + "test_nonlinear_solvers.py::"
+                                                  "test_t1_t2_end_strain_energy_taylor_remainder",),
+                                  "hyperelastic materials only (svk, neo_hooke); a stateful law is refused"),
+        tensor_elasticity=Cell(UNSUPPORTED, reason="needs physics nonlinear_elasticity", enforced="component")),
     "end_compliance": _row(
         elasticity=Cell(UNSUPPORTED, reason="needs physics nonlinear_elasticity", enforced="component"),
         elasticity_gmg=Cell(UNSUPPORTED, reason="needs physics nonlinear_elasticity", enforced="component"),

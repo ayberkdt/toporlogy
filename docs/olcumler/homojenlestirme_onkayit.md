@@ -62,3 +62,7 @@ interpolasyonuyla E) periyodik etkin rijitliğini `summary.json`'a yazar; tam ku
 | # | Kontrol | Eşik |
 |:---|:---|:---|
 | H12 | Düzgün tasarımı döndüren bir koşu (hacim kısıtı 1,0, x̄ ≡ 1): C_eff = E0 · D(ν) ve doğrudan `homogenize_elasticity` ile aynı | ≤ 1e-12 göreli; aynı sayılar |
+
+### H12 sonucu
+
+PASS: post adımı x̄ ≡ 1'de C = E0 · D_ps(ν) (≤ 1e-12) ve doğrudan `homogenize_elasticity` ile bit düzeyinde aynı.

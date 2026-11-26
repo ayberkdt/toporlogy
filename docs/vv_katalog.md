@@ -111,6 +111,7 @@ Yalnız sentetik kayıt var; kaynağı, sayfası ve lisansı bu çalışmada oku
 | displacement | SUPPORTED | NOT VERIFIED | UNSUPPORTED (catalog) | SUPPORTED | NOT VERIFIED |
 | eigenvalue | UNSUPPORTED (component) | UNSUPPORTED (component) | SUPPORTED | UNSUPPORTED (component) | NOT VERIFIED |
 | end_compliance | UNSUPPORTED (component) | UNSUPPORTED (component) | UNSUPPORTED (component) | SUPPORTED | NOT VERIFIED |
+| end_strain_energy | UNSUPPORTED (component) | UNSUPPORTED (component) | UNSUPPORTED (component) | SUPPORTED | UNSUPPORTED (component) |
 | frequency | UNSUPPORTED (component) | UNSUPPORTED (component) | SUPPORTED | UNSUPPORTED (component) | NOT VERIFIED |
 | grey_level | SUPPORTED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED |
 | local_volume | SUPPORTED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED |
@@ -167,6 +168,11 @@ Gerekçe ve kanıt (yalnız boş olmayanlar):
 - `end_compliance` × `elasticity_gmg`: UNSUPPORTED — needs physics nonlinear_elasticity
 - `end_compliance` × `modal`: UNSUPPORTED — needs physics nonlinear_elasticity
 - `end_compliance` × `nonlinear_elasticity`: SUPPORTED [test_nonlinear.py::test_v6_end_compliance_gradient_finite_difference; test_nonlinear_orientation.py::test_n4_end_compliance_gradient_with_a_field]
+- `end_strain_energy` × `elasticity`: UNSUPPORTED — needs physics nonlinear_elasticity
+- `end_strain_energy` × `elasticity_gmg`: UNSUPPORTED — needs physics nonlinear_elasticity
+- `end_strain_energy` × `modal`: UNSUPPORTED — needs physics nonlinear_elasticity
+- `end_strain_energy` × `nonlinear_elasticity`: SUPPORTED — hyperelastic materials only (svk, neo_hooke); a stateful law is refused [test_nonlinear_solvers.py::test_t1_t2_end_strain_energy_taylor_remainder]
+- `end_strain_energy` × `tensor_elasticity`: UNSUPPORTED — needs physics nonlinear_elasticity
 - `frequency` × `elasticity`: UNSUPPORTED — needs physics modal
 - `frequency` × `elasticity_gmg`: UNSUPPORTED — needs physics modal
 - `frequency` × `modal`: SUPPORTED [test_modal.py::test_response_gradients; test_modal.py::test_eigenpairs_match_dense]

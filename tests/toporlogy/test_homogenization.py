@@ -213,3 +213,23 @@ def test_h11_mesh_sensitivity_of_a_holed_cell() -> None:
     assert all(np.diff(c) < 0) or all(np.diff(c) > 0)
     assert 0.5 <= order <= 2.5
     assert abs(d2) / abs(c[3]) <= 0.02
+
+
+def test_h12_homogenize_post_step() -> None:
+    import types
+
+    from toporlogy.configuration.build import build_setup
+    cfg = {"domain": {"type": "box", "shape": [6, 5], "h": 1.0}, "material": {"E0": 2.0, "nu": NU},
+           "supports": [{"type": "fixed", "where": {"type": "plane", "axis": "x", "at": "min"}}],
+           "load_cases": [{"loads": [{"type": "force", "where": {"type": "point", "at": ["max", "min"]},
+                                      "force": [0, -1]}]}],
+           "constraints": [{"response": "volume", "upper": 0.5}], "optimizer": "mma",
+           "post": [{"type": "homogenize"}]}
+    setup = build_setup(cfg)
+    step = dict(setup.post)["homogenize"]
+    d = setup.study.domain
+    out = step(types.SimpleNamespace(xphys=np.ones(d.shape)), setup.study, ".")
+    E = setup.study.interp(__import__("torch").ones(d.shape, dtype=__import__("torch").float64)).numpy().ravel()
+    direct = homogenize_elasticity(d, E[d.active_elements], NU).C
+    assert _rel(np.array(out["C"]), 2.0 * D_plane_stress(NU)) <= 1e-12
+    assert np.array_equal(np.array(out["C"]), direct)

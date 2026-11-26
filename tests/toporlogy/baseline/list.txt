@@ -101,10 +101,11 @@ physics  - physics model (state solve) (5)
   nonlinear_elasticity  material=svk  element=null  energy_interpolation=true  beta=120.0
                         cutoff=0.1  cutoff_step=0.02  cutoff_max=1.0  density_exponent=3.0
                         load_steps=10  max_iter=30  rtol=1e-09  min_step=0.0001 [load factor]
-                        warm_start=false  solver=direct
+                        warm_start=false  solver=direct  cutoff_policy=adaptive  line_search=none
+                        merit=residual
   tensor_elasticity     element=null  solver=direct
 
-response  - objective or constraint response (22)
+response  - objective or constraint response (23)
   buckling                     load_factor=null  n_modes=6  rho=50.0  case=0  penal_g=3.0
                                scale=null  preload_case=null  exclude=null
   compliance                   weights=null
@@ -116,6 +117,7 @@ response  - objective or constraint response (22)
   displacement                 where=?  direction=?  case=0  name=displacement
   eigenvalue                   k=1
   end_compliance               weights=null
+  end_strain_energy            weights=null
   frequency                    k=1  E_unit=1.0  rho_unit=1.0  length_unit=1.0
   grey_level                   source=xphys
   local_volume                 t_max=null [length]  radius=null [elements]  member=null  p=16.0
@@ -153,7 +155,7 @@ schedule  - continuation schedule (3)
   robust_continuation  beta0=1.0  beta_max=32.0  every=50  tol=null  volume_every=20  target=null
                        update_volume=true
 
-post  - post-processing step after the run (10)
+post  - post-processing step after the run (11)
   connectivity_gate     threshold=0.5  connectivity=face  robust_thresholds=[0.3, 0.7]
                         erosion=true  voids=fail  repair=none  section=2
   discrete_check        volume=constraint  threshold=0.5  max_ratio=null
@@ -166,6 +168,7 @@ post  - post-processing step after the run (10)
                         smooth_iter=20  lam=0.5  mu=-0.53  pass_band=0.1  relax_iter=5
                         project_to_implicit=true  feature_tol=null  feature_angle_deg=60.0
                         adaptive_radius=0.0  target_faces=null  envelope=voxel
+  homogenize            bc=periodic
   manufacturing_checks  max_bodies=1  max_voids=0  min_wall=null [length]  wall_statistic=p1
                         wall_method=ray  build_direction=[0.0, 0.0, 1.0]  overhang_deg=45.0
                         plate_level=null [length]  max_overhang_fraction=null

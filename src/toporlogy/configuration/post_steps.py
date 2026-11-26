@@ -366,6 +366,30 @@ def register_post_steps() -> None:
                     + (f" ({'; '.join(notes)})" if notes else ""), "path": path}
         return step
 
+    def homogenize_step(ctx: BuildContext, bc: str = "periodic") -> Any:
+        """Effective (homogenised) stiffness of the returned design as a periodic cell (fem.homogenization): the
+        whole box domain is the cell, E from the study's interpolation of x̄, ν and plane stress from the material.
+        bc periodic | kubc. Refused for a domain that is not the full box."""
+        import torch
+
+        from toporlogy.fem.homogenization import homogenize_elasticity
+        state = _post_state(ctx)
+        nu = float(ctx.material["nu"])
+
+        def step(res: Any, study: Any, folder: Any) -> dict[str, Any]:
+            d = study.domain
+            x, label = _design(state, res)
+            E = study.interp(torch.as_tensor(np.asarray(x, float))).detach().numpy().ravel()[d.active_elements]
+            h = homogenize_elasticity(d, E, nu, bc=bc)
+            C = h.C
+            out: dict[str, Any] = {"design": label, "bc": bc, "C": C.tolist()}
+            if d.dim == 2:
+                out["nu12"] = float(C[0, 1] / C[0, 0])
+                out["nu21"] = float(C[0, 1] / C[1, 1])
+            out["summary"] = f"C11 {C[0, 0]:.6g}" + (f", nu12 {out['nu12']:.4f}" if d.dim == 2 else "")
+            return out
+        return step
+
     def discrete_check(ctx: BuildContext, volume: Any = "constraint", threshold: float = 0.5,
                        max_ratio: float | None = None) -> Any:
         """Objective and constraints of the thresholded (0/1) design, re-evaluated on the same mesh
@@ -437,3 +461,4 @@ def register_post_steps() -> None:
     register("post", "export", "toporlogy.configuration.post_steps:export_step")
     register("post", "discrete_check", discrete_check, types={"volume": None})
     register("post", "vtu", vtu_step)
+    register("post", "homogenize", homogenize_step)
