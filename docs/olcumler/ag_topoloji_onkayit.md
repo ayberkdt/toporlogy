@@ -161,3 +161,17 @@ kuruculardan çağrılır), `fem.mesh` ve `fem.shell` (ağ / kabuk fizikleri).
 | GF1 | yukarıdaki 18 bileşen, RF1'in üç ızgara dışı alanında (2-B Q4 `MeshDomain`, 3-B `MeshDomain`, `ShellDomain`) | `ValueError`; iletide bileşenin adı, "grid", alan türü; `Elasticity` / `ElasticityGMG` iletisinde `MeshElasticity`, diğerlerinde "no mesh or shell counterpart"; başka tür istisna 0 |
 | GF2 | `ConductivityInterp` üç alanda; RF1–RF3, MD1–MD5, KS1–KS5 | hatasız, sonlu çıktı; hepsi geçer |
 | GF3 | ızgara davranışı ve katmanlar | `pytest -m baseline` 8 passed bit düzeyinde; dokunulan `fem` modüllerinin test dosyaları, mimari ve API yüzeyi testleri geçer |
+
+### GF1–GF3 sonucu (2026-11-26)
+
+`tests/toporlogy/test_grid_refusals.py`'ye eklendi (`test_gf1_*` 18 bileşen × 3 alan, `test_gf2_*` 3 alan); dosya
+202 passed. Her kurucu / fonksiyon ilk satırında `require_grid` çağırıyor (`TensorElasticity` ve `Modal` kendi
+adlarıyla, iç `Elasticity`'den önce; `ElasticityGMG` ve `MindlinPlate` boyut denetiminden önce).
+
+| # | Durum | Ölçülen |
+|:---|:---|:---|
+| GF1 | PASS | 54 / 54 durumda `ValueError`; iletide bileşen adı, "grid", alan türü; `Elasticity` ve `ElasticityGMG`'de "use MeshElasticity instead", diğer 16'da "it has no mesh or shell counterpart yet"; başka tür istisna yok |
+| GF2 | PASS | `ConductivityInterp` üç alanda sonlu; RF1–RF3 (145), MD1–MD5, KS1–KS5 geçti |
+| GF3 | PASS | `pytest -m baseline` 8 passed, en büyük bağıl fark 0,00e+00; dokunulan `fem` modüllerinin testleri + mimari / API yüzeyi / gradyan / ağ / kabuk: 436 passed, 2 skipped (pypardiso yok), 3 xfailed (önceden var olan strict xfail'ler); katalog / kütük / uyumluluk 131 passed; ruff ve mypy temiz |
+
+Testler ilk koşuda geçti; kurulum düzeltmesi yok. API yüzeyi anlık görüntüsü değişmedi (imzalar aynı).

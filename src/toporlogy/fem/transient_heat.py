@@ -20,7 +20,7 @@ from typing import Any
 import numpy as np
 import torch
 
-from toporlogy.core.domain import Domain
+from toporlogy.core.domain import Domain, require_grid
 from toporlogy.fem.grid_spd import GridSPD, apply_elements
 from toporlogy.fem.heat import conduction_matrix, element_nodes
 
@@ -46,6 +46,7 @@ class TransientHeat:
 
     def __init__(self, domain: Domain, fixed: Sequence[int] | np.ndarray = (), values: Any = 0.0,
                  theta: float = 0.5) -> None:
+        require_grid(domain, "TransientHeat")
         if not 0.0 <= float(theta) <= 1.0:
             raise ValueError(f"theta must lie in [0, 1], got {theta}")
         self.domain, self.theta = domain, float(theta)
@@ -87,6 +88,7 @@ class TransientHeat:
 def nodal_source(domain: Domain, density: float) -> np.ndarray:
     """Consistent nodal heat input (nn,) of a uniform source ``density`` per unit volume over the active elements
     (∫ N_i dV = element volume / 2^dim for bilinear / trilinear shape functions), times ``frac``."""
+    require_grid(domain, "nodal_source")
     vol = domain.h ** domain.dim * (domain.thickness if domain.dim == 2 else 1.0)
     el = domain.active_elements
     frac = np.asarray(domain.frac, float).reshape(-1)[el]

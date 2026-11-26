@@ -116,7 +116,7 @@ import torch
 
 from toporlogy.core import tensor as T
 from toporlogy.core.constitutive import Kinematics, NeoHooke, MaterialRequest, SaintVenantKirchhoff, StateStore
-from toporlogy.core.domain import Domain
+from toporlogy.core.domain import Domain, require_grid
 from toporlogy.core.material import unique_matrices
 from toporlogy.fem.elastic import checked_residual, matrix_norm1
 from toporlogy.fem.elements import H8_CORNER, Q4_CORNER, D_iso, D_plane_strain, D_plane_stress, indexed_matmul
@@ -369,6 +369,7 @@ class NonlinearElasticity:
                  rtol: float = 1e-9, min_step: float = 1e-4, warm_start: bool = False, solver: Any = None,
                  line_search: str = "none", merit: str = "residual", log_energy: bool = False,
                  tangent_kind: str = "algorithmic") -> None:
+        require_grid(domain, "NonlinearElasticity")
         dim = domain.dim
         named = isinstance(material, str)
         if named and material not in MATERIALS:

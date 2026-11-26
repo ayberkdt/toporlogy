@@ -26,7 +26,7 @@ from typing import Any
 import numpy as np
 import torch
 
-from toporlogy.core.domain import Domain
+from toporlogy.core.domain import Domain, require_grid
 from toporlogy.fem.elements import (D_iso, D_plane_strain, D_plane_stress, _B_unit_h8, _B_unit_q4,
                                     element_matrix_from_D)
 from toporlogy.fem.grid_spd import GridSPD
@@ -91,6 +91,7 @@ class ThermoElastic:
     def __init__(self, domain: Domain, mech_fixed: Sequence[int] | np.ndarray, alpha: Any, nu: float = 0.3,
                  heat_fixed: Sequence[int] | np.ndarray = (), heat_values: Any = 0.0, T_ref: float = 0.0,
                  element: str | None = None, plane: str = "stress", D: np.ndarray | None = None) -> None:
+        require_grid(domain, "ThermoElastic")
         dim = domain.dim
         element = element or ("Q4" if dim == 2 else "H8")
         if element not in ("Q4", "H8"):

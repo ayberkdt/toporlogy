@@ -20,7 +20,7 @@ from typing import Any, cast
 import numpy as np
 import torch
 
-from toporlogy.core.domain import Domain
+from toporlogy.core.domain import Domain, require_grid
 from toporlogy.fem.elements import D_iso, D_plane_stress, element_matrix_from_D
 from toporlogy.fem.grid_spd import GridSPD, apply_elements
 from toporlogy.fem.transient_heat import capacity_matrix
@@ -47,6 +47,7 @@ class Newmark:
     def __init__(self, domain: Domain, fixed: Sequence[int] | np.ndarray, nu: float = 0.3,
                  D: np.ndarray | None = None, element: str | None = None, rayleigh: tuple[float, float] = (0.0, 0.0)
                  ) -> None:
+        require_grid(domain, "Newmark")
         dim = domain.dim
         if D is None:
             D = D_plane_stress(nu) if dim == 2 else D_iso(nu)

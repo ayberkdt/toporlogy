@@ -20,7 +20,7 @@ from typing import Any
 import numpy as np
 import torch
 
-from toporlogy.core.domain import Domain
+from toporlogy.core.domain import Domain, require_grid
 from toporlogy.fem.grid_spd import GridSPD
 from toporlogy.fem.heat import element_nodes
 
@@ -94,6 +94,7 @@ def plate_element_matrix(h: float, t: float, nu: float, shear: str = "reduced") 
 def hard_simply_supported(domain: Domain) -> np.ndarray:
     """Fixed DOFs of a hard simple support on the whole boundary of the box: w = 0 everywhere on it, βy = 0 on the
     edges x = const and βx = 0 on the edges y = const (the tangential rotations)."""
+    require_grid(domain, "hard_simply_supported")
     X = np.asarray(domain.node_coords(), float)
     lo, hi = X.min(axis=0), X.max(axis=0)
     tol = 1e-9 * domain.h
@@ -109,6 +110,7 @@ class MindlinPlate:
 
     def __init__(self, domain: Domain, t: float, nu: float = 0.3, fixed: Sequence[int] | np.ndarray = (),
                  shear: str = "reduced") -> None:
+        require_grid(domain, "MindlinPlate")
         if domain.dim != 2:
             raise ValueError("MindlinPlate needs a 2-D domain (the plate mid-surface)")
         _check(float(t), float(nu))

@@ -28,7 +28,7 @@ import numpy as np
 import scipy.sparse as sp
 import scipy.sparse.linalg as spla
 
-from toporlogy.core.domain import Domain
+from toporlogy.core.domain import Domain, require_grid
 from toporlogy.fem.elements import D_iso, D_plane_stress, element_matrix_from_D
 from toporlogy.fem.grid_spd import GridSPD
 from toporlogy.fem.heat import conduction_matrix, element_nodes
@@ -66,6 +66,7 @@ def _grid_index(domain: Domain) -> np.ndarray:
 
 def periodic_map(domain: Domain) -> np.ndarray:
     """Independent node (0 … prod(shape)−1) of every grid node: the node at index i is the one at i mod shape."""
+    require_grid(domain, "periodic_map")
     idx = _grid_index(domain) % np.asarray(domain.shape)
     return np.ravel_multi_index(tuple(idx.T), tuple(domain.shape))
 
@@ -201,6 +202,7 @@ def homogenize_elasticity(domain: Domain, E: np.ndarray, nu: float = 0.3, D: np.
     """Effective Voigt stiffness of the cell with element moduli ``E`` (n_active,) times the unit-modulus ``D``
     (default isotropic ``nu``; plane stress in 2-D). ``sensitivities``: also dC/dE per element. The element
     sensitivity carries the element's geometry factor (2-D thickness, 3-D h)."""
+    require_grid(domain, "homogenize_elasticity")
     dim = domain.dim
     if D is None:
         D = D_plane_stress(nu) if dim == 2 else D_iso(nu)
@@ -217,6 +219,7 @@ def homogenize_elasticity(domain: Domain, E: np.ndarray, nu: float = 0.3, D: np.
 def homogenize_conduction(domain: Domain, k: np.ndarray, bc: str = "periodic",
                           sensitivities: bool = False) -> Homogenized:
     """Effective conductivity matrix (dim × dim) of the cell with element conductivities ``k`` (n_active,)."""
+    require_grid(domain, "homogenize_conduction")
     dim = domain.dim
     geom = domain.thickness if dim == 2 else domain.h
     KE = np.asarray(conduction_matrix(dim), float) * geom

@@ -35,7 +35,7 @@ from typing import Any
 import numpy as np
 import torch
 
-from toporlogy.core.domain import Domain
+from toporlogy.core.domain import Domain, require_grid
 from toporlogy.core.material_field import MaterialField, stiffness_coefficients, symmetric_basis
 from toporlogy.fem.elastic import Elasticity
 from toporlogy.fem.elements import element_matrix_from_D
@@ -66,6 +66,7 @@ class TensorElasticity(Elasticity):
 
     def __init__(self, domain: Domain, fixed: Sequence[int] | np.ndarray, element: str | None = None,
                  solver: Any = None, ordering: str = "nested_dissection") -> None:
+        require_grid(domain, "TensorElasticity")
         el = element or ("H8" if domain.dim == 3 else "Q4")
         self.KE_basis = basis_element_matrices(domain.dim, el)
         super().__init__(domain, fixed, element=el, solver=solver, ordering=ordering)

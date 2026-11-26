@@ -1,4 +1,5 @@
-"""Grid-only components refuse a non-grid domain with a clear error (docs/olcumler/ag_topoloji_onkayit.md, RF1-RF3)."""
+"""Grid-only components and grid FE physics refuse a non-grid domain with a clear error
+(docs/olcumler/ag_topoloji_onkayit.md, RF1-RF3, GF1-GF2)."""
 from __future__ import annotations
 
 from collections.abc import Callable
@@ -168,3 +169,52 @@ def test_rf3_is_grid_truth_table() -> None:
     print("RF3:", table)
     assert all(is_grid(g) for g in grids)
     assert not any(is_grid(d) for d in DOMAINS.values())
+
+
+# ------------------------------------------------------------------ GF1-GF2: grid FE physics (ag_topoloji_onkayit.md)
+def _fem_refused() -> dict[str, tuple[Callable[[Any], Any], str | None]]:
+    from toporlogy.fem import dynamics_newmark as nm
+    from toporlogy.fem import elastic, elastic_gmg, grid_spd, heat, homogenization, modal, nonlinear, plate
+    from toporlogy.fem import tensor_elastic, thermoelastic, transient_heat
+    return {
+        "Elasticity": (lambda d: elastic.Elasticity(d, [0]), "MeshElasticity"),
+        "ElasticityGMG": (lambda d: elastic_gmg.ElasticityGMG(d, [0]), "MeshElasticity"),
+        "TensorElasticity": (lambda d: tensor_elastic.TensorElasticity(d, [0]), None),
+        "Modal": (lambda d: modal.Modal(d, [0]), None),
+        "HeatConduction": (lambda d: heat.HeatConduction(d, [0]), None),
+        "element_nodes": (lambda d: heat.element_nodes(d), None),
+        "assemble_conduction": (lambda d: heat.assemble_conduction(d, np.ones(d.n_active)), None),
+        "ThermoElastic": (lambda d: thermoelastic.ThermoElastic(d, [0], 1e-5), None),
+        "TransientHeat": (lambda d: transient_heat.TransientHeat(d, [0]), None),
+        "nodal_source": (lambda d: transient_heat.nodal_source(d, 1.0), None),
+        "Newmark": (lambda d: nm.Newmark(d, [0]), None),
+        "NonlinearElasticity": (lambda d: nonlinear.NonlinearElasticity(d, [0]), None),
+        "MindlinPlate": (lambda d: plate.MindlinPlate(d, 0.1), None),
+        "hard_simply_supported": (lambda d: plate.hard_simply_supported(d), None),
+        "GridSPD": (lambda d: grid_spd.GridSPD(d, np.eye(4), np.zeros((d.ne, 4), np.int64), d.ndof, [0]), None),
+        "homogenize_elasticity": (lambda d: homogenization.homogenize_elasticity(d, np.ones(d.n_active)), None),
+        "homogenize_conduction": (lambda d: homogenization.homogenize_conduction(d, np.ones(d.n_active)), None),
+        "periodic_map": (lambda d: homogenization.periodic_map(d), None),
+    }
+
+
+FEM_REFUSED = _fem_refused()
+
+
+@pytest.mark.parametrize("where", list(DOMAINS))
+@pytest.mark.parametrize("component", list(FEM_REFUSED))
+def test_gf1_grid_physics_refuses_non_grid_domain(component: str, where: str) -> None:
+    call, alternative = FEM_REFUSED[component]
+    d = DOMAINS[where]
+    with pytest.raises(ValueError) as err:
+        call(d)
+    msg = str(err.value)
+    assert component in msg and "grid" in msg and type(d).__name__ in msg, msg
+    assert (alternative in msg) if alternative else ("no mesh or shell counterpart" in msg), msg
+
+
+@pytest.mark.parametrize("where", list(DOMAINS))
+def test_gf2_conductivity_interpolation_keeps_working(where: str) -> None:
+    from toporlogy.fem.heat import ConductivityInterp
+    d = DOMAINS[where]
+    assert torch.isfinite(ConductivityInterp(d)(_x(d))).all()

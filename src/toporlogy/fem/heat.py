@@ -29,7 +29,7 @@ import scipy.sparse as sp
 import torch
 from scipy import ndimage
 
-from toporlogy.core.domain import Domain
+from toporlogy.core.domain import Domain, require_grid
 from toporlogy.fem.elastic import _LinearSolve
 from toporlogy.solvers.direct import DirectSolver
 from toporlogy.solvers.ordering import nested_dissection_blocks
@@ -68,12 +68,14 @@ def conduction_matrix(dim: int) -> np.ndarray:
 
 def element_nodes(domain: Domain, elements: np.ndarray | None = None) -> np.ndarray:
     """(n, 2^dim) node numbers of the given elements (default: all box elements), corner order of the domain."""
+    require_grid(domain, "element_nodes")
     e = np.arange(domain.ne) if elements is None else np.asarray(elements, np.int64)
     return domain.edof[e][:, ::domain.dim] // domain.dim
 
 
 def assemble_conduction(domain: Domain, k_active: np.ndarray) -> sp.csr_matrix:
     """Full (nn × nn) conduction matrix for conductivities ``k_active`` of the active elements (tests, inspection)."""
+    require_grid(domain, "assemble_conduction")
     en = element_nodes(domain, domain.active_elements)
     KE = conduction_matrix(domain.dim)
     s = domain.h if domain.dim == 3 else domain.thickness
@@ -109,6 +111,7 @@ class HeatConduction:
     """
 
     def __init__(self, domain: Domain, fixed: Sequence[int] | np.ndarray, solver: Any = None) -> None:
+        require_grid(domain, "HeatConduction")
         self.domain = domain
         self.KE = conduction_matrix(domain.dim)
         self.geom = domain.h if domain.dim == 3 else domain.thickness

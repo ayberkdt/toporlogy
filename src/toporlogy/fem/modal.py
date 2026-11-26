@@ -45,7 +45,7 @@ import scipy.sparse as sp
 import scipy.sparse.linalg as spla
 import torch
 
-from toporlogy.core.domain import Domain
+from toporlogy.core.domain import Domain, require_grid
 from toporlogy.fem.elastic import Elasticity
 from toporlogy.fem.mechanisms import check_moduli
 from toporlogy.solvers.direct import DirectSolver
@@ -150,6 +150,7 @@ class Modal:
                  mass: Any = None, n_modes: int = 6, sigma: float = 0.0, tol: float = 0.0,
                  cluster_tol: float = 1e-3, repeated: str = "warn", solver: Any = None,
                  elasticity: np.ndarray | None = None) -> None:
+        require_grid(domain, "Modal")
         if repeated not in ("warn", "raise", "ignore"):
             raise ValueError("repeated: warn | raise | ignore")
         if n_modes < 1:
