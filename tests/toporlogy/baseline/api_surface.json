@@ -3952,7 +3952,8 @@
     "solve"
    ],
    "class": "GridSPD"
-  }
+  },
+  "apply_elements": "apply_elements(KE,coef,u,edof,n)"
  },
  "toporlogy.fem.heat": {
   "ConductivityInterp": {
@@ -4186,6 +4187,16 @@
   "alpha_voigt": "alpha_voigt(alpha,dim)",
   "thermal_beta": "thermal_beta(alpha,dim,nu,D,plane,C3)",
   "thermal_load_matrix": "thermal_load_matrix(dim,beta,h,thickness)"
+ },
+ "toporlogy.fem.transient_heat": {
+  "TransientHeat": {
+   "attrs": [
+    "run",
+    "total_heat"
+   ],
+   "class": "TransientHeat"
+  },
+  "capacity_matrix": "capacity_matrix(dim)"
  },
  "toporlogy.geometry": {
   "Ball": {
