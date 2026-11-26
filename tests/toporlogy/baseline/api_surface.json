@@ -5769,6 +5769,23 @@
    "class": "InertiaComponent"
   }
  },
+ "toporlogy.optimization.mesh_topology": {
+  "MeshCompliance": {
+   "attrs": [],
+   "class": "MeshCompliance"
+  },
+  "MeshDensityFilter": {
+   "attrs": [
+    "backward"
+   ],
+   "class": "MeshDensityFilter"
+  },
+  "MeshResult": {
+   "attrs": [],
+   "class": "MeshResult"
+  },
+  "optimize_mesh": "optimize_mesh(mesh,D,F,fixed,volume,rmin,penal,emin_ratio,max_iter,tol,thickness,move,x0)"
+ },
  "toporlogy.optimization.mode_tracking": {
   "Tracking": {
    "attrs": [],

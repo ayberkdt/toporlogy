@@ -17,3 +17,19 @@
 | MS4 | Bozulmuş Q4 ağında konsol, hacim ≤ 0,4, 30 MMA iterasyonu | son uyum < ilk uyum; hacim ≤ 0,4 (1 + 1e-3) |
 | MS5 | rmin ≤ 0, hacim sınırı (0, 1] dışında, yanlış satırlı yük | açık hata |
 | MS6 | var olan kod | `pytest -m baseline` bit düzeyinde (yeni modül başka dosyaya dokunmaz) |
+
+## Sonuç (ilk ölçüm, 2026-11-26)
+
+`tests/toporlogy/test_mesh_topology.py` (6 test); hepsi ilk koşuda geçti.
+
+| # | Durum | Ölçülen |
+|:---|:---|:---|
+| MS1 | PASS | `from_domain` ağında hücre sırası = eleman sırası; filtre matrisi farkı ≤ 1e-14 (rmin 1,5 ve 2,5 eleman) |
+| MS2 | PASS | uyum 2,7e-14, dc/dE 3,1e-14 göreli |
+| MS3 | PASS | bozulmuş Q4: 1,1e-8; bozulmuş T3: 2,0e-8 göreli |
+| MS4 | PASS | bozulmuş Q4 konsol (16 × 8): uyum 653 → 176 (30 iterasyon), hacim 0,4000 |
+| MS5 | PASS | rmin = 0, hacim 1,2, yanlış satırlı yük: açık hata |
+| MS6 | PASS | baseline 8 passed bit düzeyinde |
+
+Sonraki adım (mimari karar): genel ağın `Study` / YAML'a girmesi — ızgaraya bağlı olmayan bir tasarım zinciri (bu
+modüldeki filtre gibi) ve ağ etiketleriyle mesnet / yük.
