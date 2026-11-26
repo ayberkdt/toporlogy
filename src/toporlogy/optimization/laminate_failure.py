@@ -145,8 +145,18 @@ def load_factor_to_failure(stress_mechanical: Any, stress_residual: Any,
                 roots = [q / a] + ([c / q] if q != 0.0 else [])
         elif b != 0.0:
             roots = [-c / b]
+        # a mode that switches on along the load path may already be exceeded where it switches on (fibre tension
+        # with α > 0 is discontinuous at σ11 = 0): the switching point is then the first failure of that mode
+        if m.component is not None and m.sign * sm[m.component] > 0.0:
+            lam0 = -sr[m.component] / sm[m.component]
+            if lam0 > 0.0 and float(m.value(sr + lam0 * sm)) >= 1.0:
+                roots.append(lam0)
         for lam in roots:
-            if lam >= 0.0 and lam < best and bool(m.active(sr + lam * sm)):
+            at = sr + lam * sm
+            if m.component is not None and abs(at[m.component]) <= 1e-12 * float(np.abs(at).max()):
+                at[m.component] = 0.0                      # a switching point belongs to the mode it switches on
+            if lam >= 0.0 and lam < best and (bool(m.active(at)) or
+                                              (m.component is not None and at[m.component] == 0.0)):
                 best, name = float(lam), m.name
     return best, name
 

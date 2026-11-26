@@ -290,6 +290,13 @@ def test_load_factor_edge_cases() -> None:
     assert load_factor_to_failure([1.0, 0, 0], [0, 80.0, 0], modes)[0] == 0.0   # residual alone already failed
 
 
+def test_load_factor_at_a_discontinuous_switching_point() -> None:
+    """Fibre tension (α = 1) switches on at σ11 = 0 already exceeded by shear: λ* is the switching point."""
+    modes = [m for m in failure_modes("hashin", STRENGTH) if m.name == "fibre_tension"]
+    lam, name = load_factor_to_failure([100.0, 0, 0], [-300.0, 0, 1.2 * STRENGTH.S12], modes)
+    assert name == "fibre_tension" and abs(lam - 3.0) <= 1e-12
+
+
 # --------------------------------------------------------------------------------------------------- L11
 def test_l11_bad_input_is_refused() -> None:
     with pytest.raises(ValueError):
