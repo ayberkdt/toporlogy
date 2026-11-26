@@ -50,14 +50,17 @@ def mac(Phi: np.ndarray, Psi: np.ndarray, M: Any = None) -> np.ndarray:
 
 
 def clusters(lam: np.ndarray, cluster_tol: float = 1e-6) -> list[list[int]]:
-    """Groups of consecutive (sorted) eigenvalues within ``cluster_tol`` relative of their neighbour."""
+    """Every mode in a group: the clusters of :func:`toporlogy.fem.modal.find_clusters` (sorted eigenvalues within
+    ``cluster_tol`` relative of their neighbour) and each remaining mode on its own, in index order."""
+    from toporlogy.fem.modal import find_clusters
     lam = np.asarray(lam, float)
-    out: list[list[int]] = [[0]] if len(lam) else []
-    for i in range(1, len(lam)):
-        if abs(lam[i] - lam[i - 1]) <= cluster_tol * max(abs(lam[i]), abs(lam[i - 1]), 1e-300):
-            out[-1].append(i)
-        else:
-            out.append([i])
+    groups = {int(c[0]): [int(i) for i in c] for c in find_clusters(lam, cluster_tol)}
+    out: list[list[int]] = []
+    i = 0
+    while i < len(lam):
+        g = groups.get(i, [i])
+        out.append(g)
+        i = g[-1] + 1
     return out
 
 

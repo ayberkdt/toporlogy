@@ -3895,6 +3895,15 @@
   "ke_q4im_from_D": "ke_q4im_from_D(D)",
   "mode_recovery_from_D": "mode_recovery_from_D(dim,D)"
  },
+ "toporlogy.fem.grid_spd": {
+  "GridSPD": {
+   "attrs": [
+    "matrix",
+    "solve"
+   ],
+   "class": "GridSPD"
+  }
+ },
  "toporlogy.fem.heat": {
   "ConductivityInterp": {
    "attrs": [
@@ -4115,13 +4124,6 @@
   }
  },
  "toporlogy.fem.thermoelastic": {
-  "GridSPD": {
-   "attrs": [
-    "matrix",
-    "solve"
-   ],
-   "class": "GridSPD"
-  },
   "ThermoElastic": {
    "attrs": [
     "displacement",

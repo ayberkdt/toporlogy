@@ -26,6 +26,7 @@ import scipy.sparse.linalg as spla
 
 from toporlogy.core.domain import Domain
 from toporlogy.fem.elements import D_iso, D_plane_stress, element_matrix_from_D
+from toporlogy.fem.grid_spd import GridSPD
 from toporlogy.fem.heat import conduction_matrix, element_nodes
 
 __all__ = ["Homogenized", "homogenize_elasticity", "homogenize_conduction", "periodic_map", "BCS"]
@@ -73,11 +74,7 @@ def _volume(domain: Domain) -> float:
 def _assemble(domain: Domain, KE: np.ndarray, weights: np.ndarray, dofs_per_node: int) -> sp.csr_matrix:
     el = domain.active_elements
     edof = np.asarray(domain.edof)[el] if dofs_per_node == domain.dim else element_nodes(domain, el)
-    n = domain.nn * dofs_per_node
-    rows = np.repeat(edof, edof.shape[1], axis=1).ravel()
-    cols = np.tile(edof, (1, edof.shape[1])).ravel()
-    vals = (np.asarray(weights, float)[:, None] * KE.ravel()[None, :]).ravel()
-    return sp.csr_matrix((vals, (rows, cols)), shape=(n, n))
+    return GridSPD(domain, KE, edof, domain.nn * dofs_per_node, ()).matrix(weights)
 
 
 def _unit_cases(domain: Domain, kind: str) -> np.ndarray:
