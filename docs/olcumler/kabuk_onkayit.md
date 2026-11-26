@@ -166,3 +166,24 @@ için eşik yuvarlama düzeyinde. KS3 yalnızca zincirin çalıştığını ve k
 Kurallar: ilk koşuda tutmayan kontrol, ölçülen değeriyle `xfail(strict=True)` olur ve `docs/vv_kutugu.json`'a girer;
 eşik gevşetilmez; test kurulum hatası (ölçüm değil) düzeltilebilir ama burada yazılır; ilk koşudan sonra eklenen kontrol
 "post hoc" diye işaretlenir.
+
+### KS1–KS5 sonucu (ilk ölçüm, 2026-11-26)
+
+`tests/toporlogy/test_shell_study.py` (5 test); beşi de ilk koşuda geçti. Değerler testlerin `-s` çıktısından.
+
+| # | Durum | Ölçülen |
+|:---|:---|:---|
+| KS1 | PASS | değer 2,3e-14 göreli (c = 9564,5, iki yük durumu); hacim 1,9e-16; toplam alan 1,4e-16 göreli |
+| KS2 | PASS | 8,3e-11 göreli (dördüncü mertebe fark, s = 1e-3) |
+| KS3 | PASS | uyum 3,166e4 → 6,946e3; hacim 0,40000 (0,3999997); `max_iter = 30`, döngü 27 kayıttan sonra tasarım değişimi ≤ 0,01 ölçütüyle durdu (`termination = "design_change"`, `feasible = True`) |
+| KS4 | PASS | `Study`: "… the physics 378 state DOFs" (6 · 63); `ShellPhysics.solve`: "… 378 state DOFs (6 per node)" |
+| KS5 | PASS | bozulmuş Q4 ağında rmin = 0,2 ve 0,35 için filtre matrisleri (indptr, indices, data) bit düzeyinde eşit; `test_mesh_topology.py` değişmeden geçti; baseline 8 passed bit düzeyinde |
+
+Notlar. KS3'te ön kayıttaki "30 MMA iterasyonu", MD4'teki gibi `max_iter = 30` olarak uygulandı; varsayılan
+`tol = 0,01` ile döngü 27'de durdu (yeniden koşulmadı; eşikler son tasarım için). Test kurulumunda ölçüm öncesi ya da
+sonrası düzeltme yok; ilk koşudan sonra yalnız mypy için `sd: Any` tip notu eklendi (sayıları değiştirmez).
+`MeshFilterLink` ve `MeshVolume` artık alanın `centroids` / `cell_volume` özniteliklerini okuyor; `MeshDomain`
+`centroids = mesh.cell_centroids()` taşıyor, böylece ağ yolu aynı sayıları üretiyor (KS5, MD1–MD4 geçti).
+
+Kalan: YAML (`domain: {type: shell}`), ızgaraya özgü bileşenlerin kabuk alanında açık hatası, jeodezik filtre
+mesafesi, drilling ölçeğinin (α) eğri kabuk optimizasyonuna etkisi (kayıt ölçümünde uyumun %5,4'ü kadar).

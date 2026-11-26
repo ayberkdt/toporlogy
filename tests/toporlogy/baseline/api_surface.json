@@ -6167,6 +6167,21 @@
   "pod_basis": "pod_basis(snapshots,rank)",
   "projection_error": "projection_error(snapshots,V)"
  },
+ "toporlogy.optimization.shell_study": {
+  "ShellDomain": {
+   "attrs": [
+    "uniform_start"
+   ],
+   "class": "ShellDomain"
+  },
+  "ShellPhysics": {
+   "attrs": [
+    "name",
+    "solve"
+   ],
+   "class": "ShellPhysics"
+  }
+ },
  "toporlogy.optimization.strength": {
   "CRITERIA": "<tuple>",
   "Criterion": {

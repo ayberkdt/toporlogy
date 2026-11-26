@@ -26,12 +26,15 @@ __all__ = ["MeshDensityFilter", "MeshCompliance", "MeshResult", "optimize_mesh"]
 
 class MeshDensityFilter:
     """x̃ = H x / Hs over the cells of ``mesh``: cone weights max(0, rmin − |c_i − c_j|) between cell centroids
-    (``rmin`` in length units), each row normalised by its sum. ``matrix`` is the normalised sparse matrix."""
+    (``rmin`` in length units), each row normalised by its sum. ``matrix`` is the normalised sparse matrix.
+    ``mesh`` is a :class:`~toporlogy.fem.mesh.Mesh` or the centroids themselves, an (n, d) array (shell facets)."""
 
-    def __init__(self, mesh: Mesh, rmin: float) -> None:
+    def __init__(self, mesh: Mesh | np.ndarray, rmin: float) -> None:
         if not rmin > 0:
             raise ValueError(f"rmin must be > 0 (a length), got {rmin}")
-        c = np.asarray(mesh.cell_centroids(), float)
+        c = np.asarray(mesh.cell_centroids() if isinstance(mesh, Mesh) else mesh, float)
+        if c.ndim != 2 or len(c) == 0 or not np.isfinite(c).all():
+            raise ValueError(f"centroids must be a finite non-empty (n, d) array, got shape {c.shape}")
         tree = cKDTree(c)
         rows, cols, vals = [], [], []
         for i, nb in enumerate(tree.query_ball_point(c, r=float(rmin))):

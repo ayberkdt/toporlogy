@@ -81,6 +81,7 @@ FILE_LAYERS: dict[str, tuple[str, ...]] = {
     "test_thermoelastic_study.py": ("AN", "OG", "IC"),
     "test_plate.py": ("U", "AN", "OG"),
     "test_shell.py": ("U", "AN", "OG"),
+    "test_shell_study.py": ("OG", "IC"),
     "test_mesh_topology.py": ("EL", "OG"),
     "test_thermoelastic.py": ("AN", "AS", "OG"),
     "test_bifurcation.py": ("U", "AN", "IS"),

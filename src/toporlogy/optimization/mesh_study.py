@@ -10,12 +10,15 @@ a 1-D "grid" of ``n_cells`` (all active and full, no keep or void cells), so ``S
 * :class:`MeshElasticity`: linear elasticity, ``solve(E, F)`` → U with an autograd backward (self-adjoint);
 * :class:`MeshVolume`: volume fraction weighted by the cell volumes (a :class:`Volume`, so the uniform start applies).
 
+:class:`MeshFilterLink` and :class:`MeshVolume` read only the domain's ``centroids`` and ``cell_volume``, so they also
+serve the shell facets of :class:`~toporlogy.optimization.shell_study.ShellDomain`.
+
 Grid-only links and responses (projection filters on the grid, AM, symmetry, stress recovery, connectivity) are not
 for a ``MeshDomain``; they are not checked here. No YAML yet.
 """
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Protocol
 
 import numpy as np
 import torch
@@ -29,9 +32,17 @@ from toporlogy.optimization.responses import EvalContext, Volume
 __all__ = ["MeshDomain", "MeshFilterLink", "MeshElasticity", "MeshVolume"]
 
 
+class _Cells(Protocol):
+    """What :class:`MeshFilterLink` and :class:`MeshVolume` read from a domain: centroids (n, d), measures (n,)."""
+
+    centroids: np.ndarray
+    cell_volume: np.ndarray
+
+
 class MeshDomain:
     """The cells of ``mesh`` as the design domain of a Study (a 1-D grid of n_cells, every cell active and full).
-    ``cell_volume``: measure of each cell (area in 2-D without thickness, volume in 3-D)."""
+    ``cell_volume``: measure of each cell (area in 2-D without thickness, volume in 3-D); ``centroids``: their
+    centroids (n_cells, dim)."""
 
     def __init__(self, mesh: Mesh) -> None:
         n = int(mesh.n_cells)
@@ -49,6 +60,7 @@ class MeshDomain:
         k = 3 if self.dim == 2 else 6
         geo = ElasticProblem(mesh, np.eye(k)).geom                   # geometry only (D unused)
         self.cell_volume = np.asarray(geo.dV, float).sum(axis=1)
+        self.centroids = np.asarray(mesh.cell_centroids(), float)
 
     def uniform_start(self, volume_fraction: float, weighted: bool = False) -> np.ndarray:
         return np.full(self.n_design, float(min(max(volume_fraction, 0.0), 1.0)))
@@ -58,12 +70,12 @@ class MeshDomain:
 
 
 class MeshFilterLink(torch.nn.Module):
-    """Chain link x̃ = H x / Hs of :class:`~toporlogy.optimization.mesh_topology.MeshDensityFilter` (``rmin`` in
-    length units); autograd backward Hᵀ g."""
+    """Chain link x̃ = H x / Hs of :class:`~toporlogy.optimization.mesh_topology.MeshDensityFilter` on the domain's
+    ``centroids`` (``rmin`` in length units); autograd backward Hᵀ g."""
 
-    def __init__(self, domain: MeshDomain, rmin: float) -> None:
+    def __init__(self, domain: _Cells, rmin: float) -> None:
         super().__init__()
-        self.filter = MeshDensityFilter(domain.mesh, rmin)
+        self.filter = MeshDensityFilter(domain.centroids, rmin)
         self._H, self._Ht = self.filter.matrix, self.filter.matrix.T.tocsr()
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
@@ -124,9 +136,10 @@ class MeshElasticity:
 
 
 class MeshVolume(Volume):
-    """Volume fraction Σ V_e x̄_e / Σ V_e with the cell volumes of a :class:`MeshDomain`."""
+    """Volume fraction Σ V_e x̄_e / Σ V_e with the domain's ``cell_volume`` (cell volumes of a :class:`MeshDomain`,
+    facet areas of a shell domain)."""
 
-    def __init__(self, domain: MeshDomain) -> None:
+    def __init__(self, domain: _Cells) -> None:
         super().__init__(weighted=True)
         v = np.asarray(domain.cell_volume, float)
         self._w = torch.as_tensor(v / v.sum(), dtype=torch.float64)
