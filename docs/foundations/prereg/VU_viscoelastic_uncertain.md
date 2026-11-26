@@ -19,3 +19,21 @@ non-proportional material scaled by factors (0.7, 1.0, 1.3) × (0.5, 1, 2) — a
 | VU5 | invalid inputs: structures with different meshes, time grids, loads or supports, negative weights, weights not summing to 1, κ < 0 → ValueError | — | exact |
 
 Run: `python -m pytest tests/toporlogy/test_viscoelastic_uncertain.py -q -p no:randomly`. First result appended below.
+
+## First result (run 2026-11-27 02:38–02:42 +0300 by the clock)
+
+5 passed on the first run (VU1–VU5). VU4 values over the 9 samples, J at t_s = 100 s:
+
+| design | mean | std | mean + 2 std | iterations (stop) |
+|---|---|---|---|---|
+| robust (objective mean + 2 std) | 1.202647e-4 | 1.029451e-5 | 1.40854e-4 | 101 (tol 1e-3) |
+| nominal sample (1.0, 1.0) | 1.198694e-4 | 1.030795e-5 | **1.40485e-4** | 134 (tol 1e-3) |
+
+**The pass is weak and the robust run is not optimal at its own objective**: its std is only 0.13 % smaller, and the
+nominal design has the lower mean + 2 std (by 0.26 %). Together with VO6 (non-convergence at 40 iterations) and VR1
+(min–max bound formulation 0.28 % worse), this is the third measurement where the step-size stop of MMA (largest
+change < 1e-3) leaves a ~0.3 % objective gap, the same size as the effects measured. Conclusion recorded for the
+optimisation side: on this problem class the spectral uncertainty of the bulk relaxation changes J(t_s) by ±8.6 %
+(std/mean) almost independently of the topology, so topology optimisation can do little against it; and design
+comparisons at the 0.1–1 % level need a KKT-residual stop and multiple starts before any claim. Follow-up: KKT
+residual stopping criterion for MMA (the optimiser module), multi-start comparisons.

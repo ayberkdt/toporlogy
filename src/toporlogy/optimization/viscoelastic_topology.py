@@ -35,7 +35,7 @@ from toporlogy.fem.mesh.linear import Factorization
 from toporlogy.fem.mesh.mesh import Mesh
 from toporlogy.fem.mesh.quadrature import rule
 
-__all__ = ["ViscoelasticStructure", "ViscoelasticResult", "optimize_viscoelastic"]
+__all__ = ["ViscoelasticStructure", "ViscoelasticResult", "RobustViscoelastic", "optimize_viscoelastic"]
 
 _IP = [0, 1, 5]                                         # plane strain [xx, yy, xy] inside the 3-D Voigt order
 _ONE6 = np.array([1.0, 1.0, 1.0, 0.0, 0.0, 0.0])
@@ -169,6 +169,51 @@ class ViscoelasticStructure:
         return ViscoelasticResult(torch.stack(us), torch.stack(cs), self.times.copy())
 
 
+class RobustViscoelastic:
+    """Mean + κ · std over material samples (``docs/foundations/prereg/VU_viscoelastic_uncertain.md``).
+
+    ``structures``: :class:`ViscoelasticStructure` objects that share the mesh, loads, supports and time grid and
+    differ only in the material sample; ``weights`` (≥ 0, sum 1; default equal). :meth:`response` returns, per time
+    step, J_rob = Σ_s ω_s J_s + κ sqrt(Σ_s ω_s (J_s − mean)²) as ``compliance``, so :func:`optimize_viscoelastic`
+    accepts it in place of one structure. The samples are given by the caller (a deterministic set). The std term is
+    not differentiable where all samples coincide (zero variance); κ > 0 there gives a non-finite gradient."""
+
+    def __init__(self, structures: Sequence[ViscoelasticStructure], weights: Sequence[float] | None = None,
+                 kappa: float = 0.0) -> None:
+        st = list(structures)
+        if not st:
+            raise ValueError("RobustViscoelastic needs at least one structure")
+        s0 = st[0]
+        for s in st[1:]:
+            if (s.mesh is not s0.mesh and not (np.array_equal(s.mesh.points, s0.mesh.points)
+                                               and np.array_equal(s.mesh.cells, s0.mesh.cells))):
+                raise ValueError("RobustViscoelastic: the samples must share the mesh")
+            if not (np.array_equal(s.times, s0.times) and np.array_equal(s.loads, s0.loads)
+                    and np.array_equal(s.free, s0.free)):
+                raise ValueError("RobustViscoelastic: the samples must share times, loads and supports")
+        w = np.full(len(st), 1.0 / len(st)) if weights is None else np.asarray(weights, float).reshape(-1)
+        if w.shape != (len(st),) or not np.all(np.isfinite(w)) or np.any(w < 0) or abs(w.sum() - 1.0) > 1e-12:
+            raise ValueError("weights must be one finite non-negative value per sample, summing to 1")
+        if not (np.isfinite(kappa) and kappa >= 0.0):
+            raise ValueError(f"kappa must be finite and >= 0, got {kappa!r}")
+        self.structures, self.weights, self.kappa = st, w, float(kappa)
+        self.mesh, self.dV, self.ne = s0.mesh, s0.dV, s0.ne
+
+    def samples(self, w: torch.Tensor) -> torch.Tensor:
+        """J_s at every step (n_samples, n_steps)."""
+        return torch.stack([s.response(w).compliance for s in self.structures])
+
+    def response(self, w: torch.Tensor) -> ViscoelasticResult:
+        Js = self.samples(w)
+        if len(self.structures) == 1 and self.kappa == 0.0:
+            rob = Js[0]
+        else:
+            om = torch.as_tensor(self.weights, dtype=Js.dtype)[:, None]
+            mean = (om * Js).sum(0)
+            rob = mean + self.kappa * torch.sqrt((om * (Js - mean) ** 2).sum(0)) if self.kappa > 0 else mean
+        return ViscoelasticResult(torch.empty(0), rob, self.structures[0].times.copy())
+
+
 @dataclass
 class OptimizeResult:
     x: np.ndarray
@@ -181,7 +226,8 @@ class OptimizeResult:
     iterations: int = 0
 
 
-def optimize_viscoelastic(structure: ViscoelasticStructure, volume: float, rmin: float, step_index: int = -1,
+def optimize_viscoelastic(structure: ViscoelasticStructure | RobustViscoelastic, volume: float, rmin: float,
+                          step_index: int = -1,
                           penal: float = 3.0, emin: float = 1e-9, max_iter: int = 40, move: float = 0.2,
                           x0: np.ndarray | None = None, steps: Sequence[int] | None = None,
                           tol: float = 0.0) -> OptimizeResult:
