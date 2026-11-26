@@ -1,8 +1,8 @@
 # Foundations II — live status
 
-Actual HEAD: `70b48a4`  
+Actual HEAD: `6b2bff9`  
 Branch / dirty state: `foundations/round-3` / dirty  
-Updated at: 2026-11-27 02:09 +0300  
+Updated at: 2026-11-27 02:48 +0300  
 Environment / resource budget: Windows 11, Python 3.12.1, numpy 2.2.6, scipy 1.14.1, torch 2.5.1+cu121 (CUDA present, not exercised), mpmath 1.3.0, scikit-fem 12.0.2, meshio absent; 12 logical CPUs; 16.7 GB RAM, about 2-4 GB free; C: 5.6 GB free (temp files on D:)  
 Last successful integrated checkpoint: f1ff694 (baseline marker 8 passed, collection 2584 tests; logs/collect_f1ff694.txt, logs/baseline_marker_f1ff694.txt)  
 Current unit: VO record; integration fast suite
@@ -24,8 +24,11 @@ Current unit: VO record; integration fast suite
 | WP16-cure | P1/P2 | P-properties | VERIFIED_SCOPE | prereg/TS_cure.md TS1-TS6 pass (9532240) | FE residual-stress coupling |
 | WP15-thermoplastics | P1/P2 | P-properties, V-viscoelastic | VERIFIED_SCOPE | prereg/TS_cure.md TP3, TP4 pass (Avrami/Nakamura only) | TP1/TP2/TP5/TP6 |
 | WP20-identification | P1/P2 | V-viscoelastic, C-creep | PLANNED | — | Prony and Norton synthetic fits D4-D6 |
-| VO-viscoelastic-topology | P1 | V-viscoelastic, WP17-history-fem | IN_PROGRESS | prereg/VO_viscoelastic_topology.md | record VO1-VO6 and the post hoc VO6 study |
-| WP07-WP10, WP18, WP19 | P1/P2 | WP06-fem-kernel | DEFERRED | — | after the P0 gates |
+| VO-viscoelastic-topology | P1 | V-viscoelastic, WP17-history-fem | VERIFIED_SCOPE | prereg/VO_viscoelastic_topology.md VO1-VO6 pass; post hoc: 0.2 % gain at convergence | Study/YAML integration |
+| MM-micromechanics | P2 | E04-poisson | VERIFIED_SCOPE | prereg/MM_micromechanics.md MM1-MM4, E7, MMI1-2 pass (c9f019b); Eshelby components from memory, cross-checked by coated/hollow sphere closed forms | self-consistent, ellipsoidal inclusions |
+| D-identification | P1/P2 | V-viscoelastic, C-creep | VERIFIED_SCOPE | prereg/D_identification.md D4-D7 pass except D5a covariance prediction (strict xfail); D8 NOT VERIFIED (skip) | real licensed data |
+| VR/VU/KS robust optimisation | P1 | VO-viscoelastic-topology | IN_PROGRESS | prereg/VR_viscoelastic_robust.md (VR1 FAILED), VU_viscoelastic_uncertain.md (weak pass), KS_kkt_stop.md (KS1 pass, KS2/KS3 running) | KS2/KS3 results |
+| WP07-WP10, WP19 | P1/P2 | WP06-fem-kernel | DEFERRED | — | after the P0 gates |
 
 ## Next executable units
 
@@ -64,6 +67,7 @@ Current unit: VO record; integration fast suite
 - test_viscoelastic_topology.py: 7 passed (first run)
 - ledger/api/architecture/catalog meta tests after merges: 35 passed 1 xfailed (after the diagnostics layer fix)
 - ruff check src tests: clean after fixes; mypy: clean after fixes (166 files)
+- fast suite (-m 'not slow') started at 79623a7: 2747 passed, 4 skipped, 55 xfailed, 2 FAILED, exit 1, 32 min (logs/fast_suite_79623a7.txt). The 2 failures (api_surface signature of optimize_viscoelastic, vv_risk_kapsam render) are artefacts of regenerating snapshots in the working tree while the suite ran; both pass on the regenerated state (meta tests 102 passed). Lesson: the release suite runs in a separate clean worktree of the commit.
 
 ## Resource and permission blockers
 
