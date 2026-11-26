@@ -39,7 +39,8 @@ from toporlogy.optimization.laminate_failure import first_ply_failure  # noqa: E
 
 
 def environment() -> dict:
-    git = lambda *a: subprocess.run(["git", *a], cwd=REPO, capture_output=True, text=True).stdout.strip()  # noqa: E731
+    git = lambda *a: subprocess.run(["git", *a], cwd=REPO, capture_output=True,  # noqa: E731, S603, S607
+                                    text=True).stdout.strip()
     return {"date": datetime.now().astimezone().isoformat(timespec="seconds"), "git_sha": git("rev-parse", "HEAD"),
             "git_dirty_src": bool(git("status", "--porcelain", "--", "src", "tests")),
             "python": platform.python_version(), "numpy": np.__version__, "scipy": scipy.__version__,
@@ -85,7 +86,8 @@ def uq_record() -> dict:
     for method in uq.SAMPLING_METHODS:
         y = TU.values(2 ** 14, method, 1)
         out[f"normal_{method}"] = {"mean": float(y.mean()), "variance": float(y.var(ddof=1)),
-                                   "q95": uq.quantile_estimate(y, 0.95).value, "cvar95": uq.cvar_estimate(y, 0.95).value,
+                                   "q95": uq.quantile_estimate(y, 0.95).value,
+                                   "cvar95": uq.cvar_estimate(y, 0.95).value,
                                    "mean_se_iid": uq.mean_estimate(y).standard_error}
     space = uq.ParameterSpace((uq.Parameter.uniform("x", 0.0, 1.0),))
     hits = 0
@@ -199,7 +201,8 @@ def rom_record() -> dict:
             "R5_max_gap_error_over_s": max(abs(g - e2) / s for s, g, e2 in gaps),
             "R6_other_load": {"rel_error": rel_other, "rel_bound": sol_other.relative_error_bound,
                               "bound_over_error": sol_other.error_bound / e_other},
-            "R7_median_ms": {"full_solve": median_ms(system.solve), "reduced_only": median_ms(model.reduced_coefficients),
+            "R7_median_ms": {"full_solve": median_ms(system.solve),
+                             "reduced_only": median_ms(model.reduced_coefficients),
                              "reduced_with_bound": median_ms(model.solve), "rank": TR.RANK}}
 
 
