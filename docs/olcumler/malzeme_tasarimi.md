@@ -41,11 +41,11 @@ problemler). §2 (konstitutif protokol) nonlinear-solvers oturumunun; 3-B yön p
 | G3 | Sıfır türevler (saf izotrop faz, keep) | PASS | |
 | G4 | Taban doğrusallığı KE(C) (Q4, H8) | PASS | ≤ 1e-14 |
 | G5 | Kütle / maliyet türevi | PASS | ≤ 1e-8 |
-| E1 | `pytest -m baseline` | §5'e bakın | |
+| E1 | `pytest -m baseline` | PASS | 8 örnek, en büyük göreli fark 0 |
 | E2 | Parmak izi (`SIMP`, `RAMP`, `HashinShtrikman`, `MultiPhaseSIMP`, `phase_fractions`, `phase_start`) | PASS | 12/12 bit düzeyinde aynı |
 | E3 | Tek izotrop faz tensör yolu = SIMP + `Elasticity` (MBB 30 × 10) | PASS | uyum ≤ 1e-10, gradyan ≤ 1e-8, 10 MMA adımı ≤ 1e-6 |
 | E4 | Sabit açı alanı = mevcut ortotrop `angle_field` yolu | PASS | uyum ≤ 1e-10, U ≤ 1e-9 |
-| U1 | 13 yeni UNSUPPORTED kuralı fail-closed | PASS | `test_compatibility.py` probları |
+| U1 | 12 yeni UNSUPPORTED kuralı fail-closed | PASS | `test_compatibility.py` probları |
 | U2 | Katalog belgeleri, `test_catalog.py` | PASS | |
 | M1 | `MaterialField` yalnız aktif eleman, istenmeyen alan yok | PASS | |
 
@@ -121,8 +121,16 @@ maliyet yok.
 
 ## 5. Testler ve araçlar
 
-Hızlı paket, baseline, ruff, mypy sonuçları `material-design_sonuc.md`'de (ortak not klasörü). Yeni test dosyası
-60 test (4 strict xfail, 2 yavaş: A6, A7).
+`1a0c490` üzerinde (bu makine, diğer koşularla eşzamanlı):
+
+* `pytest tests/toporlogy -m "not slow" -p no:randomly`: 1216 passed, 4 skipped, 69 deselected, 25 xfailed, 1 failed
+  (3198 s). Tek hata `test_ledger_entries_are_complete`: koşu bu dosya yazılmadan önce başladı, kütük girdisinin
+  kayıt yolu henüz yoktu; dosya eklendikten sonra `test_catalog_ledger.py` 8 passed. Taban `10daa03`: 1149 passed,
+  22 xfailed (koordinasyon notundan; bu oturumda tabanı yeniden koşmadım).
+* Yavaş: A6 strict xfail (beklenen), A7 passed.
+* `pytest -m baseline`: 8 passed, her örnekte en büyük göreli fark 0,00e+00 (E1 PASS).
+* `ruff check src tests`: temiz. `python -m mypy`: 116 dosyada sorun yok.
+* Yeni test dosyası 60 test (4 strict xfail, 2 yavaş: A6, A7).
 
 ## 6. Uyumluluk matrisi (katalog satırları)
 
