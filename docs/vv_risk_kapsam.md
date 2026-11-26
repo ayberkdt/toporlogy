@@ -8,12 +8,12 @@ Kaynak: `tests/toporlogy/_vv_layers.py` (dosya → katman sınıflaması elle, d
 | MP material point | 16/205 | — | — | 8/126 | 11/154 | 1/25 | 13/163 | 5/91 | 7/97 | 1/13 | 4/55 | — |
 | EL element patch / quadrature | 7/80 | — | — | 1/10 | 10/109 | 1/14 | 4/52 | 1/14 | 1/17 | — | 3/40 | — |
 | AS assembly / BC / reactions | 5/111 | 1/23 | 5/62 | 2/59 | 8/127 | 6/78 | 3/82 | 2/59 | 1/34 | — | 1/20 | — |
-| AN analytical / MMS | 17/215 | — | — | 5/94 | 23/278 | 1/25 | 18/257 | 5/100 | 6/97 | 1/13 | 3/44 | — |
+| AN analytical / MMS | 17/217 | — | — | 5/94 | 23/280 | 1/25 | 18/257 | 5/100 | 6/99 | 1/13 | 3/44 | — |
 | IS independent solver / implementation | 8/96 | — | 1/14 | 3/73 | 13/173 | 3/51 | 7/122 | 3/73 | 3/62 | — | 1/24 | — |
-| OG optimization / KKT / gradient | 14/182 | — | 1/14 | 8/129 | 19/250 | 6/87 | 27/300 | 16/210 | 13/151 | 3/34 | 3/54 | — |
+| OG optimization / KKT / gradient | 14/184 | — | 1/14 | 8/129 | 19/252 | 6/87 | 27/300 | 16/210 | 13/153 | 3/34 | 3/54 | — |
 | E2E end-to-end geometry | 2/38 | 5/39 | — | 2/13 | 3/62 | — | 8/85 | 1/21 | 4/38 | 1/10 | 11/91 | — |
-| IC integration / compatibility | 5/52 | 2/34 | — | 4/65 | 6/64 | — | 7/88 | 3/57 | 17/165 | 10/89 | 1/8 | 1/11 |
-| PF performance | — | — | 2/25 | 1/14 | 3/37 | 3/37 | 1/14 | 1/14 | 1/14 | — | — | — |
+| IC integration / compatibility | 5/52 | 2/34 | — | 4/65 | 6/64 | — | 8/89 | 3/57 | 17/165 | 11/90 | 1/8 | 1/11 |
+| PF performance | — | — | 2/25 | 1/14 | 3/37 | 3/37 | 2/15 | 1/14 | 1/14 | 1/1 | — | — |
 
 Boş hücreler (açık risk adayı; her biri bir risk değildir, örn. `references` için çoğu katman anlamsız):
 
@@ -26,7 +26,7 @@ Boş hücreler (açık risk adayı; her biri bir risk değildir, örn. `referenc
 - **OG** (optimization / KKT / gradient): geometry, references
 - **E2E** (end-to-end geometry): boundary, solvers, references
 - **IC** (integration / compatibility): boundary, solvers
-- **PF** (performance): core, geometry, execution, post, references
+- **PF** (performance): core, geometry, post, references
 
 Katman sınıflaması (dosya → katmanlar):
 
@@ -46,6 +46,7 @@ Katman sınıflaması (dosya → katmanlar):
 - `test_catalog_ledger.py`: IC
 - `test_checkpoint.py`: OG, IC
 - `test_cli.py`: IC
+- `test_cli_threads.py`: IC, PF
 - `test_closed_forms.py`: U, AN
 - `test_compatibility.py`: IC
 - `test_compose.py`: U, OG

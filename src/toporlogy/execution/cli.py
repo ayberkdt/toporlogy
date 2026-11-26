@@ -249,6 +249,7 @@ def cmd_run(a: argparse.Namespace) -> int:
         if a.sweep:
             return _run_sweep(a, raw)
         setup = build_setup(raw, a.set)
+        setup.study.torch_threads = None          # the command set torch's threads once (_with_torch_threads)
     except ConfigError as e:
         return report_config_error(e, src, "validate")
     folder = Path(a.out) if a.out else _default_folder(setup.config)
@@ -346,6 +347,7 @@ def _run_sweep(a: argparse.Namespace, raw: dict[str, Any]) -> int:
         print(head, end="", flush=True)
         try:
             setup = build_setup(base, combo)
+            setup.study.torch_threads = None      # set once for the whole sweep (_with_torch_threads)
         except ConfigError as e:
             print(f"  config error: {e}", flush=True)
             rows.append({"index": i, "folder": sub.name, "values": dict(combo), "status": "config error"})
@@ -621,6 +623,28 @@ def main(argv: Sequence[str] | None = None) -> int:
     a = parser().parse_args(args)
     handlers = {"run": cmd_run, "validate": cmd_validate, "show": cmd_show, "compare": cmd_compare,
                 "list": cmd_list}
+    if a.command == "run":
+        return _with_torch_threads(lambda: _dispatch(handlers, a))
+    return _dispatch(handlers, a)
+
+
+def _with_torch_threads(fn: Any) -> int:
+    """Set torch's threads once for the whole command (TOPORLOGY_TORCH_THREADS, default 1 = Study.run's default), so
+    every Study.run of a sweep finds them set and does not switch; restored afterwards."""
+    import torch
+    before = torch.get_num_threads()
+    n = int(os.environ.get("TOPORLOGY_TORCH_THREADS", "1"))
+    if n < 1:
+        raise ValueError("TOPORLOGY_TORCH_THREADS must be >= 1")
+    torch.set_num_threads(n)
+    try:
+        out: int = fn()
+        return out
+    finally:
+        torch.set_num_threads(before)
+
+
+def _dispatch(handlers: dict[str, Any], a: argparse.Namespace) -> int:
     try:
         return handlers[a.command](a)
     except ConfigError as e:

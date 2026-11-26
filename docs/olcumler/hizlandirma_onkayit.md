@@ -138,3 +138,14 @@ varsayılanı). Böylece her `Study.run` içindeki geçiş (ölçülen 0,2–0,7
 |:---|:---|:---|
 | TT1 | `pytest -m baseline` (örnekler CLI'dan koşuyor) | bit düzeyinde aynı |
 | TT2 | CLI koşusundan sonra süreçte `torch.get_num_threads()` = 1; ortam değişkeni 3 iken 3 | aynen |
+
+TT2 düzeltmesi (ilk koşudan önce, uygulamayı yazarken): CLI eski iş parçacığı sayısını komut bittikten sonra geri
+yükler (aynı süreçte `main()`'i çağıran testler ve kütüphane kullanıcıları etkilenmesin diye) ve kurduğu Study'lerin
+kendi geçişini kapatır (`torch_threads = None`). TT2 bu yüzden koşunun İÇİNDE ölçülür: döngüde
+`torch.get_num_threads()` = 1 (ortam değişkeni yok) / 3 (`TOPORLOGY_TORCH_THREADS=3`), komuttan sonra önceki değer.
+
+### TT1–TT2 sonucu
+
+TT1 PASS: `pytest -m baseline` 8 passed (bit düzeyinde). TT2 PASS (`test_cli_threads.py`): döngüde 1 (ortam yok) ve 3
+(`TOPORLOGY_TORCH_THREADS=3`), komuttan sonra önceki değer. Kazancın süresi ölçülmedi (perf'in 0,2–0,7 s/koşu
+ölçümü yük altındaydı; NOT VERIFIED).
