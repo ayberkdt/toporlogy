@@ -210,7 +210,12 @@ continues it, and the resumed MMA, GCMMA or OC run is bit for bit the uninterrup
 ([`checkpoint_onkayit.md`](docs/olcumler/checkpoint_onkayit.md)). From YAML: `run: {checkpoint_every: k}` and
 `python -m toporlogy run CONFIG --out DIR --resume`. When the physics changes its model (the adaptive cutoff of the
 non-linear energy interpolation), `Study` resets the optimizer so that asymptotes of the old model are not reused
-(`reset_on_model_change`, default on; [`model_donemi_onkayit.md`](docs/olcumler/model_donemi_onkayit.md)). To give boundary conditions by geometry instead of DOF numbers, use `toporlogy.boundary`
+(`reset_on_model_change`, default on; [`model_donemi_onkayit.md`](docs/olcumler/model_donemi_onkayit.md)). The energy interpolation sees the real
+density: `Study` hands the physics the inverse of its SIMP / RAMP interpolation, so γ stays right when the SIMP
+exponent is continued ([`gercek_yogunluk_onkayit.md`](docs/olcumler/gercek_yogunluk_onkayit.md)). `run.start`
+perturbs the uniform start (`{type: cosine, amplitude, periods}` or `{type: random, amplitude}` with `run.seed`;
+`study.perturbed_start(spec)`), for objectives at which a uniform design is stationary
+([`baslangic_tasarimi_onkayit.md`](docs/olcumler/baslangic_tasarimi_onkayit.md)). To give boundary conditions by geometry instead of DOF numbers, use `toporlogy.boundary`
 (`BoundaryConditions`, `OnCylinder`, `BearingLoad`, `RemoteForce`, `check()`). For surfaces, use
 `toporlogy.post.finalize(...)`.
 
