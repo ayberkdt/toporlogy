@@ -4,7 +4,9 @@
 # components) on its bottom ring (z = 0); a unit inward radial force at the middle node of the free ring.
 # angle is in DEGREES; node sets: bottom top start end (cylinder segment). rmin is a LENGTH (chord distance between
 # facet centres); the volume constraint is area weighted. physics.drill: the drilling penalty scale (default
-# toporlogy.fem.shell.DRILL).
+# toporlogy.fem.shell.DRILL). A load on a node set: {set, force, distribute: nodes | traction} (traction: a uniform
+# line load along the set's boundary edges); post: [{type: vtu}] writes facets, displacement and rotation
+# (docs/olcumler/kabuk_onkayit.md, SX1-SX6).
 #   python -m toporlogy validate examples/research/shell_cylinder.yaml
 #   python -m toporlogy run examples/research/shell_cylinder.yaml --out runs/shell_cylinder
 name: shell_cylinder
@@ -13,8 +15,10 @@ material: {E0: 1.0, nu: 0.3}
 physics: shell
 supports:
   - {set: bottom, fix: all}
-loads:
-  - {point: [0.7071067811865476, 0.7071067811865476, 1.0], force: [-0.7071067811865476, -0.7071067811865476, 0.0]}
+load_cases:
+  - name: radial
+    loads:
+      - {point: [0.7071067811865476, 0.7071067811865476, 1.0], force: [-0.7071067811865476, -0.7071067811865476, 0.0]}
 chain:
   - {type: density_filter, rmin: 0.15}
 interpolation: {type: simp, penal: 3.0, emin_ratio: 1.0e-9}

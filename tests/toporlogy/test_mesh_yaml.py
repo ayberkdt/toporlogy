@@ -1,5 +1,6 @@
 """YAML for a general mesh through its own build path, ``configuration/mesh_build.py``
-(docs/olcumler/ag_topoloji_onkayit.md, AY1-AY4; AY5-AY6 are suite / diff checks)."""
+(docs/olcumler/ag_topoloji_onkayit.md, AY1-AY4; AY5-AY6 are suite / diff checks). Inputs in the load_cases form since
+AX1-AX8 (test_mesh_yaml_ext.py); the AY4 rows load_cases, post vtu and plane strain are supported since then."""
 from __future__ import annotations
 
 import copy
@@ -34,7 +35,7 @@ def _base() -> dict[str, Any]:
 
 def _mesh_cfg(domain: dict[str, Any], supports: list[Any], loads: list[Any], rmin: float) -> dict[str, Any]:
     return {"name": "t", "domain": {"type": "mesh", **domain}, "material": {"E0": 1.0, "nu": 0.3},
-            "supports": supports, "loads": loads, "chain": [{"type": "density_filter", "rmin": rmin}],
+            "supports": supports, "load_cases": [{"loads": loads}], "chain": [{"type": "density_filter", "rmin": rmin}],
             "interpolation": {"type": "simp", "penal": 3.0, "emin_ratio": 1e-9}, "objective": "compliance",
             "constraints": [{"response": "volume", "upper": 0.4}], "optimizer": "mma", "run": {"max_iter": 10}}
 
@@ -181,14 +182,11 @@ def _with(path: str, value: Any) -> dict[str, Any]:
     return cfg
 
 
-LOAD = [{"name": "a", "loads": [{"type": "force", "where": {"type": "point", "at": ["max", "min"]}, "force": [0, -1]}]}]
 UNSUPPORTED: dict[str, tuple[str, Any, str]] = {      # id -> (config key to set, value, path named in the error)
-    "load_cases": ("load_cases", LOAD, "load_cases"),
     "combinations": ("combinations", [{"name": "c", "factors": {"a": 1.0}}], "combinations"),
     "robust": ("robust", {"eta_e": 0.7}, "robust"),
     "connectivity": ("connectivity", {}, "connectivity"),
     "schedule": ("schedule", {"type": "beta_continuation"}, "schedule"),
-    "post": ("post", [{"type": "vtu"}], "post.0"),
     "units": ("units", {"length": "mm", "force": "N"}, "units"),
     "heaviside_link": ("chain", [{"type": "density_filter", "rmin": 0.1}, {"type": "heaviside_projection"}],
                        "chain.1.type"),
@@ -205,19 +203,18 @@ UNSUPPORTED: dict[str, tuple[str, Any, str]] = {      # id -> (config key to set
     "strength": ("material.strength", {"tension": 1.0}, "material.strength"),
     "phases": ("material.phases", [{"name": "a", "E": 1.0}], "material.phases"),
     "rho": ("material.rho", 1.0, "material.rho"),
-    "plane_strain": ("material.plane", "strain", "material.plane"),
     "run_start": ("run.start", {"type": "random", "amplitude": 0.1}, "run.start"),
     "run_checkpoint": ("run.checkpoint_every", 5, "run.checkpoint_every"),
     "run_move_beta_ref": ("run.move_beta_ref", 4.0, "run.move_beta_ref"),
 }
 INVALID: dict[str, tuple[str, Any, str]] = {
     "unknown_support_set": ("supports", [{"set": "middle", "fix": ["x"]}], "supports.0.set"),
-    "unknown_load_set": ("loads", [{"set": "nowhere", "force": [0, -1]}], "loads.0.set"),
+    "unknown_load_set": ("load_cases.0.loads", [{"set": "nowhere", "force": [0, -1]}], "load_cases.0.loads.0.set"),
     "element_dimension": ("domain.element", "H8", "domain.element"),
     "n_length": ("domain.n", [48], "domain.n"),
     "size_length": ("domain.size", [3.0, 1.0, 1.0], "domain.size"),
     "generator": ("domain.generator", "disk", "domain.generator"),
-    "zero_load": ("loads", [{"point": [3.0, 0.0], "force": [0, 0]}], "loads"),
+    "zero_load": ("load_cases.0.loads", [{"point": [3.0, 0.0], "force": [0, 0]}], "load_cases.0"),
     "rigid_motion": ("supports", [{"set": "left", "fix": ["x"]}], "supports"),
     "chain_missing": ("chain", None, "chain"),
     "unknown_top_key": ("symmetry", {"x": 1.5}, "symmetry"),

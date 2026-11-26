@@ -2891,11 +2891,14 @@
   "VOIGT_CONVENTION": "<str>",
   "VTK_HEXAHEDRON": "<int>",
   "VTK_QUAD": "<int>",
+  "VTK_TETRA": "<int>",
+  "VTK_TRIANGLE": "<int>",
   "VtuData": {
    "attrs": [],
    "class": "VtuData"
   },
   "read_vtu": "read_vtu(path)",
+  "write_cells_vtu": "write_cells_vtu(path,points,cells,cell_type,point_data,cell_data,meta)",
   "write_vtu": "write_vtu(path,domain,point_data,cell_data,meta)"
  },
  "toporlogy.design": {},
@@ -4974,6 +4977,7 @@
   "DRILL": "<float>",
   "FlatShell": {
    "attrs": [
+    "line_load",
     "pressure_load",
     "solve",
     "stiffness"

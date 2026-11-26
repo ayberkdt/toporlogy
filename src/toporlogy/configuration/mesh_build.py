@@ -11,30 +11,40 @@ Schema (minimal scope; defaults in brackets):
     domain: {type: mesh, generator: rectangle, n: [48, 16], size: [3.0, 1.0], element: Q4, perturb: 0.0, seed: 0}
                                    # *required*; generator rectangle (2-D: element Q4 | T3 [Q4]) or box (3-D: H8 | T4
                                    # [H8]); perturb: interior vertices moved by up to this length (fem.mesh.perturb)
-    material: {E0: 1.0, nu: 0.3, plane: stress}                     # unit-modulus D: plane stress (2-D), isotropic
+    material: {E0: 1.0, nu: 0.3, plane: stress}     # unit-modulus D; plane (2-D only): stress | strain
+                                                    # (fem.elements.D_plane_stress | D_plane_strain); 3-D isotropic
     physics: elasticity            # [elasticity] -> MeshElasticity (thickness 1)
     supports:                      # *required*, >= 1: named node set and the fixed components
       - {set: left, fix: [x, y]}   # sets: left right bottom top (2-D) back front (3-D); fix: axis letters or all
-    loads:                         # *required*, >= 1, one load case: the total force spread equally over the nodes
-      - {point: [3.0, 0.0], force: [0, -1]}         # of a set, or applied at the node nearest a point
+    load_cases:                    # *required*, >= 1; column c of F; compliance = sum_c weight_c F_c.U_c
+      - name: tip                  # [case<i>]
+        weight: 1.0                # [1.0]
+        loads:                     # >= 1, summed:
+          - {point: [3.0, 0.0], force: [0, -1]}     # at the node nearest the point
+          - {set: right, force: [0, -1], distribute: nodes}
+                                   # distribute nodes [default]: the total force split equally over the set's nodes;
+                                   # traction: a uniform traction force / |facets| over the set's boundary facets
+                                   # (edges in 2-D, faces in 3-D), consistent nodal forces (ElasticProblem.traction)
     chain: [{type: density_filter, rmin: 0.125}]    # *required*; rmin in LENGTH units (the grid path: elements);
                                                     # embed / passive added at the ends if absent
     interpolation: simp            # [simp] penal, emin_ratio as on the grid path
-    objective: compliance          # [compliance]
+    objective: compliance          # [compliance] weights null = the load-case weights
     constraints: [{response: volume, upper: 0.4}]   # volume -> MeshVolume (cell-volume weighted)
     optimizer: mma                 # [mma]
     run: {max_iter: 100, tol: 0.01, seed: 0, feasibility_tol: 0.001}
     output: {folder: runs, snapshot_every: 0}       # snapshots are the flat x̄ vector (no grid assumed)
+    post: [{type: vtu, name: result}]               # [[]] <name>.vtu: the mesh cells (VTK triangle, quad, tetra,
+                                                    # hexahedron) with cell data xphys and E, point data
+                                                    # displacement_<case> (n, 3; z = 0 in 2-D)
 
-Anything else (``load_cases``, ``combinations``, ``robust``, ``connectivity``, ``schedule``, ``post`` steps,
-``units``, other links, responses, objectives, optimizers, physics or interpolations, ``material`` orthotropic /
-strength / phases / rho / catalog, ``plane: strain``, ``run.start`` / ``checkpoint_every`` / ``move_beta_ref``) is
-a :class:`ConfigError` that names the key and says the mesh path does not support it yet. No post steps run, so a
-run folder holds what :func:`~toporlogy.execution.runner.run_setup` writes (``config.resolved.yaml``, ``setup.json``,
-``history.jsonl``, ``result.npz``, ``result.json``, ``summary.json``) and no VTU or STL file.
+Anything else (``combinations``, per-case ``supports``, ``robust``, ``connectivity``, ``schedule``, other ``post``
+steps, ``units``, other links, responses, objectives, optimizers, physics or interpolations, ``material``
+orthotropic / strength / phases / rho / catalog, ``run.start`` / ``checkpoint_every`` / ``move_beta_ref``) is a
+:class:`ConfigError` that names the key and says the mesh path does not support it yet; a top-level ``loads`` list is
+refused with a pointer to ``load_cases`` (``docs/olcumler/ag_topoloji_onkayit.md``, AX1-AX8).
 
-``domain.type: shell`` (``docs/olcumler/kabuk_onkayit.md``, SY1-SY6) takes a small parallel branch of the same
-functions: the flat-facet shell of :mod:`toporlogy.fem.shell` as a
+``domain.type: shell`` (``docs/olcumler/kabuk_onkayit.md``, SY1-SY6, SX1-SX6) takes a small parallel branch of the
+same functions: the flat-facet shell of :mod:`toporlogy.fem.shell` as a
 :class:`~toporlogy.optimization.shell_study.ShellDomain` with :class:`~toporlogy.optimization.shell_study.ShellPhysics`.
 Its own keys:
 
@@ -47,9 +57,17 @@ Its own keys:
     physics: {type: shell, drill: 0.1}              # [shell; drill = toporlogy.fem.shell.DRILL], drill > 0
     supports:                      # node sets: cylinder bottom top (+ start end for an open segment),
       - {set: bottom, fix: all}    # rectangle left right bottom top; fix: u v w rx ry rz (global axes) or all
-    loads:                         # one load case, summed: a normal pressure and / or a force at the nearest node
-      - {pressure: 1.0}
-      - {point: [0.7071, 0.7071, 1.0], force: [-0.7071, -0.7071, 0]}
+    load_cases:                    # as on the mesh path; the loads of a case are summed:
+      - name: radial
+        loads:
+          - {pressure: 1.0}        # along the facet normals (FlatShell.pressure_load)
+          - {point: [0.7071, 0.7071, 1.0], force: [-0.7071, -0.7071, 0]}  # at the nearest node
+          - {set: top, force: [0, 0, 1], distribute: traction}
+                                   # nodes [default]: split equally over the set's nodes; traction: a uniform line
+                                   # load along the set's boundary facet edges, q L_e / 2 to each edge end
+                                   # (FlatShell.line_load)
+    post: [{type: vtu}]            # facets as VTK quads; point data displacement_<case> (u, v, w) and
+                                   # rotation_<case> (rx, ry, rz)
 
 ``chain`` (rmin a length: the 3-D chord distance between facet centres), ``interpolation``, ``objective``,
 ``constraints`` (``volume``: area weighted), ``optimizer``, ``run``, ``output`` and the refusals are those of the mesh
@@ -65,12 +83,14 @@ import numpy as np
 from toporlogy.configuration.build import Setup, _resultant
 from toporlogy.configuration.registry import BuildContext, ConfigError, Param, REGISTRY, join, normalise_name, suggest
 from toporlogy.configuration.resolve import _list, _section
-from toporlogy.configuration.schema import _CONSTRAINT, _OUTPUT, _RUN
+from toporlogy.configuration.schema import _CASE, _CONSTRAINT, _OUTPUT, _RUN
 
 __all__ = ["is_mesh_config", "resolve_mesh", "build_mesh", "MESH_KEYS"]
 
-MESH_KEYS = ("name", "domain", "material", "physics", "supports", "loads", "chain", "interpolation", "objective",
+MESH_KEYS = ("name", "domain", "material", "physics", "supports", "load_cases", "chain", "interpolation", "objective",
              "constraints", "optimizer", "run", "output", "post", "provenance", "schema_version", "units")
+_DISTRIBUTE = ("nodes", "traction")
+_PLANES = ("stress", "strain")
 _ELEMENTS = {"rectangle": ("Q4", "T3"), "box": ("H8", "T4")}
 _SETS = ("left", "right", "bottom", "top", "back", "front")
 _AXES = "xyz"
@@ -164,8 +184,11 @@ def _resolve_material(raw: Any, errors: list[tuple[str, str]], schema: dict[str,
         errors.append(("material.E0", f"must be > 0, got {m['E0']}"))
     if "nu" in m and not -1.0 < m["nu"] < 0.5:
         errors.append(("material.nu", f"must lie in (-1, 0.5), got {m['nu']}"))
-    if m.get("plane") is not None and normalise_name(m["plane"]) != "stress":
-        _not_yet(errors, "material.plane", f"material.plane {m['plane']!r}")
+    if "plane" in m:
+        plane = normalise_name(str(m["plane"]))
+        if plane not in _PLANES:
+            errors.append(("material.plane", f"stress | strain on the mesh path, got {m['plane']!r}"))
+        m["plane"] = plane
     return m
 
 
@@ -205,33 +228,91 @@ def _resolve_supports(raw: Any, dim: int, errors: list[tuple[str, str]]) -> list
     return out
 
 
-def _resolve_loads(raw: Any, dim: int, errors: list[tuple[str, str]]) -> list[dict[str, Any]]:
+def _resolve_cases(raw: Any, errors: list[tuple[str, str]], loads: Any) -> list[dict[str, Any]]:
+    """``load_cases: [{name, weight, loads}]`` of both branches; ``loads(raw, path, errors)`` resolves one list."""
+    cases = []
+    for i, c in enumerate(_list(raw, "load_cases", errors, 1)):
+        cp = join("load_cases", i)
+        if not isinstance(c, dict):
+            errors.append((cp, "expected a mapping {name, weight, loads}"))
+            continue
+        if c.get("supports") is not None:
+            _not_yet(errors, join(cp, "supports"), "per-case supports (the supports above hold for every case)")
+        head = _section({k: v for k, v in c.items() if k not in ("loads", "supports")}, _CASE, cp, errors,
+                        "load case")
+        w = head.get("weight", 1.0)
+        if not math.isfinite(w):
+            errors.append((join(cp, "weight"), f"must be finite, got {w}"))
+        if "loads" not in c:
+            errors.append((join(cp, "loads"), "required key of a load case is missing"))
+        cases.append({"name": head.get("name") or f"case{i + 1}", "weight": w,
+                      "loads": loads(c.get("loads"), join(cp, "loads"), errors) if "loads" in c else []})
+    names = [c["name"] for c in cases]
+    for i, n in enumerate(names):
+        if n in names[:i]:
+            errors.append((join(join("load_cases", i), "name"), f'load case name "{n}" is used twice'))
+    return cases
+
+
+def _set_load(ld: dict[str, Any], p: str, sets: tuple[str, ...], what: str,
+              errors: list[tuple[str, str]]) -> dict[str, Any]:
+    """{set, distribute} of a load on a named node set (the force is resolved by the caller)."""
+    if ld["set"] not in sets:
+        errors.append((join(p, "set"), f"a named node set of the {what} ({', '.join(sets)}), got {ld['set']!r}"))
+    how = normalise_name(str(ld.get("distribute", "nodes")))
+    if how not in _DISTRIBUTE:
+        errors.append((join(p, "distribute"), f"nodes (equal share per node) | traction (uniform traction, consistent "
+                                              f"nodal forces), got {ld.get('distribute')!r}"))
+    return {"set": ld["set"], "distribute": how}
+
+
+def _resolve_loads(raw: Any, path: str, dim: int, errors: list[tuple[str, str]]) -> list[dict[str, Any]]:
     out = []
     sets = _SETS[:2 * dim]
-    for i, ld in enumerate(_list(raw, "loads", errors, 1)):
-        p = join("loads", i)
+    keys = ["set", "point", "force", "distribute"]
+    for i, ld in enumerate(_list(raw, path, errors, 1)):
+        p = join(path, i)
         if not isinstance(ld, dict):
-            errors.append((p, "expected a mapping {set | point, force}"))
+            errors.append((p, "expected a mapping {set, force, distribute} or {point, force}"))
             continue
         for k in ld:
-            if k not in ("set", "point", "force"):
-                errors.append((join(p, k), f"unknown key of a mesh load (keys: set, point, force)"
-                                           f"{suggest(k, ['set', 'point', 'force'])}"))
+            if k not in keys:
+                errors.append((join(p, k), f"unknown key of a mesh load (keys: {', '.join(keys)}){suggest(k, keys)}"))
         if ("set" in ld) == ("point" in ld):
             errors.append((p, "give exactly one of set (a named node set) and point (coordinates)"))
             continue
         r: dict[str, Any] = {}
         if "set" in ld:
-            if ld["set"] not in sets:
-                errors.append((join(p, "set"), f"a named node set of the mesh ({', '.join(sets)}), got {ld['set']!r}"))
-            r["set"] = ld["set"]
+            r.update(_set_load(ld, p, sets, "mesh", errors))
         else:
+            if "distribute" in ld:
+                errors.append((join(p, "distribute"), "distribute applies to a load on a set; a point load acts on "
+                                                      "the nearest node (mesh path)"))
             r["point"] = _number_list(ld["point"], join(p, "point"), dim, errors)
         if "force" not in ld:
             errors.append((join(p, "force"), "required key of a mesh load is missing"))
         else:
             r["force"] = _number_list(ld["force"], join(p, "force"), dim, errors)
         out.append(r)
+    return out
+
+
+def _resolve_post(raw: Any, errors: list[tuple[str, str]]) -> list[dict[str, Any]]:
+    out = []
+    for i, s in enumerate(_list(raw, "post", errors)):
+        p = join("post", i)
+        spec = {"type": s} if isinstance(s, str) else s
+        t = normalise_name(str(spec.get("type", ""))) if isinstance(spec, dict) else ""
+        if t != "vtu":
+            _not_yet(errors, p, f"post step {spec.get('type') if isinstance(spec, dict) else s!r} (mesh path post "
+                                "steps: vtu)")
+            continue
+        for k in sorted(set(spec) - {"type", "name"}):
+            _not_yet(errors, join(p, k), f"vtu parameter {k} (mesh path vtu parameters: name)")
+        name = spec.get("name", "result")
+        if not isinstance(name, str) or not name or any(c in name for c in "/\\:"):
+            errors.append((join(p, "name"), f"a file name without a folder (mesh path), got {name!r}"))
+        out.append({"type": "vtu", "name": name})
     return out
 
 
@@ -324,33 +405,42 @@ def resolve_mesh(raw: dict[str, Any]) -> dict[str, Any]:
     for k in raw:
         if k in MESH_KEYS:
             continue
-        if k in SCHEMA_KEYS:
+        if k == "loads":
+            errors.append((k, "the mesh path takes load_cases: [{name, weight, loads: [...]}], not a top-level "
+                              "loads list"))
+        elif k in SCHEMA_KEYS:
             if raw[k] is not None and raw[k] != [] and raw[k] != "none":   # null / [] asks for nothing; {} does
-                _not_yet(errors, k, "load_cases (use loads: one load case)" if k == "load_cases" else None)
+                _not_yet(errors, k)
         else:
             errors.append((k, f"unknown top-level key{suggest(k, MESH_KEYS) or ''}"))
     if raw.get("units") is not None:
         _not_yet(errors, "units", "units (values with units)")
-    for k in ("supports", "loads"):
+    for k in ("supports", "load_cases"):
         if k not in raw:
             errors.append((k, "required key is missing"))
     r: dict[str, Any] = {"name": str(raw.get("name") or "study")}
     kind = _domain_type(raw)
+    cases = raw.get("load_cases")
     if kind == "shell":
         sd = r["domain"] = _resolve_shell_domain(raw["domain"], errors)
         r["material"] = _resolve_material(raw.get("material"), errors, _SHELL_MATERIAL, "shell")
         r["physics"] = _resolve_shell_physics(raw.get("physics"), errors)
         sets = _shell_sets(sd)
         r["supports"] = _resolve_shell_supports(raw.get("supports"), sets, errors) if "supports" in raw else []
-        r["loads"] = _resolve_shell_loads(raw.get("loads"), errors) if "loads" in raw else []
+        r["load_cases"] = _resolve_cases(cases, errors, lambda v, p, e: _resolve_shell_loads(v, p, sets, e)) \
+            if "load_cases" in raw else []
     else:
         d = _resolve_domain(raw["domain"], errors)
         dim = 2 if d is None else d.pop("dim")
         r["domain"] = d
         r["material"] = _resolve_material(raw.get("material"), errors)
+        if dim == 3 and r["material"].get("plane") == "strain":
+            errors.append(("material.plane", "plane strain is a 2-D model; a 3-D mesh (generator box) is "
+                                             "isotropic 3-D elasticity"))
         r["physics"] = _resolve_physics(raw.get("physics"), errors)
         r["supports"] = _resolve_supports(raw.get("supports"), dim, errors) if "supports" in raw else []
-        r["loads"] = _resolve_loads(raw.get("loads"), dim, errors) if "loads" in raw else []
+        r["load_cases"] = _resolve_cases(cases, errors, lambda v, p, e: _resolve_loads(v, p, dim, e)) \
+            if "load_cases" in raw else []
     r["chain"] = _resolve_chain(raw.get("chain"), errors)
     r["interpolation"] = _resolve_component("interpolation", raw.get("interpolation", "simp"), "interpolation",
                                             "simp", errors)
@@ -370,9 +460,7 @@ def resolve_mesh(raw: dict[str, Any]) -> dict[str, Any]:
     if run.get("tol", 1) < 0:
         errors.append(("run.tol", "must be >= 0"))
     r["output"] = _section(raw.get("output"), _OUTPUT, "output", errors, "output")
-    for i, _p in enumerate(_list(raw.get("post", []), "post", errors)):
-        _not_yet(errors, join("post", i), "post steps (VTU, STL, checks assume the element grid)")
-    r["post"] = []
+    r["post"] = _resolve_post(raw.get("post", []), errors)
     r["schedule"] = None                                 # what the CLI reads of a grid config, here always none
     if "provenance" in raw:
         r["provenance"] = raw["provenance"]
@@ -497,17 +585,31 @@ def _resolve_shell_supports(raw: Any, sets: tuple[str, ...], errors: list[tuple[
     return out
 
 
-def _resolve_shell_loads(raw: Any, errors: list[tuple[str, str]]) -> list[dict[str, Any]]:
+def _resolve_shell_loads(raw: Any, path: str, sets: tuple[str, ...],
+                         errors: list[tuple[str, str]]) -> list[dict[str, Any]]:
     out: list[dict[str, Any]] = []
-    for i, ld in enumerate(_list(raw, "loads", errors, 1)):
-        p = join("loads", i)
+    keys = ["pressure", "point", "set", "force", "distribute"]
+    forms = "{pressure}, {point, force} or {set, force, distribute}"
+    for i, ld in enumerate(_list(raw, path, errors, 1)):
+        p = join(path, i)
         if not isinstance(ld, dict):
-            errors.append((p, "expected a mapping {pressure} or {point, force}"))
+            errors.append((p, f"expected a mapping {forms}"))
             continue
         for k in ld:
-            if k not in ("pressure", "point", "force"):
-                errors.append((join(p, k), f"unknown key of a shell load (keys: pressure, point, force)"
-                                           f"{suggest(k, ['pressure', 'point', 'force'])}"))
+            if k not in keys:
+                errors.append((join(p, k), f"unknown key of a shell load (keys: {', '.join(keys)}){suggest(k, keys)}"))
+        if "set" in ld:
+            if "pressure" in ld or "point" in ld:
+                errors.append((p, f"a shell load is one of {forms}"))
+                continue
+            r = _set_load(ld, p, sets, "shell surface", errors)
+            if "force" not in ld:
+                errors.append((join(p, "force"), "required key of a shell load on a set is missing"))
+                continue
+            out.append({**r, "force": _number_list(ld["force"], join(p, "force"), 3, errors)})
+            continue
+        if "distribute" in ld:
+            errors.append((join(p, "distribute"), "distribute applies to a load on a set (shell path)"))
         if "pressure" in ld:
             if "point" in ld or "force" in ld:
                 errors.append((p, "a shell load is either {pressure} or {point, force}, not both"))
@@ -565,7 +667,7 @@ def build_mesh(r: dict[str, Any]) -> Setup:
 
 
 def _build_mesh(r: dict[str, Any]) -> Setup:
-    from toporlogy.fem.elements import D_iso, D_plane_stress
+    from toporlogy.fem.elements import D_iso, D_plane_strain, D_plane_stress
     from toporlogy.optimization.mesh_study import MeshDomain, MeshElasticity
 
     dom = r["domain"]
@@ -587,32 +689,56 @@ def _build_mesh(r: dict[str, Any]) -> Setup:
         fixed_parts.append(dofs)
     fixed = np.unique(np.concatenate(fixed_parts))
     _check_rigid(mesh, fixed)
-    F = np.zeros((d.ndof, 1))
-    for j, ld in enumerate(r["loads"]):
-        f = np.asarray(ld["force"], float)
-        if "set" in ld:
-            nodes = mesh.node_sets[ld["set"]]
-            if not nodes.size:
-                raise ConfigError(f'node set "{ld["set"]}" is empty', join(join("loads", j), "set"))
-            F.reshape(-1, dim)[nodes] += f / len(nodes)
-        else:
-            used = mesh.used_nodes()
-            dist = np.linalg.norm(mesh.points[used] - np.asarray(ld["point"], float), axis=1)
-            k = int(used[np.argmin(dist)])
-            F.reshape(-1, dim)[k] += f
-            notes.append(f"load {j + 1} at node {k} ({', '.join(f'{v:g}' for v in mesh.points[k])}), "
-                         f"{float(dist.min()):.3g} from the given point")
-    if not np.any(F):
-        raise ConfigError("load case has zero load", "loads")
-    warnings = []
-    loaded_fixed = np.intersect1d(np.flatnonzero(F[:, 0] != 0), fixed)
-    if loaded_fixed.size:
-        warnings.append(f"{loaded_fixed.size} loaded DOF(s) are also fixed; their load does no work")
-
     m = r["material"]
-    D = D_plane_stress(m["nu"]) if dim == 2 else D_iso(m["nu"])
+    if dim == 3:
+        D = D_iso(m["nu"])
+    else:
+        D = D_plane_strain(m["nu"]) if m["plane"] == "strain" else D_plane_stress(m["nu"])
     physics = MeshElasticity(d, D, fixed)
-    return _finish(r, d, physics, F, fixed, dim, dim, warnings, notes)
+    prob = physics.problem
+    cases = r["load_cases"]
+    F = np.zeros((d.ndof, len(cases)))
+    for c, case in enumerate(cases):
+        label = f"{case['name']} load" if len(cases) > 1 else "load"
+        Fc = np.zeros(d.ndof)
+        for j, ld in enumerate(case["loads"]):
+            lp = join(join(join("load_cases", c), "loads"), j)
+            f = np.asarray(ld["force"], float)
+            if "set" not in ld:
+                used = mesh.used_nodes()
+                dist = np.linalg.norm(mesh.points[used] - np.asarray(ld["point"], float), axis=1)
+                k = int(used[np.argmin(dist)])
+                Fc.reshape(-1, dim)[k] += f
+                notes.append(f"{label} {j + 1} at node {k} ({', '.join(f'{v:g}' for v in mesh.points[k])}), "
+                             f"{float(dist.min()):.3g} from the given point")
+            elif ld["distribute"] == "traction":                # uniform traction force / |facets|, consistent
+                facets = mesh.facet_sets.get(ld["set"], np.zeros((0, 2), np.int64))
+                if not len(facets):
+                    raise ConfigError(f'facet set "{ld["set"]}" is empty', join(lp, "set"))
+                fg, _ = prob.facet_geometry(facets)
+                area = float(fg.dS.sum()) * (prob.thickness if dim == 2 else 1.0)
+                Fc += prob.traction(facets, f / area)
+            else:                                               # equal share per node
+                nodes = mesh.node_sets[ld["set"]]
+                if not nodes.size:
+                    raise ConfigError(f'node set "{ld["set"]}" is empty', join(lp, "set"))
+                Fc.reshape(-1, dim)[nodes] += f / len(nodes)
+        F[:, c] = Fc
+    _check_loads(F)
+    return _finish(r, d, physics, F, fixed, dim, dim, _loaded_fixed(F, fixed), notes)
+
+
+def _check_loads(F: np.ndarray) -> None:
+    for c in range(F.shape[1]):
+        if not np.isfinite(F[:, c]).all():
+            raise ConfigError("load case has a load that is not finite (NaN or Inf)", join("load_cases", c))
+        if not np.any(F[:, c]):
+            raise ConfigError("load case has zero load", join("load_cases", c))
+
+
+def _loaded_fixed(F: np.ndarray, fixed: np.ndarray) -> list[str]:
+    loaded_fixed = np.intersect1d(np.flatnonzero(np.any(F != 0, axis=1)), fixed)
+    return [f"{loaded_fixed.size} loaded DOF(s) are also fixed; their load does no work"] if loaded_fixed.size else []
 
 
 def _finish(r: dict[str, Any], d: Any, physics: Any, F: np.ndarray, fixed: np.ndarray, per_node: int, nforce: int,
@@ -636,8 +762,9 @@ def _finish(r: dict[str, Any], d: Any, physics: Any, F: np.ndarray, fixed: np.nd
             except ValueError as e:
                 raise ConfigError(f"link density_filter: {e}", join("chain", i)) from None
     chain = Chain(links)
-    ctx = BuildContext(config=r, domain=d, material=dict(m), run=dict(r["run"]), n_cases=1, case_weights=[1.0],
-                       physics=physics, chain=chain, links=links, fixed=fixed)
+    weights = [float(c["weight"]) for c in r["load_cases"]]
+    ctx = BuildContext(config=r, domain=d, material=dict(m), run=dict(r["run"]), n_cases=F.shape[1],
+                       case_weights=weights, physics=physics, chain=chain, links=links, fixed=fixed)
     ctx.interp = REGISTRY.build("interpolation", r["interpolation"], ctx, "interpolation")
     objective = ctx.objective = REGISTRY.build("response", r["objective"], ctx, "objective")
     constraints, cnames = ctx.constraints, []
@@ -658,10 +785,60 @@ def _finish(r: dict[str, Any], d: Any, physics: Any, F: np.ndarray, fixed: np.nd
     except ValueError as e:
         raise ConfigError(str(e), "constraints" if "constraint" in str(e) else "") from e
     study.config = r
-    Fn = F[:, 0].reshape(-1, per_node)
-    cases = [{"name": "loads", "weight": 1.0, "resultant": _resultant(Fn[:, :nforce].ravel(), nforce),
-              "n_nodes": int(np.any(Fn != 0, axis=1).sum()), "combination": False}]
-    return Setup(study, r, fixed, cases, cnames, [], warnings, None, None, {}, {"notes": notes})
+    cases = []
+    for c, case in enumerate(r["load_cases"]):
+        Fn = F[:, c].reshape(-1, per_node)
+        cases.append({"name": case["name"], "weight": weights[c],
+                      "resultant": _resultant(Fn[:, :nforce].ravel(), nforce),
+                      "n_nodes": int(np.any(Fn != 0, axis=1).sum()), "combination": False})
+    post = [(p["type"], _vtu_step(p["name"])) for p in r["post"]]
+    return Setup(study, r, fixed, cases, cnames, post, warnings, None, None, {}, {"notes": notes})
+
+
+def _vtu_step(name: str) -> Any:
+    """Post step ``vtu`` of both branches: ``<name>.vtu`` of the cells (mesh: ``mesh.points`` with z = 0 in 2-D and
+    ``mesh.cells`` as VTK triangle / quad / tetra / hexahedron; shell: ``mesh.nodes`` and ``mesh.facets`` as VTK
+    quads), cell data ``xphys`` and ``E`` = interp(x̄), point data per load case ``displacement_<c>`` (n, 3) and, on a
+    shell, ``rotation_<c>`` (n, 3: rx, ry, rz)."""
+
+    def step(res: Any, study: Any, folder: Any) -> dict[str, Any]:
+        import torch
+
+        from toporlogy.core.vtu import VTK_HEXAHEDRON, VTK_QUAD, VTK_TETRA, VTK_TRIANGLE, write_cells_vtu
+        d = study.domain
+        shell = not hasattr(d.mesh, "cells")
+        x = np.asarray(res.xphys, float).reshape(-1)
+        cell: dict[str, Any] = {"xphys": x}
+        point: dict[str, Any] = {}
+        notes: list[str] = []
+        try:
+            cell["E"] = np.asarray(study.interp(torch.as_tensor(x)).detach().numpy(), float).reshape(-1)
+        except (ValueError, TypeError, RuntimeError) as e:
+            notes.append(f"E not written: {type(e).__name__}: {e}")
+        per = 6 if shell else d.dim
+        U = None if res.U is None else np.asarray(res.U, float).reshape(d.ndof, -1)
+        n = d.mesh.nn if shell else d.mesh.n_nodes
+        for c in range(0 if U is None else U.shape[1]):
+            assert U is not None
+            Uc = U[:, c].reshape(n, per)
+            u = np.zeros((n, 3))
+            u[:, :min(per, 3)] = Uc[:, :3]
+            point[f"displacement_{c}"] = u
+            if shell:
+                point[f"rotation_{c}"] = Uc[:, 3:].copy()
+        if shell:
+            pts, cells, kind, element = d.mesh.nodes, d.mesh.facets, VTK_QUAD, "flat-facet shell quad"
+        else:
+            types = {"T3": VTK_TRIANGLE, "Q4": VTK_QUAD, "T4": VTK_TETRA, "H8": VTK_HEXAHEDRON}
+            pts, cells, element = d.mesh.points, d.mesh.cells, d.mesh.element
+            kind = types[element]
+        path = write_cells_vtu(f"{folder}/{name}.vtu", pts, cells, kind, point, cell,
+                               meta={"design": "optimized", "element": element})
+        return {"file": f"{name}.vtu", "design": "optimized", "cell_arrays": sorted(cell),
+                "point_arrays": sorted(point), "notes": notes, "path": path,
+                "summary": f"{name}.vtu: {len(cell)} cell and {len(point)} point arrays"
+                + (f" ({'; '.join(notes)})" if notes else "")}
+    return step
 
 
 # ============================================================================================== shell (build)
@@ -710,20 +887,33 @@ def _build_shell(r: dict[str, Any]) -> Setup:
     if rank < 6:
         raise ConfigError(f"the supports leave {6 - rank} rigid motion(s) free; the system is singular", "supports")
     shell = FlatShell(mesh, dom["thickness"], r["material"]["nu"], fixed, drill=r["physics"]["drill"])
-    F = np.zeros((shell.ndof, 1))
-    for j, ld in enumerate(r["loads"]):
-        if "pressure" in ld:
-            F[:, 0] += shell.pressure_load(ld["pressure"])
-            continue
-        dist = np.linalg.norm(mesh.nodes - np.asarray(ld["point"], float), axis=1)
-        k = int(np.argmin(dist))
-        F[6 * k:6 * k + 3, 0] += np.asarray(ld["force"], float)
-        notes.append(f"load {j + 1} at node {k} ({', '.join(f'{v:g}' for v in mesh.nodes[k])}), "
-                     f"{float(dist.min()):.3g} from the given point")
-    if not np.any(F):
-        raise ConfigError("load case has zero load", "loads")
-    warnings = []
-    loaded_fixed = np.intersect1d(np.flatnonzero(F[:, 0] != 0), fixed)
-    if loaded_fixed.size:
-        warnings.append(f"{loaded_fixed.size} loaded DOF(s) are also fixed; their load does no work")
-    return _finish(r, d, ShellPhysics(shell), F, fixed, 6, 3, warnings, notes)
+    cases = r["load_cases"]
+    F = np.zeros((shell.ndof, len(cases)))
+    for c, case in enumerate(cases):
+        label = f"{case['name']} load" if len(cases) > 1 else "load"
+        Fc = np.zeros(shell.ndof)
+        for j, ld in enumerate(case["loads"]):
+            lp = join(join(join("load_cases", c), "loads"), j)
+            if "pressure" in ld:
+                Fc += shell.pressure_load(ld["pressure"])
+            elif "set" in ld:
+                nodes = mesh.node_sets[ld["set"]]
+                f = np.asarray(ld["force"], float)
+                if not nodes.size:
+                    raise ConfigError(f'node set "{ld["set"]}" is empty', join(lp, "set"))
+                if ld["distribute"] == "traction":         # uniform line load along the set's boundary edges
+                    try:
+                        Fc += shell.line_load(nodes, f)
+                    except ValueError as e:
+                        raise ConfigError(f"distribute traction: {e}", join(lp, "set")) from None
+                else:                                       # equal share per node (translations)
+                    Fc.reshape(-1, 6)[nodes, :3] += f / len(nodes)
+            else:
+                dist = np.linalg.norm(mesh.nodes - np.asarray(ld["point"], float), axis=1)
+                k = int(np.argmin(dist))
+                Fc[6 * k:6 * k + 3] += np.asarray(ld["force"], float)
+                notes.append(f"{label} {j + 1} at node {k} ({', '.join(f'{v:g}' for v in mesh.nodes[k])}), "
+                             f"{float(dist.min()):.3g} from the given point")
+        F[:, c] = Fc
+    _check_loads(F)
+    return _finish(r, d, ShellPhysics(shell), F, fixed, 6, 3, _loaded_fixed(F, fixed), notes)

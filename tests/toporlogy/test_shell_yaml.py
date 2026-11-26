@@ -1,5 +1,7 @@
 """YAML for the flat-facet shell domain, the shell branch of ``configuration/mesh_build.py``
-(docs/olcumler/kabuk_onkayit.md, SY1-SY4; SY5-SY6 are suite / diff checks)."""
+(docs/olcumler/kabuk_onkayit.md, SY1-SY4; SY5-SY6 are suite / diff checks). Inputs in the load_cases form since
+SX1-SX6 (test_shell_yaml_ext.py); the SY3 rows load_cases and post are supported since then, and a load on a set is
+valid (the load_key row now uses an unknown key, edge)."""
 from __future__ import annotations
 
 import copy
@@ -39,7 +41,7 @@ def _base() -> dict[str, Any]:
 def _cfg(domain: dict[str, Any], supports: list[Any], loads: list[Any], rmin: float, drill: float | None) -> dict:
     physics: Any = "shell" if drill is None else {"type": "shell", "drill": drill}
     return {"name": "s", "domain": {"type": "shell", **domain}, "material": {"E0": 1.0, "nu": 0.3},
-            "physics": physics, "supports": supports, "loads": loads,
+            "physics": physics, "supports": supports, "load_cases": [{"loads": loads}],
             "chain": [{"type": "density_filter", "rmin": rmin}],
             "interpolation": {"type": "simp", "penal": 3.0, "emin_ratio": 1e-9}, "objective": "compliance",
             "constraints": [{"response": "volume", "upper": 0.4}], "optimizer": "mma", "run": {"max_iter": 10}}
@@ -146,10 +148,7 @@ def _rectangle() -> dict[str, Any]:
     return _yaml_cfg("rectangle")
 
 
-LOAD = [{"name": "a", "loads": [{"type": "force", "where": {"type": "point", "at": ["max", "min"]}, "force": [0, -1]}]}]
 UNSUPPORTED: dict[str, tuple[str, Any, str, Any]] = {      # id -> (key, value, path in the error, base config)
-    "load_cases": ("load_cases", LOAD, "load_cases", None),
-    "post": ("post", [{"type": "vtu"}], "post.0", None),
     "units": ("units", {"length": "mm", "force": "N"}, "units", None),
     "physics_elasticity": ("physics", "elasticity", "physics", None),
     "physics_modal": ("physics", "modal", "physics", None),
@@ -173,10 +172,11 @@ INVALID: dict[str, tuple[str, Any, str, Any]] = {
     "set_left_on_cylinder": ("supports", [{"set": "left", "fix": "all"}], "supports.0.set", None),
     "set_start_on_tube": ("supports", [{"set": "start", "fix": "all"}], "supports.0.set", "closed"),
     "fix_component": ("supports", [{"set": "bottom", "fix": ["x"]}], "supports.0.fix", None),
-    "load_key": ("loads", [{"set": "top", "force": [0, 0, 1]}], "loads.0.set", None),
-    "point_length": ("loads", [{"point": [1.0, 0.0], "force": [0, 0, 1]}], "loads.0.point", None),
+    "load_key": ("load_cases.0.loads", [{"edge": "top", "force": [0, 0, 1]}], "load_cases.0.loads.0.edge", None),
+    "point_length": ("load_cases.0.loads", [{"point": [1.0, 0.0], "force": [0, 0, 1]}], "load_cases.0.loads.0.point",
+                     None),
     "rigid_motion": ("supports", [{"set": "bottom", "fix": ["u"]}], "supports", None),
-    "zero_load": ("loads", [{"point": [1.0, 0.0, 1.0], "force": [0, 0, 0]}], "loads", None),
+    "zero_load": ("load_cases.0.loads", [{"point": [1.0, 0.0, 1.0], "force": [0, 0, 0]}], "load_cases.0", None),
     "material_plane": ("material.plane", "stress", "material.plane", None),
 }
 

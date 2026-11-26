@@ -17,7 +17,9 @@ K_global = Tᵀ K_local T. In the facet frame:
 Element matrices are for unit modulus; :class:`FlatShell` assembles K = Σ_e E_e K_e⁰ and solves with fixed DOFs as a
 torch autograd function (dc/dE_e = −λ_eᵀ K_e⁰ u_e), so a design gradient is available. Pre-registered checks:
 KB1-KB11 in ``docs/olcumler/kabuk_onkayit.md``. Study: :mod:`toporlogy.optimization.shell_study`; YAML:
-``domain: {type: shell}`` (:mod:`toporlogy.configuration.mesh_build`). Not here: non-rectangular facets.
+``domain: {type: shell}`` (:mod:`toporlogy.configuration.mesh_build`). Consistent loads: :meth:`FlatShell.pressure_load`
+(uniform pressure) and :meth:`FlatShell.line_load` (uniform line load along boundary edges, SX2 in
+``docs/olcumler/kabuk_onkayit.md``). Not here: non-rectangular facets.
 """
 from __future__ import annotations
 
@@ -341,6 +343,37 @@ class FlatShell:
         for c in range(4):
             for d in range(3):
                 np.add.at(F, 6 * self.mesh.facets[:, c] + d, f[:, d])
+        return F
+
+    def _boundary_edges(self, nodes: Any) -> np.ndarray:
+        """(n_edges, 2) node pairs of the facet edges that belong to one facet only (boundary edges) and have both
+        corners in ``nodes``; sorted pairs, in ascending order."""
+        inset = np.zeros(self.mesh.nn, bool)
+        inset[np.asarray(nodes, np.int64).ravel()] = True
+        f = self.mesh.facets
+        e = np.sort(np.stack([f, np.roll(f, -1, axis=1)], axis=-1).reshape(-1, 2), axis=1)
+        pairs, count = np.unique(e, axis=0, return_counts=True)
+        keep = (count == 1) & inset[pairs[:, 0]] & inset[pairs[:, 1]]
+        return pairs[keep]
+
+    def line_load(self, nodes: Any, force: Any) -> np.ndarray:
+        """Consistent nodal load (6 nn,) of a uniform line load along the boundary edges of ``nodes``
+        (:meth:`_boundary_edges`) with total ``force`` (3,) in global axes: q = force / L (L the summed edge length),
+        q L_e / 2 to both ends of every edge (the bilinear shape functions are linear along an edge); rotations get
+        nothing. ``ValueError`` when ``nodes`` holds no boundary edge or the force is not a finite 3-vector."""
+        f = np.asarray(force, float)
+        if f.shape != (3,) or not np.isfinite(f).all():
+            raise ValueError(f"line load force must be a finite 3-vector, got {force!r}")
+        edges = self._boundary_edges(nodes)
+        if not len(edges):
+            raise ValueError("the node set holds no boundary edge of a facet (a line load needs at least one edge "
+                             "with both corners in the set)")
+        L = np.linalg.norm(self.mesh.nodes[edges[:, 1]] - self.mesh.nodes[edges[:, 0]], axis=1)
+        share = (L / (2.0 * L.sum()))[:, None] * f                                 # (n_edges, 3) per end
+        F = np.zeros(self.ndof)
+        for end in range(2):
+            for d in range(3):
+                np.add.at(F, 6 * edges[:, end] + d, share[:, d])
         return F
 
     def _forward(self, E: np.ndarray, F: np.ndarray) -> tuple[np.ndarray, Any]:

@@ -342,3 +342,38 @@ değişmez. (H2) `test_speedups.py` H2 parametreleri değişmez (15). (C) `catal
 Kurallar: ilk koşuda tutmayan kontrol, ölçülen değeriyle `xfail(strict=True)` olur ve `docs/vv_kutugu.json`'a girer;
 eşik gevşetilmez; test kurulum hatası düzeltilebilir ama burada yazılır; tutmayan fark öngörüsü burada FAIL diye
 yazılır; ilk koşudan sonra eklenen kontrol "post hoc" diye işaretlenir. Testler: `tests/toporlogy/test_mesh_yaml_ext.py`.
+
+### AX1–AX8 sonucu (ilk ölçüm, 2026-11-26)
+
+Kod: `configuration/mesh_build.py` (`load_cases`, `distribute`, `plane: strain`, `post: vtu`), `core/vtu.py`
+(`write_cells_vtu`, `VTK_TRIANGLE`, `VTK_TETRA`; ızgara `write_vtu` aynı iç yazıcıdan), `fem/shell.py`
+(`FlatShell.line_load`). Testler `tests/toporlogy/test_mesh_yaml_ext.py` (41 test). Değerler
+`python -m pytest tests/toporlogy/test_mesh_yaml_ext.py -q -p no:randomly -s` çıktısından; ilk koşu 41 passed, ölçüt
+ya da kurulum düzeltmesi gerekmedi.
+
+| # | Durum | Ölçülen |
+|:---|:---|:---|
+| AX1 | PASS | Q4: değer 0,00e+00 (c = 4,552852e2), gradyan 4,55e-13; H8: değer 0,00e+00 (c = 2,049946e2), gradyan 2,23e-14; `Setup.cases` [(a, 0,7), (b, 1,3)], F iki sütun |
+| AX2 | PASS | bileşke: Q4 48 × 16 0,00e+00, T3 5,32e-17, H8 2,44e-17, T4 4,89e-17; paylar: Q4 6,65e-18, T3 1,33e-17, H8 6,11e-18; küme dışında yüklü düğüm yok |
+| AX3 | PASS | traction: Q4 1,67e-15, T3 2,44e-15, H8 1,44e-15, T4 1,67e-15 (≤ 1e-10); `nodes` karşıt örneği Q4'te 1,47e-1 (≥ 1e-3) |
+| AX4 | PASS | YAML = Python plane strain: Q4 değer 0, gradyan 0 (c = 6,185378e2), T3 değer 0, gradyan 0 (c = 6,713818e2); yama: Q4 1,83e-15, T3 1,10e-15; 3-B `plane: strain` `ConfigError` (`material.plane`, "a 3-D mesh") |
+| AX5 | PASS | Q4 (2 durum), T3, H8, T4: noktalar, bağlantı, tip (9, 5, 12, 10), `xphys`, `E`, `displacement_<c>` bit düzeyinde aynı; vtk 9.5.2: hücre sayısı ve tipi aynı, en küçük boyut > 0, toplam farkı Q4 0, T3 0, H8 5,55e-16, T4 0; CLI koşusu `result.vtu` yazdı, x̄ `result.npz` ile aynı (3 iterasyonda yakınsamadığı için çıkış 1, ölçüt değil) |
+| AX6 | PASS | 12 durumun hepsinde `ConfigError`, iletisi o yolda ve "mesh" içeriyor; beş desteklenmeyende "not support"; üst düzey `loads` iletisi `load_cases`'i gösteriyor |
+| AX7 | PASS | dönüştürülmüş örnekler çapayı bit düzeyinde veriyor: `mesh_cantilever2d` 1908.3237613774095 (df0 `4793a979cd435212`, F `a627b5d4d61a4200`), `shell_cylinder` 30131.882810400843 (df0 `ce282cdd37f56919`, F `1581708cfbc900cb`); ızgara VTU sha256 iki boyutta da çapadaki; AY1–AY4 (girdiler `load_cases` biçiminde) geçti; `test_vtu.py` geçti; `pytest -m baseline` 8 passed, yedi örnekte en büyük bağıl fark 0,00e+00 |
+| AX8 | PASS (altı öngörünün altısı tuttu) | (U1) `--write` öncesi U1 `mesh_cantilever2d.yaml`'da düştü; sonrası yalnız iki girdi değişti, ikisinde de yalnız `loads` → `load_cases` (`tip`, `radial`, weight 1,0, yükler aynı); 15 girdi aynı (`resolved_configs.json` +30 / −18 satır). (A) `api_surface.json` +4 satır: `core.vtu` `VTK_TETRA`, `VTK_TRIANGLE`, `write_cells_vtu`; `FlatShell` + `line_load`; `list.txt` aynı. (D) `resolve.py`, `build.py`, `post_steps.py`, `boundary/*` farkı yok. (R) `test_research_examples.py` değişmedi ve geçti. (H2) `test_speedups.py` değişmedi; `test_h2a` parametreleri 15, önceki gibi. (C) `catalog --write docs` fark üretmedi |
+
+Ön kayıtta yazılmayan, kodla birlikte gelen küçük ekler: yük sütunu NaN / Inf içerirse `ConfigError`
+(`load_cases.<c>`; ızgara yolundaki denetimin eşi); kabukta sıfır yük iletisinin yolu `loads` yerine
+`load_cases.<c>` (SY3 `zero_load` satırı buna çevrildi). Kenar bulucu `FlatShell._boundary_edges` özel tutuldu
+(yalnız `line_load` kullanıyor).
+
+AY4 listesinden ön kayıtta yazıldığı gibi `load_cases`, `post: vtu` ve `plane_strain` satırları çıktı (artık
+destekli; yerine AX6). AY4 `unknown_load_set` ve `zero_load` satırlarının girdileri `load_cases.0.loads` altına, beklenen
+yolları `load_cases.0.loads.0.set` ve `load_cases.0`'a çevrildi (kurulum, ölçüt aynı).
+
+Koşular (`PYTHONPATH=src`, `TMP` / `--basetemp` `.claude/tmp-toporlogy/meshext` altında, `-p no:randomly`):
+`test_mesh_yaml_ext test_shell_yaml_ext test_mesh_yaml test_shell_yaml test_vtu test_shell test_shell_drilling
+test_shell_reference test_mesh_topology test_shell_study test_api_surface test_catalog test_catalog_ledger test_units
+test_research_examples test_speedups test_cli test_architecture test_grid_refusals` → 496 passed, 8 xfailed (9 dk 10 s;
+xfail'ler SX1 dikdörtgen ve önceden var olan yedisi: AY2, KB3, DR1 × 3, DR2, U8). `pytest -m baseline` → 8 passed
+(1 dk 52 s). ruff ve mypy (`src` dosyaları) temiz.

@@ -550,3 +550,34 @@ düğüm f / n.
 | SX6 | dokunulmamışlık: SY1–SY4 (girdileri `load_cases` biçimine çevrilmiş) geçer; `test_shell.py`, `test_shell_study.py` geçer; dönüştürülmüş örnek çapadaki amaç, df0, F'yi bit düzeyinde verir (AX7) | aynen |
 
 Kurallar AX bölümündeki gibi. Testler: `tests/toporlogy/test_shell_yaml_ext.py`.
+
+### SX1–SX6 sonucu (ilk ölçüm, 2026-11-26)
+
+Testler `tests/toporlogy/test_shell_yaml_ext.py` (ilk koşuda 21 test, sonra bir post hoc; SX1 × 2, SX2 × 3, SX3 × 2, SX4 × 5, SX5 × 9).
+Değerler `-s` çıktısından. **İlk koşu: 20 passed, 1 failed (SX1 düz dikdörtgen, ölçüm).**
+
+| # | Durum | Ölçülen |
+|:---|:---|:---|
+| SX1 | **kısmen: örnek PASS, düz dikdörtgen FAIL → strict xfail** | örnek dilim: değer 0,00e+00 (c = 1,135246e4), gradyan 1,85e-13; düz dikdörtgen 8 × 6: değer 0,00e+00 (c = 2,385549e6), gradyan **5,59e-12** (> 1e-12); ikisinde de `Setup.cases` [(a, 0,7), (b, 1,3)] |
+| SX2 | PASS | bileşke: dikdörtgen `right` 0,00e+00, dilim `top` 0,00e+00, kapalı boru `top` 2,22e-16; paylar 0,00e+00, 8,33e-17, 6,94e-17 (uç sayısı 2, 2, 0); dönme DOF'ları tam 0; küme dışında yük yok |
+| SX3 | PASS | traction: altı bileşende max fark / max \|u\| = 4,40e-13 (≤ 1e-10); `nodes` karşıt örneği 6,69e-1 (≥ 1e-3) |
+| SX4 | PASS | dilim (2 durum) ve dikdörtgen: noktalar, bağlantı, tip 9, `xphys`, `E`, `displacement_<c>`, `rotation_<c>` bit düzeyinde aynı; vtk alan toplamı farkı 1,42e-16 ve 0, en küçük alan > 0; CLI koşusu `result.vtu` yazdı, x̄ `result.npz` ile aynı |
+| SX5 | PASS | sekiz YAML durumunda `ConfigError`, iletisi o yolda ve "shell" içeriyor; üç desteklenmeyende "not support"; `line_load` tek düğümle `ValueError` ("no boundary edge") |
+| SX6 | PASS | SY1–SY4 (girdiler `load_cases` biçiminde) geçti; dönüştürülmüş örnek çapayı bit düzeyinde veriyor (AX7: 30131.882810400843, df0 ve F karmaları aynı); `test_shell.py`, `test_shell_drilling.py`, `test_shell_reference.py`, `test_shell_study.py` geçti (koşu AX bölümünde) |
+
+SX1 notu. Bu x'te cond(K_ff) = 4,0e6, eps · cond(K_ff) = 9,0e-10. Mekanizma ölçüldü (scratchpad betiği, çıktısı
+burada): iki durumlu çalışma eşlenik sistemini K λ = 0,7 F_a ile çözüyor, tek durumlu çalışma K λ = F_a'yı çözüp sonra
+0,7 ile çarpıyor; aynı LU ile bu iki yol a durumunda eşlenikte 5,8e-13, eleman duyarlılığında 1,2e-11 göreli fark
+veriyor. Yani fark doğrudan çözümün yuvarlama düzeyinde, formülde değil (örnek dilimde cond daha küçük, 1,85e-13).
+Eşik değişmedi; strict xfail ve `docs/vv_kutugu.json` girdisi (risk low). Sonradan (post hoc)
+`test_sx1_posthoc_differences_are_within_the_solve_roundoff_bound`: değer farkı 0, gradyan farkı 5,59e-12 <
+eps · cond(K_ff) = 8,95e-10 (PASS).
+
+Ön kayıtta yazılmayan kurulum değişikliği: SY3 `load_key` satırının girdisi `{set: top, force}` idi ve artık geçerli bir
+yük; satır bilinmeyen bir anahtarla (`{edge: top, force}`, yol `load_cases.0.loads.0.edge`) sürdürüldü. SY3
+`point_length` ve `zero_load` satırlarının girdileri `load_cases.0.loads` altına, beklenen yolları
+`load_cases.0.loads.0.point` ve `load_cases.0`'a çevrildi. `load_cases` ve `post` satırları ön kayıtta yazıldığı gibi
+çıktı (yerine SX5).
+
+Kalan: durum başına mesnet, `combinations`, nokta momenti, jeodezik filtre mesafesi, VTU'da gerilme / kabuk kesit
+kuvvetleri.

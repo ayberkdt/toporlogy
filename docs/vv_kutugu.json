@@ -656,6 +656,16 @@
    "resolution": "yok bu turda: eşik değişmez; iki yol aynı çözücüyle çözülürse (ayrı ön kayıt) ya da yuvarlama sınırına dayalı yeni bir ölçüt ön kayda alınırsa yeniden değerlendirilir",
    "record": "docs/olcumler/ag_topoloji_onkayit.md",
    "slow": false
+  },
+  {
+   "nodeid": "tests/toporlogy/test_shell_yaml_ext.py::test_sx1_two_cases_are_the_weighted_sum_of_one_case_studies[rectangle]",
+   "kind": "pre-registered check failed",
+   "model_backend": "configuration.mesh_build kabuk kolu (ShellPhysics, FlatShell, SuperLU splu), düz dikdörtgen 2 × 1, 8 × 6, t = 0,05, iki yük durumu (CPU, numpy)",
+   "reason": "SX1: değer farkı 0, gradyan farkı 5,59e-12 > 1e-12. Bu x'te cond(K_ff) = 4,0e6, eps · cond = 9,0e-10: iki durumlu çalışmanın ağırlıklı eşlenik çözümü K λ = w F ile tek durumlu çalışmaların w (K⁻¹ F)'si farklı yuvarlanıyor (ölçüldü: a durumunda eleman duyarlılığı farkı 1,2e-11); sonradan: gradyan farkı eps · cond(K_ff) altında",
+   "risk": "low",
+   "resolution": "yok bu turda: eşik değişmez; yuvarlama sınırına dayalı bir ölçüt ön kayda alınırsa yeniden değerlendirilir",
+   "record": "docs/olcumler/kabuk_onkayit.md",
+   "slow": false
   }
  ],
  "skips": [
@@ -776,6 +786,20 @@
    "site": "pytest.importorskip(\"skfem\")",
    "backend": "scikit-fem (dev extra)",
    "covers": "voksel yeniden analizinin bağımsız montajı (GC7, prizmatik çubuk)",
+   "status_when_skipped": "NOT VERIFIED"
+  },
+  {
+   "file": "tests/toporlogy/test_mesh_yaml_ext.py",
+   "site": "vtk = pytest.importorskip(\"vtk\")",
+   "backend": "vtk (post extra)",
+   "covers": "ağ VTU dosyasının bağımsız okuyucuyla okunması, hücre tipleri ve hücre boyutları (AX5)",
+   "status_when_skipped": "NOT VERIFIED"
+  },
+  {
+   "file": "tests/toporlogy/test_shell_yaml_ext.py",
+   "site": "vtk = pytest.importorskip(\"vtk\")",
+   "backend": "vtk (post extra)",
+   "covers": "kabuk VTU dosyasının bağımsız okuyucuyla okunması ve parça alanları (SX4)",
    "status_when_skipped": "NOT VERIFIED"
   }
  ]
