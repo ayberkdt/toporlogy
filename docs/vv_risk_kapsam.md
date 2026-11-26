@@ -4,11 +4,11 @@ Kaynak: `tests/toporlogy/_vv_layers.py` (dosya → katman sınıflaması elle, d
 
 | Katman | core | geometry | boundary | design | fem | solvers | optimization | optimizers | configuration | execution | post | references |
 |:---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| U unit / property | 8/121 | 3/30 | — | 6/69 | 5/55 | 3/43 | 12/143 | 2/30 | 1/10 | 1/10 | 4/44 | — |
-| MP material point | 12/131 | — | — | 6/67 | 8/84 | — | 10/100 | 3/32 | 5/57 | 1/13 | 4/55 | — |
+| U unit / property | 8/122 | 3/30 | — | 6/69 | 5/55 | 3/43 | 12/144 | 2/30 | 1/10 | 1/10 | 4/44 | — |
+| MP material point | 12/132 | — | — | 6/67 | 8/84 | — | 10/101 | 3/32 | 5/57 | 1/13 | 4/55 | — |
 | EL element patch / quadrature | 5/48 | — | — | 1/10 | 8/77 | 1/14 | 4/52 | 1/14 | 1/17 | — | 2/20 | — |
 | AS assembly / BC / reactions | 1/23 | 1/23 | 5/62 | — | 4/39 | 5/53 | 1/23 | — | — | — | — | — |
-| AN analytical / MMS | 6/71 | — | — | 3/35 | 12/119 | — | 14/167 | 3/41 | 3/41 | 1/13 | 2/20 | — |
+| AN analytical / MMS | 6/72 | — | — | 3/35 | 12/119 | — | 14/168 | 3/41 | 3/41 | 1/13 | 2/20 | — |
 | IS independent solver / implementation | 4/14 | — | — | — | 7/53 | 1/12 | 3/25 | — | 1/14 | — | — | — |
 | OG optimization / KKT / gradient | 7/79 | — | — | 5/56 | 10/112 | 4/48 | 21/191 | 13/137 | 6/70 | 2/30 | 2/30 | — |
 | E2E end-to-end geometry | 2/38 | 5/39 | — | 2/13 | 2/38 | — | 7/61 | 1/21 | 4/38 | 1/10 | 10/67 | — |
