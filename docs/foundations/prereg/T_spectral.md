@@ -68,3 +68,34 @@ Run command: `python -m pytest tests/toporlogy/test_spectral.py tests/toporlogy/
 seconds, negligible memory.
 
 First result (append after run): see below.
+
+## First result (2026-11-27, base 828d9be plus production code and test files)
+
+`python -m pytest tests/toporlogy/test_spectral.py tests/toporlogy/test_moduli_foundations.py
+tests/toporlogy/test_linear_elastic.py tests/toporlogy/test_anisotropy.py -p no:randomly`: 201 passed, 2 xfailed (the
+two xfails are historical ones of the existing files, untouched). New tests: 117 in `test_spectral.py`, 13 in
+`test_moduli_foundations.py`.
+
+| ID | Result | Measured |
+|---|---|---|
+| TS1 | PASS | within the 1e-12 threshold (pass/fail only; per-case maxima not logged) |
+| TS2 (T3) | PASS | analytic, mpmath FD and Sylvester within 1e-12; FD sweep best step <= 1e-6 |
+| TS3 (T4) | PASS | 2I limits, projector oracle, expm_frechet, inverse-expm_frechet log, Sylvester sqrt within thresholds |
+| TS4 | PASS | near repeat (delta 1e-10) within 1e-10 of mpmath, continuity within 1e-9 |
+| TS5 | PASS | 40 rotations x 3 spectra x 7 functions within 1e-12; near-repeat 1e-9; negative control differs by > 1e-6 as required |
+| TS6 | PASS | duality 1e-12 (consistency); VJP vs independent FD gradient 1e-6 |
+| TS7 | PASS; kappa 1e12 reported only | scale laws 1e-10; kappa 1, 1e2, 1e4, 1e8 within 1e-12 + 1e-14 kappa; kappa 1e12 log-derivative relative error 4.0e-06 vs a 100-digit mpmath eigsy reference (one sample, not asserted) |
+| TS8 | PASS | all invalid inputs refused; batch broadcast equals loop |
+| TS9 | PASS | 2x2 values 1e-12, derivatives 1e-12 (1e-10 near repeat) |
+| MO1-MO4 | PASS | within thresholds (rotated isotropic A_U <= 1e-12; cubic (2, 1, 1.5): Zener 3, A_U closed form 5.6 to 1e-12) |
+| E5 | PASS | plane stress/strain vs dense 3-D solve 1e-12; sigma_zz-only control differs by > 1e-3, rotation-about-z control agrees to 1e-13 |
+
+Test set-up corrections (no threshold changed, no production change):
+1. mpmath returns `mpc` entries from `sqrtm/logm/expm`; `float()` failed in the first run. Fixed with `mp.re`.
+2. TS7 kappa 1e12 report: `mp.logm` does not converge at that condition number (ZeroDivisionError), so the reference
+   for this report-only case is a central difference of an `mp.eigsy`-based log at 100 digits. The case is not asserted.
+
+Deviations from the preregistration text: the 2x2 near-repeat case uses the TS4 threshold 1e-10 (the TS9 row said
+1e-12 for the whole 2x2 batch; the separated and exactly repeated 2x2 cases use 1e-12). No production fault found, so
+no ledger entry. Limitation: only pass/fail against the thresholds is on record, apart from the values stated.
+Not done: torch path, second derivatives, float32/GPU (documented in `TENSOR_CONTRACT.md`).
