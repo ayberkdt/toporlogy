@@ -190,9 +190,8 @@ class Passive(torch.nn.Module):
         self.register_buffer("off", torch.as_tensor(domain.void | ~domain.active))
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        # selection only (the same values and gradient as where(keep, 1, where(off, 0, x))), without two full-size
-        # constant tensors per call
-        return x.masked_fill(self.off, 0.0).masked_fill(self.keep, 1.0)
+        one, zero = torch.ones_like(x), torch.zeros_like(x)
+        return torch.where(self.keep, one, torch.where(self.off, zero, x))
 
 
 class Chain(torch.nn.Module):

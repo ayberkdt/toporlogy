@@ -96,29 +96,17 @@ class Volume(Response):
 
     def __init__(self, weighted: bool = False) -> None:
         self.weighted = bool(weighted)
-        self._cache: tuple[Any, ...] | None = None         # (domain, device, dtype, mask or frac, divisor)
-
-    def _terms(self, d: Domain, x: torch.Tensor) -> tuple[torch.Tensor, float]:
-        """The domain's active mask (or frac) as a tensor and the divisor, built once per domain, device and dtype
-        (the OC bisection calls this response some 35 times per iteration)."""
-        c = self._cache
-        if c is None or c[0] is not d or c[1] != x.device or c[2] != x.dtype:
-            if self.weighted:
-                t, den = torch.as_tensor(d.frac, dtype=x.dtype, device=x.device), float(d.frac.sum())
-            else:
-                t, den = torch.as_tensor(d.active, device=x.device), float(d.n_active)
-            c = self._cache = (d, x.device, x.dtype, t, den)
-        return c[3], c[4]
 
     def __call__(self, ctx: EvalContext) -> torch.Tensor:
         d = ctx.domain
         if ctx.xphys.dim() != d.dim:
             raise ValueError("Volume needs one design field; with several phases use PhaseVolume (solid or per "
                              "phase), Mass or Cost")
-        t, den = self._terms(d, ctx.xphys)
         if self.weighted:
-            return (t * ctx.xphys).sum() / den
-        return ctx.xphys[t].sum() / den
+            fr = torch.as_tensor(d.frac, dtype=ctx.xphys.dtype, device=ctx.xphys.device)
+            return (fr * ctx.xphys).sum() / float(d.frac.sum())
+        act = torch.as_tensor(d.active, device=ctx.xphys.device)
+        return ctx.xphys[act].sum() / float(d.n_active)
 
 
 # ---------------------------------------------------------------------------------------------- several phases
