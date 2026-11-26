@@ -606,6 +606,46 @@
    "resolution": "yok (karesel formun yuvarlama tabanı; eşik değişmez); post hoc KB3b t = 0,1'de geçiyor, zar yaması 1,6e-15",
    "record": "docs/olcumler/kabuk_onkayit.md",
    "slow": false
+  },
+  {
+   "nodeid": "tests/toporlogy/test_shell_drilling.py::test_dr1_static_compliance_spread_on_16x12[0.01-radial]",
+   "kind": "pre-registered check failed",
+   "model_backend": "fem.shell FlatShell, ankastre R = 1, 90°, L = 1 silindir dilimi, 16 × 12 parça (CPU, numpy)",
+   "reason": "t/R = 0,01, serbest halka ortasında radyal yük: |c(1e-4) − c(1e-2)| / c(1e-3) = 2,50e-2 > 1e-2; α küçüldükçe yapı yumuşuyor",
+   "risk": "medium",
+   "resolution": "yok bu turda: varsayılan α = 1e-3 ön kayıtlı kural gereği değişmez; hangi α'nın doğru olduğunu söyleyecek drilling'den bağımsız bir referans çözüm gerekir (ayrı ön kayıt)",
+   "record": "docs/olcumler/kabuk_onkayit.md",
+   "slow": false
+  },
+  {
+   "nodeid": "tests/toporlogy/test_shell_drilling.py::test_dr1_static_compliance_spread_on_16x12[0.05-corner]",
+   "kind": "pre-registered check failed",
+   "model_backend": "fem.shell FlatShell, ankastre R = 1, 90°, L = 1 silindir dilimi, 16 × 12 parça (CPU, numpy)",
+   "reason": "t/R = 0,05, köşe z yükü: |c(1e-4) − c(1e-2)| / c(1e-3) = 5,57e-2 > 1e-2 (8 × 6 ve 32 × 24 ağda da ~5 %: ağ incelmesiyle küçülmüyor)",
+   "risk": "medium",
+   "resolution": "yok bu turda: varsayılan α = 1e-3 ön kayıtlı kural gereği değişmez; hangi α'nın doğru olduğunu söyleyecek drilling'den bağımsız bir referans çözüm gerekir (ayrı ön kayıt)",
+   "record": "docs/olcumler/kabuk_onkayit.md",
+   "slow": false
+  },
+  {
+   "nodeid": "tests/toporlogy/test_shell_drilling.py::test_dr1_static_compliance_spread_on_16x12[0.05-radial]",
+   "kind": "pre-registered check failed",
+   "model_backend": "fem.shell FlatShell, ankastre R = 1, 90°, L = 1 silindir dilimi, 16 × 12 parça (CPU, numpy)",
+   "reason": "t/R = 0,05, radyal yük: |c(1e-4) − c(1e-2)| / c(1e-3) = 2,13e-1 > 1e-2 (32 × 24 ağda 2,07e-1)",
+   "risk": "medium",
+   "resolution": "yok bu turda: varsayılan α = 1e-3 ön kayıtlı kural gereği değişmez; hangi α'nın doğru olduğunu söyleyecek drilling'den bağımsız bir referans çözüm gerekir (ayrı ön kayıt)",
+   "record": "docs/olcumler/kabuk_onkayit.md",
+   "slow": false
+  },
+  {
+   "nodeid": "tests/toporlogy/test_shell_drilling.py::test_dr2_optimisation_spread[0.05]",
+   "kind": "pre-registered check failed",
+   "model_backend": "fem.shell FlatShell + optimization.shell_study, KS3 kurulumu 16 × 12, MMA (CPU, numpy)",
+   "reason": "KS3 kurulumu (t = 0,05), 30 MMA iterasyonu: son uyum farkı |c(1e-4) − c(1e-2)| / c(1e-3) = 5,80e-2 > 2e-2; tasarım L1 farkı 1,35e-2 ≤ 0,05 tuttu",
+   "risk": "medium",
+   "resolution": "yok bu turda: varsayılan α = 1e-3 ön kayıtlı kural gereği değişmez; hangi α'nın doğru olduğunu söyleyecek drilling'den bağımsız bir referans çözüm gerekir (ayrı ön kayıt)",
+   "record": "docs/olcumler/kabuk_onkayit.md",
+   "slow": false
   }
  ],
  "skips": [

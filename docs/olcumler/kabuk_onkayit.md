@@ -214,3 +214,72 @@ incelmesiyle farkın küçülüp küçülmediği yalnız kayıttır.
 Kurallar: ilk koşuda tutmayan kontrol, ölçülen değeriyle `xfail(strict=True)` olur ve `docs/vv_kutugu.json`'a girer;
 eşik gevşetilmez; test kurulum hatası (ölçüm değil) düzeltilebilir ama burada yazılır; ilk koşudan sonra eklenen kontrol
 "post hoc" diye işaretlenir.
+
+### DR0–DR3 sonucu (ilk ölçüm, 2026-11-26)
+
+`tests/toporlogy/test_shell_drilling.py` (8 test). Değerler ilk koşunun `-s` çıktısından; testlerde ilk koşudan önce ya
+da sonra kurulum düzeltmesi yok. Ön kayıtlı karar kuralı **tutmadı**: DR1 dört durumdan üçünde, DR2 iki kalınlıktan
+birinde başarısız. Kural gereği varsayılan α = 1e-3 **değişmedi**; başarısız durumlar ölçülen değerle strict xfail ve
+`docs/vv_kutugu.json`'da.
+
+| # | Durum | Ölçülen |
+|:---|:---|:---|
+| DR0 | PASS | 184,9039 / 177,2657 / 175,3294 (α = 1e-4 / 1e-3 / 1e-2; kayıt 184,90 / 177,27 / 175,33) |
+| DR1 t = 0,01, köşe | PASS | yayılım 7,2e-3 (eşik 1e-2) |
+| DR1 t = 0,01, radyal | **xfail** | yayılım 2,50e-2 > 1e-2 |
+| DR1 t = 0,05, köşe | **xfail** | yayılım 5,57e-2 > 1e-2 |
+| DR1 t = 0,05, radyal | **xfail** | yayılım 2,13e-1 > 1e-2 |
+| DR2 t = 0,05 (KS3) | **xfail** | (a) son uyum yayılımı 5,80e-2 > 2e-2; (b) L1 1,35e-2 ≤ 0,05 tuttu |
+| DR2 t = 0,01 | PASS | (a) 1,25e-2 ≤ 2e-2; (b) L1 2,36e-3 ≤ 0,05 |
+
+Yayılım = \|c(1e-4) − c(1e-2)\| / c(1e-3).
+
+**DR3 (kayıt): statik uyum α'ya göre ağ incelirken küçülmüyor.** c(1e-3) birim modülle; diğer sütunlar
+c(α) / c(1e-3) − 1, yüzde; son sütun yayılım, yüzde.
+
+| Ağ | t/R | Yük | c(1e-3) | α = 1e-5 | α = 1e-4 | α = 1e-2 | α = 1e-1 | Yayılım 1e-4…1e-2 |
+|:---|---:|:---|---:|---:|---:|---:|---:|---:|
+| 8 × 6 | 0,01 | köşe | 1 169 | 2,9 | 0,5 | −0,1 | −0,2 | 0,6 |
+| 16 × 12 | 0,01 | köşe | 1 492 | 4,2 | 0,6 | −0,1 | −0,2 | 0,7 |
+| 32 × 24 | 0,01 | köşe | 1 700 | 4,2 | 0,6 | −0,1 | −0,1 | 0,6 |
+| 8 × 6 | 0,01 | radyal | 43 418 | 8,1 | 2,1 | −0,3 | −0,6 | 2,4 |
+| 16 × 12 | 0,01 | radyal | 55 977 | 11,4 | 2,2 | −0,3 | −0,4 | 2,5 |
+| 32 × 24 | 0,01 | radyal | 60 901 | 11,6 | 1,8 | −0,2 | −0,3 | 2,0 |
+| 8 × 6 | 0,05 | köşe | 177 | 7,7 | 4,3 | −1,1 | −1,3 | 5,4 |
+| 16 × 12 | 0,05 | köşe | 213 | 9,0 | 4,6 | −1,0 | −1,2 | 5,6 |
+| 32 × 24 | 0,05 | köşe | 245 | 8,6 | 4,2 | −0,9 | −1,0 | 5,1 |
+| 8 × 6 | 0,05 | radyal | 1 853 | 27,3 | 15,8 | −5,1 | −6,0 | 20,9 |
+| 16 × 12 | 0,05 | radyal | 2 026 | 32,8 | 17,1 | −4,2 | −4,8 | 21,3 |
+| 32 × 24 | 0,05 | radyal | 2 089 | 34,6 | 17,1 | −3,6 | −4,1 | 20,7 |
+
+Farkın kaynağı ağ kabalığı değil: 8 × 6'dan 32 × 24'e yayılım t = 0,05 radyal yükte %20,9 → %20,7, köşe yükünde
+%5,4 → %5,1 kalıyor. α küçüldükçe yapı her durumda yumuşuyor; α = 1e-2 ile 1e-1 arası fark %1'in altında (en çok 0,9
+puan, 8 × 6, t = 0,05 radyal), yani büyük α'da uyum doyuyor, küçük α'da doymuyor (α = 1e-5'te 32 × 24, t = 0,05
+radyal +%34,6). Bu ölçüm hangi
+α'nın doğru olduğunu söylemez; drilling'den bağımsız bir referans gerekir.
+
+**DR3 (kayıt): optimizasyon.** KS3 kurulumu, `max_iter = 30`. Δx̄ ve L1 α = 1e-3 tasarımına göre; "Çapraz" her son
+tasarımın α = 1e-3 fiziğiyle değerlendirilen uyumunun α = 1e-3 tasarımınınkine bağıl farkı (yüzde).
+
+| t/R | α | c_son | İter. | Hacim | En büyük Δx̄ | L1 | Çapraz (%) |
+|---:|:---|---:|---:|---:|---:|---:|---:|
+| 0,05 | 1e-5 | 7 518 | 30 | 0,4000 | 0,189 | 0,0160 | 0,74 |
+| 0,05 | 1e-4 | 7 248 | 30 | 0,4000 | 0,141 | 0,0108 | 0,30 |
+| 0,05 | 1e-3 | 6 946 | 27 | 0,4000 | 0,000 | 0,0000 | 0,00 |
+| 0,05 | 1e-2 | 6 845 | 30 | 0,4000 | 0,053 | 0,0029 | 0,03 |
+| 0,05 | 1e-1 | 6 824 | 28 | 0,4000 | 0,048 | 0,0028 | 0,03 |
+| 0,01 | 1e-5 | 139 355 | 27 | 0,4000 | 0,084 | 0,0079 | 0,22 |
+| 0,01 | 1e-4 | 134 584 | 30 | 0,4000 | 0,025 | 0,0022 | −0,01 |
+| 0,01 | 1e-3 | 133 174 | 30 | 0,4000 | 0,000 | 0,0000 | 0,00 |
+| 0,01 | 1e-2 | 132 914 | 30 | 0,4000 | 0,005 | 0,0006 | 0,00 |
+| 0,01 | 1e-1 | 132 766 | 30 | 0,4000 | 0,005 | 0,0006 | 0,00 |
+
+Son uyum α ile fiziğin kendisi kadar değişiyor (t = 0,05'te %5,8), tasarım ise az: başka α ile bulunan tasarımlar
+α = 1e-3 fiziğiyle değerlendirildiğinde α = 1e-3 tasarımından en çok %0,74 (α = 1e-5), α = 1e-4 ile 1e-1 arasında
+en çok %0,30 kötü. Yani bu kurulumda α tasarımı değil, raporlanan uyum değerini taşıyor. Birkaç koşu
+`max_iter = 30`'da durdu (`tol` ölçütüne varmadan); tasarım farklarının bir kısmı yakınsamamış iterasyondan olabilir,
+ayrıca ölçülmedi.
+
+Sonraki adım (ayrı ön kayıt): drilling'den bağımsız bir referans (örneğin aynı dilimin katı / düzgün kabuk çözümü ya
+da drilling serbestliğini kullanmayan bir eleman) ile hangi α aralığının uyumu doğru verdiğini ölçmek; ancak ondan
+sonra varsayılan değişebilir.
