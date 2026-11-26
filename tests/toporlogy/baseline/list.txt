@@ -67,7 +67,8 @@ link  - chain link (design -> physical density) (11)
                         eps=0.0001  xi0=0.5  masked=true  autograd=false
   casting               direction=+z  parting=null [length]  p=40.0
   density_filter        rmin=? [elements]  backend=auto
-  embed                 (no parameters)
+  embed                 angle=null [degrees (bounds, start, keep_angle); rmin in elements]
+                        density=true
   extrusion             axis=?
   group_average         (no parameters)
   heaviside_projection  beta=1.0  eta=0.5
@@ -77,17 +78,18 @@ link  - chain link (design -> physical density) (11)
                         axis=z
   symmetry              planes=? [length]
 
-interpolation  - physical density -> element modulus (5)
+interpolation  - physical density -> element modulus (6)
   hashin_shtrikman  emin_ratio=1e-06
   multiphase_simp   penal=3.0  emin_ratio=1e-06
   ramp              q=8.0  emin_ratio=1e-06
   simp              penal=3.0  emin_ratio=1e-06
+  tensor_phases     phases=?  rule=simplex  penal=3.0  emin_ratio=1e-06
   two_range_simp    penal=3.0  threshold=0.1  q=1.0  emin_ratio=1e-09
 
 solver  - linear solver (1)
   direct  method=auto
 
-physics  - physics model (state solve) (4)
+physics  - physics model (state solve) (5)
   elasticity            element=null  solver=direct
   elasticity_gmg        element=null  tol=1e-08  maxit=300  direct_below=4000 [active elements]
                         fallback_max_elements=120000 [active elements]  warm_start=true
@@ -100,6 +102,7 @@ physics  - physics model (state solve) (4)
                         cutoff=0.1  cutoff_step=0.02  cutoff_max=1.0  density_exponent=3.0
                         load_steps=10  max_iter=30  rtol=1e-09  min_step=0.0001 [load factor]
                         warm_start=false  solver=direct
+  tensor_elasticity     element=null  solver=direct
 
 response  - objective or constraint response (22)
   buckling                     load_factor=null  n_modes=6  rho=50.0  case=0  penal_g=3.0

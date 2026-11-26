@@ -2726,6 +2726,39 @@
   "unit_elasticity": "unit_elasticity(material,dim,plane,R)",
   "unit_elasticity_field": "unit_elasticity_field(material,dim,plane,R)"
  },
+ "toporlogy.core.material_field": {
+  "FIELD_REQUESTS": "<tuple>",
+  "MaterialField": {
+   "attrs": [
+    "coefficients",
+    "conductivity",
+    "mass_density",
+    "min_eigenvalue",
+    "n_elements",
+    "nbytes",
+    "plane"
+   ],
+   "class": "MaterialField"
+  },
+  "PLANES": "<tuple>",
+  "PhaseMaterial": {
+   "attrs": [
+    "conductivity",
+    "cost",
+    "density",
+    "rotate",
+    "stiffness"
+   ],
+   "class": "PhaseMaterial"
+  },
+  "as_phase_materials": "as_phase_materials(spec)",
+  "basis_pairs": "basis_pairs(k)",
+  "in_plane_stiffness": "in_plane_stiffness(C6,dim,plane)",
+  "rotate_in_plane": "rotate_in_plane(D,theta)",
+  "rotate_in_plane_derivative": "rotate_in_plane_derivative(D,theta)",
+  "stiffness_coefficients": "stiffness_coefficients(C)",
+  "symmetric_basis": "symmetric_basis(k)"
+ },
  "toporlogy.core.tensor": {
   "DeformationError": {
    "attrs": [
@@ -3758,6 +3791,167 @@
   "undercuts": "undercuts(xphys,direction,domain,parting,threshold)",
   "validate_chain": "validate_chain(chain)"
  },
+ "toporlogy.design.orientation": {
+  "AngleBlock": {
+   "attrs": [
+    "bounds",
+    "from_degrees",
+    "keep_angle",
+    "location",
+    "period",
+    "rmin",
+    "s_of",
+    "start"
+   ],
+   "class": "AngleBlock"
+  },
+  "DesignBlock": {
+   "attrs": [
+    "bounds"
+   ],
+   "class": "DesignBlock"
+  },
+  "DesignLayout": {
+   "attrs": [
+    "describe",
+    "join",
+    "split"
+   ],
+   "class": "DesignLayout"
+  },
+  "OrientedEmbed": {
+   "attrs": [
+    "T_destination",
+    "add_module",
+    "angle_raw",
+    "apply",
+    "bfloat16",
+    "buffers",
+    "call_super_init",
+    "children",
+    "compile",
+    "cpu",
+    "cuda",
+    "double",
+    "dump_patches",
+    "eval",
+    "extra_repr",
+    "float",
+    "forward",
+    "get_buffer",
+    "get_extra_state",
+    "get_parameter",
+    "get_submodule",
+    "half",
+    "ipu",
+    "load_state_dict",
+    "modules",
+    "mtia",
+    "named_buffers",
+    "named_children",
+    "named_modules",
+    "named_parameters",
+    "parameters",
+    "reduce",
+    "register_backward_hook",
+    "register_buffer",
+    "register_forward_hook",
+    "register_forward_pre_hook",
+    "register_full_backward_hook",
+    "register_full_backward_pre_hook",
+    "register_load_state_dict_post_hook",
+    "register_load_state_dict_pre_hook",
+    "register_module",
+    "register_parameter",
+    "register_state_dict_post_hook",
+    "register_state_dict_pre_hook",
+    "requires_grad_",
+    "set_extra_state",
+    "set_period",
+    "set_submodule",
+    "share_memory",
+    "state_dict",
+    "take",
+    "to",
+    "to_empty",
+    "train",
+    "type",
+    "xpu",
+    "zero_grad"
+   ],
+   "class": "OrientedEmbed"
+  },
+  "PeriodicAngleFilter": {
+   "attrs": [
+    "T_destination",
+    "add_module",
+    "apply",
+    "bfloat16",
+    "buffers",
+    "call_super_init",
+    "children",
+    "compile",
+    "cpu",
+    "cuda",
+    "double",
+    "dump_patches",
+    "eval",
+    "extra_repr",
+    "float",
+    "forward",
+    "get_buffer",
+    "get_extra_state",
+    "get_parameter",
+    "get_submodule",
+    "half",
+    "ipu",
+    "load_state_dict",
+    "modules",
+    "mtia",
+    "named_buffers",
+    "named_children",
+    "named_modules",
+    "named_parameters",
+    "parameters",
+    "register_backward_hook",
+    "register_buffer",
+    "register_forward_hook",
+    "register_forward_pre_hook",
+    "register_full_backward_hook",
+    "register_full_backward_pre_hook",
+    "register_load_state_dict_post_hook",
+    "register_load_state_dict_pre_hook",
+    "register_module",
+    "register_parameter",
+    "register_state_dict_post_hook",
+    "register_state_dict_pre_hook",
+    "requires_grad_",
+    "set_extra_state",
+    "set_submodule",
+    "share_memory",
+    "state_dict",
+    "to",
+    "to_empty",
+    "train",
+    "type",
+    "xpu",
+    "zero_grad"
+   ],
+   "class": "PeriodicAngleFilter"
+  },
+  "StaleFieldError": {
+   "attrs": [
+    "add_note",
+    "args",
+    "with_traceback"
+   ],
+   "class": "StaleFieldError"
+  },
+  "angle_period": "angle_period(Ds,rtol)",
+  "directional_compliance_derivative": "directional_compliance_derivative(E1,E2,G12,nu12,theta)",
+  "directional_modulus": "directional_modulus(E1,E2,G12,nu12,theta)",
+  "wrap_angle": "wrap_angle(theta,period)"
+ },
  "toporlogy.design.pde_filter": {
   "HelmholtzFilter": {
    "attrs": [
@@ -3821,6 +4015,7 @@
   "helmholtz_matrix": "helmholtz_matrix(active,r)"
  },
  "toporlogy.design.phases": {
+  "MIXING_RULES": "<tuple>",
   "MultiPhaseSIMP": {
    "attrs": [
     "T_destination",
@@ -3888,6 +4083,73 @@
     "density"
    ],
    "class": "Phase"
+  },
+  "TensorPhases": {
+   "attrs": [
+    "T_destination",
+    "add_module",
+    "apply",
+    "attach_angle",
+    "bfloat16",
+    "buffers",
+    "call_super_init",
+    "children",
+    "compile",
+    "cpu",
+    "cuda",
+    "double",
+    "dump_patches",
+    "eval",
+    "extra_repr",
+    "float",
+    "forward",
+    "fractions",
+    "get_buffer",
+    "get_extra_state",
+    "get_parameter",
+    "get_submodule",
+    "half",
+    "ipu",
+    "load_state_dict",
+    "material_field",
+    "modules",
+    "mtia",
+    "n_fields",
+    "named_buffers",
+    "named_children",
+    "named_modules",
+    "named_parameters",
+    "parameters",
+    "phase_stiffness",
+    "register_backward_hook",
+    "register_buffer",
+    "register_forward_hook",
+    "register_forward_pre_hook",
+    "register_full_backward_hook",
+    "register_full_backward_pre_hook",
+    "register_load_state_dict_post_hook",
+    "register_load_state_dict_pre_hook",
+    "register_module",
+    "register_parameter",
+    "register_state_dict_post_hook",
+    "register_state_dict_pre_hook",
+    "requires_grad_",
+    "set_extra_state",
+    "set_submodule",
+    "share_memory",
+    "solid",
+    "state_dict",
+    "stiffness_from_fractions",
+    "stiffness_of",
+    "take_field",
+    "to",
+    "to_empty",
+    "train",
+    "type",
+    "xpu",
+    "zero_grad"
+   ],
+   "class": "TensorPhases"
   },
   "as_phases": "as_phases(spec)",
   "is_multiphase": "is_multiphase(interp)",
@@ -4644,6 +4906,33 @@
    ],
    "class": "NonlinearElasticity"
   }
+ },
+ "toporlogy.fem.tensor_elastic": {
+  "TENSOR_ELEMENTS": "<dict>",
+  "TensorElasticity": {
+   "attrs": [
+    "bind",
+    "check_kinematics",
+    "coefficient_gradient",
+    "element_energy",
+    "element_forces",
+    "element_stiffness",
+    "elimination_order",
+    "factor",
+    "matrix",
+    "n_elements",
+    "ordering",
+    "per_element",
+    "set_coefficients",
+    "set_stiffness",
+    "solve",
+    "solve_field",
+    "solve_numpy",
+    "solve_stiffness"
+   ],
+   "class": "TensorElasticity"
+  },
+  "basis_element_matrices": "basis_element_matrices(dim,element)"
  },
  "toporlogy.fem.thermoelastic": {
   "ThermoElastic": {

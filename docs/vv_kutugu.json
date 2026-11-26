@@ -436,6 +436,46 @@
    "resolution": "dal değiştirme ya da çatallanma tespiti (en küçük özdeğer izleme); şimdilik belgede: birincil simetrik yol izleniyor",
    "record": "docs/olcumler/nonlineer_cozucu.md",
    "slow": true
+  },
+  {
+   "nodeid": "tests/toporlogy/test_material_design.py::test_a2_full_tensor_pi_periodicity",
+   "kind": "pre-registered check failed",
+   "model_backend": "core.material.rotate_stiffness (6 x 6, triklinik, CPU)",
+   "reason": "A2 6 × 6 kısmı FAIL (ölçülen 0,206): z etrafında π dönüşü diag(−1, −1, 1), −I değil; triklinik 3-B tensör π-periyodik değil. Ön kaydın öngörüsü yanlıştı; 2-B (3 × 3) matris her malzemede π-periyodik (geçiyor)",
+   "risk": "low",
+   "resolution": "beklenen davranış; ön kaydın iddiası düzeltildi (post hoc test z iki katlı eksen koşulunu sınar)",
+   "record": "docs/olcumler/malzeme_tasarimi.md",
+   "slow": false
+  },
+  {
+   "nodeid": "tests/toporlogy/test_material_design.py::test_a6_global_angle_matches_the_sweep",
+   "kind": "pre-registered check failed",
+   "model_backend": "TensorElasticity + MMA, global açı, 40 × 20 konsol (CPU)",
+   "reason": "A6 FAIL: açı her başlangıçta ≤ 1° (geçiyor), uyum ölçütü tutmuyor: MMA tek değişkende 0° çevresinde ±1,6° sabit adımla salınıyor, c_opt / c_tarama = 1,00084 (0°), 1,00029 (±45°)",
+   "risk": "low",
+   "resolution": "MMA'nın tek değişkenli salınımı (optimizers/ perf oturumunun); asimptot uyarlaması ya da hareket sınırı azaltımıyla yeni ön kayıt",
+   "record": "docs/olcumler/malzeme_tasarimi.md",
+   "slow": true
+  },
+  {
+   "nodeid": "tests/toporlogy/test_material_design.py::test_g2_taylor_remainder[a-recursive]",
+   "kind": "pre-registered check failed",
+   "model_backend": "TensorPhases recursive + TensorElasticity, 12 × 6 (CPU)",
+   "reason": "G2 FAIL: ön kayıtlı h ∈ [1,25e-2; 1e-1] aralığında Taylor eğimi 1,31 (< 1,9); adımlar asimptotik bölgenin dışında, h ≤ 1e-3'te eğim 2,00 ve FD 1e-6 içinde",
+   "risk": "low",
+   "resolution": "post hoc küçük adım testi geçiyor; yeni ön kayıtta h aralığı küçültülür",
+   "record": "docs/olcumler/malzeme_tasarimi.md",
+   "slow": false
+  },
+  {
+   "nodeid": "tests/toporlogy/test_material_design.py::test_g2_taylor_remainder[c-density+angle]",
+   "kind": "pre-registered check failed",
+   "model_backend": "OrientedEmbed + TensorPhases + TensorElasticity, 12 × 6 (CPU)",
+   "reason": "G2 FAIL: ön kayıtlı h aralığında Taylor eğimi 1,55 (< 1,9); h ≤ 1e-3'te eğim 1,99, FD 1e-6 içinde",
+   "risk": "low",
+   "resolution": "post hoc küçük adım testi geçiyor; yeni ön kayıtta h aralığı küçültülür",
+   "record": "docs/olcumler/malzeme_tasarimi.md",
+   "slow": false
   }
  ],
  "skips": [

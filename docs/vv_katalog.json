@@ -28,7 +28,8 @@
    "physics": [
     "elasticity",
     "modal",
-    "nonlinear_elasticity"
+    "nonlinear_elasticity",
+    "tensor_elasticity"
    ],
    "locking": "shear-locks in bending (parasitic shear)",
    "distortion": "regular grid, undistorted unit square/cube elements only (no Jacobian varies)",
@@ -79,7 +80,8 @@
     "elasticity",
     "elasticity_gmg",
     "modal",
-    "nonlinear_elasticity"
+    "nonlinear_elasticity",
+    "tensor_elasticity"
    ],
    "locking": "shear-locks in bending",
    "distortion": "regular grid, undistorted unit square/cube elements only (no Jacobian varies)",
@@ -477,6 +479,33 @@
     "tests/toporlogy/test_nonlinear.py::test_v6_end_compliance_gradient_finite_difference"
    ],
    "scalar_modulus": "E_active through an energy interpolation; general D with material svk only"
+  },
+  {
+   "id": "tensor_elasticity",
+   "residual": "K(C) u = f (linear, small strain)",
+   "tangent": "K(C), linear in the element tensors C_e (Q4, H8: KE(C) = sum_a c_a KE(S_a))",
+   "matrix": "symmetric positive definite on the free DOFs (every C_e a convex combination of SPD tensors)",
+   "solve": "direct (solver: direct)",
+   "devices": [
+    "cpu"
+   ],
+   "dims": [
+    2,
+    3
+   ],
+   "elements": [
+    "Q4",
+    "H8"
+   ],
+   "supports": "axis-aligned fixed DOFs, one support set",
+   "convergence": "direct solve; relative residual <= 1e-6 or backward error <= 1e-14 accepted, else SolveResidualError",
+   "memory": "assembled sparse K, element matrices (n_active, nloc, nloc) refilled per evaluation",
+   "evidence": [
+    "tests/toporlogy/test_material_design.py::test_k8b_scalar_limit_matches_multiphase_simp",
+    "tests/toporlogy/test_material_design.py::test_k7_independent_assembly",
+    "tests/toporlogy/test_material_design.py::test_g1_compliance_gradient_finite_difference"
+   ],
+   "scalar_modulus": "per-element elasticity tensor C_e (MaterialField of interpolation tensor_phases); the scalar grid the study passes is only checked against the field"
   }
  ],
  "solvers": [
@@ -1081,7 +1110,8 @@
    "elasticity",
    "elasticity_gmg",
    "modal",
-   "nonlinear_elasticity"
+   "nonlinear_elasticity",
+   "tensor_elasticity"
   ],
   "physics_x_response": {
    "buckling": {
@@ -1111,6 +1141,12 @@
      "evidence": [],
      "reason": "linear buckling about a linear prestress; not defined on the non-linear state",
      "enforced": "catalog"
+    },
+    "tensor_elasticity": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "",
+     "enforced": ""
     }
    },
    "compliance": {
@@ -1145,6 +1181,15 @@
      ],
      "reason": "same number as end_compliance by construction (EndCompliance subclasses Compliance); only end_compliance is tested",
      "enforced": ""
+    },
+    "tensor_elasticity": {
+     "status": "SUPPORTED",
+     "evidence": [
+      "tests/toporlogy/test_material_design.py::test_k8b_scalar_limit_matches_multiphase_simp",
+      "tests/toporlogy/test_material_design.py::test_g1_compliance_gradient_finite_difference"
+     ],
+     "reason": "",
+     "enforced": ""
     }
    },
    "conduction_connectivity": {
@@ -1169,6 +1214,12 @@
      "enforced": ""
     },
     "nonlinear_elasticity": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "does not read the study's physics (read from the code); combination not tested",
+     "enforced": ""
+    },
+    "tensor_elasticity": {
      "status": "NOT VERIFIED",
      "evidence": [],
      "reason": "does not read the study's physics (read from the code); combination not tested",
@@ -1201,6 +1252,12 @@
      "evidence": [],
      "reason": "does not read the study's physics (read from the code); combination not tested",
      "enforced": ""
+    },
+    "tensor_elasticity": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "does not read the study's physics (read from the code); combination not tested",
+     "enforced": ""
     }
    },
    "coupling_compliance": {
@@ -1229,6 +1286,12 @@
      "evidence": [],
      "reason": "does not read the study's physics (read from the code); combination not tested",
      "enforced": ""
+    },
+    "tensor_elasticity": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "does not read the study's physics (read from the code); combination not tested",
+     "enforced": ""
     }
    },
    "dilated_volume": {
@@ -1253,6 +1316,12 @@
      "enforced": ""
     },
     "nonlinear_elasticity": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "does not read the study's physics (read from the code); combination not tested",
+     "enforced": ""
+    },
+    "tensor_elasticity": {
      "status": "NOT VERIFIED",
      "evidence": [],
      "reason": "does not read the study's physics (read from the code); combination not tested",
@@ -1289,6 +1358,12 @@
      ],
      "reason": "",
      "enforced": ""
+    },
+    "tensor_elasticity": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "",
+     "enforced": ""
     }
    },
    "eigenvalue": {
@@ -1318,6 +1393,12 @@
      "evidence": [],
      "reason": "needs physics modal",
      "enforced": "component"
+    },
+    "tensor_elasticity": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "",
+     "enforced": ""
     }
    },
    "end_compliance": {
@@ -1345,6 +1426,12 @@
       "tests/toporlogy/test_nonlinear.py::test_v6_end_compliance_gradient_finite_difference",
       "tests/toporlogy/test_nonlinear_orientation.py::test_n4_end_compliance_gradient_with_a_field"
      ],
+     "reason": "",
+     "enforced": ""
+    },
+    "tensor_elasticity": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
      "reason": "",
      "enforced": ""
     }
@@ -1376,6 +1463,12 @@
      "evidence": [],
      "reason": "needs physics modal",
      "enforced": "component"
+    },
+    "tensor_elasticity": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "",
+     "enforced": ""
     }
    },
    "grey_level": {
@@ -1400,6 +1493,12 @@
      "enforced": ""
     },
     "nonlinear_elasticity": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "does not read the study's physics (read from the code); combination not tested",
+     "enforced": ""
+    },
+    "tensor_elasticity": {
      "status": "NOT VERIFIED",
      "evidence": [],
      "reason": "does not read the study's physics (read from the code); combination not tested",
@@ -1432,6 +1531,12 @@
      "evidence": [],
      "reason": "does not read the study's physics (read from the code); combination not tested",
      "enforced": ""
+    },
+    "tensor_elasticity": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "does not read the study's physics (read from the code); combination not tested",
+     "enforced": ""
     }
    },
    "mass": {
@@ -1460,6 +1565,12 @@
      "evidence": [],
      "reason": "does not read the study's physics (read from the code); combination not tested",
      "enforced": ""
+    },
+    "tensor_elasticity": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "does not read the study's physics (read from the code); combination not tested",
+     "enforced": ""
     }
    },
    "maximize": {
@@ -1482,6 +1593,12 @@
      "enforced": ""
     },
     "nonlinear_elasticity": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "composite: the weakest status of its parts",
+     "enforced": ""
+    },
+    "tensor_elasticity": {
      "status": "NOT VERIFIED",
      "evidence": [],
      "reason": "composite: the weakest status of its parts",
@@ -1515,6 +1632,12 @@
      "evidence": [],
      "reason": "needs physics modal",
      "enforced": "component"
+    },
+    "tensor_elasticity": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "",
+     "enforced": ""
     }
    },
    "min_frequency": {
@@ -1544,6 +1667,12 @@
      "evidence": [],
      "reason": "needs physics modal",
      "enforced": "component"
+    },
+    "tensor_elasticity": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "",
+     "enforced": ""
     }
    },
    "phase_volume": {
@@ -1572,6 +1701,12 @@
      "evidence": [],
      "reason": "does not read the study's physics (read from the code); combination not tested",
      "enforced": ""
+    },
+    "tensor_elasticity": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "does not read the study's physics (read from the code); combination not tested",
+     "enforced": ""
     }
    },
    "robust_compliance": {
@@ -1596,6 +1731,12 @@
      "enforced": "catalog"
     },
     "nonlinear_elasticity": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "",
+     "enforced": ""
+    },
+    "tensor_elasticity": {
      "status": "NOT VERIFIED",
      "evidence": [],
      "reason": "",
@@ -1629,6 +1770,12 @@
      "evidence": [],
      "reason": "builds; the small-strain stress of the stress response on a large-displacement state is not a verified measure (risk)",
      "enforced": ""
+    },
+    "tensor_elasticity": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "",
+     "enforced": ""
     }
    },
    "stress_augmented_lagrangian": {
@@ -1653,6 +1800,12 @@
      "enforced": "catalog"
     },
     "nonlinear_elasticity": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "",
+     "enforced": ""
+    },
+    "tensor_elasticity": {
      "status": "NOT VERIFIED",
      "evidence": [],
      "reason": "",
@@ -1685,6 +1838,12 @@
      "evidence": [],
      "reason": "does not read the study's physics (read from the code); combination not tested",
      "enforced": ""
+    },
+    "tensor_elasticity": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "does not read the study's physics (read from the code); combination not tested",
+     "enforced": ""
     }
    },
    "weighted_sum": {
@@ -1707,6 +1866,12 @@
      "enforced": ""
     },
     "nonlinear_elasticity": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "composite: the weakest status of its parts",
+     "enforced": ""
+    },
+    "tensor_elasticity": {
      "status": "NOT VERIFIED",
      "evidence": [],
      "reason": "composite: the weakest status of its parts",
@@ -2079,6 +2244,166 @@
      "tests/toporlogy/test_mesh_locking.py::test_l1e_taylor_hood_converges_near_and_at_incompressibility"
     ],
     "enforced": ""
+   },
+   {
+    "id": "tensor_phases_elasticity",
+    "when": {
+     "interpolation": "tensor_phases",
+     "physics": "tensor_elasticity"
+    },
+    "status": "SUPPORTED",
+    "reason": "phases with their own tensors, rules simplex and recursive",
+    "evidence": [
+     "tests/toporlogy/test_material_design.py::test_k7_independent_assembly",
+     "tests/toporlogy/test_material_design.py::test_k6_series_parallel_bar"
+    ],
+    "enforced": ""
+   },
+   {
+    "id": "angle_elasticity",
+    "when": {
+     "link": "embed.angle",
+     "physics": "tensor_elasticity"
+    },
+    "status": "SUPPORTED",
+    "reason": "density + fibre angle, 2-D, one phase",
+    "evidence": [
+     "tests/toporlogy/test_material_design.py::test_a5_off_axis_tension_and_gradient",
+     "tests/toporlogy/test_material_design.py::test_a8_yaml_example_runs"
+    ],
+    "enforced": ""
+   },
+   {
+    "id": "tensor_responses",
+    "when": {
+     "physics": "tensor_elasticity",
+     "response": "other_than_compliance_volume_phase_volume_mass_cost"
+    },
+    "status": "UNSUPPORTED",
+    "reason": "only Compliance, Volume, PhaseVolume, Mass, Cost verified with tensor_elasticity",
+    "evidence": [],
+    "enforced": "catalog"
+   },
+   {
+    "id": "tensor_interpolation",
+    "when": {
+     "physics": "tensor_elasticity",
+     "interpolation": "other_than_tensor_phases"
+    },
+    "status": "UNSUPPORTED",
+    "reason": "tensor_elasticity reads the material field of interpolation tensor_phases",
+    "evidence": [],
+    "enforced": "catalog"
+   },
+   {
+    "id": "tensor_phases_physics",
+    "when": {
+     "interpolation": "tensor_phases",
+     "physics": "other_than_tensor_elasticity"
+    },
+    "status": "UNSUPPORTED",
+    "reason": "the scalar-modulus physics cannot take the element tensors",
+    "evidence": [],
+    "enforced": "component"
+   },
+   {
+    "id": "tensor_incompatible_modes",
+    "when": {
+     "physics": "tensor_elasticity",
+     "element": "Q4IM|H8IM"
+    },
+    "status": "UNSUPPORTED",
+    "reason": "condensed incompatible modes are not linear in D",
+    "evidence": [],
+    "enforced": "component"
+   },
+   {
+    "id": "tensor_per_case_supports",
+    "when": {
+     "physics": "tensor_elasticity",
+     "supports": "per_case"
+    },
+    "status": "UNSUPPORTED",
+    "reason": "one support set only",
+    "evidence": [],
+    "enforced": "component"
+   },
+   {
+    "id": "tensor_oblique_supports",
+    "when": {
+     "physics": "tensor_elasticity",
+     "supports": "oblique_or_spring"
+    },
+    "status": "UNSUPPORTED",
+    "reason": "axis-aligned fixed DOFs only",
+    "evidence": [],
+    "enforced": "component"
+   },
+   {
+    "id": "tensor_post",
+    "when": {
+     "physics": "tensor_elasticity",
+     "post": "other_than_phase_report"
+    },
+    "status": "UNSUPPORTED",
+    "reason": "the other post steps assume a scalar modulus or an isotropic material",
+    "evidence": [],
+    "enforced": "catalog"
+   },
+   {
+    "id": "angle_3d",
+    "when": {
+     "link": "embed.angle",
+     "dim": "3"
+    },
+    "status": "UNSUPPORTED",
+    "reason": "3-D orientation is not implemented",
+    "evidence": [],
+    "enforced": "component"
+   },
+   {
+    "id": "angle_phases",
+    "when": {
+     "link": "embed.angle",
+     "interpolation": "tensor_phases with several phases"
+    },
+    "status": "UNSUPPORTED",
+    "reason": "Study takes several design fields only through the plain embed link",
+    "evidence": [],
+    "enforced": "component"
+   },
+   {
+    "id": "angle_interpolation",
+    "when": {
+     "link": "embed.angle",
+     "interpolation": "other_than_tensor_phases"
+    },
+    "status": "UNSUPPORTED",
+    "reason": "the angle turns the phase tensors of tensor_phases",
+    "evidence": [],
+    "enforced": "component"
+   },
+   {
+    "id": "angle_isotropic",
+    "when": {
+     "link": "embed.angle",
+     "material": "isotropic phase"
+    },
+    "status": "UNSUPPORTED",
+    "reason": "the material does not depend on the angle (zero gradient)",
+    "evidence": [],
+    "enforced": "component"
+   },
+   {
+    "id": "angle_oc",
+    "when": {
+     "link": "embed.angle",
+     "optimizer": "oc"
+    },
+    "status": "UNSUPPORTED",
+    "reason": "OC assumes a constraint gradient positive in every variable; the angle has none",
+    "evidence": [],
+    "enforced": "catalog"
    }
   ]
  }
