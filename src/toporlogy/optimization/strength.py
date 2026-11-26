@@ -147,9 +147,10 @@ class Criterion:
             a = torch.einsum("nv,vw,nw->n", sm, F, sm)
             diag = torch.einsum("nv,v->n", sm * sm, torch.diagonal(F))
             if bool((a < -1e-12 * diag).any()):
-                raise ValueError(f"tsai_wu: the quadratic form is negative for a stress here (f12 = "
-                                 f"{getattr(self.strength, 'f12', float('nan')):g}; with normal stresses in all three axes it is positive "
-                                 f"semidefinite only for -1/2 <= f12 < 1): the index would be negative")
+                f12 = float(getattr(self.strength, "f12", float("nan")))
+                raise ValueError(f"tsai_wu: the quadratic form is negative for a stress here (f12 = {f12:g}; with "
+                                 f"normal stresses in all three axes it is positive semidefinite only for "
+                                 f"-1/2 <= f12 < 1): the index would be negative")
             b = sm @ f
             return 0.5 * (b + torch.sqrt(b * b + 4.0 * a + e ** 2))
         sn = s / self.scale                                            # dimensionless: eps is relative
