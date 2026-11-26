@@ -2,7 +2,8 @@
 
 * :func:`dominates` / :func:`nondominated`: a dominates b when a ≤ b in every objective and a < b in one.
 * :func:`weighted_sum`: min Σ w_i (f_i − o_i) / s_i. It reaches only points on the convex hull of the front: on a
-  non-convex part no weight returns an interior point, however fine the weights are.
+  non-convex part no weight returns an interior point, however fine the weights are. With a zero weight the other
+  objective is left free: the solution may be only weakly efficient (dominated); filter with :func:`nondominated`.
 * :func:`epsilon_constraint`: min f_k s.t. f_i ≤ ε_i. It also reaches non-convex parts; a point is reported
   feasible only when every bound holds.
 
