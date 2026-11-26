@@ -55,7 +55,8 @@ def run_setup(setup: Setup, folder: str | Path, progress: Callable[[int, dict[st
     ck = folder / "checkpoint.ckpt"
     if resume and not ck.is_file():
         raise FileNotFoundError(f"{folder} has no checkpoint.ckpt to resume from (run.checkpoint_every > 0 writes it)")
-    res = st.run(max_iter=int(run["max_iter"]), tol=float(run["tol"]), callback=cb,
+    x0 = st.perturbed_start(run["start"], int(run["seed"])) if run.get("start") else None
+    res = st.run(x0, max_iter=int(run["max_iter"]), tol=float(run["tol"]), callback=cb,
                  feasibility_tol=float(run["feasibility_tol"]), checkpoint=str(ck) if every > 0 else None,
                  checkpoint_every=every, resume=str(ck) if resume else None)
     ftol = float(run["feasibility_tol"])

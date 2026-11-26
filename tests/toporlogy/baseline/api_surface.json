@@ -579,11 +579,13 @@
   },
   "Study": {
    "attrs": [
+    "START_TYPES",
     "constraint_values",
     "context",
     "default_start",
     "evaluate",
     "evaluate_density",
+    "perturbed_start",
     "physical",
     "run",
     "settings"
@@ -6116,11 +6118,13 @@
   },
   "Study": {
    "attrs": [
+    "START_TYPES",
     "constraint_values",
     "context",
     "default_start",
     "evaluate",
     "evaluate_density",
+    "perturbed_start",
     "physical",
     "run",
     "settings"

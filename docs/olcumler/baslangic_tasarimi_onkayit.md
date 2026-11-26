@@ -16,3 +16,18 @@ random: p_e ~ U(−a, a). 0 < a ≤ 0,5; k ≥ 1 tamsayı. Birden çok faz ve a�
 | ST3 | random: aynı tohum → aynı x0; farklı tohum → farklı; \|x0 − x_düzgün\| ≤ a | bit düzeyinde eşit / farklı |
 | ST4 | YAML ters homojenleştirme: 10 × 10 hücre, `density_filter {rmin: 1.5, periodic: true}`, amaç `effective_poisson`, hacim ≤ 0,6, C11 ≥ 0,02, `start: {type: cosine, amplitude: 0.2}`, 40 MMA iterasyonu | son ν12 ≤ başlangıç ν12 − 0,1 |
 | ST5 | bilinmeyen tür, a ≤ 0 ya da a > 0,5, k < 1, birden çok faz | açık hata |
+
+## Sonuç (ilk ölçüm, 2026-11-26)
+
+`tests/toporlogy/test_start_design.py` (10 test); hepsi ilk koşuda geçti.
+
+| # | Durum | Ölçülen |
+|:---|:---|:---|
+| ST1 | PASS | baseline 8 passed (bit düzeyinde); anlık görüntüde 14 yapılandırmaya tam 14 `"start": null` satırı, başka fark yok |
+| ST2 | PASS | ≤ 1e-15 (12 × 6 kiriş, a = 0,2, k = 2) |
+| ST3 | PASS | aynı tohum eşit, farklı tohum farklı, \|p\| ≤ a |
+| ST4 | PASS | ν12 0,3248 → 1,7e-5; 21 iterasyonda tasarım değişimiyle durdu; hacim 0,258, C11 = 0,070 (iki kısıt da sağlanıyor) |
+| ST5 | PASS | bilinmeyen tür, a = 0 / 0,6, k = 0, eksik genlik, fazla anahtar ve açı bloklu örnek (fiber_angle_cantilever2d) için açık hata |
+
+ST4 için not: tasarım düzgün başlangıçtaki durağanlıktan kurtuldu, ama bu kurulumda (10 × 10, tol 0,01) negatif
+Poisson oranına ulaşmadı; auxetic hücre `auxetic_hucre_onkayit.md`'deki ayrı döngüde, daha büyük hücre ve 200 iterasyonla.

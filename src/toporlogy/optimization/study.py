@@ -345,13 +345,50 @@ class Study:
         """Uniform start from the first Volume constraint's bound (topo3d rule), else 0.5."""
         if self.n_fields > 1:
             return self._phase_start()
-        x = None
+        x = self._uniform_design()
+        if self._reduce is not None:
+            x = np.asarray(self._reduce(x), float)
+        return x
+
+    def _uniform_design(self) -> np.ndarray:
         for c in self.constraints:
             if isinstance(c.response, Volume):
-                x = self.domain.uniform_start(c.upper, weighted=bool(getattr(c.response, "weighted", False)))
-                break
-        if x is None:
-            x = np.full(self.domain.n_design, 0.5)
+                return self.domain.uniform_start(c.upper, weighted=bool(getattr(c.response, "weighted", False)))
+        return np.full(self.domain.n_design, 0.5)
+
+    START_TYPES = ("cosine", "random")
+
+    def perturbed_start(self, spec: dict[str, Any], seed: int = 0) -> np.ndarray:
+        """Start vector: the uniform start of :meth:`default_start` plus a perturbation, clipped to [0, 1], then
+        reduced like the default (YAML ``run.start``; docs/olcumler/baslangic_tasarimi_onkayit.md).
+        ``{type: cosine, amplitude: a, periods: k}``: a · Π_d cos(2π k i_d / n_d) over the element grid indices;
+        ``{type: random, amplitude: a}``: U(−a, a) drawn with ``seed``. 0 < a ≤ 0.5, integer k ≥ 1."""
+        spec = dict(spec)
+        kind = spec.pop("type", None)
+        if kind not in self.START_TYPES:
+            raise ValueError(f"run.start type: {' | '.join(self.START_TYPES)}, got {kind!r}")
+        if "amplitude" not in spec:
+            raise ValueError("run.start needs amplitude (0 < amplitude <= 0.5)")
+        a = float(spec.pop("amplitude"))
+        k = spec.pop("periods", 1) if kind == "cosine" else 1
+        if spec:
+            raise ValueError(f"run.start {kind}: unknown key(s) {sorted(spec)}")
+        if not 0.0 < a <= 0.5:
+            raise ValueError(f"run.start amplitude must be in (0, 0.5], got {a}")
+        if isinstance(k, bool) or int(k) != k or int(k) < 1:
+            raise ValueError(f"run.start periods must be an integer >= 1, got {k!r}")
+        first = self.chain.links[0] if len(self.chain.links) else None
+        if self.n_fields > 1 or getattr(first, "angle_block", None) is not None:
+            raise ValueError("run.start: several phases or an angle block are not supported (uniform start only)")
+        self.schedule.reset()                                  # the volume bound the uniform start reads
+        x = self._uniform_design()
+        d = self.domain
+        if kind == "cosine":
+            ijk = np.stack(np.unravel_index(np.asarray(d.design_elements), d.shape), axis=1)
+            p = a * np.prod(np.cos(2.0 * np.pi * int(k) * ijk / np.asarray(d.shape)), axis=1)
+        else:
+            p = np.random.default_rng(int(seed)).uniform(-a, a, d.n_design)
+        x = np.clip(x + p, 0.0, 1.0)
         if self._reduce is not None:
             x = np.asarray(self._reduce(x), float)
         return x

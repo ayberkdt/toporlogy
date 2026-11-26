@@ -126,6 +126,7 @@
    "max_iter": 150,
    "move_beta_ref": null,
    "seed": 0,
+   "start": null,
    "tol": 0.01
   },
   "schedule": {
@@ -265,6 +266,7 @@
    "max_iter": 60,
    "move_beta_ref": null,
    "seed": 0,
+   "start": null,
    "tol": 0.001
   },
   "schedule": null,
@@ -609,6 +611,7 @@
    "max_iter": 40,
    "move_beta_ref": 2.0,
    "seed": 0,
+   "start": null,
    "tol": 0.01
   },
   "schedule": {
@@ -753,6 +756,7 @@
    "max_iter": 300,
    "move_beta_ref": null,
    "seed": 0,
+   "start": null,
    "tol": 0.01
   },
   "schedule": null,
@@ -927,6 +931,7 @@
    "max_iter": 80,
    "move_beta_ref": null,
    "seed": 0,
+   "start": null,
    "tol": 0.01
   },
   "schedule": null,
@@ -1084,6 +1089,7 @@
    "max_iter": 80,
    "move_beta_ref": null,
    "seed": 0,
+   "start": null,
    "tol": 0.001
   },
   "schedule": null,
@@ -1244,6 +1250,7 @@
    "max_iter": 60,
    "move_beta_ref": null,
    "seed": 0,
+   "start": null,
    "tol": 0.001
   },
   "schedule": null,
@@ -1400,6 +1407,7 @@
    "max_iter": 100,
    "move_beta_ref": null,
    "seed": 0,
+   "start": null,
    "tol": 0.002
   },
   "schedule": null,
@@ -1599,6 +1607,7 @@
    "max_iter": 150,
    "move_beta_ref": null,
    "seed": 0,
+   "start": null,
    "tol": 0.005
   },
   "schedule": null,
@@ -1870,6 +1879,7 @@
    "max_iter": 600,
    "move_beta_ref": null,
    "seed": 0,
+   "start": null,
    "tol": 0.002
   },
   "schedule": {
@@ -2125,6 +2135,7 @@
    "max_iter": 120,
    "move_beta_ref": null,
    "seed": 0,
+   "start": null,
    "tol": 0.002
   },
   "schedule": {
@@ -2282,6 +2293,7 @@
    "max_iter": 60,
    "move_beta_ref": null,
    "seed": 0,
+   "start": null,
    "tol": 0.01
   },
   "schedule": null,
@@ -2525,6 +2537,7 @@
    "max_iter": 120,
    "move_beta_ref": null,
    "seed": 0,
+   "start": null,
    "tol": 0.01
   },
   "schedule": {
@@ -2714,6 +2727,7 @@
    "max_iter": 60,
    "move_beta_ref": null,
    "seed": 0,
+   "start": null,
    "tol": 0.01
   },
   "schedule": {
