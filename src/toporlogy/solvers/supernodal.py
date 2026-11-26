@@ -28,11 +28,19 @@ The result differs from SuperLU's LU (same order, diagonal pivots) by rounding o
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Any
 
 import numpy as np
 import scipy.sparse as sp
 
-__all__ = ["SupernodalCholesky", "NotPositiveDefiniteError"]
+__all__ = ["SupernodalCholesky", "NotPositiveDefiniteError", "AMALGAMATE"]
+
+AMALGAMATE = 0
+"""Default of ``amalgamate``: a block is merged with its parent when the parent is the next block in the order and the
+merged block has at most this many unknowns (fewer, larger dense blocks: less Python per block, more stored zeros).
+0 = off. Measured post hoc (docs/olcumler/hizlandirma.md §P1): 256 / 1024 make the 2-D factorisation 1.5x / 1.8x
+faster at 60 600 DOF but store more than SuperLU's L + U at 120 x 40 (the pre-registered H3g fails), and do not help
+in 3-D; so off by default."""
 
 
 class NotPositiveDefiniteError(RuntimeError):
@@ -47,7 +55,7 @@ class _Block:
     a_src: np.ndarray               # indices into A_upper.data of the entries assembled into this front
     a_dst11: np.ndarray             # their flat positions in F11 (ns × ns) or -1
     a_dst21: np.ndarray             # their flat positions in F21 (len(struct) × ns) or -1 (aligned with a_src)
-    children: list[tuple[int, int, np.ndarray, np.ndarray]]   # (child, k1, pos in block, pos in struct)
+    children: list[tuple[int, int, Any, Any]]   # (child, k1, pos in block, pos in struct) as torch index tensors
 
 
 class SupernodalCholesky:
@@ -59,9 +67,12 @@ class SupernodalCholesky:
         Elimination order: ``order[k]`` is the unknown eliminated k-th.
     blocks : array of int
         Sizes of the consecutive groups of ``order`` eliminated as one dense block; they sum to n.
+    amalgamate : int
+        Merge a block into its parent when the parent follows it and the merged size is at most this (0: never).
     """
 
-    def __init__(self, order: np.ndarray, blocks: np.ndarray) -> None:
+    def __init__(self, order: np.ndarray, blocks: np.ndarray, amalgamate: int = AMALGAMATE) -> None:
+        self.amalgamate = int(amalgamate)
         self.order = np.asarray(order, np.int64)
         n = len(self.order)
         sizes = np.asarray(blocks, np.int64)
@@ -71,7 +82,8 @@ class SupernodalCholesky:
             raise ValueError("order is not a permutation")
         self.n = n
         sizes = sizes[sizes > 0]
-        self._bounds = np.concatenate([[0], np.cumsum(sizes)])
+        self._given = np.concatenate([[0], np.cumsum(sizes)])     # the partition as given
+        self._bounds = self._given                                # after amalgamation (set by the analysis)
         self._pattern: tuple[np.ndarray, np.ndarray] | None = None
         self._blocks: list[_Block] = []
         self._L11: list = []                                 # torch tensors (lower factors per block)
@@ -83,10 +95,32 @@ class SupernodalCholesky:
         sizes = np.asarray(blocks, np.int64)
         sizes = sizes[sizes > 0]
         return (np.array_equal(np.asarray(order), self.order)
-                and np.array_equal(np.concatenate([[0], np.cumsum(sizes)]), self._bounds))
+                and np.array_equal(np.concatenate([[0], np.cumsum(sizes)]), self._given))
 
     # ------------------------------------------------------------------ symbolic
     def _analyse(self, A: sp.csr_matrix) -> None:
+        self._bounds = self._given
+        self._structure(A)
+        if self.amalgamate > 0:
+            b = self._bounds
+            keep = [0]
+            size = 0
+            for k, blk in enumerate(self._blocks[:-1]):
+                size += blk.stop - blk.start
+                nxt = self._blocks[k + 1]
+                parent_next = len(blk.struct) > 0 and nxt.start <= blk.struct[0] < nxt.stop
+                if parent_next and size + (nxt.stop - nxt.start) <= self.amalgamate:
+                    continue                                       # merge k with k + 1
+                keep.append(k + 1)
+                size = 0
+            keep.append(len(self._blocks))
+            merged = b[np.asarray(keep)]
+            if len(merged) < len(b):
+                self._bounds = merged
+                self._structure(A)
+
+    def _structure(self, A: sp.csr_matrix) -> None:
+        import torch
         n = self.n
         iperm = np.empty(n, np.int64)
         iperm[self.order] = np.arange(n)
@@ -115,7 +149,8 @@ class SupernodalCholesky:
             children = []
             for child, st in pending[b]:
                 k1 = int(np.searchsorted(st, s1))
-                children.append((child, k1, st[:k1] - s0, np.searchsorted(struct, st[k1:])))
+                children.append((child, k1, torch.from_numpy(st[:k1] - s0),
+                                 torch.from_numpy(np.searchsorted(struct, st[k1:]))))
             blocks.append(_Block(s0, s1, struct, src, d11, d21, children))
             nnz += ns * (ns + 1) // 2 + ns * len(struct)
             if len(struct):
@@ -135,7 +170,7 @@ class SupernodalCholesky:
                 or not np.array_equal(self._pattern[1], A.indices)):
             self._analyse(A)
         data = np.asarray(A.data, float)
-        updates: dict[int, np.ndarray] = {}
+        updates: dict[int, Any] = {}
         L11s: list[torch.Tensor] = []
         L21s: list[torch.Tensor] = []
         for b, blk in enumerate(self._blocks):
@@ -146,28 +181,29 @@ class SupernodalCholesky:
             m11 = blk.a_dst11 >= 0
             F11.ravel()[blk.a_dst11[m11]] = data[blk.a_src[m11]]
             F21.ravel()[blk.a_dst21[~m11]] = data[blk.a_src[~m11]]
+            T11, T21, T22 = torch.from_numpy(F11), torch.from_numpy(F21), torch.from_numpy(F22)
             for child, k1, p1, p2 in blk.children:
                 U = updates.pop(child)
+                # extend-add: one addition per position (indices unique), the same as F[ix] += U
                 if k1:
-                    F11[np.ix_(p1, p1)] += U[:k1, :k1]
+                    T11.index_put_((p1[:, None], p1[None, :]), U[:k1, :k1], accumulate=True)
                     if len(p2):
-                        F21[np.ix_(p2, p1)] += U[k1:, :k1]
+                        T21.index_put_((p2[:, None], p1[None, :]), U[k1:, :k1], accumulate=True)
                 if len(p2):
-                    F22[np.ix_(p2, p2)] += U[k1:, k1:]
+                    T22.index_put_((p2[:, None], p2[None, :]), U[k1:, k1:], accumulate=True)
             # F11 holds K's entries in its lower triangle and the children's updates in both; Cholesky reads the
             # lower one
-            L11, info = torch.linalg.cholesky_ex(torch.from_numpy(F11))
+            L11, info = torch.linalg.cholesky_ex(T11)
             if int(info) != 0:
                 raise NotPositiveDefiniteError(
                     f"supernodal Cholesky: block {b} (order positions {blk.start}..{blk.stop - 1}) is not positive "
                     f"definite (pivot {int(info)}): the matrix is singular or not SPD at these values")
             if nsr:
-                L21 = torch.linalg.solve_triangular(L11.mT, torch.from_numpy(F21), upper=True, left=False)
-                U22 = torch.from_numpy(F22)
-                U22.addmm_(L21, L21.mT, alpha=-1.0)              # F22 − L21 L21ᵀ, in place
-                updates[b] = F22
+                L21 = torch.linalg.solve_triangular(L11.mT, T21, upper=True, left=False)
+                T22.addmm_(L21, L21.mT, alpha=-1.0)              # F22 − L21 L21ᵀ, in place
+                updates[b] = T22
             else:
-                L21 = torch.from_numpy(F21)
+                L21 = T21
             L11s.append(L11)
             L21s.append(L21)
         self._L11, self._L21 = L11s, L21s

@@ -37,12 +37,12 @@ ROWS = {
     ],
     "cholesky": [
         ("mbb2d_300x100_chol", "mbb2d", ["domain.shape=[300,100]", PHYS, CHOL], 5, 3, True),
-        ("cantilever3d_40x20x10_chol", "cantilever3d", ["domain.shape=[40,20,10]", CHOL], 3, 2, True),
-        ("multiload3d_40x16x12_chol", "multiload3d", ["domain.shape=[40,16,12]", CHOL], 3, 2, True),
+        ("cantilever3d_40x20x10_chol", "cantilever3d", ["domain.shape=[40,20,10]", PHYS, CHOL], 3, 2, True),
+        ("multiload3d_40x16x12_chol", "multiload3d", ["domain.shape=[40,16,12]", PHYS, CHOL], 3, 2, True),
         ("mbb2d_600x200_chol", "mbb2d", ["domain.shape=[600,200]", PHYS, CHOL], 3, 2, True),
-        ("cantilever3d_chol", "cantilever3d", [CHOL], 5, 3, True),
-        ("multiload3d_chol", "multiload3d", [CHOL], 5, 3, True),
-        ("symmetric_am3d_chol", "symmetric_am3d", [CHOL], 5, 3, True),
+        ("cantilever3d_chol", "cantilever3d", [PHYS, CHOL], 5, 3, True),
+        ("multiload3d_chol", "multiload3d", [PHYS, CHOL], 5, 3, True),
+        ("symmetric_am3d_chol", "symmetric_am3d", [PHYS, CHOL], 5, 3, True),
         ("mbb2d_chol", "mbb2d", [PHYS, CHOL], 5, 3, True),
     ],
 }
