@@ -74,3 +74,19 @@ düşey kuvvet P; `build` fizik kurulduktan sonra Study'nin yükünü `physics.s
 | PY2 | YAML: 16 × 16, kenarlar `clamped`, merkezde P, hacim ≤ 0,4, 15 MMA iterasyonu | son uyum < ilk uyum; hacim ≤ 0,4 (1 + 1e-3) |
 | PY3 | `load_cases` verilmesi, kısmi bileşenli mesnet, ne q ne P, t ≤ 0, 3-B alan, `at`'sız P | açık hata |
 | PY4 | var olan yapılandırmalar | `pytest -m baseline` bit düzeyinde; çözülmüş yapılandırma anlık görüntüsü değişmez |
+
+### PY1–PY4 sonucu
+
+İlk koşuda iki test kurulum hatasıyla düştü (ölçüm değil): PY1'in Python karşılaştırma çalışması `emin_ratio` 1e-9 ile
+kurulmuştu, YAML'ınki 1e-6 (iki çalışma aynı problem değildi; ölçülen fark 7,0e-6); PY3'ün "kısmi mesnet" durumu
+geçersiz roller tanımıyla (`axis` yerine `normal`) yanlış nedenle düşüyordu. İkisi düzeltildi, eşikler aynı.
+
+| # | Durum | Ölçülen |
+|:---|:---|:---|
+| PY1 | PASS | değer ve gradyan farkı 0 |
+| PY2 | PASS | 16 × 16 ankastre plaka, merkezde P: uyum 1,21e5 → 1,45e4 (15 iterasyon), hacim 0,3998 |
+| PY3 | PASS | `load_cases`, kısmi mesnet, yüksüz, t = 0, 3-B, `at`'sız P: beklenen iletiyle açık hata |
+| PY4 | PASS | baseline 8 passed bit düzeyinde; çözülmüş yapılandırma anlık görüntüsü değişmedi |
+
+Katalog: `plate` fiziği kaydı, `compliance × plate` SUPPORTED; uyumluluk sondası plaka için kendi yüküyle kuruluyor
+(`test_compatibility.py::physics_for`).

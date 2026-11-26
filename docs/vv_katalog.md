@@ -34,6 +34,7 @@ Durumlar: **SUPPORTED** hızlı pakette bir referansa ya da sonlu farka karşı 
 | nonlinear_elasticity | r(u; E) = f_int(u) - f = 0 (total Lagrangian, SVK or neo-Hooke; API: small-strain models of core.constitutive incl. J2 plasticity, design sensitivity by the path adjoint over the load increments) | symmetric; positive definite only on the stable branch | general Newton (solvers.newton) with load steps; arc length / displacement control through continuation_problem (API); one adjoint solve with K_T per case (path-dependent: at most one per load increment) | cpu | 2, 3 | Q4, H8 | axis-aligned fixed DOFs, one support set | Newton residual and error contraction; NonlinearConvergenceError with the history | E_active through an energy interpolation; general D with material svk only |
 | tensor_elasticity | K(C) u = f (linear, small strain) | symmetric positive definite on the free DOFs (every C_e a convex combination of SPD tensors) | direct (solver: direct) | cpu | 2, 3 | Q4, H8 | axis-aligned fixed DOFs, one support set | direct solve; relative residual <= 1e-6 or backward error <= 1e-14 accepted, else SolveResidualError | per-element elasticity tensor C_e (MaterialField of interpolation tensor_phases); the scalar grid the study passes is only checked against the field |
 | thermoelastic | K(E) u = f + f_th(E), f_th = sum_e E_e G dT_e (one-way, small strain, prescribed uniform temperature rise) | symmetric positive definite on the free DOFs | direct (GridSPD supernodal / SuperLU factor) | cpu | 2, 3 | Q4, H8 | axis-aligned fixed DOFs, one support set | direct solve (GridSPD) | E_active scales ONE unit D (per-element D refused) and the thermal load; compliance is F_totᵀ U |
+| plate | K(E) u = f, Mindlin-Reissner plate bending, DOFs (w, beta_x, beta_y) per node | symmetric positive definite on the free DOFs | direct (GridSPD supernodal / SuperLU factor) | cpu | 2 | Q4 | supported nodes = nodes of support type fixed (every component); edge simply_supported (w = 0) or clamped (w, beta_x, beta_y = 0); one support set | direct solve (GridSPD) | E_active scales one unit-modulus plate element (bending 2 x 2, shear 1 point); own load, no load_cases |
 | transient_heat | C(x) dT/dt + K(E) T = q, theta-method (C/dt + theta K) T_n+1 = (C/dt - (1 - theta) K) T_n + q | symmetric positive definite (C SPD: capacity_min_ratio > 0) | direct (GridSPD supernodal / SuperLU factor), one factorisation per evaluation | cpu | 2, 3 | Q4, H8 | heat sinks = nodes of support type fixed (every component), one support set | direct solve per step (GridSPD); time-step order measured (TH1, TH5) | E_active scales the conductivity (k = conductivity E / E0); capacity linear in the physical density x |
 | dynamics_newmark | M(x) u'' + C u' + K(E) u = s(t) F (Newmark average acceleration, from rest, Rayleigh C = a M + b K) | symmetric positive definite (M SPD: rhomin_ratio > 0) | direct (GridSPD supernodal / SuperLU factor): K_eff and M factorised once per evaluation | cpu | 2, 3 | Q4, H8 | axis-aligned fixed DOFs, one support set, one load case | direct solve per step (GridSPD); energy conservation and time-step order measured (ND1, ND2) | E_active scales ONE unit D (per-element D refused); mass linear in the physical density x |
 
@@ -106,39 +107,39 @@ Yalnız sentetik kayıt var; kaynağı, sayfası ve lisansı bu çalışmada oku
 
 ## 5. Uyumluluk: fizik × yanıt
 
-| Yanıt | elasticity | elasticity_gmg | modal | nonlinear_elasticity | tensor_elasticity | thermoelastic | transient_heat | dynamics_newmark |
-|:---|:---|:---|:---|:---|:---|:---|:---|:---|
-| buckling | SUPPORTED | UNSUPPORTED (catalog) | UNSUPPORTED (catalog) | UNSUPPORTED (catalog) | NOT VERIFIED | NOT VERIFIED | UNSUPPORTED (catalog) | UNSUPPORTED (catalog) |
-| centre_of_mass | SUPPORTED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED |
-| compliance | SUPPORTED | SUPPORTED | UNSUPPORTED (catalog) | EXPERIMENTAL | SUPPORTED | SUPPORTED | UNSUPPORTED (catalog) | UNSUPPORTED (catalog) |
-| compliance_case | SUPPORTED | NOT VERIFIED | UNSUPPORTED (catalog) | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | UNSUPPORTED (catalog) | UNSUPPORTED (catalog) |
-| conduction_connectivity | SUPPORTED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED |
-| cost | SUPPORTED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED |
-| coupling_compliance | SUPPORTED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED |
-| dilated_volume | SUPPORTED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED |
-| displacement | SUPPORTED | NOT VERIFIED | UNSUPPORTED (catalog) | SUPPORTED | NOT VERIFIED | NOT VERIFIED | UNSUPPORTED (catalog) | UNSUPPORTED (catalog) |
-| dynamic_compliance | UNSUPPORTED (component) | UNSUPPORTED (component) | UNSUPPORTED (component) | UNSUPPORTED (component) | UNSUPPORTED (component) | UNSUPPORTED (component) | UNSUPPORTED (component) | SUPPORTED |
-| effective_poisson | SUPPORTED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED |
-| effective_stiffness | SUPPORTED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED |
-| eigenvalue | UNSUPPORTED (component) | UNSUPPORTED (component) | SUPPORTED | UNSUPPORTED (component) | NOT VERIFIED | NOT VERIFIED | UNSUPPORTED (component) | UNSUPPORTED (component) |
-| end_compliance | UNSUPPORTED (component) | UNSUPPORTED (component) | UNSUPPORTED (component) | SUPPORTED | NOT VERIFIED | NOT VERIFIED | UNSUPPORTED (component) | UNSUPPORTED (component) |
-| end_strain_energy | UNSUPPORTED (component) | UNSUPPORTED (component) | UNSUPPORTED (component) | SUPPORTED | UNSUPPORTED (component) | NOT VERIFIED | UNSUPPORTED (component) | UNSUPPORTED (component) |
-| frequency | UNSUPPORTED (component) | UNSUPPORTED (component) | SUPPORTED | UNSUPPORTED (component) | NOT VERIFIED | NOT VERIFIED | UNSUPPORTED (component) | UNSUPPORTED (component) |
-| grey_level | SUPPORTED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED |
-| inertia | SUPPORTED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED |
-| local_volume | SUPPORTED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED |
-| mass | SUPPORTED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED |
-| maximize | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED |
-| min_eigenvalue_ks | UNSUPPORTED (component) | UNSUPPORTED (component) | SUPPORTED | UNSUPPORTED (component) | NOT VERIFIED | NOT VERIFIED | UNSUPPORTED (component) | UNSUPPORTED (component) |
-| min_frequency | UNSUPPORTED (component) | UNSUPPORTED (component) | SUPPORTED | UNSUPPORTED (component) | NOT VERIFIED | NOT VERIFIED | UNSUPPORTED (component) | UNSUPPORTED (component) |
-| phase_volume | SUPPORTED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED |
-| robust_compliance | SUPPORTED | NOT VERIFIED | UNSUPPORTED (catalog) | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | UNSUPPORTED (catalog) | UNSUPPORTED (catalog) |
-| scenario_compliance | SUPPORTED | NOT VERIFIED | UNSUPPORTED (catalog) | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | UNSUPPORTED (catalog) | UNSUPPORTED (catalog) |
-| stress | SUPPORTED | NOT VERIFIED | UNSUPPORTED (catalog) | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | UNSUPPORTED (catalog) | UNSUPPORTED (catalog) |
-| stress_augmented_lagrangian | SUPPORTED | NOT VERIFIED | UNSUPPORTED (catalog) | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | UNSUPPORTED (catalog) | UNSUPPORTED (catalog) |
-| transient_thermal_compliance | UNSUPPORTED (component) | UNSUPPORTED (component) | UNSUPPORTED (component) | UNSUPPORTED (component) | UNSUPPORTED (component) | UNSUPPORTED (component) | SUPPORTED | UNSUPPORTED (component) |
-| volume | SUPPORTED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED |
-| weighted_sum | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED |
+| Yanıt | elasticity | elasticity_gmg | modal | nonlinear_elasticity | tensor_elasticity | thermoelastic | transient_heat | dynamics_newmark | plate |
+|:---|:---|:---|:---|:---|:---|:---|:---|:---|:---|
+| buckling | SUPPORTED | UNSUPPORTED (catalog) | UNSUPPORTED (catalog) | UNSUPPORTED (catalog) | NOT VERIFIED | NOT VERIFIED | UNSUPPORTED (catalog) | UNSUPPORTED (catalog) | NOT VERIFIED |
+| centre_of_mass | SUPPORTED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED |
+| compliance | SUPPORTED | SUPPORTED | UNSUPPORTED (catalog) | EXPERIMENTAL | SUPPORTED | SUPPORTED | UNSUPPORTED (catalog) | UNSUPPORTED (catalog) | SUPPORTED |
+| compliance_case | SUPPORTED | NOT VERIFIED | UNSUPPORTED (catalog) | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | UNSUPPORTED (catalog) | UNSUPPORTED (catalog) | NOT VERIFIED |
+| conduction_connectivity | SUPPORTED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED |
+| cost | SUPPORTED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED |
+| coupling_compliance | SUPPORTED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED |
+| dilated_volume | SUPPORTED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED |
+| displacement | SUPPORTED | NOT VERIFIED | UNSUPPORTED (catalog) | SUPPORTED | NOT VERIFIED | NOT VERIFIED | UNSUPPORTED (catalog) | UNSUPPORTED (catalog) | NOT VERIFIED |
+| dynamic_compliance | UNSUPPORTED (component) | UNSUPPORTED (component) | UNSUPPORTED (component) | UNSUPPORTED (component) | UNSUPPORTED (component) | UNSUPPORTED (component) | UNSUPPORTED (component) | SUPPORTED | UNSUPPORTED (component) |
+| effective_poisson | SUPPORTED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED |
+| effective_stiffness | SUPPORTED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED |
+| eigenvalue | UNSUPPORTED (component) | UNSUPPORTED (component) | SUPPORTED | UNSUPPORTED (component) | NOT VERIFIED | NOT VERIFIED | UNSUPPORTED (component) | UNSUPPORTED (component) | NOT VERIFIED |
+| end_compliance | UNSUPPORTED (component) | UNSUPPORTED (component) | UNSUPPORTED (component) | SUPPORTED | NOT VERIFIED | NOT VERIFIED | UNSUPPORTED (component) | UNSUPPORTED (component) | NOT VERIFIED |
+| end_strain_energy | UNSUPPORTED (component) | UNSUPPORTED (component) | UNSUPPORTED (component) | SUPPORTED | UNSUPPORTED (component) | NOT VERIFIED | UNSUPPORTED (component) | UNSUPPORTED (component) | NOT VERIFIED |
+| frequency | UNSUPPORTED (component) | UNSUPPORTED (component) | SUPPORTED | UNSUPPORTED (component) | NOT VERIFIED | NOT VERIFIED | UNSUPPORTED (component) | UNSUPPORTED (component) | NOT VERIFIED |
+| grey_level | SUPPORTED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED |
+| inertia | SUPPORTED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED |
+| local_volume | SUPPORTED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED |
+| mass | SUPPORTED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED |
+| maximize | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED |
+| min_eigenvalue_ks | UNSUPPORTED (component) | UNSUPPORTED (component) | SUPPORTED | UNSUPPORTED (component) | NOT VERIFIED | NOT VERIFIED | UNSUPPORTED (component) | UNSUPPORTED (component) | NOT VERIFIED |
+| min_frequency | UNSUPPORTED (component) | UNSUPPORTED (component) | SUPPORTED | UNSUPPORTED (component) | NOT VERIFIED | NOT VERIFIED | UNSUPPORTED (component) | UNSUPPORTED (component) | NOT VERIFIED |
+| phase_volume | SUPPORTED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED |
+| robust_compliance | SUPPORTED | NOT VERIFIED | UNSUPPORTED (catalog) | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | UNSUPPORTED (catalog) | UNSUPPORTED (catalog) | NOT VERIFIED |
+| scenario_compliance | SUPPORTED | NOT VERIFIED | UNSUPPORTED (catalog) | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | UNSUPPORTED (catalog) | UNSUPPORTED (catalog) | NOT VERIFIED |
+| stress | SUPPORTED | NOT VERIFIED | UNSUPPORTED (catalog) | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | UNSUPPORTED (catalog) | UNSUPPORTED (catalog) | NOT VERIFIED |
+| stress_augmented_lagrangian | SUPPORTED | NOT VERIFIED | UNSUPPORTED (catalog) | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | UNSUPPORTED (catalog) | UNSUPPORTED (catalog) | NOT VERIFIED |
+| transient_thermal_compliance | UNSUPPORTED (component) | UNSUPPORTED (component) | UNSUPPORTED (component) | UNSUPPORTED (component) | UNSUPPORTED (component) | UNSUPPORTED (component) | SUPPORTED | UNSUPPORTED (component) | UNSUPPORTED (component) |
+| volume | SUPPORTED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED |
+| weighted_sum | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED |
 
 Gerekçe ve kanıt (yalnız boş olmayanlar):
 
@@ -156,6 +157,7 @@ Gerekçe ve kanıt (yalnız boş olmayanlar):
 - `centre_of_mass` × `thermoelastic`: NOT VERIFIED — does not read the study's physics (read from the code); combination not tested
 - `centre_of_mass` × `transient_heat`: NOT VERIFIED — does not read the study's physics (read from the code); combination not tested
 - `centre_of_mass` × `dynamics_newmark`: NOT VERIFIED — does not read the study's physics (read from the code); combination not tested
+- `centre_of_mass` × `plate`: NOT VERIFIED — does not read the study's physics (read from the code); combination not tested
 - `compliance` × `elasticity`: SUPPORTED [test_gradients.py::test_compliance_single_case; test_independent_vv.py::test_top88_fixed_design_objective_and_sensitivity]
 - `compliance` × `elasticity_gmg`: SUPPORTED [test_gmg.py::test_gradients; test_gmg.py::test_study_regression_against_direct]
 - `compliance` × `modal`: UNSUPPORTED — needs the static state u; physics modal solves an eigenproblem only
@@ -164,6 +166,7 @@ Gerekçe ve kanıt (yalnız boş olmayanlar):
 - `compliance` × `thermoelastic`: SUPPORTED — c = F_totᵀ U with the design-dependent thermal load [test_thermoelastic_study.py::test_ts2_value_equals_direct_thermoelastic; test_thermoelastic_study.py::test_ts3_gradient_finite_difference]
 - `compliance` × `transient_heat`: UNSUPPORTED — needs the static state u; the transient physics integrates a time history (no static state)
 - `compliance` × `dynamics_newmark`: UNSUPPORTED — needs the static state u; the transient physics integrates a time history (no static state)
+- `compliance` × `plate`: SUPPORTED — c = Fᵀ w with the plate's own load (pressure / transverse force) [test_plate.py::test_pq1_pq2_study_value_and_gradient; test_plate.py::test_py1_yaml_equals_python_plate_study]
 - `compliance_case` × `elasticity`: SUPPORTED [test_yaml_research_responses.py::test_value_and_gradient]
 - `compliance_case` × `modal`: UNSUPPORTED — needs the static state u; physics modal solves an eigenproblem only
 - `compliance_case` × `transient_heat`: UNSUPPORTED — needs the static state u; the transient physics integrates a time history (no static state)
@@ -176,6 +179,7 @@ Gerekçe ve kanıt (yalnız boş olmayanlar):
 - `conduction_connectivity` × `thermoelastic`: NOT VERIFIED — does not read the study's physics (read from the code); combination not tested
 - `conduction_connectivity` × `transient_heat`: NOT VERIFIED — does not read the study's physics (read from the code); combination not tested
 - `conduction_connectivity` × `dynamics_newmark`: NOT VERIFIED — does not read the study's physics (read from the code); combination not tested
+- `conduction_connectivity` × `plate`: NOT VERIFIED — does not read the study's physics (read from the code); combination not tested
 - `cost` × `elasticity`: SUPPORTED — tested with physics elasticity [test_multi_material.py::test_v4_gradients_finite_difference]
 - `cost` × `elasticity_gmg`: NOT VERIFIED — does not read the study's physics (read from the code); combination not tested
 - `cost` × `modal`: NOT VERIFIED — does not read the study's physics (read from the code); combination not tested
@@ -184,6 +188,7 @@ Gerekçe ve kanıt (yalnız boş olmayanlar):
 - `cost` × `thermoelastic`: NOT VERIFIED — does not read the study's physics (read from the code); combination not tested
 - `cost` × `transient_heat`: NOT VERIFIED — does not read the study's physics (read from the code); combination not tested
 - `cost` × `dynamics_newmark`: NOT VERIFIED — does not read the study's physics (read from the code); combination not tested
+- `cost` × `plate`: NOT VERIFIED — does not read the study's physics (read from the code); combination not tested
 - `coupling_compliance` × `elasticity`: SUPPORTED — tested with physics elasticity [test_connectivity.py::test_gradcheck_coupling_compliance]
 - `coupling_compliance` × `elasticity_gmg`: NOT VERIFIED — does not read the study's physics (read from the code); combination not tested
 - `coupling_compliance` × `modal`: NOT VERIFIED — does not read the study's physics (read from the code); combination not tested
@@ -192,6 +197,7 @@ Gerekçe ve kanıt (yalnız boş olmayanlar):
 - `coupling_compliance` × `thermoelastic`: NOT VERIFIED — does not read the study's physics (read from the code); combination not tested
 - `coupling_compliance` × `transient_heat`: NOT VERIFIED — does not read the study's physics (read from the code); combination not tested
 - `coupling_compliance` × `dynamics_newmark`: NOT VERIFIED — does not read the study's physics (read from the code); combination not tested
+- `coupling_compliance` × `plate`: NOT VERIFIED — does not read the study's physics (read from the code); combination not tested
 - `dilated_volume` × `elasticity`: SUPPORTED — tested with physics elasticity [test_robust.py::test_gradcheck_robust_compliance_and_dilated_volume]
 - `dilated_volume` × `elasticity_gmg`: NOT VERIFIED — does not read the study's physics (read from the code); combination not tested
 - `dilated_volume` × `modal`: NOT VERIFIED — does not read the study's physics (read from the code); combination not tested
@@ -200,6 +206,7 @@ Gerekçe ve kanıt (yalnız boş olmayanlar):
 - `dilated_volume` × `thermoelastic`: NOT VERIFIED — does not read the study's physics (read from the code); combination not tested
 - `dilated_volume` × `transient_heat`: NOT VERIFIED — does not read the study's physics (read from the code); combination not tested
 - `dilated_volume` × `dynamics_newmark`: NOT VERIFIED — does not read the study's physics (read from the code); combination not tested
+- `dilated_volume` × `plate`: NOT VERIFIED — does not read the study's physics (read from the code); combination not tested
 - `displacement` × `elasticity`: SUPPORTED [test_gradients.py::test_non_self_adjoint_displacement; test_compose.py::test_displacement_value_and_gradient]
 - `displacement` × `modal`: UNSUPPORTED — needs the static state u; physics modal solves an eigenproblem only
 - `displacement` × `nonlinear_elasticity`: SUPPORTED [test_nonlinear.py::test_v5_large_deflection_cantilever_elastica; test_nonlinear.py::test_v6_end_compliance_gradient_finite_difference]
@@ -213,6 +220,7 @@ Gerekçe ve kanıt (yalnız boş olmayanlar):
 - `dynamic_compliance` × `thermoelastic`: UNSUPPORTED — needs physics dynamics_newmark
 - `dynamic_compliance` × `transient_heat`: UNSUPPORTED — needs physics dynamics_newmark
 - `dynamic_compliance` × `dynamics_newmark`: SUPPORTED — time-averaged (trapezoid); the autograd graph holds every step [test_transient_study.py::test_ds1_value_equals_direct_run; test_transient_study.py::test_ds2_value_equals_dense_newmark; test_transient_study.py::test_ds3_gradient_finite_difference]
+- `dynamic_compliance` × `plate`: UNSUPPORTED — needs physics dynamics_newmark
 - `effective_poisson` × `elasticity`: SUPPORTED — tested with physics elasticity [test_homogenization.py::test_h15_h16_study_responses_value_and_gradient]
 - `effective_poisson` × `elasticity_gmg`: NOT VERIFIED — does not read the study's physics (read from the code); combination not tested
 - `effective_poisson` × `modal`: NOT VERIFIED — does not read the study's physics (read from the code); combination not tested
@@ -221,6 +229,7 @@ Gerekçe ve kanıt (yalnız boş olmayanlar):
 - `effective_poisson` × `thermoelastic`: NOT VERIFIED — does not read the study's physics (read from the code); combination not tested
 - `effective_poisson` × `transient_heat`: NOT VERIFIED — does not read the study's physics (read from the code); combination not tested
 - `effective_poisson` × `dynamics_newmark`: NOT VERIFIED — does not read the study's physics (read from the code); combination not tested
+- `effective_poisson` × `plate`: NOT VERIFIED — does not read the study's physics (read from the code); combination not tested
 - `effective_stiffness` × `elasticity`: SUPPORTED — tested with physics elasticity [test_homogenization.py::test_h15_h16_study_responses_value_and_gradient]
 - `effective_stiffness` × `elasticity_gmg`: NOT VERIFIED — does not read the study's physics (read from the code); combination not tested
 - `effective_stiffness` × `modal`: NOT VERIFIED — does not read the study's physics (read from the code); combination not tested
@@ -229,6 +238,7 @@ Gerekçe ve kanıt (yalnız boş olmayanlar):
 - `effective_stiffness` × `thermoelastic`: NOT VERIFIED — does not read the study's physics (read from the code); combination not tested
 - `effective_stiffness` × `transient_heat`: NOT VERIFIED — does not read the study's physics (read from the code); combination not tested
 - `effective_stiffness` × `dynamics_newmark`: NOT VERIFIED — does not read the study's physics (read from the code); combination not tested
+- `effective_stiffness` × `plate`: NOT VERIFIED — does not read the study's physics (read from the code); combination not tested
 - `eigenvalue` × `elasticity`: UNSUPPORTED — needs physics modal
 - `eigenvalue` × `elasticity_gmg`: UNSUPPORTED — needs physics modal
 - `eigenvalue` × `modal`: SUPPORTED [test_modal.py::test_response_gradients; test_modal.py::test_eigenpairs_match_dense]
@@ -262,6 +272,7 @@ Gerekçe ve kanıt (yalnız boş olmayanlar):
 - `grey_level` × `thermoelastic`: NOT VERIFIED — does not read the study's physics (read from the code); combination not tested
 - `grey_level` × `transient_heat`: NOT VERIFIED — does not read the study's physics (read from the code); combination not tested
 - `grey_level` × `dynamics_newmark`: NOT VERIFIED — does not read the study's physics (read from the code); combination not tested
+- `grey_level` × `plate`: NOT VERIFIED — does not read the study's physics (read from the code); combination not tested
 - `inertia` × `elasticity`: SUPPORTED — tested with physics elasticity [test_mass_properties.py::test_mp7_mp8_study_responses_value_and_gradient]
 - `inertia` × `elasticity_gmg`: NOT VERIFIED — does not read the study's physics (read from the code); combination not tested
 - `inertia` × `modal`: NOT VERIFIED — does not read the study's physics (read from the code); combination not tested
@@ -270,6 +281,7 @@ Gerekçe ve kanıt (yalnız boş olmayanlar):
 - `inertia` × `thermoelastic`: NOT VERIFIED — does not read the study's physics (read from the code); combination not tested
 - `inertia` × `transient_heat`: NOT VERIFIED — does not read the study's physics (read from the code); combination not tested
 - `inertia` × `dynamics_newmark`: NOT VERIFIED — does not read the study's physics (read from the code); combination not tested
+- `inertia` × `plate`: NOT VERIFIED — does not read the study's physics (read from the code); combination not tested
 - `local_volume` × `elasticity`: SUPPORTED — tested with physics elasticity [test_lengthscale.py::test_gradcheck_local_volume_and_grey]
 - `local_volume` × `elasticity_gmg`: NOT VERIFIED — does not read the study's physics (read from the code); combination not tested
 - `local_volume` × `modal`: NOT VERIFIED — does not read the study's physics (read from the code); combination not tested
@@ -278,6 +290,7 @@ Gerekçe ve kanıt (yalnız boş olmayanlar):
 - `local_volume` × `thermoelastic`: NOT VERIFIED — does not read the study's physics (read from the code); combination not tested
 - `local_volume` × `transient_heat`: NOT VERIFIED — does not read the study's physics (read from the code); combination not tested
 - `local_volume` × `dynamics_newmark`: NOT VERIFIED — does not read the study's physics (read from the code); combination not tested
+- `local_volume` × `plate`: NOT VERIFIED — does not read the study's physics (read from the code); combination not tested
 - `mass` × `elasticity`: SUPPORTED — tested with physics elasticity [test_multi_material.py::test_v4_gradients_finite_difference]
 - `mass` × `elasticity_gmg`: NOT VERIFIED — does not read the study's physics (read from the code); combination not tested
 - `mass` × `modal`: NOT VERIFIED — does not read the study's physics (read from the code); combination not tested
@@ -286,6 +299,7 @@ Gerekçe ve kanıt (yalnız boş olmayanlar):
 - `mass` × `thermoelastic`: NOT VERIFIED — does not read the study's physics (read from the code); combination not tested
 - `mass` × `transient_heat`: NOT VERIFIED — does not read the study's physics (read from the code); combination not tested
 - `mass` × `dynamics_newmark`: NOT VERIFIED — does not read the study's physics (read from the code); combination not tested
+- `mass` × `plate`: NOT VERIFIED — does not read the study's physics (read from the code); combination not tested
 - `maximize` × `elasticity`: NOT VERIFIED — composite: the weakest status of its parts
 - `maximize` × `elasticity_gmg`: NOT VERIFIED — composite: the weakest status of its parts
 - `maximize` × `modal`: NOT VERIFIED — composite: the weakest status of its parts
@@ -294,6 +308,7 @@ Gerekçe ve kanıt (yalnız boş olmayanlar):
 - `maximize` × `thermoelastic`: NOT VERIFIED — composite: the weakest status of its parts
 - `maximize` × `transient_heat`: NOT VERIFIED — composite: the weakest status of its parts
 - `maximize` × `dynamics_newmark`: NOT VERIFIED — composite: the weakest status of its parts
+- `maximize` × `plate`: NOT VERIFIED — composite: the weakest status of its parts
 - `min_eigenvalue_ks` × `elasticity`: UNSUPPORTED — needs physics modal
 - `min_eigenvalue_ks` × `elasticity_gmg`: UNSUPPORTED — needs physics modal
 - `min_eigenvalue_ks` × `modal`: SUPPORTED [test_modal.py::test_response_gradients; test_modal.py::test_eigenpairs_match_dense]
@@ -314,6 +329,7 @@ Gerekçe ve kanıt (yalnız boş olmayanlar):
 - `phase_volume` × `thermoelastic`: NOT VERIFIED — does not read the study's physics (read from the code); combination not tested
 - `phase_volume` × `transient_heat`: NOT VERIFIED — does not read the study's physics (read from the code); combination not tested
 - `phase_volume` × `dynamics_newmark`: NOT VERIFIED — does not read the study's physics (read from the code); combination not tested
+- `phase_volume` × `plate`: NOT VERIFIED — does not read the study's physics (read from the code); combination not tested
 - `robust_compliance` × `elasticity`: SUPPORTED [test_robust.py::test_gradcheck_robust_compliance_and_dilated_volume]
 - `robust_compliance` × `modal`: UNSUPPORTED — needs the static state u; physics modal solves an eigenproblem only
 - `robust_compliance` × `transient_heat`: UNSUPPORTED — needs the static state u; the transient physics integrates a time history (no static state)
@@ -339,6 +355,7 @@ Gerekçe ve kanıt (yalnız boş olmayanlar):
 - `transient_thermal_compliance` × `thermoelastic`: UNSUPPORTED — needs physics transient_heat
 - `transient_thermal_compliance` × `transient_heat`: SUPPORTED — time-averaged (trapezoid); the autograd graph holds every step [test_transient_study.py::test_hs1_value_equals_direct_run; test_transient_study.py::test_hs2_value_equals_dense_theta_method; test_transient_study.py::test_hs3_gradient_finite_difference]
 - `transient_thermal_compliance` × `dynamics_newmark`: UNSUPPORTED — needs physics transient_heat
+- `transient_thermal_compliance` × `plate`: UNSUPPORTED — needs physics transient_heat
 - `volume` × `elasticity`: SUPPORTED — tested with physics elasticity [test_gradients.py::test_volume_weighted_and_unweighted]
 - `volume` × `elasticity_gmg`: NOT VERIFIED — does not read the study's physics (read from the code); combination not tested
 - `volume` × `modal`: NOT VERIFIED — does not read the study's physics (read from the code); combination not tested
@@ -347,6 +364,7 @@ Gerekçe ve kanıt (yalnız boş olmayanlar):
 - `volume` × `thermoelastic`: NOT VERIFIED — does not read the study's physics (read from the code); combination not tested
 - `volume` × `transient_heat`: NOT VERIFIED — does not read the study's physics (read from the code); combination not tested
 - `volume` × `dynamics_newmark`: NOT VERIFIED — does not read the study's physics (read from the code); combination not tested
+- `volume` × `plate`: NOT VERIFIED — does not read the study's physics (read from the code); combination not tested
 - `weighted_sum` × `elasticity`: NOT VERIFIED — composite: the weakest status of its parts
 - `weighted_sum` × `elasticity_gmg`: NOT VERIFIED — composite: the weakest status of its parts
 - `weighted_sum` × `modal`: NOT VERIFIED — composite: the weakest status of its parts
@@ -355,6 +373,7 @@ Gerekçe ve kanıt (yalnız boş olmayanlar):
 - `weighted_sum` × `thermoelastic`: NOT VERIFIED — composite: the weakest status of its parts
 - `weighted_sum` × `transient_heat`: NOT VERIFIED — composite: the weakest status of its parts
 - `weighted_sum` × `dynamics_newmark`: NOT VERIFIED — composite: the weakest status of its parts
+- `weighted_sum` × `plate`: NOT VERIFIED — composite: the weakest status of its parts
 
 ## 6. Diğer kurallar (malzeme, eleman, mesnet, faz, cihaz)
 

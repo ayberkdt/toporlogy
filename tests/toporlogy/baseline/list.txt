@@ -89,7 +89,7 @@ interpolation  - physical density -> element modulus (6)
 solver  - linear solver (1)
   direct  method=auto
 
-physics  - physics model (state solve) (8)
+physics  - physics model (state solve) (9)
   dynamics_newmark      dt=null [time]  n_steps=null  profile=step  pulse_duration=null [time]
                         period=null [time]  rayleigh_alpha=0.0  rayleigh_beta=0.0
                         rhomin_ratio=1e-06  element=null
@@ -106,6 +106,8 @@ physics  - physics model (state solve) (8)
                         load_steps=10  max_iter=30  rtol=1e-09  min_step=0.0001 [load factor]
                         warm_start=false  solver=direct  cutoff_policy=adaptive  line_search=none
                         merit=residual
+  plate                 thickness=null  edge=simply_supported  pressure=0.0  force=0.0  at=null
+                        shear=reduced
   tensor_elasticity     element=null  solver=direct
   thermoelastic         alpha=null  delta_T=0.0  element=null
   transient_heat        dt=null [time]  n_steps=null  theta=1.0  conductivity=1.0  capacity=1.0

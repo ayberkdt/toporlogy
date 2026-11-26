@@ -542,6 +542,32 @@
    "scalar_modulus": "E_active scales ONE unit D (per-element D refused) and the thermal load; compliance is F_totᵀ U"
   },
   {
+   "id": "plate",
+   "residual": "K(E) u = f, Mindlin-Reissner plate bending, DOFs (w, beta_x, beta_y) per node",
+   "tangent": "K(E), linear in the element moduli",
+   "matrix": "symmetric positive definite on the free DOFs",
+   "solve": "direct (GridSPD supernodal / SuperLU factor)",
+   "devices": [
+    "cpu"
+   ],
+   "dims": [
+    2
+   ],
+   "elements": [
+    "Q4"
+   ],
+   "supports": "supported nodes = nodes of support type fixed (every component); edge simply_supported (w = 0) or clamped (w, beta_x, beta_y = 0); one support set",
+   "convergence": "direct solve (GridSPD)",
+   "memory": "assembled sparse K and its factor",
+   "evidence": [
+    "tests/toporlogy/test_plate.py::test_pl3_navier_convergence",
+    "tests/toporlogy/test_plate.py::test_pl6_design_gradient",
+    "tests/toporlogy/test_plate.py::test_pq1_pq2_study_value_and_gradient",
+    "tests/toporlogy/test_plate.py::test_py1_yaml_equals_python_plate_study"
+   ],
+   "scalar_modulus": "E_active scales one unit-modulus plate element (bending 2 x 2, shear 1 point); own load, no load_cases"
+  },
+  {
    "id": "transient_heat",
    "residual": "C(x) dT/dt + K(E) T = q, theta-method (C/dt + theta K) T_n+1 = (C/dt - (1 - theta) K) T_n + q",
    "tangent": "C/dt + theta K, linear in the element conductivities and capacities",
@@ -1235,7 +1261,8 @@
    "tensor_elasticity",
    "thermoelastic",
    "transient_heat",
-   "dynamics_newmark"
+   "dynamics_newmark",
+   "plate"
   ],
   "physics_x_response": {
    "buckling": {
@@ -1289,6 +1316,12 @@
      "evidence": [],
      "reason": "needs the static state u; the transient physics integrates a time history (no static state)",
      "enforced": "catalog"
+    },
+    "plate": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "",
+     "enforced": ""
     }
    },
    "centre_of_mass": {
@@ -1337,6 +1370,12 @@
      "enforced": ""
     },
     "dynamics_newmark": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "does not read the study's physics (read from the code); combination not tested",
+     "enforced": ""
+    },
+    "plate": {
      "status": "NOT VERIFIED",
      "evidence": [],
      "reason": "does not read the study's physics (read from the code); combination not tested",
@@ -1405,6 +1444,15 @@
      "evidence": [],
      "reason": "needs the static state u; the transient physics integrates a time history (no static state)",
      "enforced": "catalog"
+    },
+    "plate": {
+     "status": "SUPPORTED",
+     "evidence": [
+      "tests/toporlogy/test_plate.py::test_pq1_pq2_study_value_and_gradient",
+      "tests/toporlogy/test_plate.py::test_py1_yaml_equals_python_plate_study"
+     ],
+     "reason": "c = Fᵀ w with the plate's own load (pressure / transverse force)",
+     "enforced": ""
     }
    },
    "compliance_case": {
@@ -1457,6 +1505,12 @@
      "evidence": [],
      "reason": "needs the static state u; the transient physics integrates a time history (no static state)",
      "enforced": "catalog"
+    },
+    "plate": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "",
+     "enforced": ""
     }
    },
    "conduction_connectivity": {
@@ -1505,6 +1559,12 @@
      "enforced": ""
     },
     "dynamics_newmark": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "does not read the study's physics (read from the code); combination not tested",
+     "enforced": ""
+    },
+    "plate": {
      "status": "NOT VERIFIED",
      "evidence": [],
      "reason": "does not read the study's physics (read from the code); combination not tested",
@@ -1561,6 +1621,12 @@
      "evidence": [],
      "reason": "does not read the study's physics (read from the code); combination not tested",
      "enforced": ""
+    },
+    "plate": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "does not read the study's physics (read from the code); combination not tested",
+     "enforced": ""
     }
    },
    "coupling_compliance": {
@@ -1613,6 +1679,12 @@
      "evidence": [],
      "reason": "does not read the study's physics (read from the code); combination not tested",
      "enforced": ""
+    },
+    "plate": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "does not read the study's physics (read from the code); combination not tested",
+     "enforced": ""
     }
    },
    "dilated_volume": {
@@ -1661,6 +1733,12 @@
      "enforced": ""
     },
     "dynamics_newmark": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "does not read the study's physics (read from the code); combination not tested",
+     "enforced": ""
+    },
+    "plate": {
      "status": "NOT VERIFIED",
      "evidence": [],
      "reason": "does not read the study's physics (read from the code); combination not tested",
@@ -1721,6 +1799,12 @@
      "evidence": [],
      "reason": "needs the static state u; the transient physics integrates a time history (no static state)",
      "enforced": "catalog"
+    },
+    "plate": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "",
+     "enforced": ""
     }
    },
    "dynamic_compliance": {
@@ -1775,6 +1859,12 @@
      ],
      "reason": "time-averaged (trapezoid); the autograd graph holds every step",
      "enforced": ""
+    },
+    "plate": {
+     "status": "UNSUPPORTED",
+     "evidence": [],
+     "reason": "needs physics dynamics_newmark",
+     "enforced": "component"
     }
    },
    "effective_poisson": {
@@ -1827,6 +1917,12 @@
      "evidence": [],
      "reason": "does not read the study's physics (read from the code); combination not tested",
      "enforced": ""
+    },
+    "plate": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "does not read the study's physics (read from the code); combination not tested",
+     "enforced": ""
     }
    },
    "effective_stiffness": {
@@ -1875,6 +1971,12 @@
      "enforced": ""
     },
     "dynamics_newmark": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "does not read the study's physics (read from the code); combination not tested",
+     "enforced": ""
+    },
+    "plate": {
      "status": "NOT VERIFIED",
      "evidence": [],
      "reason": "does not read the study's physics (read from the code); combination not tested",
@@ -1932,6 +2034,12 @@
      "evidence": [],
      "reason": "needs physics modal",
      "enforced": "component"
+    },
+    "plate": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "",
+     "enforced": ""
     }
    },
    "end_compliance": {
@@ -1985,6 +2093,12 @@
      "evidence": [],
      "reason": "needs physics nonlinear_elasticity",
      "enforced": "component"
+    },
+    "plate": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "",
+     "enforced": ""
     }
    },
    "end_strain_energy": {
@@ -2037,6 +2151,12 @@
      "evidence": [],
      "reason": "needs physics nonlinear_elasticity",
      "enforced": "component"
+    },
+    "plate": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "",
+     "enforced": ""
     }
    },
    "frequency": {
@@ -2090,6 +2210,12 @@
      "evidence": [],
      "reason": "needs physics modal",
      "enforced": "component"
+    },
+    "plate": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "",
+     "enforced": ""
     }
    },
    "grey_level": {
@@ -2138,6 +2264,12 @@
      "enforced": ""
     },
     "dynamics_newmark": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "does not read the study's physics (read from the code); combination not tested",
+     "enforced": ""
+    },
+    "plate": {
      "status": "NOT VERIFIED",
      "evidence": [],
      "reason": "does not read the study's physics (read from the code); combination not tested",
@@ -2194,6 +2326,12 @@
      "evidence": [],
      "reason": "does not read the study's physics (read from the code); combination not tested",
      "enforced": ""
+    },
+    "plate": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "does not read the study's physics (read from the code); combination not tested",
+     "enforced": ""
     }
    },
    "local_volume": {
@@ -2242,6 +2380,12 @@
      "enforced": ""
     },
     "dynamics_newmark": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "does not read the study's physics (read from the code); combination not tested",
+     "enforced": ""
+    },
+    "plate": {
      "status": "NOT VERIFIED",
      "evidence": [],
      "reason": "does not read the study's physics (read from the code); combination not tested",
@@ -2298,6 +2442,12 @@
      "evidence": [],
      "reason": "does not read the study's physics (read from the code); combination not tested",
      "enforced": ""
+    },
+    "plate": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "does not read the study's physics (read from the code); combination not tested",
+     "enforced": ""
     }
    },
    "maximize": {
@@ -2344,6 +2494,12 @@
      "enforced": ""
     },
     "dynamics_newmark": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "composite: the weakest status of its parts",
+     "enforced": ""
+    },
+    "plate": {
      "status": "NOT VERIFIED",
      "evidence": [],
      "reason": "composite: the weakest status of its parts",
@@ -2401,6 +2557,12 @@
      "evidence": [],
      "reason": "needs physics modal",
      "enforced": "component"
+    },
+    "plate": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "",
+     "enforced": ""
     }
    },
    "min_frequency": {
@@ -2454,6 +2616,12 @@
      "evidence": [],
      "reason": "needs physics modal",
      "enforced": "component"
+    },
+    "plate": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "",
+     "enforced": ""
     }
    },
    "phase_volume": {
@@ -2502,6 +2670,12 @@
      "enforced": ""
     },
     "dynamics_newmark": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "does not read the study's physics (read from the code); combination not tested",
+     "enforced": ""
+    },
+    "plate": {
      "status": "NOT VERIFIED",
      "evidence": [],
      "reason": "does not read the study's physics (read from the code); combination not tested",
@@ -2558,6 +2732,12 @@
      "evidence": [],
      "reason": "needs the static state u; the transient physics integrates a time history (no static state)",
      "enforced": "catalog"
+    },
+    "plate": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "",
+     "enforced": ""
     }
    },
    "scenario_compliance": {
@@ -2611,6 +2791,12 @@
      "evidence": [],
      "reason": "needs the static state u; the transient physics integrates a time history (no static state)",
      "enforced": "catalog"
+    },
+    "plate": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "",
+     "enforced": ""
     }
    },
    "stress": {
@@ -2664,6 +2850,12 @@
      "evidence": [],
      "reason": "needs the static state u; the transient physics integrates a time history (no static state)",
      "enforced": "catalog"
+    },
+    "plate": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "",
+     "enforced": ""
     }
    },
    "stress_augmented_lagrangian": {
@@ -2716,6 +2908,12 @@
      "evidence": [],
      "reason": "needs the static state u; the transient physics integrates a time history (no static state)",
      "enforced": "catalog"
+    },
+    "plate": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "",
+     "enforced": ""
     }
    },
    "transient_thermal_compliance": {
@@ -2766,6 +2964,12 @@
      "enforced": ""
     },
     "dynamics_newmark": {
+     "status": "UNSUPPORTED",
+     "evidence": [],
+     "reason": "needs physics transient_heat",
+     "enforced": "component"
+    },
+    "plate": {
      "status": "UNSUPPORTED",
      "evidence": [],
      "reason": "needs physics transient_heat",
@@ -2822,6 +3026,12 @@
      "evidence": [],
      "reason": "does not read the study's physics (read from the code); combination not tested",
      "enforced": ""
+    },
+    "plate": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "does not read the study's physics (read from the code); combination not tested",
+     "enforced": ""
     }
    },
    "weighted_sum": {
@@ -2868,6 +3078,12 @@
      "enforced": ""
     },
     "dynamics_newmark": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "composite: the weakest status of its parts",
+     "enforced": ""
+    },
+    "plate": {
      "status": "NOT VERIFIED",
      "evidence": [],
      "reason": "composite: the weakest status of its parts",

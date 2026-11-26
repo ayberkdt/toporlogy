@@ -314,6 +314,9 @@ def build(resolved: dict[str, Any]) -> Setup:
     # ---------------------------------------------------------------- physics, chain, responses
     ctx.solver = None
     ctx.physics = B("physics", r["physics"], ctx, "physics")
+    own = getattr(ctx.physics, "state_loads", None)
+    if own is not None:                                 # the physics brings its load (plate: 3 DOFs per node)
+        F = np.asarray(own, float)
     for i, lk in enumerate(r["chain"]):
         ctx.links.append(B("link", lk, ctx, join("chain", i)))
     ctx.chain = Chain(ctx.links)

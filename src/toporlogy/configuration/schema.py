@@ -104,7 +104,7 @@ SCHEMA_KEYS = ("name", "domain", "material", "physics", "supports", "load_cases"
 
 _REQUIRED = ("domain", "supports")                     # load_cases too, unless the physics takes no static load
 # physics without static loads: load_cases optional (modal: eigenproblem; transient_heat: heat input in physics)
-NO_LOAD_PHYSICS = ("modal", "transient_heat")
+NO_LOAD_PHYSICS = ("modal", "transient_heat", "plate")
 
 
 _MATERIAL = {"E0": Param("E0", 1.0, float, unit="force/length^2"), "nu": Param("nu", 0.3, float),

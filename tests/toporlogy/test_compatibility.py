@@ -67,6 +67,8 @@ def physics_for(p: str) -> tuple[dict[str, Any], dict[str, Any]]:
         return B2, {"type": p, "dt": 1.0, "n_steps": 3}
     if p == "thermoelastic":
         return B2, {"type": p, "alpha": 1e-2}
+    if p == "plate":
+        return HEAT_BASE, {"type": p, "thickness": 0.1, "pressure": 1.0}         # own load, no load cases
     return (B3 if p == "elasticity_gmg" else B2), {"type": p}
 
 

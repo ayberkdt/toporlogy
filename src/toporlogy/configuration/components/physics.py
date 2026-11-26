@@ -193,6 +193,49 @@ def register_physics() -> None:
                                     conductivity=conductivity, E0=float(ctx.material["E0"]), capacity=capacity,
                                     capacity_min_ratio=capacity_min_ratio)
 
+    def plate(ctx: BuildContext, thickness: float | None = None, edge: str = "simply_supported",
+              pressure: float = 0.0, force: float = 0.0, at: Any = None, shear: str = "reduced") -> Any:
+        """Mindlin-Reissner plate bending of the 2-D domain (fem.plate, docs/olcumler/plaka_onkayit.md): DOFs
+        (w, beta_x, beta_y) per node, thickness t, nu from material. No load_cases: the load is pressure (uniform q)
+        and / or force (total transverse force spread over the nodes of at). The supports select the supported
+        nodes (support type fixed); edge simply_supported fixes w there, clamped also both rotations. compliance
+        is then F^T w. Q4 with reduced shear (shear: reduced | full)."""
+        from toporlogy.fem.plate import MindlinPlate, PlatePhysics
+        d = ctx.domain
+        if d.dim != 2:
+            raise ValueError("plate needs a 2-D domain (the plate mid-surface)")
+        if ctx.config.get("load_cases"):
+            raise ValueError("plate takes no load_cases: the load is physics.pressure and / or physics.force at "
+                             "physics.at")
+        if thickness is None:
+            raise ValueError("plate needs thickness")
+        if edge not in ("simply_supported", "clamped"):
+            raise ValueError(f"plate edge: simply_supported | clamped, got {edge!r}")
+        cs = ctx.bc.constraints(0)
+        if cs.needs_extension:
+            raise ValueError("plate: the supports select the supported nodes (support type fixed only)")
+        nodes, count = np.unique(np.asarray(cs.fixed, np.int64) // d.dim, return_counts=True)
+        if np.any(count != d.dim):
+            raise ValueError("plate: the supports select the supported nodes; use support type fixed on every "
+                             "component (a node with only some components fixed is ambiguous)")
+        if nodes.size == 0:
+            raise ValueError("plate needs supports (the supported nodes)")
+        fixed = 3 * nodes if edge == "simply_supported" else (3 * nodes[:, None] + np.arange(3)).ravel()
+        pl = MindlinPlate(d, float(thickness), float(ctx.material["nu"]), fixed, shear=shear)
+        F = pl.pressure_load(float(pressure)) if pressure else np.zeros(pl.ndof)
+        if force:
+            if at is None:
+                raise ValueError("plate: force needs at (a selector)")
+            where = np.asarray(checked_selector(ctx, at, "at").select(d), np.int64)
+            np.add.at(F, 3 * where, float(force) / where.size)
+        elif at is not None:
+            raise ValueError("plate: at needs force (the total transverse force)")
+        if not np.any(F):
+            raise ValueError("plate needs a load: pressure and / or force")
+        return PlatePhysics(pl, loads=F)
+
+    register("physics", "plate", plate, nested={"at": "selector"})
+
     def dynamics_newmark(ctx: BuildContext, dt: float | None = None, n_steps: int | None = None,
                          profile: str = "step", pulse_duration: float | None = None, period: float | None = None,
                          rayleigh_alpha: float = 0.0, rayleigh_beta: float = 0.0, rhomin_ratio: float = 1e-6,

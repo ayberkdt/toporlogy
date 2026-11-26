@@ -155,3 +155,75 @@ def test_pq4_wrong_load_rows_refused() -> None:
     plate = MindlinPlate(d, 0.1, NU, hard_simply_supported(d))
     with pytest.raises(ValueError, match=f"{3 * d.nn} state DOFs"):
         Study(d, PlatePhysics(plate), np.zeros(d.ndof), Chain([Embed(d)]), SIMP(d), Compliance(), [], MMA())
+
+
+def _yaml(n: int = 12, edge: str = "simply_supported", **phys) -> dict:
+    p = {"type": "plate", "thickness": 0.02, "edge": edge, **phys}
+    if "pressure" not in phys and "force" not in phys:
+        p["pressure"] = 1.0
+    return {"domain": {"type": "box", "shape": [n, n], "h": 1.0 / n}, "material": {"E0": 1.0, "nu": NU},
+            "physics": p, "load_cases": [],
+            "supports": [{"type": "fixed", "where": {"type": "plane", "axis": a, "at": e}}
+                         for a in ("x", "y") for e in ("min", "max")],
+            "chain": [{"type": "density_filter", "rmin": 1.5}], "objective": "compliance",
+            "constraints": [{"response": "volume", "upper": 0.4}], "optimizer": "mma"}
+
+
+def test_py1_yaml_equals_python_plate_study() -> None:
+    from toporlogy.configuration.build import build_setup
+    from toporlogy.design.chain import Chain, DensityFilter, Embed, Passive
+    from toporlogy.design.interp import SIMP
+    from toporlogy.fem.plate import PlatePhysics
+    from toporlogy.optimization.responses import Compliance, Volume
+    from toporlogy.optimization.study import Constraint, Study
+    from toporlogy.optimizers.mma import MMA
+    a = build_setup(_yaml()).study
+    d = a.domain
+    X = d.node_coords()
+    edge = np.flatnonzero((X[:, 0] < 1e-9) | (X[:, 0] > 1 - 1e-9) | (X[:, 1] < 1e-9) | (X[:, 1] > 1 - 1e-9))
+    plate = MindlinPlate(d, 0.02, NU, 3 * edge)
+    F = plate.pressure_load(1.0)
+    b = Study(d, PlatePhysics(plate), F, Chain([Embed(d), DensityFilter(d, 1.5), Passive(d)]),
+              SIMP(d, E0=1.0, penal=3.0, emin_ratio=a.interp.emin_ratio), Compliance(), [Constraint(Volume(), 0.4)],
+              MMA())
+    x = 0.2 + 0.7 * np.random.default_rng(8).random(a.n_var)
+    ea, eb = a.evaluate(x), b.evaluate(x)
+    print(f"PY1: value {abs(ea.f0 - eb.f0) / abs(eb.f0):.2e}, grad {np.abs(ea.df0 - eb.df0).max() / np.abs(eb.df0).max():.2e}"
+          f", emin {a.interp.emin_ratio}")
+    assert abs(ea.f0 - eb.f0) <= 1e-12 * abs(eb.f0)
+    assert np.abs(ea.df0 - eb.df0).max() <= 1e-12 * np.abs(eb.df0).max()
+
+
+def test_py2_yaml_clamped_point_load_runs() -> None:
+    from toporlogy.configuration.build import build_setup
+    st = build_setup(_yaml(16, "clamped", force=-1.0, at={"type": "point", "at": [0.5, 0.5]})).study
+    res = st.run(max_iter=15)
+    c0 = res.history["f0"][0]
+    print(f"PY2: compliance {c0:.4e} -> {res.objective:.4e}, volume {res.constraint_values['volume']:.4f}")
+    assert res.objective < c0 and res.constraint_values["volume"] <= 0.4 * (1 + 1e-3)
+
+
+@pytest.mark.parametrize("change,match", [
+    ("load_cases", "no load_cases"), ("partial", "fixed on every"), ("no_load", "needs a load"),
+    ("thickness", "thickness"), ("three_d", "2-D"), ("force_no_at", "needs at")])
+def test_py3_yaml_refusals(change, match) -> None:
+    from toporlogy.configuration.build import build_setup
+    from toporlogy.configuration.registry import ConfigError
+    cfg = _yaml()
+    if change == "load_cases":
+        cfg["load_cases"] = [{"loads": [{"type": "force", "where": {"type": "point", "at": ["max", "max"]},
+                                         "force": [0, -1]}]}]
+    elif change == "partial":
+        cfg["supports"].append({"type": "roller", "where": {"type": "point", "at": [0.5, 0.5]}, "normal": [1, 0]})
+    elif change == "no_load":
+        cfg["physics"]["pressure"] = 0.0
+    elif change == "thickness":
+        cfg["physics"]["thickness"] = 0.0
+    elif change == "three_d":
+        cfg["domain"] = {"type": "box", "shape": [4, 4, 2], "h": 0.25}
+        cfg["supports"] = [{"type": "fixed", "where": {"type": "plane", "axis": "x", "at": "min"}}]
+    else:
+        cfg["physics"].pop("pressure")
+        cfg["physics"]["force"] = -1.0
+    with pytest.raises((ValueError, ConfigError), match=match):
+        build_setup(cfg)

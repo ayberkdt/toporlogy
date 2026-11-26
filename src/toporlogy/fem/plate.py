@@ -137,9 +137,11 @@ class PlatePhysics:
 
     name = "plate"
 
-    def __init__(self, plate: MindlinPlate) -> None:
+    def __init__(self, plate: MindlinPlate, loads: Any = None) -> None:
         self.plate, self.domain = plate, plate.domain
         self.state_dofs = plate.ndof
+        # the physics' own load (3 nn, 1) for a study built from YAML (configuration.build uses it)
+        self.state_loads = None if loads is None else np.asarray(loads, float).reshape(plate.ndof, -1)
         self.n_solves = 0
 
     def solve(self, E: torch.Tensor, F: Any) -> torch.Tensor:

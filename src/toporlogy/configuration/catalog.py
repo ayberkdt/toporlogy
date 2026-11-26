@@ -235,6 +235,16 @@ PHYSICS: tuple[Physics, ...] = (
              T + "test_thermoelastic_study.py::test_ts3_gradient_finite_difference",
              T + "test_thermoelastic.py::test_te1_free_expansion"),
             "E_active scales ONE unit D (per-element D refused) and the thermal load; compliance is F_totᵀ U"),
+    Physics("plate", "K(E) u = f, Mindlin-Reissner plate bending, DOFs (w, beta_x, beta_y) per node",
+            "K(E), linear in the element moduli", "symmetric positive definite on the free DOFs",
+            "direct (GridSPD supernodal / SuperLU factor)", ("cpu",), (2,), ("Q4",),
+            "supported nodes = nodes of support type fixed (every component); edge simply_supported (w = 0) or "
+            "clamped (w, beta_x, beta_y = 0); one support set",
+            "direct solve (GridSPD)", "assembled sparse K and its factor",
+            (T + "test_plate.py::test_pl3_navier_convergence", T + "test_plate.py::test_pl6_design_gradient",
+             T + "test_plate.py::test_pq1_pq2_study_value_and_gradient",
+             T + "test_plate.py::test_py1_yaml_equals_python_plate_study"),
+            "E_active scales one unit-modulus plate element (bending 2 x 2, shear 1 point); own load, no load_cases"),
     Physics("transient_heat", "C(x) dT/dt + K(E) T = q, theta-method (C/dt + theta K) T_n+1 = (C/dt - (1 - theta) K) "
                               "T_n + q", "C/dt + theta K, linear in the element conductivities and capacities",
             "symmetric positive definite (C SPD: capacity_min_ratio > 0)",
@@ -877,7 +887,7 @@ class Cell:
 
 
 PHYS = ("elasticity", "elasticity_gmg", "modal", "nonlinear_elasticity", "tensor_elasticity", "thermoelastic",
-        "transient_heat", "dynamics_newmark")
+        "transient_heat", "dynamics_newmark", "plate")
 
 # responses that do not read the study's physics (no state solve, or an own auxiliary solve); evidence with elasticity
 PHYSICS_INDEPENDENT: dict[str, tuple[str, ...]] = {
@@ -932,7 +942,10 @@ RESPONSE_MATRIX: dict[str, dict[str, Cell]] = {
             T + "test_material_design.py::test_g1_compliance_gradient_finite_difference")),
         thermoelastic=Cell(SUPPORTED, (T + "test_thermoelastic_study.py::test_ts2_value_equals_direct_thermoelastic",
                                        T + "test_thermoelastic_study.py::test_ts3_gradient_finite_difference"),
-                           "c = F_totᵀ U with the design-dependent thermal load")),
+                           "c = F_totᵀ U with the design-dependent thermal load"),
+        plate=Cell(SUPPORTED, (T + "test_plate.py::test_pq1_pq2_study_value_and_gradient",
+                               T + "test_plate.py::test_py1_yaml_equals_python_plate_study"),
+                   "c = Fᵀ w with the plate's own load (pressure / transverse force)")),
     "robust_compliance": _row(
         **_STATE_T,
         elasticity=Cell(SUPPORTED, (T + "test_robust.py::test_gradcheck_robust_compliance_and_dilated_volume",)),
