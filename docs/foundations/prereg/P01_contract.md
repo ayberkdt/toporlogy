@@ -19,3 +19,9 @@ Design and rules: `docs/foundations/MATERIAL_CONTRACT.md`.
 | CT8 | `small_strain_history_evaluate`: 2-D plane stress refused; 2-D plane strain equals the 3-D evaluation at ε_zz = 0 restricted to [xx, yy, xy] (probe linear model) | 3-D evaluation | `np.array_equal` |
 
 Run: `python -m pytest tests/toporlogy/test_material_contract.py -q -p no:randomly`. First result appended below.
+
+## First result (2026-11-27 01:35 +0300, SHA 25d8df6 + test file)
+
+CT1–CT8: 8 passed on the first run (`python -m pytest tests/toporlogy/test_material_contract.py -q -p no:randomly`).
+Two test set-up corrections were made before that first run (a non-existent `Domain.box` call replaced by
+`Domain(shape)`; the probe's Voigt packing replaced by `tensor.strain_to_voigt`). No threshold changed.

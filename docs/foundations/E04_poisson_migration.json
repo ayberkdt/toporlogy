@@ -1,0 +1,26 @@
+{
+ "source": "docs/olcumler/auxetic_hucre.json",
+ "convention_note": "nu_ij = -eps_j/eps_i under uniaxial stress along i = -S_ji/S_ii; legacy = C12/C11",
+ "designs": {
+  "grey": {
+   "legacy_stored": -0.9505873121561587,
+   "legacy_recomputed_C12_over_C11": -0.9505873121561587,
+   "nu12_uniaxial": -0.8425344424092385,
+   "nu21_uniaxial": -0.9505875838384658,
+   "C11": 0.019999999952338934,
+   "C22": 0.022564952626861708,
+   "coupling_max_abs_C16_C26_over_C11": 9.115819463959308e-05,
+   "min_eig_C": 0.0009996244776015121
+  },
+  "binary": {
+   "legacy_stored": -1.0102402291145125,
+   "legacy_recomputed_C12_over_C11": -1.0102402291145125,
+   "nu12_uniaxial": -0.8306522816154317,
+   "nu21_uniaxial": -1.0102402291145125,
+   "C11": 0.02789709561931239,
+   "C22": 0.03392847873152707,
+   "coupling_max_abs_C16_C26_over_C11": 3.085136188194032e-13,
+   "min_eig_C": 0.0011340756393306674
+  }
+ }
+}

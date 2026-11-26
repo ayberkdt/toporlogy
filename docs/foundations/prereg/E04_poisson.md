@@ -48,3 +48,26 @@ historical json is not modified.
 
 Run command: `python -m pytest tests/toporlogy/test_poisson_convention.py -q -p no:randomly`.
 First result: appended below after the run.
+
+## First result (2026-11-27 01:45 +0300, SHA 25d8df6 + E04 change)
+
+`python -m pytest tests/toporlogy/test_poisson_convention.py -q -p no:randomly`: PO1, PO2, PO2n, PO3, PO5 (2-D and
+3-D), PO6 passed on the first run. PO4 failed on the first run for a test set-up reason: the YAML layer reports
+constructor errors as `configuration.registry.ConfigError`, which is not a `ValueError`; the message named both
+conventions as required. The test now expects `ConfigError` (the production error type of the YAML layer); no
+threshold changed, rerun passed. Affected existing tests (test_homogenization H15–H17, test_start_design ST4,
+test_auxetic_cell) given `convention: stiffness_ratio` where they use the YAML response: 41 passed, 1 xfailed
+(historical H7, unchanged).
+
+Migration (`docs/foundations/E04_poisson_migration.json`): the historical auxetic cell is **not** square-symmetric
+(C11 = 0.0200, C22 = 0.0226 grey; 0.0279 vs 0.0339 binary), so its reported value is ν21, not ν12:
+
+| design | stored "ν12" (= C12/C11) | ν21 uniaxial | ν12 uniaxial |
+|---|---|---|---|
+| grey | −0.9506 | −0.9506 | −0.8425 |
+| binary | −1.0102 | −1.0102 | −0.8307 |
+
+ν21 and the legacy ratio agree to 3e-7 (grey; coupling |C16|/C11 = 9e-5) and exactly (binary; coupling 3e-13). The
+historical optimisation therefore minimised ν21; the historical report `docs/olcumler/auxetic_hucre_onkayit.md` keeps
+its text, and this note is the correction of its label. `tests/toporlogy/_auxetic.py` keeps its own C12/C11 (it is
+the historical reproduction).

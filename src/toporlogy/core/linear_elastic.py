@@ -48,7 +48,7 @@ __all__ = ["NotPositiveDefiniteError", "check_positive_definite", "IsotropicModu
            "isotropic_stiffness", "isotropic_compliance", "isotropic_plane_stress", "isotropic_plane_strain",
            "plane_bulk_modulus", "orthotropic_compliance", "transversely_isotropic_compliance", "cubic_stiffness",
            "engineering_constants", "symmetry_class", "acoustic_tensor", "fibonacci_sphere", "strong_ellipticity",
-           "wave_speeds", "ElasticTensor", "SINGULAR_RCOND"]
+           "wave_speeds", "ElasticTensor", "SINGULAR_RCOND", "poisson_uniaxial"]
 
 #: scaled smallest Mandel eigenvalue below which a matrix counts as numerically singular
 SINGULAR_RCOND = 64 * np.finfo(float).eps
@@ -281,6 +281,33 @@ def engineering_constants(S6: Any) -> dict[str, Any]:
     mask[np.arange(6), np.arange(6)] = False
     out["coupling"] = float(np.abs(S[mask]).max() / np.abs(S).max())
     return out
+
+
+def poisson_uniaxial(C: Any, load: int, transverse: int) -> Any:
+    """Poisson ratio ν_{load,transverse} = −ε_transverse / ε_load under uniaxial stress along ``load`` of the stiffness
+    ``C`` (Voigt, engineering shear; 3×3 in 2-D, 6×6 in 3-D; NumPy or torch, differentiable in torch). With
+    S = C⁻¹: ν = −S[transverse, load] / S[load, load], the column S[:, load] from a linear solve of C x = e_load (no
+    explicit inverse). ``load`` and ``transverse`` are distinct normal components (2-D: 0, 1; 3-D: 0, 1, 2). The
+    stiffness ratio C12/C11 is not this quantity: for an uncoupled 2-D C it is ν21, and with normal–shear coupling it
+    is no Poisson ratio at all (``docs/foundations/prereg/E04_poisson.md``)."""
+    nv = int(C.shape[-1])
+    if tuple(C.shape[-2:]) != (nv, nv) or nv not in (3, 6):
+        raise ValueError(f"C must be (3, 3) or (6, 6) Voigt, got {tuple(C.shape)}")
+    nn = 2 if nv == 3 else 3
+    i, j = int(load), int(transverse)
+    if i == j or not (0 <= i < nn and 0 <= j < nn):
+        raise ValueError(f"load and transverse must be distinct normal components in 0..{nn - 1}, got {load}, "
+                         f"{transverse}")
+    if T._is_torch(C):
+        import torch
+        e = torch.zeros(nv, dtype=C.dtype, device=C.device)
+        e[i] = 1.0
+        x = torch.linalg.solve(C, e)
+    else:
+        e = np.zeros(nv)
+        e[i] = 1.0
+        x = np.linalg.solve(np.asarray(C, float), e)
+    return -x[j] / x[i]
 
 
 def symmetry_class(C6: Any, rtol: float = 1e-10) -> str:

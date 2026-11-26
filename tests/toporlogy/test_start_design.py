@@ -50,7 +50,7 @@ def test_st4_yaml_inverse_homogenisation_moves_from_a_cosine_start(tmp_path) -> 
            "load_cases": [{"loads": [{"type": "force", "where": {"type": "point", "at": ["max", "max"]},
                                       "force": [0, -1]}]}],
            "chain": [{"type": "density_filter", "rmin": 1.5, "periodic": True}],
-           "objective": {"type": "effective_poisson"},
+           "objective": {"type": "effective_poisson", "convention": "stiffness_ratio"},
            "constraints": [{"response": "volume", "upper": 0.6},
                            {"response": {"type": "effective_stiffness", "negate": True}, "upper": -0.02}],
            "optimizer": "mma", "run": {"max_iter": 40, "start": {"type": "cosine", "amplitude": 0.2}},
