@@ -303,3 +303,55 @@ def test_cholesky_solver_refuses_a_physics_without_blocks():
     mo = Modal(d, d.dofs(np.flatnonzero(X[:, 0] < 1e-9)), nu=0.3, n_modes=2, solver=DirectSolver("cholesky"))
     with pytest.raises(ValueError, match="cholesky"):
         mo.solve_numpy(np.ones(d.n_active), np.ones(d.n_active), 2)
+
+
+# ------------------------------------------------------------------------------------------------------ H4
+def _old_passive(link, x):
+    one, zero = torch.ones_like(x), torch.zeros_like(x)
+    return torch.where(link.keep, one, torch.where(link.off, zero, x))
+
+
+def _old_volume(resp, ctx):
+    d = ctx.domain
+    if resp.weighted:
+        fr = torch.as_tensor(d.frac, dtype=ctx.xphys.dtype, device=ctx.xphys.device)
+        return (fr * ctx.xphys).sum() / float(d.frac.sum())
+    act = torch.as_tensor(d.active, device=ctx.xphys.device)
+    return ctx.xphys[act].sum() / float(d.n_active)
+
+
+@pytest.mark.parametrize("fields", [1, 2])
+def test_h4b_passive_and_volume_bitwise_as_before(fields):
+    from toporlogy.design.chain import Passive
+    from toporlogy.optimization.responses import EvalContext, Volume
+    shape = (9, 6, 4)
+    rng = np.random.default_rng(3)
+    frac = np.clip(rng.uniform(0.0, 1.5, shape), 0, 1)
+    keep = rng.random(shape) < 0.1
+    void = (rng.random(shape) < 0.1) & ~keep
+    d = T.Domain(shape, frac=frac, keep=keep, void=void)
+    link = Passive(d)
+    x0 = torch.tensor(rng.random(((fields,) if fields > 1 else ()) + shape), dtype=torch.float64)
+    w = torch.tensor(rng.standard_normal(x0.shape), dtype=torch.float64)
+    outs = []
+    for f in (link, lambda x: _old_passive(link, x)):
+        x = x0.clone().requires_grad_(True)
+        y = f(x)
+        (w * y).sum().backward()
+        assert x.grad is not None
+        outs.append((y.detach().numpy().tobytes(), x.grad.numpy().tobytes()))
+    assert outs[0] == outs[1]
+    if fields > 1:
+        return
+    for weighted in (False, True):
+        r = Volume(weighted=weighted)
+        res = []
+        for f in (r, lambda c: _old_volume(r, c)):
+            x = x0.clone().requires_grad_(True)
+            v = f(EvalContext(d, x, x))
+            v.backward()
+            assert x.grad is not None
+            res.append((float(v), x.grad.numpy().tobytes()))
+        assert res[0][0] == res[1][0] and res[0][1] == res[1][1]
+        d2 = T.Domain(shape)                                  # a second domain: the cache must follow it
+        assert float(r(EvalContext(d2, x0, x0))) == float(_old_volume(r, EvalContext(d2, x0, x0)))
