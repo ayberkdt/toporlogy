@@ -91,8 +91,8 @@ def register_design() -> None:
         """Phases with their own elasticity tensors [{name, isotropic {E, nu} | orthotropic {E1, E2, E3, G12, G13,
         G23, nu12, nu13, nu23} | cubic {C11, C12, C44} | transversely_isotropic | stiffness, angle, density, cost,
         rotate}], mixed as convex combinations (rule simplex | recursive, docs/olcumler/malzeme_tasarimi.md);
-        plane from material.plane; needs physics tensor_elasticity. An angle block on the embed link turns the
-        phase (one phase)."""
+        plane from material.plane; needs physics tensor_elasticity. An angle block on the embed link turns every
+        phase with rotate true by the same designed angle."""
         from toporlogy.design.orientation import OrientedEmbed
         from toporlogy.design.phases import TensorPhases
         from toporlogy.fem.tensor_elastic import TensorElasticity

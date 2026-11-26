@@ -111,8 +111,8 @@ def multiphase_embed() -> dict[str, str]:
 
 def main() -> None:
     torch.set_num_threads(1)
-    commit = subprocess.run(["git", "rev-parse", "--short", "HEAD"], capture_output=True, text=True).stdout.strip()
-    dirty = bool(subprocess.run(["git", "status", "--porcelain", "src"], capture_output=True, text=True).stdout)
+    commit = subprocess.run(["git", "rev-parse", "--short", "HEAD"], capture_output=True, text=True).stdout.strip()  # noqa: S603, S607
+    dirty = bool(subprocess.run(["git", "status", "--porcelain", "src"], capture_output=True, text=True).stdout)  # noqa: S603, S607
     res = {"commit": commit, "src_dirty": dirty, "single_phase_angle": single_phase_angle(),
            "multiphase_embed": multiphase_embed()}
     Path(sys.argv[1]).write_text(json.dumps(res, indent=1, sort_keys=True) + "\n", encoding="utf-8")

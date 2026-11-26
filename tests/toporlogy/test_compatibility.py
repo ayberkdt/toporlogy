@@ -184,9 +184,10 @@ RULE_PROBES: dict[str, tuple[Callable[[], Any], type[BaseException], str]] = {
     "tensor_post": (_cfg(mod(TENSOR, post=["discrete_check"])), ConfigError, r"post step\(s\) \['discrete_check'\]"),
     "angle_3d": (_cfg(mod(TENSOR, domain=B3["domain"], load_cases=B3["load_cases"], chain=ANGLE_CHAIN)), ConfigError,
                  r"angle block is 2-D only"),
-    "angle_phases": (_cfg(mod(TENSOR, chain=ANGLE_CHAIN, interpolation=dict(TENSOR["interpolation"],
-                                                                          phases=[FIBRE, dict(FIBRE, name="g")]))),
-                     ConfigError, r"angle block with 2 phases is not supported"),
+    "angle_phases_no_density": (_cfg(mod(TENSOR, chain=[{"type": "embed", "density": False, "angle": {"rmin": 1.5}}],
+                                         interpolation=dict(TENSOR["interpolation"],
+                                                            phases=[FIBRE, dict(FIBRE, name="g")]))),
+                                ConfigError, r"density false and 2 phases is not supported"),
     "angle_interpolation": (_cfg(mod(B2, chain=ANGLE_CHAIN)), ConfigError, r"angle block needs interpolation "
                                                                           r"tensor_phases"),
     "angle_isotropic": (_cfg(mod(TENSOR, chain=ANGLE_CHAIN, interpolation=dict(

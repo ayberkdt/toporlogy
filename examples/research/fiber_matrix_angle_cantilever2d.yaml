@@ -1,0 +1,36 @@
+# Cantilever (2-D, 40 x 20, plane stress) of two solid phases + void: a soft isotropic matrix and a stiff
+# orthotropic fibre material. The two phase fields and the fibre angle of every element are designed together
+# (docs/olcumler/faz_aci_onkayit.md, check MA4). The design vector is [matrix field | fibre field | angle]; one angle
+# field turns every phase with rotate true (the isotropic matrix does not depend on it). The angle is filtered in the
+# doubled-angle representation (cos 2θ, sin 2θ). Physics tensor_elasticity takes the element tensors C_e(t, θ) of
+# interpolation tensor_phases (rule simplex). Units: consistent (h = 1, E1 = 1, unit load); angles in degrees.
+name: fiber_matrix_angle_cantilever2d
+domain: {type: box, shape: [40, 20], h: 1.0}
+material: {E0: 1.0, nu: 0.3}
+supports:
+  - {type: fixed, where: {type: plane, axis: x, at: min}}
+load_cases:
+  - name: tip
+    loads:
+      - {type: force, where: {type: point, at: [max, mid]}, force: [0, -1]}
+chain:
+  - {type: embed, angle: {location: element, bounds: [-90, 90], start: 0, rmin: 2.0}}
+  - {type: density_filter, rmin: 2.0}
+interpolation:
+  type: tensor_phases
+  rule: simplex
+  penal: 3.0
+  phases:
+    - name: matrix
+      isotropic: {E: 0.3, nu: 0.3}
+      cost: 1.0
+    - name: fibre
+      orthotropic: {E1: 1.0, E2: 0.1, E3: 0.1, G12: 0.05, G13: 0.05, G23: 0.04, nu12: 0.3, nu13: 0.3, nu23: 0.3}
+      cost: 4.0
+physics: {type: tensor_elasticity}
+objective: compliance
+constraints:
+  - {response: {type: phase_volume, phases: matrix}, upper: 0.25}
+  - {response: {type: phase_volume, phases: fibre}, upper: 0.2}
+optimizer: {type: mma, move: 0.1}
+run: {max_iter: 60, tol: 0.001}

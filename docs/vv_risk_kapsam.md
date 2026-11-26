@@ -10,9 +10,9 @@ Kaynak: `tests/toporlogy/_vv_layers.py` (dosya → katman sınıflaması elle, d
 | AS assembly / BC / reactions | 5/111 | 1/23 | 5/62 | 2/59 | 8/127 | 6/78 | 3/82 | 2/59 | 1/34 | — | 1/20 | — |
 | AN analytical / MMS | 17/219 | — | — | 5/94 | 23/282 | 1/25 | 19/275 | 5/100 | 7/106 | 1/13 | 3/44 | — |
 | IS independent solver / implementation | 8/96 | — | 1/14 | 3/73 | 13/173 | 3/51 | 7/122 | 3/73 | 3/62 | — | 1/24 | — |
-| OG optimization / KKT / gradient | 16/194 | — | 1/14 | 10/137 | 20/259 | 6/87 | 29/323 | 17/215 | 14/160 | 3/34 | 3/54 | — |
+| OG optimization / KKT / gradient | 17/204 | — | 1/14 | 11/147 | 21/269 | 6/87 | 30/333 | 18/225 | 15/170 | 3/34 | 3/54 | — |
 | E2E end-to-end geometry | 2/38 | 5/39 | — | 2/13 | 3/62 | — | 8/85 | 1/21 | 4/38 | 1/10 | 11/91 | — |
-| IC integration / compatibility | 5/52 | 2/34 | — | 4/65 | 6/64 | — | 8/89 | 3/57 | 19/175 | 12/95 | 1/8 | 1/11 |
+| IC integration / compatibility | 6/62 | 2/34 | — | 5/75 | 7/74 | — | 9/99 | 4/67 | 20/185 | 12/95 | 1/8 | 1/11 |
 | PF performance | — | — | 2/25 | 1/14 | 3/37 | 3/37 | 2/15 | 1/14 | 1/14 | 1/1 | — | — |
 
 Boş hücreler (açık risk adayı; her biri bir risk değildir, örn. `references` için çoğu katman anlamsız):
@@ -106,6 +106,7 @@ Katman sınıflaması (dosya → katmanlar):
 - `test_pareto.py`: AN, OG
 - `test_pde_filter.py`: U, OG
 - `test_periodic_filter.py`: U, OG
+- `test_phase_angle.py`: OG, IC
 - `test_post_cantilever.py`: E2E
 - `test_post_checks.py`: E2E
 - `test_post_pipeline.py`: E2E

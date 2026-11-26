@@ -458,6 +458,16 @@
    "slow": false
   },
   {
+   "nodeid": "tests/toporlogy/test_phase_angle.py::test_ma2_gradients_finite_difference[simplex-global-density]",
+   "kind": "pre-registered check failed",
+   "model_backend": "TensorPhases simplex (matris + fiber) + global açı + TensorElasticity, 12 × 6 (CPU)",
+   "reason": "MA2 FAIL: ön kayıtlı h = 1e-6 merkezi FD, uyum gradyanından 2,43e-6 göreli farklı (> 1e-6); yuvarlama: FD hatası h = 1e-4'te 7,2e-8, h küçüldükçe büyüyor; Richardson FD (h = 1e-3, 5e-4) 6,1e-9 içinde",
+   "risk": "low",
+   "resolution": "post hoc Richardson testi (test_ma2_posthoc_richardson) 12 durumda geçiyor; yeni ön kayıtta FD adımı h = 1e-4 ya da Richardson",
+   "record": "docs/olcumler/faz_aci_onkayit.md",
+   "slow": false
+  },
+  {
    "nodeid": "tests/toporlogy/test_buckling_geometry.py::test_rl2b_whole_cluster_aggregate_is_differentiable",
    "kind": "pre-registered check failed",
    "model_backend": "BucklingKS over a double eigenvalue, 3-D square column (CPU)",

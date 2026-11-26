@@ -208,8 +208,10 @@ class Study:
         if self.n_fields > 1 or int(getattr(first, "n_fields", 1)) > 1:
             self._check_phases(first)
 
-    # Multi-phase designs (toporlogy.design.phases): what has been verified with several design fields.
-    _PHASE_LINKS = ("Embed", "DensityFilter", "HeavisideProjection", "Passive")
+    # Multi-phase designs (toporlogy.design.phases): what has been verified with several design fields. The first
+    # link is an Embed, or an OrientedEmbed (density fields + fibre angle, docs/olcumler/faz_aci_onkayit.md).
+    _PHASE_FIRST = ("Embed", "OrientedEmbed")
+    _PHASE_LINKS = ("DensityFilter", "HeavisideProjection", "Passive")
     _PHASE_RESPONSES = ("Compliance", "PhaseVolume", "Mass", "Cost")
 
     def _check_phases(self, first: Any) -> None:
@@ -218,10 +220,10 @@ class Study:
             raise ValueError(f"the chain's embed link has {nf} design field(s), the interpolation "
                              f"{type(self.interp).__name__} {self.n_fields}; build Embed(domain, n_fields=m) for m "
                              "phases")
-        bad = [type(lk).__name__ for lk in self.chain.links if type(lk).__name__ not in self._PHASE_LINKS]
-        if bad or type(first).__name__ != "Embed":
-            raise ValueError(f"with several phases the chain may hold only {', '.join(self._PHASE_LINKS)} (embed "
-                             f"first); got {[type(lk).__name__ for lk in self.chain.links]}")
+        names = [type(lk).__name__ for lk in self.chain.links]
+        if type(first).__name__ not in self._PHASE_FIRST or any(n not in self._PHASE_LINKS for n in names[1:]):
+            raise ValueError(f"with several phases the chain may hold only {' or '.join(self._PHASE_FIRST)} first, "
+                             f"then {', '.join(self._PHASE_LINKS)}; got {names}")
         if getattr(self.optimizer, "needs_constraint_fn", False):
             raise ValueError(f"{self.optimizer.name} does not handle several phases: its update assumes one "
                              "constraint whose gradient is positive in every variable, while the mass and cost of a "
@@ -342,10 +344,9 @@ class Study:
             return self.chain(torch.as_tensor(np.asarray(x, float), dtype=torch.float64)).numpy().copy()
 
     def default_start(self) -> np.ndarray:
-        """Uniform start from the first Volume constraint's bound (topo3d rule), else 0.5."""
-        if self.n_fields > 1:
-            return self._phase_start()
-        x = self._uniform_design()
+        """Uniform start from the first Volume constraint's bound (topo3d rule), else 0.5; several phases:
+        :meth:`_phase_start`. Then reduced by the first link (symmetry, extrusion, an angle block), if it can."""
+        x = self._phase_start() if self.n_fields > 1 else self._uniform_design()
         if self._reduce is not None:
             x = np.asarray(self._reduce(x), float)
         return x
@@ -394,9 +395,10 @@ class Study:
         return x
 
     def _phase_start(self) -> np.ndarray:
-        """Uniform start whose phase volume fractions are the bounds of the single-phase PhaseVolume constraints
-        (other fields 0.5); with only a solid-volume bound V every field starts at τ = 1 − (1 − V)^(1/m), which
-        gives solid fraction V (a field at 0 would stay there: d t^p / dt = 0 at t = 0)."""
+        """Uniform density fields (m · n_design, field-major) whose phase volume fractions are the bounds of the
+        single-phase PhaseVolume constraints (other fields 0.5); with only a solid-volume bound V every field
+        starts at τ = 1 − (1 − V)^(1/m), which gives solid fraction V (a field at 0 would stay there: d t^p / dt = 0
+        at t = 0). The first link's ``reduce`` (an angle block) is applied by :meth:`default_start`."""
         from toporlogy.design.phases import phase_start
         names = [p.name for p in getattr(self.interp, "phases", ())]
         fr: list[float | None] = [None] * self.n_fields
@@ -411,7 +413,7 @@ class Study:
                 fr[names.index(ph[0])] = c.upper
         if solid is not None and all(f is None for f in fr):
             tau = 1.0 - (1.0 - min(max(float(solid), 0.0), 1.0)) ** (1.0 / self.n_fields)
-            return np.full(self.n_var, tau)
+            return np.full(self.n_fields * self.domain.n_design, tau)
         return phase_start(self.n_fields, self.domain.n_design, fr)
 
     # ------------------------------------------------------------------ loop
