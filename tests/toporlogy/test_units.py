@@ -25,9 +25,16 @@ def _mbb() -> dict:
     return read_config(REPO / "examples" / "mbb2d.yaml")
 
 
+def _examples() -> list[Path]:
+    return sorted(p.relative_to(REPO) for p in (REPO / "examples").glob("**/*.y*ml"))
+
+
 def test_u1_examples_resolve_as_before() -> None:
+    """The resolved config of every example is a snapshot (written by the code before the units change, cb1a483;
+    rewritten after intended changes of the components: ``python tests/toporlogy/test_units.py --write``, say why
+    in the commit)."""
     old = json.loads((HERE / "baseline" / "resolved_configs.json").read_text(encoding="utf-8"))
-    assert len(old) == 12
+    assert sorted(old) == [p.as_posix() for p in _examples()], "examples added or removed: --write"
     for name, want in old.items():
         got = resolve(read_config(REPO / name))
         assert got.pop("schema_version") == "1" and got.pop("units") is None
@@ -126,3 +133,17 @@ def test_u8_posthoc_loads_and_modulus_scale_exactly() -> None:
     plain, unit = _plain_and_mm()
     assert np.array_equal(np.asarray(unit.F), 1000.0 * np.asarray(plain.F))
     assert float(unit.interp.E0) == 210000.0 and float(plain.interp.E0) == 1.0
+
+
+if __name__ == "__main__":
+    import sys
+    if "--write" not in sys.argv:
+        sys.exit("usage: python tests/toporlogy/test_units.py --write")
+    out = {}
+    for p in _examples():
+        r = resolve(read_config(REPO / p))
+        r.pop("schema_version"), r.pop("units")
+        out[p.as_posix()] = json.loads(json.dumps(r, sort_keys=True, default=repr))
+    (HERE / "baseline" / "resolved_configs.json").write_text(json.dumps(out, indent=1, sort_keys=True, default=repr)
+                                                             + "\n", encoding="utf-8")
+    print(f"wrote {len(out)} resolved configs")

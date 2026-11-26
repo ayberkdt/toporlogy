@@ -2,6 +2,8 @@
  "examples/cantilever3d.yaml": {
   "chain": [
    {
+    "angle": null,
+    "density": true,
     "type": "embed"
    },
    {
@@ -147,6 +149,8 @@
  "examples/eigenfrequency2d.yaml": {
   "chain": [
    {
+    "angle": null,
+    "density": true,
     "type": "embed"
    },
    {
@@ -286,6 +290,8 @@
  "examples/lbracket_bore3d.yaml": {
   "chain": [
    {
+    "angle": null,
+    "density": true,
     "type": "embed"
    },
    {
@@ -630,6 +636,8 @@
  "examples/mbb2d.yaml": {
   "chain": [
    {
+    "angle": null,
+    "density": true,
     "type": "embed"
    },
    {
@@ -768,6 +776,8 @@
  "examples/multiload3d.yaml": {
   "chain": [
    {
+    "angle": null,
+    "density": true,
     "type": "embed"
    },
    {
@@ -926,6 +936,8 @@
  "examples/research/buckling_column2d.yaml": {
   "chain": [
    {
+    "angle": null,
+    "density": true,
     "type": "embed"
    },
    {
@@ -1076,9 +1088,169 @@
    }
   ]
  },
+ "examples/research/fiber_angle_cantilever2d.yaml": {
+  "chain": [
+   {
+    "angle": {
+     "bounds": [
+      -90,
+      90
+     ],
+     "location": "element",
+     "rmin": 2.0,
+     "start": 0
+    },
+    "density": true,
+    "type": "embed"
+   },
+   {
+    "backend": "auto",
+    "rmin": 2.0,
+    "type": "density_filter"
+   },
+   {
+    "type": "passive"
+   }
+  ],
+  "combinations": [],
+  "connectivity": null,
+  "constraints": [
+   {
+    "name": null,
+    "response": {
+     "type": "volume",
+     "weighted": false
+    },
+    "scale": null,
+    "upper": 0.4
+   }
+  ],
+  "domain": {
+   "h": 1.0,
+   "keep": null,
+   "origin": null,
+   "shape": [
+    40,
+    20
+   ],
+   "thickness": 1.0,
+   "type": "box",
+   "void": null
+  },
+  "interpolation": {
+   "emin_ratio": 1e-06,
+   "penal": 3.0,
+   "phases": [
+    {
+     "name": "fibre",
+     "orthotropic": {
+      "E1": 1.0,
+      "E2": 0.1,
+      "E3": 0.1,
+      "G12": 0.05,
+      "G13": 0.05,
+      "G23": 0.04,
+      "nu12": 0.3,
+      "nu13": 0.3,
+      "nu23": 0.3
+     }
+    }
+   ],
+   "rule": "simplex",
+   "type": "tensor_phases"
+  },
+  "load_cases": [
+   {
+    "loads": [
+     {
+      "force": [
+       0,
+       -1
+      ],
+      "name": null,
+      "type": "force",
+      "where": {
+       "at": [
+        "max",
+        "mid"
+       ],
+       "type": "point"
+      }
+     }
+    ],
+    "name": "tip",
+    "supports": null,
+    "weight": 1.0
+   }
+  ],
+  "material": {
+   "E0": 1.0,
+   "nu": 0.3,
+   "orthotropic": null,
+   "phases": null,
+   "plane": "stress",
+   "rho": 1.0,
+   "strength": null
+  },
+  "name": "fiber_angle_cantilever2d",
+  "objective": {
+   "type": "compliance",
+   "weights": null
+  },
+  "optimizer": {
+   "albefa": 0.1,
+   "asydecr": 0.7,
+   "asyincr": 1.2,
+   "asyinit": 0.5,
+   "asymax": 10.0,
+   "asymin": 0.01,
+   "c": 1000.0,
+   "d": 1.0,
+   "move": 0.1,
+   "normalise": "first",
+   "raa0": 1e-05,
+   "type": "mma"
+  },
+  "output": {
+   "folder": "runs",
+   "snapshot_every": 0
+  },
+  "physics": {
+   "element": null,
+   "solver": {
+    "method": "auto",
+    "type": "direct"
+   },
+   "type": "tensor_elasticity"
+  },
+  "post": [],
+  "robust": null,
+  "run": {
+   "feasibility_tol": 0.001,
+   "max_iter": 60,
+   "move_beta_ref": null,
+   "seed": 0,
+   "tol": 0.001
+  },
+  "schedule": null,
+  "supports": [
+   {
+    "dofs": "all",
+    "name": null,
+    "type": "fixed",
+    "where": {
+     "at": "min",
+     "axis": "x",
+     "type": "plane"
+    }
+   }
+  ]
+ },
  "examples/research/inverter2d.yaml": {
   "chain": [
    {
+    "angle": null,
+    "density": true,
     "type": "embed"
    },
    {
@@ -1294,6 +1466,8 @@
  "examples/research/mbb_simpl2d.yaml": {
   "chain": [
    {
+    "angle": null,
+    "density": true,
     "type": "embed"
    },
    {
@@ -1439,6 +1613,8 @@
  "examples/research/stress_al_lbracket2d.yaml": {
   "chain": [
    {
+    "angle": null,
+    "density": true,
     "type": "embed"
    },
    {
@@ -1708,6 +1884,8 @@
  "examples/research/stress_lbracket2d.yaml": {
   "chain": [
    {
+    "angle": null,
+    "density": true,
     "type": "embed"
    },
    {
@@ -1956,6 +2134,8 @@
  "examples/split_connectivity2d.yaml": {
   "chain": [
    {
+    "angle": null,
+    "density": true,
     "type": "embed"
    },
    {
@@ -2234,6 +2414,8 @@
     "type": "symmetry"
    },
    {
+    "angle": null,
+    "density": true,
     "type": "embed"
    },
    {

@@ -4,15 +4,15 @@ Kaynak: `tests/toporlogy/_vv_layers.py` (dosya → katman sınıflaması elle, d
 
 | Katman | core | geometry | boundary | design | fem | solvers | optimization | optimizers | configuration | execution | post | references |
 |:---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| U unit / property | 14/194 | 3/30 | — | 7/102 | 9/117 | 3/43 | 15/191 | 3/63 | 3/52 | 2/14 | 4/44 | — |
-| MP material point | 16/204 | — | — | 8/125 | 11/153 | 1/25 | 13/162 | 5/90 | 7/96 | 1/13 | 4/55 | — |
+| U unit / property | 14/195 | 3/30 | — | 7/103 | 9/118 | 3/43 | 15/192 | 3/64 | 3/53 | 2/14 | 4/44 | — |
+| MP material point | 16/205 | — | — | 8/126 | 11/154 | 1/25 | 13/163 | 5/91 | 7/97 | 1/13 | 4/55 | — |
 | EL element patch / quadrature | 7/80 | — | — | 1/10 | 10/109 | 1/14 | 4/52 | 1/14 | 1/17 | — | 3/40 | — |
-| AS assembly / BC / reactions | 5/110 | 1/23 | 5/62 | 2/58 | 8/126 | 6/78 | 3/81 | 2/58 | 1/33 | — | 1/20 | — |
-| AN analytical / MMS | 17/211 | — | — | 5/93 | 22/252 | 1/25 | 17/232 | 5/99 | 4/74 | 1/13 | 2/20 | — |
-| IS independent solver / implementation | 8/95 | — | 1/14 | 3/72 | 12/148 | 3/51 | 6/97 | 3/72 | 3/61 | — | — | — |
-| OG optimization / KKT / gradient | 14/178 | — | 1/14 | 8/128 | 17/219 | 6/87 | 25/271 | 16/209 | 8/117 | 2/30 | 2/30 | — |
+| AS assembly / BC / reactions | 5/111 | 1/23 | 5/62 | 2/59 | 8/127 | 6/78 | 3/82 | 2/59 | 1/34 | — | 1/20 | — |
+| AN analytical / MMS | 17/213 | — | — | 5/94 | 22/254 | 1/25 | 17/233 | 5/100 | 5/89 | 1/13 | 2/20 | — |
+| IS independent solver / implementation | 8/96 | — | 1/14 | 3/73 | 12/149 | 3/51 | 6/98 | 3/73 | 3/62 | — | — | — |
+| OG optimization / KKT / gradient | 14/180 | — | 1/14 | 8/129 | 17/221 | 6/87 | 25/272 | 16/210 | 9/132 | 2/30 | 2/30 | — |
 | E2E end-to-end geometry | 2/38 | 5/39 | — | 2/13 | 2/38 | — | 7/61 | 1/21 | 4/38 | 1/10 | 10/67 | — |
-| IC integration / compatibility | 5/51 | 2/34 | — | 4/64 | 5/58 | — | 6/83 | 3/56 | 14/153 | 9/85 | 1/8 | 1/11 |
+| IC integration / compatibility | 5/52 | 2/34 | — | 4/65 | 5/59 | — | 6/84 | 3/57 | 14/154 | 9/85 | 1/8 | 1/11 |
 | PF performance | — | — | 2/25 | 1/14 | 3/37 | 3/37 | 1/14 | 1/14 | 1/14 | — | — | — |
 
 Boş hücreler (açık risk adayı; her biri bir risk değildir, örn. `references` için çoğu katman anlamsız):
