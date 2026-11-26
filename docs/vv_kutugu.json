@@ -23,7 +23,7 @@
    "model_backend": "NonlinearElasticity neo-Hooke (CPU)",
    "reason": "ön kayıtlı yerel ikinci mertebe ölçütü neo-Hooke'ta tutmadı (1,79; 0,77-0,94); ölçüt bu problem için sağlam değil",
    "risk": "low",
-   "resolution": "ölçütün ayrı, yeni ön kayıtla değiştirilmesi (tanjant FD testi V3 geçiyor)",
+   "resolution": "nedeni ölçüldü (nonlineer_cozucu.md D): son kalıntı her adımda yuvarlama tabanında, ölçüt bu problemde kullanılamaz; mertebe kanıtı hata daralması testi",
    "record": "docs/olcumler/geometrik_dogrusal_olmama.md",
    "slow": false
   },
@@ -295,6 +295,66 @@
    "risk": "low",
    "resolution": "ada temizliği (bridge/drop floating) ya da robust iletim kısıtıyla yeniden koşu; yeni ön kayıt",
    "record": "docs/olcumler/gerilme.md",
+   "slow": true
+  },
+  {
+   "nodeid": "tests/toporlogy/test_nonlinear_solvers.py::test_a2_pre_registered_global_extrema",
+   "kind": "pre-registered check failed",
+   "model_backend": "solvers.continuation.arc_length, iki çubuklu kafes (CPU)",
+   "reason": "ön kayıt tanım hatası: yol 2,5h'ye kadar w = 2h'yi geçip çekme dalına giriyor, yolun max λ'sı 4,87 (analitik eğri; A1 geçiyor); ölçüt ilk limit noktasını yolun maksimumu sanmış",
+   "risk": "low",
+   "resolution": "post hoc test_a2_posthoc_local_limit_points (w ∈ [0, 2h], aynı eşikler) geçiyor",
+   "record": "docs/olcumler/nonlineer_cozucu.md",
+   "slow": false
+  },
+  {
+   "nodeid": "tests/toporlogy/test_nonlinear_solvers.py::test_j7_alpha_uniform_over_gauss_points_as_registered[2]",
+   "kind": "pre-registered check failed",
+   "model_backend": "NonlinearElasticity + J2Plasticity Q4 düzlem gerinim (CPU)",
+   "reason": "adım başına bağıl α yayılımı ilk plastik adımda 1,1e-12 > 1e-12 (küçük α'nın yuvarlaması)",
+   "risk": "low",
+   "resolution": "post hoc: yolun en büyük α'sına göre 3,2e-13 (geçiyor)",
+   "record": "docs/olcumler/nonlineer_cozucu.md",
+   "slow": false
+  },
+  {
+   "nodeid": "tests/toporlogy/test_nonlinear_solvers.py::test_j7_alpha_uniform_over_gauss_points_as_registered[3]",
+   "kind": "pre-registered check failed",
+   "model_backend": "NonlinearElasticity + J2Plasticity H8 (CPU)",
+   "reason": "tam akma gerilmesine düşen adımda (λ = 0,5) f_trial = ±1e-19: bazı noktalar α = 3,6e-19, bazıları elastik; adım başına bağıl yayılım 1,0",
+   "risk": "low",
+   "resolution": "post hoc: yolun en büyük α'sına göre 1,5e-14 (geçiyor)",
+   "record": "docs/olcumler/nonlineer_cozucu.md",
+   "slow": false
+  },
+  {
+   "nodeid": "tests/toporlogy/test_nonlinear_solvers.py::test_j8b_iterations_algorithmic_vs_continuum",
+   "kind": "pre-registered check failed",
+   "model_backend": "NonlinearElasticity + J2Plasticity Q4 düzlem gerinim konsol (CPU)",
+   "reason": "toplam Newton iterasyonu 27 (algoritmik) / 34 (süreklilik), oran 1,26 < 1,5; toplamı elastik adımlar belirliyor",
+   "risk": "low",
+   "resolution": "post hoc adım başına ölçüm: plastik adımlarda 3/5 ↔ 6/9 iterasyon, algoritmikte ikinci mertebe kalıntı düşüşü",
+   "record": "docs/olcumler/nonlineer_cozucu.md",
+   "slow": false
+  },
+  {
+   "nodeid": "tests/toporlogy/test_nonlinear_solvers.py::test_d1_v4_last_residual_is_at_the_rounding_floor",
+   "kind": "pre-registered check failed",
+   "model_backend": "NonlinearElasticity SVK / neo-Hooke ince konsol (CPU)",
+   "reason": "hipotezin ikinci maddesi tutmadı: son kalıntı her adımda tabanda (≤ 3,1e2 φ) ama bir öncekisi bazı adımlarda 1e4 φ'nin altında (6,9e2–4,6e3 φ)",
+   "risk": "low",
+   "resolution": "V4'ün üç noktalı ölçütü tabanla sınırlı; yerine hata daralması testi (V4 post hoc)",
+   "record": "docs/olcumler/nonlineer_cozucu.md",
+   "slow": false
+  },
+  {
+   "nodeid": "tests/toporlogy/test_nonlinear_solvers.py::test_a6b_arch_load_control_negative_control",
+   "kind": "pre-registered check failed",
+   "model_backend": "NonlinearElasticity SVK basamaklı sığ kemer + load_control (CPU)",
+   "reason": "yük kontrolü limit noktasının %99,98'inde step_limit ile duruyor, ama 3 kabul edilmiş noktada det K < 0: simetrik limit noktasından önce λ = 0,9972 λ_max'ta antisimetrik çatallanma",
+   "risk": "medium",
+   "resolution": "dal değiştirme ya da çatallanma tespiti (en küçük özdeğer izleme); şimdilik belgede: birincil simetrik yol izleniyor",
+   "record": "docs/olcumler/nonlineer_cozucu.md",
    "slow": true
   }
  ],

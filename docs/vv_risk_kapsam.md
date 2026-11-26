@@ -4,13 +4,13 @@ Kaynak: `tests/toporlogy/_vv_layers.py` (dosya → katman sınıflaması elle, d
 
 | Katman | core | geometry | boundary | design | fem | solvers | optimization | optimizers | configuration | execution | post | references |
 |:---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| U unit / property | 7/102 | 3/30 | — | 6/69 | 5/55 | 3/43 | 10/106 | 2/30 | 1/10 | 1/10 | 4/44 | — |
-| MP material point | 10/104 | — | — | 6/67 | 8/84 | — | 8/73 | 3/32 | 5/57 | 1/13 | 4/55 | — |
+| U unit / property | 8/113 | 3/30 | — | 6/69 | 6/66 | 3/43 | 10/106 | 2/30 | 1/10 | 1/10 | 4/44 | — |
+| MP material point | 12/140 | — | — | 7/92 | 10/120 | 1/25 | 9/98 | 4/57 | 5/57 | 1/13 | 4/55 | — |
 | EL element patch / quadrature | 5/48 | — | — | 1/10 | 8/77 | 1/14 | 4/52 | 1/14 | 1/17 | — | 2/20 | — |
-| AS assembly / BC / reactions | 1/23 | 1/23 | 5/62 | — | 4/39 | 5/53 | 1/23 | — | — | — | — | — |
-| AN analytical / MMS | 5/52 | — | — | 3/35 | 12/119 | — | 10/111 | 3/41 | 3/41 | 1/13 | 2/20 | — |
-| IS independent solver / implementation | 4/14 | — | — | — | 7/53 | 1/12 | 2/15 | — | 1/14 | — | — | — |
-| OG optimization / KKT / gradient | 6/71 | — | — | 5/56 | 10/112 | 4/48 | 18/156 | 13/137 | 6/70 | 2/30 | 2/30 | — |
+| AS assembly / BC / reactions | 2/48 | 1/23 | 5/62 | 1/25 | 5/64 | 6/78 | 2/48 | 1/25 | — | — | — | — |
+| AN analytical / MMS | 7/88 | — | — | 4/60 | 14/155 | 1/25 | 11/136 | 4/66 | 3/41 | 1/13 | 2/20 | — |
+| IS independent solver / implementation | 5/39 | — | — | 1/25 | 8/78 | 2/37 | 3/40 | 1/25 | 1/14 | — | — | — |
+| OG optimization / KKT / gradient | 7/96 | — | — | 6/81 | 11/137 | 5/73 | 19/181 | 14/162 | 6/70 | 2/30 | 2/30 | — |
 | E2E end-to-end geometry | 2/38 | 5/39 | — | 2/13 | 2/38 | — | 7/61 | 1/21 | 4/38 | 1/10 | 10/67 | — |
 | IC integration / compatibility | 3/14 | 2/34 | — | 3/31 | 4/25 | — | 5/50 | 2/23 | 11/105 | 7/77 | 1/8 | 1/11 |
 | PF performance | — | — | 1/11 | — | 2/23 | 2/23 | — | — | — | — | — | — |
@@ -18,11 +18,11 @@ Kaynak: `tests/toporlogy/_vv_layers.py` (dosya → katman sınıflaması elle, d
 Boş hücreler (açık risk adayı; her biri bir risk değildir, örn. `references` için çoğu katman anlamsız):
 
 - **U** (unit / property): boundary, references
-- **MP** (material point): geometry, boundary, solvers, references
+- **MP** (material point): geometry, boundary, references
 - **EL** (element patch / quadrature): geometry, boundary, execution, references
-- **AS** (assembly / BC / reactions): design, optimizers, configuration, execution, post, references
-- **AN** (analytical / MMS): geometry, boundary, solvers, references
-- **IS** (independent solver / implementation): geometry, boundary, design, optimizers, execution, post, references
+- **AS** (assembly / BC / reactions): configuration, execution, post, references
+- **AN** (analytical / MMS): geometry, boundary, references
+- **IS** (independent solver / implementation): geometry, boundary, execution, post, references
 - **OG** (optimization / KKT / gradient): geometry, boundary, references
 - **E2E** (end-to-end geometry): boundary, solvers, references
 - **IC** (integration / compatibility): boundary, solvers
@@ -48,6 +48,7 @@ Katman sınıflaması (dosya → katmanlar):
 - `test_compose.py`: U, OG
 - `test_config.py`: IC
 - `test_connectivity.py`: U, OG, E2E
+- `test_constitutive.py`: U, MP, AN
 - `test_core.py`: U, EL, AS
 - `test_deriving_methods.py`: OG, IC
 - `test_element_orientation.py`: MP, EL, OG, E2E
@@ -81,6 +82,7 @@ Katman sınıflaması (dosya → katmanlar):
 - `test_multi_material.py`: MP, AN, OG
 - `test_nonlinear.py`: MP, AN, OG
 - `test_nonlinear_orientation.py`: MP, OG
+- `test_nonlinear_solvers.py`: MP, AN, IS, OG, AS
 - `test_onebody.py`: OG, E2E
 - `test_ordering.py`: AS, PF
 - `test_pde_filter.py`: U, OG

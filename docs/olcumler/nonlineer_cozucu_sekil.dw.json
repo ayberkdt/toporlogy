@@ -1,0 +1,310 @@
+{
+ "surum": 1,
+ "ad": "nonlineer_cozucu_sekil",
+ "boyut_pt": [
+  479.9,
+  201.6
+ ],
+ "metin_kutusu_pt": [
+  4.5,
+  4.5,
+  425.8,
+  193.4
+ ],
+ "hedef": "web-640",
+ "ortam": "web",
+ "boyut_mm": [
+  169.3,
+  71.1
+ ],
+ "yazi_tipleri": [
+  "Source Sans 3"
+ ],
+ "punto": {
+  "tik": [
+   9.0
+  ],
+  "eksen_adi": [
+   10.0
+  ],
+  "baslik": [],
+  "lejant": [
+   9.0
+  ],
+  "panel": [],
+  "metin": [
+   9.0
+  ]
+ },
+ "punto_tepe": {
+  "tik": 9.0,
+  "eksen_adi": 10.0,
+  "lejant": 9.0,
+  "metin": 9.0
+ },
+ "panel_harfleri": [],
+ "eksenler": [
+  {
+   "konum_pt": [
+    20.4,
+    36.9,
+    232.5,
+    164.6
+   ],
+   "baslik": "",
+   "seriler": [
+    {
+     "etiket": "analitik",
+     "tur": "cizgi",
+     "renk": "#999999",
+     "isaret": null,
+     "cizgi": "-",
+     "kalinlik": 2.2,
+     "isaret_boyu": null
+    },
+    {
+     "etiket": "yay boyu",
+     "tur": "cizgi",
+     "renk": "#0072b2",
+     "isaret": "o",
+     "cizgi": null,
+     "kalinlik": null,
+     "isaret_boyu": 3.2
+    },
+    {
+     "etiket": "yük kontrolü",
+     "tur": "cizgi",
+     "renk": "#d55e00",
+     "isaret": "Path(array([[-1.  , -0.68],\n       [-1.  , -1.  ],\n       [-0.68, -1.  ],\n       [ 0.68, -1.  ],\n       [ 1.  , -1.  ],\n       [ 1.  , -0.68],\n       [ 1.  ,  0.68],\n       [ 1.  ,  1.  ],\n       [ 0.68,  1.  ],\n       [-0.68,  1.  ],\n       [-1.  ,  1.  ],\n       [-1.  ,  0.68],\n       [-1.  , -0.68]]), array([ 1,  3,  3,  2,  3,  3,  2,  3,  3,  2,  3,  3, 79], dtype=uint8))",
+     "cizgi": null,
+     "kalinlik": null,
+     "isaret_boyu": 3.23
+    }
+   ],
+   "eksen_turu": "rectilinear",
+   "sabit_oran": false,
+   "x": {
+    "ham": "Tepe çökmesi w/h (–)",
+    "nicelik": "Tepe çökmesi w/h",
+    "birim": "–",
+    "bicim": "parantez",
+    "anahtar": "tepeçökmesiw/h",
+    "harf": "cumle",
+    "olcek": "linear",
+    "tarih": false,
+    "ters": false,
+    "sinir": [
+     0.0,
+     2.5
+    ],
+    "gorunur": true,
+    "kategorik": true,
+    "kategoriler": [
+     "mathdefault0,0",
+     "mathdefault0,5",
+     "mathdefault1,0",
+     "mathdefault1,5",
+     "mathdefault2,0",
+     "mathdefault2,5"
+    ],
+    "ondaliklar": [],
+    "ondalik_isareti": ",",
+    "tikler": [
+     "mathdefault0,0",
+     "mathdefault0,5",
+     "mathdefault1,0",
+     "mathdefault1,5",
+     "mathdefault2,0",
+     "mathdefault2,5"
+    ],
+    "eksi": null,
+    "e_gosterimi": false,
+    "ofset": "",
+    "etiket_pt": [
+     82.0,
+     4.6,
+     170.9,
+     14.7
+    ]
+   },
+   "y": {
+    "ham": "Yük çarpanı λ = P/P_max (–)",
+    "nicelik": "Yük çarpanı λ = P/P_max",
+    "birim": "–",
+    "bicim": "parantez",
+    "anahtar": "yükçarpanıλ=p/pmax",
+    "harf": "cumle",
+    "olcek": "linear",
+    "tarih": false,
+    "ters": false,
+    "sinir": [
+     -1.0,
+     5.0
+    ],
+    "gorunur": true,
+    "kategorik": false,
+    "kategoriler": [],
+    "ondaliklar": [
+     0
+    ],
+    "ondalik_isareti": null,
+    "tikler": [
+     "-1",
+     "0",
+     "1",
+     "2",
+     "3",
+     "4",
+     "5"
+    ],
+    "eksi": "unicode",
+    "e_gosterimi": false,
+    "ofset": "",
+    "etiket_pt": [
+     20.4,
+     168.4,
+     135.8,
+     178.6
+    ]
+   },
+   "lejant": [
+    "analitik",
+    "yay boyu",
+    "yük kontrolü"
+   ],
+   "dogrudan_etiket": [],
+   "izgara": {
+    "x": false,
+    "y": true
+   },
+   "cerceve": [
+    "bottom"
+   ],
+   "alan": false,
+   "cerceve_kalinlik": 0.6,
+   "tik_yonu": 3,
+   "haritalar": []
+  },
+  {
+   "konum_pt": [
+    263.3,
+    36.9,
+    475.4,
+    164.6
+   ],
+   "baslik": "",
+   "seriler": [
+    {
+     "etiket": "kapalı form",
+     "tur": "cizgi",
+     "renk": "#999999",
+     "isaret": null,
+     "cizgi": "-",
+     "kalinlik": 2.2,
+     "isaret_boyu": null
+    },
+    {
+     "etiket": "radial return",
+     "tur": "cizgi",
+     "renk": "#009e73",
+     "isaret": "o",
+     "cizgi": null,
+     "kalinlik": null,
+     "isaret_boyu": 3.0
+    }
+   ],
+   "eksen_turu": "rectilinear",
+   "sabit_oran": false,
+   "x": {
+    "ham": "Şekil değiştirme ε/ε_y (–)",
+    "nicelik": "Şekil değiştirme ε/ε_y",
+    "birim": "–",
+    "bicim": "parantez",
+    "anahtar": "şekildeğiştirmeε/εy",
+    "harf": "cumle",
+    "olcek": "linear",
+    "tarih": false,
+    "ters": false,
+    "sinir": [
+     -5.0,
+     8.26
+    ],
+    "gorunur": true,
+    "kategorik": false,
+    "kategoriler": [],
+    "ondaliklar": [
+     0
+    ],
+    "ondalik_isareti": null,
+    "tikler": [
+     "-5",
+     "0",
+     "5"
+    ],
+    "eksi": "unicode",
+    "e_gosterimi": false,
+    "ofset": "",
+    "etiket_pt": [
+     317.3,
+     4.5,
+     421.4,
+     14.7
+    ]
+   },
+   "y": {
+    "ham": "Gerilme σ/σ_y (–)",
+    "nicelik": "Gerilme σ/σ_y",
+    "birim": "–",
+    "bicim": "parantez",
+    "anahtar": "gerilmeσ/σy",
+    "harf": "tek",
+    "olcek": "linear",
+    "tarih": false,
+    "ters": false,
+    "sinir": [
+     -1.7321725515603068,
+     2.2032879818594107
+    ],
+    "gorunur": true,
+    "kategorik": false,
+    "kategoriler": [],
+    "ondaliklar": [
+     0
+    ],
+    "ondalik_isareti": null,
+    "tikler": [
+     "-1",
+     "0",
+     "1",
+     "2"
+    ],
+    "eksi": "unicode",
+    "e_gosterimi": false,
+    "ofset": "",
+    "etiket_pt": [
+     263.3,
+     168.4,
+     335.3,
+     178.6
+    ]
+   },
+   "lejant": [
+    "kapalı form",
+    "radial return"
+   ],
+   "dogrudan_etiket": [],
+   "izgara": {
+    "x": false,
+    "y": true
+   },
+   "cerceve": [
+    "bottom"
+   ],
+   "alan": false,
+   "cerceve_kalinlik": 0.6,
+   "tik_yonu": 3,
+   "haritalar": []
+  }
+ ],
+ "renk_cubuklari": []
+}

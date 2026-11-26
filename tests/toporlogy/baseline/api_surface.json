@@ -1854,6 +1854,70 @@
   "resolve": "resolve(raw)",
   "study_from_dict": "study_from_dict(d,overrides)"
  },
+ "toporlogy.configuration.catalog": {
+  "BENCHMARKS": "<tuple>",
+  "Benchmark": {
+   "attrs": [
+    "note",
+    "validation"
+   ],
+   "class": "Benchmark"
+  },
+  "COMPOSITE_RESPONSES": "<tuple>",
+  "Cell": {
+   "attrs": [
+    "enforced",
+    "evidence",
+    "reason"
+   ],
+   "class": "Cell"
+  },
+  "ELEMENTS": "<tuple>",
+  "EXPERIMENTAL": "<str>",
+  "Element": {
+   "attrs": [],
+   "class": "Element"
+  },
+  "MATERIALS": "<tuple>",
+  "MaterialRecord": {
+   "attrs": [
+    "note",
+    "used_by"
+   ],
+   "class": "MaterialRecord"
+  },
+  "NOT_VERIFIED": "<str>",
+  "PHYSICS": "<tuple>",
+  "PHYSICS_INDEPENDENT": "<dict>",
+  "Physics": {
+   "attrs": [],
+   "class": "Physics"
+  },
+  "RESPONSE_MATRIX": "<dict>",
+  "RULES": "<tuple>",
+  "Rule": {
+   "attrs": [
+    "enforced",
+    "evidence",
+    "reason"
+   ],
+   "class": "Rule"
+  },
+  "SCHEMA_VERSION": "<str>",
+  "SOLVERS": "<tuple>",
+  "STATUSES": "<tuple>",
+  "SUPPORTED": "<str>",
+  "Solver": {
+   "attrs": [],
+   "class": "Solver"
+  },
+  "UNSUPPORTED": "<str>",
+  "as_dict": "as_dict()",
+  "check_build": "check_build(resolved,physics,responses)",
+  "render_markdown": "render_markdown(data)",
+  "status": "status(physics,response)",
+  "write": "write(folder)"
+ },
  "toporlogy.configuration.components": {
   "annotations": "<_Feature>",
   "register_all": "register_all()"
@@ -2302,6 +2366,134 @@
  "toporlogy.core.bodies": {
   "label_bodies": "label_bodies(solid,connectivity)",
   "neighbourhood": "neighbourhood(dim,connectivity)"
+ },
+ "toporlogy.core.constitutive": {
+  "ConstitutiveFailure": {
+   "attrs": [
+    "add_note",
+    "args",
+    "code",
+    "with_traceback"
+   ],
+   "class": "ConstitutiveFailure"
+  },
+  "ConstitutiveModel": {
+   "attrs": [
+    "evaluate",
+    "initial_state"
+   ],
+   "class": "ConstitutiveModel"
+  },
+  "InadmissibleState": {
+   "attrs": [
+    "add_note",
+    "args",
+    "code",
+    "with_traceback"
+   ],
+   "class": "InadmissibleState"
+  },
+  "J2Plasticity": {
+   "attrs": [
+    "conservative",
+    "dkappa",
+    "evaluate",
+    "hardening_energy",
+    "initial_state",
+    "kappa",
+    "kinematics",
+    "name",
+    "state_fields",
+    "update"
+   ],
+   "class": "J2Plasticity"
+  },
+  "KINEMATICS": "<tuple>",
+  "Kinematics": {
+   "attrs": [
+    "dim",
+    "n",
+    "plane"
+   ],
+   "class": "Kinematics"
+  },
+  "LinearElastic": {
+   "attrs": [
+    "conservative",
+    "evaluate",
+    "initial_state",
+    "kinematics",
+    "name",
+    "state_fields"
+   ],
+   "class": "LinearElastic"
+  },
+  "MaterialPointHistory": {
+   "attrs": [],
+   "class": "MaterialPointHistory"
+  },
+  "MaterialRequest": {
+   "attrs": [
+    "energy",
+    "tangent",
+    "tangent_kind"
+   ],
+   "class": "MaterialRequest"
+  },
+  "MaterialResponse": {
+   "attrs": [
+    "dissipation",
+    "energy",
+    "trial_state"
+   ],
+   "class": "MaterialResponse"
+  },
+  "NeoHooke": {
+   "attrs": [
+    "conservative",
+    "evaluate",
+    "initial_state",
+    "kinematics",
+    "name",
+    "state_fields"
+   ],
+   "class": "NeoHooke"
+  },
+  "ReturnMappingFailure": {
+   "attrs": [
+    "add_note",
+    "args",
+    "code",
+    "with_traceback"
+   ],
+   "class": "ReturnMappingFailure"
+  },
+  "SaintVenantKirchhoff": {
+   "attrs": [
+    "conservative",
+    "evaluate",
+    "initial_state",
+    "kinematics",
+    "name",
+    "state_fields"
+   ],
+   "class": "SaintVenantKirchhoff"
+  },
+  "StateStore": {
+   "attrs": [
+    "checkpoint",
+    "commit",
+    "restore",
+    "rollback",
+    "set_trial"
+   ],
+   "class": "StateStore"
+  },
+  "drive_material_point": "drive_material_point(model,strain,stress,control,tol,max_iter)",
+  "energy_oracle": "energy_oracle(psi,Ev)",
+  "neo_hooke_energy_torch": "neo_hooke_energy_torch(kappa,mu)",
+  "neo_hooke_response": "neo_hooke_response(E,Jm1,kappa,mu,energy)",
+  "svk_energy_torch": "svk_energy_torch(D6)"
  },
  "toporlogy.core.domain": {
   "Domain": {
@@ -3923,6 +4115,7 @@
   "find_clusters": "find_clusters(lam,rel_tol)"
  },
  "toporlogy.fem.nonlinear": {
+  "CUTOFF_POLICIES": "<tuple>",
   "CaseReport": {
    "attrs": [
     "backward_error",
@@ -3943,7 +4136,8 @@
     "cutoff_max",
     "cutoff_step",
     "density_exponent",
-    "gamma"
+    "gamma",
+    "policy"
    ],
    "class": "EnergyInterpolation"
   },
@@ -3961,23 +4155,22 @@
    "attrs": [
     "adjoint_gradient",
     "check_kinematics",
+    "continuation_problem",
     "cutoffs",
     "dim",
+    "element_energies",
     "element_state",
     "internal_force",
+    "min_det_f",
     "n_elements",
+    "reset_model",
     "solve",
+    "solve_history",
     "solve_numpy",
     "strain_energy",
     "tangent"
    ],
    "class": "NonlinearElasticity"
-  },
-  "StepRecord": {
-   "attrs": [
-    "reason"
-   ],
-   "class": "StepRecord"
   }
  },
  "toporlogy.geometry": {
@@ -4588,6 +4781,13 @@
     "per_case"
    ],
    "class": "EndCompliance"
+  },
+  "EndStrainEnergy": {
+   "attrs": [
+    "name",
+    "needs"
+   ],
+   "class": "EndStrainEnergy"
   }
  },
  "toporlogy.optimization.responses": {
@@ -4821,6 +5021,74 @@
   },
   "centroid_stress": "centroid_stress(domain,U,nu,E0,elements)",
   "von_mises_matrix": "von_mises_matrix(dim)"
+ },
+ "toporlogy.optimization.stress_recovery": {
+  "CornerField": {
+   "attrs": [
+    "kind",
+    "measure",
+    "von_mises"
+   ],
+   "class": "CornerField"
+  },
+  "ElementField": {
+   "attrs": [
+    "kind",
+    "measure",
+    "von_mises"
+   ],
+   "class": "ElementField"
+  },
+  "ElementMaximum": {
+   "attrs": [
+    "kind"
+   ],
+   "class": "ElementMaximum"
+  },
+  "NodalField": {
+   "attrs": [
+    "kind",
+    "measure",
+    "von_mises"
+   ],
+   "class": "NodalField"
+  },
+  "PointField": {
+   "attrs": [
+    "energy_density",
+    "kind",
+    "measure",
+    "von_mises"
+   ],
+   "class": "PointField"
+  },
+  "StressRecovery": {
+   "attrs": [
+    "centroids",
+    "extrapolated",
+    "integration_points",
+    "ip_maximum",
+    "nodal_averaged",
+    "patch_recovered"
+   ],
+   "class": "StressRecovery"
+  }
+ },
+ "toporlogy.optimization.stress_singularity": {
+  "CONVERGED": "<str>",
+  "NOT_CONVERGED": "<str>",
+  "NOT_VERIFIED": "<str>",
+  "PeakAssessment": {
+   "attrs": [],
+   "class": "PeakAssessment"
+  },
+  "RegionStress": {
+   "attrs": [],
+   "class": "RegionStress"
+  },
+  "SINGULAR": "<str>",
+  "assess_peak": "assess_peak(h,peak,rel_tol,ratio_min,noise)",
+  "region_stress": "region_stress(values,points,lo,hi,weights)"
  },
  "toporlogy.optimization.study": {
   "Constraint": {
@@ -5736,6 +6004,65 @@
    "class": "GMGSolver"
   }
  },
+ "toporlogy.solvers.continuation": {
+  "ArcLengthSettings": {
+   "attrs": [
+    "desired_iterations",
+    "direction",
+    "ds_max",
+    "ds_min",
+    "eta_tol",
+    "max_iter",
+    "max_steps",
+    "psi",
+    "rtol"
+   ],
+   "class": "ArcLengthSettings"
+  },
+  "ContinuationError": {
+   "attrs": [
+    "add_note",
+    "args",
+    "with_traceback"
+   ],
+   "class": "ContinuationError"
+  },
+  "ContinuationPath": {
+   "attrs": [
+    "component",
+    "lam",
+    "rejected"
+   ],
+   "class": "ContinuationPath"
+  },
+  "ContinuationPoint": {
+   "attrs": [],
+   "class": "ContinuationPoint"
+  },
+  "ContinuationProblem": {
+   "attrs": [
+    "linearize",
+    "solve"
+   ],
+   "class": "ContinuationProblem"
+  },
+  "IndefiniteDirectSolver": {
+   "attrs": [
+    "det_sign",
+    "factor",
+    "name",
+    "solve"
+   ],
+   "class": "IndefiniteDirectSolver"
+  },
+  "LoadControlResult": {
+   "attrs": [],
+   "class": "LoadControlResult"
+  },
+  "arc_length": "arc_length(problem,x0,lam0,settings,stop)",
+  "displacement_control": "displacement_control(problem,x0,lam0,dof,targets,max_iter,rtol,eta_tol,max_bisections)",
+  "load_control": "load_control(attempt,x0,start,end,max_step,min_step,commit,keep_points)"
+ },
  "toporlogy.solvers.direct": {
   "DirectSolver": {
    "attrs": [
@@ -5819,6 +6146,64 @@
    ],
    "class": "BlackBoxTransfer"
   }
+ },
+ "toporlogy.solvers.newton": {
+  "CODES": "<tuple>",
+  "LinearSolveFailure": {
+   "attrs": [
+    "add_note",
+    "args",
+    "code",
+    "with_traceback"
+   ],
+   "class": "LinearSolveFailure"
+  },
+  "Linearization": {
+   "attrs": [
+    "aux",
+    "energy"
+   ],
+   "class": "Linearization"
+  },
+  "NewtonOutcome": {
+   "attrs": [],
+   "class": "NewtonOutcome"
+  },
+  "NewtonProblem": {
+   "attrs": [
+    "linearize",
+    "solve"
+   ],
+   "class": "NewtonProblem"
+  },
+  "NewtonSettings": {
+   "attrs": [
+    "divergence",
+    "eta_tol",
+    "line_search",
+    "ls_c",
+    "ls_max",
+    "max_iter",
+    "merit",
+    "rtol",
+    "stagnation_factor",
+    "stagnation_window"
+   ],
+   "class": "NewtonSettings"
+  },
+  "StepRecord": {
+   "attrs": [
+    "code",
+    "dissipation",
+    "energy",
+    "iterations",
+    "min_det_f",
+    "reason",
+    "rolled_back"
+   ],
+   "class": "StepRecord"
+  },
+  "newton": "newton(problem,x0,scale,settings,load_factor,describe)"
  },
  "toporlogy.solvers.ordering": {
   "LEAF_NODES": "<int>",
