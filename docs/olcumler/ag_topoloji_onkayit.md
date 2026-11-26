@@ -175,3 +175,47 @@ adlarıyla, iç `Elasticity`'den önce; `ElasticityGMG` ve `MindlinPlate` boyut 
 | GF3 | PASS | `pytest -m baseline` 8 passed, en büyük bağıl fark 0,00e+00; dokunulan `fem` modüllerinin testleri + mimari / API yüzeyi / gradyan / ağ / kabuk: 436 passed, 2 skipped (pypardiso yok), 3 xfailed (önceden var olan strict xfail'ler); katalog / kütük / uyumluluk 131 passed; ruff ve mypy temiz |
 
 Testler ilk koşuda geçti; kurulum düzeltmesi yok. API yüzeyi anlık görüntüsü değişmedi (imzalar aynı).
+
+## Ek ön kayıt: genel ağ için YAML, ayrı kurulum yolu (AY1–AY6)
+
+Ön kayıt 2026-11-26 18:28 +0300, kod yazılmadan önce. Karar (koordinatör): `domain.type: mesh` olan bir yapılandırma ayrı bir yoldan
+kurulur, `configuration/mesh_build.py`; `resolve` ve `build` yalnız bir dağıtım satırıyla oraya yönlendirir, ızgara yolu
+(`resolve._resolve`, `build.build`, `boundary/*`) değişmez. Yeni şema (en küçük kapsam):
+
+* `domain: {type: mesh, generator: rectangle | box, n: [nx, ny(, nz)], size: [lx, ly(, lz)], element: Q4 | T3 | H8 |
+  T4, perturb: 0.0, seed: 0}` → `perturb(rectangle | box(...), perturb, seed)` (perturb > 0 ise) → `MeshDomain`.
+* `material: {E0, nu, plane: stress}`: birim modüllü D, 2-B'de düzlem gerilme, 3-B'de izotrop; E0 SIMP'e gider.
+* `physics: elasticity` (ya da yok) → `MeshElasticity` (kalınlık 1).
+* `supports: [{set: left, fix: [x, y]}]` (adlı düğüm kümesi: left right bottom top back front);
+  `loads: [{set: right | point: [x, y], force: [fx, fy]}]`: kümede toplam kuvvet düğümlere eşit bölünür, `point`'te
+  en yakın düğüme uygulanır; tek yük durumu.
+* `chain: [{type: density_filter, rmin: <uzunluk>}]` → `Embed, MeshFilterLink, Passive` (embed / passive yoksa
+  eklenir). **rmin burada uzunluk biriminde**; ızgara yolunda eleman biriminde (rmin_uzunluk = rmin_eleman · h).
+  Zincir zorunlu (uzunluk biriminde makul bir varsayılan yok).
+* `interpolation: simp` (penal, emin_ratio; varsayılanlar ızgara yolundaki gibi), `objective: compliance`,
+  `constraints: [{response: volume, upper: V}]` → `MeshVolume`, `optimizer: mma` (ağ yolunda varsayılan mma; oc
+  desteklenmiyor), `run: {max_iter, tol, seed, feasibility_tol}`, `output: {folder, snapshot_every}` (anlık
+  görüntüler düz x̄ vektörü, ızgara varsaymaz).
+* Geri kalan her şey (`load_cases`, `combinations`, `robust`, `connectivity`, `schedule`, boş olmayan `post`, `units`,
+  başka zincir halkaları, başka yanıtlar / amaç / optimizer / fizik / enterpolasyon, `orthotropic`, `strength`,
+  `phases`, `plane: strain`, `run.start`, `run.checkpoint_every`, `run.move_beta_ref`) anahtarı adlandıran ve ağ
+  yolunun onu "henüz desteklemediğini" söyleyen bir `ConfigError`. Çıktı: `run_setup`'ın yazdığı her şey
+  (`config.resolved.yaml`, `setup.json`, `history.jsonl`, `result.npz`, `result.json`, `summary.json`); VTU ve diğer
+  son işlemler `post` reddiyle birlikte yok.
+
+Örnek `examples/research/mesh_cantilever2d.yaml`: bozulmuş Q4 konsol (48 × 16, 3 × 1, h = 0,0625, perturb 0,01 (0,16 h), rmin 0,125 (2 h), sol kenar ankastre, [3, 0]'da [0, −1],
+hacim ≤ 0,4, mma). Öngörü: `test_units.py` U1 anlık görüntüsü (`baseline/resolved_configs.json`) bütün `examples/**`
+dosyalarını topladığı için yeni örnek U1'i `--write`'a kadar düşürür; `--write` sonrası dosyada **yalnız bir yeni
+anahtar** (`examples/research/mesh_cantilever2d.yaml`) eklenir, var olan girdiler bayt bayt aynı kalır.
+`test_research_examples.py` örnekleri kendiliğinden toplar ama `test_examples_are_found` adları sabit listeyle
+karşılaştırır; listeye yeni ad eklenecek (bilinçli düzenleme). `test_baseline.py` yalnız `examples/*.yaml`'ı
+topladığı için etkilenmez.
+
+| # | Kontrol | Eşik |
+|:---|:---|:---|
+| AY1 | YAML ağ çalışması = aynı çalışma Python'da (`MeshDomain`, `MeshElasticity`, `MeshFilterLink`, `MeshVolume`, `SIMP`, `Compliance`, `MMA`), rastgele x'te değer, gradyan ve hacim; örnek (bozulmuş Q4), bozulmuş T3 dikdörtgen, H8 kutu | ≤ 1e-12 göreli |
+| AY2 | bozulmamış Q4 dikdörtgende (24 × 8, 3 × 1, h = 0,125; rmin 0,25 uzunluk) YAML ağ çalışması = ızgara YAML konsolu (`box [24, 8]`, h 0,125, rmin 2 eleman, sol kenar ankastre, [max, min] noktasında [0, −1]): hücre ağırlık merkezleri = eleman merkezleri (sıra aynı); varsayılan başlangıçta ve rastgele x'te uyum ve gradyan; 10 MMA iterasyonunda amaç geçmişi | merkezler ≤ 1e-12 mutlak; değer, gradyan ≤ 1e-12 göreli; geçmiş her iterasyonda ≤ 1e-8 göreli (MD2 eşiği; MD2'de ölçülen 8,1e-9) |
+| AY3 | örnek CLI'dan: `python -m toporlogy run examples/research/mesh_cantilever2d.yaml --out <klasör>` ve `validate` | `validate` çıkış 0; `run` çıkış kodu = 0 ise `status` ok, değilse 1; `summary.json`'da amaç ve kısıt değeri sonlu; son uyum < ilk uyum; hacim ≤ 0,4 (1 + 1e-3); `config.resolved.yaml` yeniden çözülünce kendisini verir ve aynı çalışmayı kurar (varsayılan başlangıçta amaç bit düzeyinde eşit) |
+| AY4 | desteklenmeyen her anahtar (yukarıdaki liste; bilinmeyen küme adı, öğeye uymayan boyut, `n` / `size` uzunluğu yanlış, sıfır yük dâhil) | `ConfigError`; iletide anahtarın yolu ve "mesh"; desteklenmeyenlerde "not support"; başka tür istisna 0 |
+| AY5 | ızgara davranışı | `pytest -m baseline` 8 passed bit düzeyinde; U1 öngörüsü (yukarıda) tutar; `test_research_examples.py`, `test_cli.py`, `test_units.py`, `test_architecture.py`, `test_api_surface.py`, katalog testleri geçer |
+| AY6 | ızgara yolu dokunulmamış | `resolve.py` ve `build.py` farkı yalnız dağıtım satırları (ve içe aktarma); `boundary/*` farkı yok |
