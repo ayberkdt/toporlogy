@@ -356,18 +356,23 @@ class Study:
 
     # ------------------------------------------------------------------ loop
     def run(self, x0: np.ndarray | None = None, max_iter: int = 100, tol: float = 0.01, feasibility_tol: float = 1e-3,
-            callback: Callable[[int, Evaluation, float], None] | None = None) -> Result:
+            callback: Callable[[int, Evaluation, float], None] | None = None, checkpoint: str | None = None,
+            checkpoint_every: int = 0, resume: str | None = None) -> Result:
+        """Optimise. ``checkpoint`` / ``checkpoint_every``: write the run state every k iterations (atomic);
+        ``resume``: continue from such a file in a study built from the same configuration
+        (:mod:`toporlogy.optimization.checkpoint`; the physics' own state, e.g. an adaptive cutoff, is not saved)."""
         threads = torch.get_num_threads()
         if self.torch_threads is not None:
             torch.set_num_threads(self.torch_threads)
         try:
-            return self._run(x0, max_iter, tol, feasibility_tol, callback)
+            return self._run(x0, max_iter, tol, feasibility_tol, callback, checkpoint, int(checkpoint_every), resume)
         finally:
             if torch.get_num_threads() != threads:
                 torch.set_num_threads(threads)
 
     def _run(self, x0: np.ndarray | None, max_iter: int, tol: float, feasibility_tol: float,
-             callback: Callable[[int, Evaluation, float], None] | None) -> Result:
+             callback: Callable[[int, Evaluation, float], None] | None, checkpoint: str | None = None,
+             checkpoint_every: int = 0, resume: str | None = None) -> Result:
         t0 = time.perf_counter()
         # a run starts from the initial continuation state and a fresh optimizer, whatever a previous run left
         # (β, its counter, an updated volume bound, MMA asymptotes and iterates); before default_start, which
@@ -395,7 +400,26 @@ class Study:
             self.recorder.start(self)
         it, change, ev = 0, 1.0, None
         termination, stepped_last = "max_iter", False
+        if resume is not None:
+            from toporlogy.optimization.checkpoint import load_checkpoint
+            state = load_checkpoint(resume, self)
+            x, it, change, stepped_last = np.asarray(state["x"], float).copy(), int(state["it"]), \
+                float(state["change"]), bool(state["stepped_last"])
+            hist = state["hist"]
+            epoch, self.n_model_resets = state["epoch"], int(state["n_model_resets"])
+
+        def save() -> None:
+            if checkpoint is not None and checkpoint_every > 0 and it % checkpoint_every == 0:
+                from toporlogy.optimization.checkpoint import save_checkpoint
+                vf = getattr(self.optimizer, "value_fn", None)
+                save_checkpoint(checkpoint, self, {"x": x, "it": it, "change": change, "stepped_last": stepped_last,
+                                                   "hist": hist, "epoch": epoch,
+                                                   "n_model_resets": self.n_model_resets, "move0": move0})
+                if vf is not None:
+                    self.optimizer.value_fn = vf
         move0 = getattr(self.optimizer, "move", None)
+        if resume is not None and "move0" in state:
+            move0 = state["move0"]
         if getattr(self.optimizer, "needs_value_fn", False):
             def value_fn(xc: np.ndarray) -> tuple[float, np.ndarray]:
                 e = self.evaluate(xc, gradients=False)
@@ -432,7 +456,9 @@ class Study:
                     beta = self.schedule.state().get("beta")
                     if self.move_beta_ref is not None and move0 is not None and beta:
                         cast(_HasMove, self.optimizer).move = float(move0) * min(1.0, self.move_beta_ref / float(beta))
+                    save()
                     continue
+                save()
                 if change <= tol and self.schedule.finished:
                     termination = "design_change"
                     break

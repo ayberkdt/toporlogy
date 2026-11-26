@@ -5159,6 +5159,14 @@
   "inverse_load_factors": "inverse_load_factors(ctx,n_modes,case,penal_g,E0,preload_case,cluster_tol,density_threshold,exclude)",
   "reliability": "reliability(mu,diag,spurious_share,localized_share)"
  },
+ "toporlogy.optimization.checkpoint": {
+  "CHECKPOINT_VERSION": "<int>",
+  "capture": "capture(obj,_seen)",
+  "fingerprint": "fingerprint(study)",
+  "load_checkpoint": "load_checkpoint(path,study)",
+  "restore": "restore(obj,state)",
+  "save_checkpoint": "save_checkpoint(path,study,payload)"
+ },
  "toporlogy.optimization.compose": {
   "Displacement": {
    "attrs": [

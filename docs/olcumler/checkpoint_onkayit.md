@@ -16,3 +16,24 @@ torch ve NumPy RNG durumları, kütüphane sürümü ve problemin parmak izi (de
 | CK3 | Başka bir problemin (farklı değişken sayısı ya da ayar) checkpoint'inden resume | açık `ValueError` (parmak izi) |
 | CK4 | Yazım atomik: checkpoint dosyası her an okunabilir (geçici dosya kalmaz) | aynen |
 | CK5 | checkpoint verilmeden koşu eski davranış (`pytest -m baseline`) | bit düzeyinde |
+
+## Sonuç (2026-11-26, ilk koşu)
+
+`python -m pytest tests/toporlogy/test_checkpoint.py -q -p no:randomly` → 5 passed (ikinci koşu; aşağıya bakın).
+
+| # | Sonuç |
+|:---|:---|
+| CK1 | PASS: MMA + β süreklemesi (30 × 10, β her 6 iterasyonda ikiye; kesme 10. iterasyonda, β adımlarının arasında): 24 iterasyonluk kesintisiz koşu ile sürdürülen koşu x, amaç, iterasyon sayısı ve geçmişte bit düzeyinde aynı |
+| CK2 | PASS: GCMMA ve OC için aynı |
+| CK3 | PASS: başka alan boyutu ("different domain, n_var") ve başka optimizatör ("optimizer") reddediliyor |
+| CK4 | PASS: geçici dosya kalmıyor |
+| CK5 | PASS: `pytest -m baseline` 8 passed (checkpoint verilmeden davranış bit düzeyinde aynı) |
+
+**İlk koşudan sonra yapılan açıklama.** Ön kayıt "geçmiş bit düzeyinde aynı" diyordu. İlk koşuda tek fark geçmişin
+`seconds` sütunundaydı (duvar saati süresi). Bu sütun kesintisiz iki koşu arasında da aynı olamaz, bu yüzden
+karşılaştırmanın dışında bırakıldı; geri kalan bütün sütunlar (amaç, kısıtlar, değişim, β) bit düzeyinde aynı. Bu
+bir eşik değişikliği değil, ölçülemez bir sütunun ayrılmasıdır; kayıtta açıkça belirtildi.
+
+Kapsam dışı: fiziğin kendi durumu (ör. nonlineer enerji interpolasyonunun uyarlamalı kesmesi, malzeme geçmişi)
+checkpoint'e yazılmaz; böyle bir fizikle sürdürülen koşu bit düzeyinde aynı olmayabilir (sınanmadı). YAML/CLI
+bağlantısı (`run.checkpoint_every`) yapılmadı.
