@@ -2,7 +2,7 @@
 
 `tests/toporlogy/test_catalog_ledger.py` bu kütüğü toplanan testlerle karşılaştırır: her xfail strict (XPASS koşuyu kırar), kütük toplanan strict xfail listesiyle ve test kaynaklarındaki atlama noktalarıyla birebir aynı. Beklenen başarısızlık PASS sayılmaz; atlanan bir arka ucun testi NOT VERIFIED'dır. Yeniden üretim: `python tests/toporlogy/test_catalog_ledger.py --write`.
 
-Toplam 29 strict xfail (7 tanesi yavaş pakette), 14 atlama noktası.
+Toplam 33 strict xfail (8 tanesi yavaş pakette), 14 atlama noktası.
 
 Risk düzeyleri: **low** ölçüt ya da kontrolün kendisi; kod sonucu başka testle doğrulanmış; **medium** açıklanmamış sayısal fark ya da referans yeniden üretilemiyor; **high** kullanıcıya görünen sessiz kabul (yanlış sonuç üretebilir).
 
@@ -39,6 +39,10 @@ Risk düzeyleri: **low** ölçüt ya da kontrolün kendisi; kod sonucu başka te
 | `test_anisotropy.py::test_p3_rotation_invariance` | pre-registered check failed | core.anisotropy, core.linear_elastic (NumPy float64) | P3 bağıl 1e-12 eşiği: lineer sıkışabilirlikte 1.21e-12; döndürülmüş C'nin tersi Mandel koşul sayısıyla (1e4'e kadar) yuvarlamayı büyütüyor, eşik bunu öngörmemiş | low | koşul sayısına ölçeklenen eşikle yeni ön kayıt; post hoc döndürülmüş S varyantı geçiyor | docs/olcumler/tensor_elastisite.md | — |
 | `test_anisotropy.py::test_p10_cholesky_parametrisation` | pre-registered check failed | core.anisotropy.stiffness_from_cholesky (NumPy float64) | P10: 1000 θ'nın 37'si float64'te Cholesky'den geçmiyor (κ 7.6e16–1e35); gidiş-dönüş en kötü 3.1e-8 > 1e-12 (κ 2.4e11'e kadar) | medium | θ dağılımının κ < 1/eps ile sınırlanması ya da κ'ya ölçekli eşikle yeni ön kayıt; post hoc ılımlı varyant geçiyor | docs/olcumler/tensor_elastisite.md | — |
 | `test_stress_lbracket.py::test_y2_one_body_gate_on_the_returned_design[augmented_lagrangian]` | pre-registered check failed | stress_al_lbracket2d + connectivity (MMA, CPU) | tek parça kapısı FAIL: gövdeden kopuk iki 8 hücrelik ada; mesnet ve yük aynı gövdede (Y3 geçiyor) | low | ada temizliği (bridge/drop floating) ya da robust iletim kısıtıyla yeniden koşu; yeni ön kayıt | docs/olcumler/gerilme.md | evet |
+| `test_uq.py::test_u10c_robust_design_beats_the_nominal_one_on_held_out_scenarios` | pre-registered check failed | Study + Elasticity Q4 + ScenarioCompliance (CPU) | gürbüz tasarım ayrılmış senaryolarda nominalden biraz kötü (ortalama+3std 102,23 / 101,80); yerel minimum, bu problemde kazanç alanı yok | low | gürbüz tasarım için ayrışan bir problem ve başlangıç stratejisiyle yeni ön kayıt | docs/olcumler/laminat_uq.md | evet |
+| `test_pareto.py::test_p4c_epsilon_constraint_reaches_the_weighted_point` | pre-registered check failed | Study + MMA, iki yük durumu, ε-kısıt (CPU) | varsayılan başlangıçtan ε-kısıt başka yerel minimuma yakınsıyor (c1 123,77 / 111,50) | low | ε-kısıt için sürekleme / komşu noktadan sıcak başlangıç, yeni ön kayıtla | docs/olcumler/laminat_uq.md | — |
+| `test_rom.py::test_r5b_compliance_gap_equals_the_energy_error` | pre-registered check failed | PODModel, Elasticity Q4 (CPU, doğrudan) | s − s_r iki yakın sayının farkı; e²'ye göre 1e-6 yuvarlamanın altında (en çok 2,3e-5; s'ye göre 1,3e-12) | low | toleransı uyum büyüklüğüne göre tanımlayan yeni ön kayıt | docs/olcumler/laminat_uq.md | — |
+| `test_rom.py::test_r6_a_basis_for_one_load_fails_on_another` | pre-registered check failed | PODModel, eğitim dışı yük (CPU) | ön kayıtlı hata düzeyi (>= 0,5) tutmadı; ölçülen 0,293, sınır yine de uyarıyor | low | başarısızlık düzeyi için gerekçeli yeni ön kayıt | docs/olcumler/laminat_uq.md | — |
 
 ## 2. Atlama noktaları
 

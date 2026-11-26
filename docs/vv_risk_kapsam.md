@@ -4,13 +4,13 @@ Kaynak: `tests/toporlogy/_vv_layers.py` (dosya → katman sınıflaması elle, d
 
 | Katman | core | geometry | boundary | design | fem | solvers | optimization | optimizers | configuration | execution | post | references |
 |:---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| U unit / property | 7/102 | 3/30 | — | 6/69 | 5/55 | 3/43 | 10/106 | 2/30 | 1/10 | 1/10 | 4/44 | — |
-| MP material point | 10/104 | — | — | 6/67 | 8/84 | — | 8/73 | 3/32 | 5/57 | 1/13 | 4/55 | — |
+| U unit / property | 8/121 | 3/30 | — | 6/69 | 5/55 | 3/43 | 12/143 | 2/30 | 1/10 | 1/10 | 4/44 | — |
+| MP material point | 12/131 | — | — | 6/67 | 8/84 | — | 10/100 | 3/32 | 5/57 | 1/13 | 4/55 | — |
 | EL element patch / quadrature | 5/48 | — | — | 1/10 | 8/77 | 1/14 | 4/52 | 1/14 | 1/17 | — | 2/20 | — |
 | AS assembly / BC / reactions | 1/23 | 1/23 | 5/62 | — | 4/39 | 5/53 | 1/23 | — | — | — | — | — |
-| AN analytical / MMS | 5/52 | — | — | 3/35 | 12/119 | — | 10/111 | 3/41 | 3/41 | 1/13 | 2/20 | — |
-| IS independent solver / implementation | 4/14 | — | — | — | 7/53 | 1/12 | 2/15 | — | 1/14 | — | — | — |
-| OG optimization / KKT / gradient | 6/71 | — | — | 5/56 | 10/112 | 4/48 | 18/156 | 13/137 | 6/70 | 2/30 | 2/30 | — |
+| AN analytical / MMS | 6/71 | — | — | 3/35 | 12/119 | — | 14/167 | 3/41 | 3/41 | 1/13 | 2/20 | — |
+| IS independent solver / implementation | 4/14 | — | — | — | 7/53 | 1/12 | 3/25 | — | 1/14 | — | — | — |
+| OG optimization / KKT / gradient | 7/79 | — | — | 5/56 | 10/112 | 4/48 | 21/191 | 13/137 | 6/70 | 2/30 | 2/30 | — |
 | E2E end-to-end geometry | 2/38 | 5/39 | — | 2/13 | 2/38 | — | 7/61 | 1/21 | 4/38 | 1/10 | 10/67 | — |
 | IC integration / compatibility | 3/14 | 2/34 | — | 3/31 | 4/25 | — | 5/50 | 2/23 | 11/105 | 7/77 | 1/8 | 1/11 |
 | PF performance | — | — | 1/11 | — | 2/23 | 2/23 | — | — | — | — | — | — |
@@ -61,6 +61,7 @@ Katman sınıflaması (dosya → katmanlar):
 - `test_gmg.py`: IS, OG, PF
 - `test_gradients.py`: OG
 - `test_heat.py`: EL, AN, OG
+- `test_identification.py`: MP, OG
 - `test_independent_buckling.py`: IS
 - `test_independent_matrices.py`: IS, EL
 - `test_independent_stress.py`: IS, MP
@@ -68,6 +69,7 @@ Katman sınıflaması (dosya → katmanlar):
 - `test_invariants.py`: U
 - `test_kinematic_contract.py`: AS
 - `test_kkt_estimate.py`: OG
+- `test_laminate.py`: U, MP, AN
 - `test_lengthscale.py`: U, OG
 - `test_linear_elastic.py`: U, MP
 - `test_manufacturing.py`: U, OG
@@ -83,6 +85,7 @@ Katman sınıflaması (dosya → katmanlar):
 - `test_nonlinear_orientation.py`: MP, OG
 - `test_onebody.py`: OG, E2E
 - `test_ordering.py`: AS, PF
+- `test_pareto.py`: AN, OG
 - `test_pde_filter.py`: U, OG
 - `test_post_cantilever.py`: E2E
 - `test_post_checks.py`: E2E
@@ -96,6 +99,7 @@ Katman sınıflaması (dosya → katmanlar):
 - `test_residual.py`: AS
 - `test_result_contract.py`: IC, OG
 - `test_robust.py`: OG
+- `test_rom.py`: IS, AN
 - `test_sdf_contract.py`: E2E
 - `test_simpl.py`: OG
 - `test_skfem_crosscheck.py`: IS, EL
@@ -114,3 +118,4 @@ Katman sınıflaması (dosya → katmanlar):
 - `test_taylor_remainder.py`: OG
 - `test_tensor.py`: U
 - `test_timoshenko_cantilever.py`: AN
+- `test_uq.py`: U, AN, OG

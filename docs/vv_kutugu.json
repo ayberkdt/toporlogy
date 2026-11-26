@@ -296,6 +296,46 @@
    "resolution": "ada temizliği (bridge/drop floating) ya da robust iletim kısıtıyla yeniden koşu; yeni ön kayıt",
    "record": "docs/olcumler/gerilme.md",
    "slow": true
+  },
+  {
+   "nodeid": "tests/toporlogy/test_uq.py::test_u10c_robust_design_beats_the_nominal_one_on_held_out_scenarios",
+   "kind": "pre-registered check failed",
+   "model_backend": "Study + Elasticity Q4 + ScenarioCompliance (CPU)",
+   "reason": "gürbüz tasarım ayrılmış senaryolarda nominalden biraz kötü (ortalama+3std 102,23 / 101,80); yerel minimum, bu problemde kazanç alanı yok",
+   "risk": "low",
+   "resolution": "gürbüz tasarım için ayrışan bir problem ve başlangıç stratejisiyle yeni ön kayıt",
+   "record": "docs/olcumler/laminat_uq.md",
+   "slow": true
+  },
+  {
+   "nodeid": "tests/toporlogy/test_pareto.py::test_p4c_epsilon_constraint_reaches_the_weighted_point",
+   "kind": "pre-registered check failed",
+   "model_backend": "Study + MMA, iki yük durumu, ε-kısıt (CPU)",
+   "reason": "varsayılan başlangıçtan ε-kısıt başka yerel minimuma yakınsıyor (c1 123,77 / 111,50)",
+   "risk": "low",
+   "resolution": "ε-kısıt için sürekleme / komşu noktadan sıcak başlangıç, yeni ön kayıtla",
+   "record": "docs/olcumler/laminat_uq.md",
+   "slow": false
+  },
+  {
+   "nodeid": "tests/toporlogy/test_rom.py::test_r5b_compliance_gap_equals_the_energy_error",
+   "kind": "pre-registered check failed",
+   "model_backend": "PODModel, Elasticity Q4 (CPU, doğrudan)",
+   "reason": "s − s_r iki yakın sayının farkı; e²'ye göre 1e-6 yuvarlamanın altında (en çok 2,3e-5; s'ye göre 1,3e-12)",
+   "risk": "low",
+   "resolution": "toleransı uyum büyüklüğüne göre tanımlayan yeni ön kayıt",
+   "record": "docs/olcumler/laminat_uq.md",
+   "slow": false
+  },
+  {
+   "nodeid": "tests/toporlogy/test_rom.py::test_r6_a_basis_for_one_load_fails_on_another",
+   "kind": "pre-registered check failed",
+   "model_backend": "PODModel, eğitim dışı yük (CPU)",
+   "reason": "ön kayıtlı hata düzeyi (>= 0,5) tutmadı; ölçülen 0,293, sınır yine de uyarıyor",
+   "risk": "low",
+   "resolution": "başarısızlık düzeyi için gerekçeli yeni ön kayıt",
+   "record": "docs/olcumler/laminat_uq.md",
+   "slow": false
   }
  ],
  "skips": [
