@@ -234,6 +234,21 @@ def register_responses() -> None:
         return EndStrainEnergy(weights)
 
     register("response", "end_strain_energy", end_strain_energy)
+
+    def centre_of_mass(ctx: BuildContext, axis: str = "x") -> Any:
+        """Coordinate of the centre of mass of the physical density along axis x | y | z (length unit; material rho
+        as the density of solid, x̄ linear). No state solve."""
+        from toporlogy.optimization.mass_responses import CentreOfMass
+        return CentreOfMass(axis, float(ctx.material.get("rho", 1.0)))
+
+    def inertia(ctx: BuildContext, i: str = "z", j: str | None = None) -> Any:
+        """Component I_ij of the inertia tensor about the centre of mass (mass·length²; j null = i). No state
+        solve."""
+        from toporlogy.optimization.mass_responses import InertiaComponent
+        return InertiaComponent(i, j, float(ctx.material.get("rho", 1.0)))
+
+    register("response", "centre_of_mass", centre_of_mass)
+    register("response", "inertia", inertia)
     register("response", "stress", stress, nested={"exclude": "shape[]"}, units={"sigma_lim": "force/length^2"})
     register("response", "stress_augmented_lagrangian", stress_augmented_lagrangian,
              nested={"objective": "response", "exclude": "shape[]"}, types={"reference": None},

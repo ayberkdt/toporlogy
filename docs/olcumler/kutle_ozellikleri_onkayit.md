@@ -34,3 +34,9 @@ ve `InertiaComponent(i, j, about)`; YAML `centre_of_mass`, `inertia` (yoğunluk:
 | MP7 | Study.evaluate'in verdiği değer = `mass_properties(domain, xphys)` | ≤ 1e-14 göreli |
 | MP8 | Study.evaluate gradyanı (filtre dahil) merkezi farkla, iki yanıt | ≤ 1e-6 göreli |
 | MP9 | YAML: `constraints: [{response: {type: centre_of_mass, axis: x}, upper: ...}]` kurulur ve MMA ile birkaç iterasyon koşar; kısıt değeri sonlu | aynen |
+
+### MP7–MP9 sonucu
+
+PASS (`test_mass_properties.py`, 8 passed): Study değerleri `mass_properties` ile ≤ 1e-14, gradyanlar (filtre dahil)
+merkezi farkla ≤ 1e-6, YAML `centre_of_mass` kısıtıyla MMA 5 iterasyon koşuyor. Katalogda fizikten bağımsız yanıt
+olarak SUPPORTED (yalnız `elasticity` ile sınandı).

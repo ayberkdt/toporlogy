@@ -87,3 +87,38 @@ def test_mp6_design_derivatives() -> None:
     t = 1e-6
     fd = (q(x0 + t * v) - q(x0 - t * v)) / (2 * t)
     assert float((ad - fd).abs().max() / fd.abs().max()) <= 1e-8
+
+
+def _mass_study(constraint: dict):
+    from toporlogy.configuration.build import build_setup
+    cfg = {"domain": {"type": "box", "shape": [12, 6], "h": 0.5}, "material": {"E0": 1.0, "nu": 0.3, "rho": 2.0},
+           "supports": [{"type": "fixed", "where": {"type": "plane", "axis": "x", "at": "min"}}],
+           "load_cases": [{"loads": [{"type": "force", "where": {"type": "point", "at": ["max", "min"]},
+                                      "force": [0, -1]}]}],
+           "chain": [{"type": "density_filter", "rmin": 1.5}],
+           "constraints": [{"response": "volume", "upper": 0.5}, constraint], "optimizer": "mma"}
+    return build_setup(cfg).study
+
+
+def test_mp7_mp8_study_responses_value_and_gradient() -> None:
+    st = _mass_study({"response": {"type": "centre_of_mass", "axis": "x"}, "upper": 2.5})
+    st2 = _mass_study({"response": {"type": "inertia", "i": "z"}, "upper": 100.0})
+    rng = np.random.default_rng(4)
+    x = 0.2 + 0.6 * rng.random(st.n_var)
+    v = rng.normal(size=st.n_var)
+    for study, key, pick in ((st, "centre_of_mass", lambda p: p.centre[0]), (st2, "inertia", lambda p: p.inertia[2, 2])):
+        ev = study.evaluate(x)
+        direct = pick(mass_properties(study.domain, ev.xphys, rho0=2.0))
+        assert abs(ev.values[key] - direct) <= 1e-14 * abs(direct)                                  # MP7
+        i = [c.key for c in study.constraints].index(key)
+        t = 1e-6
+        fd = (study.evaluate(x + t * v, False).values[key] - study.evaluate(x - t * v, False).values[key]) / (2 * t)
+        scale = study.constraints[i].scale if study.constraints[i].scale is not None else 1.0 / abs(study.constraints[i].upper)
+        g = ev.dg[i] @ v / scale
+        assert abs(g - fd) <= 1e-6 * abs(fd)                                                         # MP8
+
+
+def test_mp9_yaml_constraint_runs() -> None:
+    st = _mass_study({"response": {"type": "centre_of_mass", "axis": "x"}, "upper": 2.0})
+    res = st.run(max_iter=5)
+    assert np.isfinite(res.constraint_values["centre_of_mass"])

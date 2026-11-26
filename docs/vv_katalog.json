@@ -1149,6 +1149,40 @@
      "enforced": ""
     }
    },
+   "centre_of_mass": {
+    "elasticity": {
+     "status": "SUPPORTED",
+     "evidence": [
+      "tests/toporlogy/test_mass_properties.py::test_mp7_mp8_study_responses_value_and_gradient"
+     ],
+     "reason": "tested with physics elasticity",
+     "enforced": ""
+    },
+    "elasticity_gmg": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "does not read the study's physics (read from the code); combination not tested",
+     "enforced": ""
+    },
+    "modal": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "does not read the study's physics (read from the code); combination not tested",
+     "enforced": ""
+    },
+    "nonlinear_elasticity": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "does not read the study's physics (read from the code); combination not tested",
+     "enforced": ""
+    },
+    "tensor_elasticity": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "does not read the study's physics (read from the code); combination not tested",
+     "enforced": ""
+    }
+   },
    "compliance": {
     "elasticity": {
      "status": "SUPPORTED",
@@ -1510,6 +1544,40 @@
      "status": "SUPPORTED",
      "evidence": [
       "tests/toporlogy/test_lengthscale.py::test_gradcheck_local_volume_and_grey"
+     ],
+     "reason": "tested with physics elasticity",
+     "enforced": ""
+    },
+    "elasticity_gmg": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "does not read the study's physics (read from the code); combination not tested",
+     "enforced": ""
+    },
+    "modal": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "does not read the study's physics (read from the code); combination not tested",
+     "enforced": ""
+    },
+    "nonlinear_elasticity": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "does not read the study's physics (read from the code); combination not tested",
+     "enforced": ""
+    },
+    "tensor_elasticity": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "does not read the study's physics (read from the code); combination not tested",
+     "enforced": ""
+    }
+   },
+   "inertia": {
+    "elasticity": {
+     "status": "SUPPORTED",
+     "evidence": [
+      "tests/toporlogy/test_mass_properties.py::test_mp7_mp8_study_responses_value_and_gradient"
      ],
      "reason": "tested with physics elasticity",
      "enforced": ""

@@ -814,6 +814,8 @@ PHYS = ("elasticity", "elasticity_gmg", "modal", "nonlinear_elasticity", "tensor
 # responses that do not read the study's physics (no state solve, or an own auxiliary solve); evidence with elasticity
 PHYSICS_INDEPENDENT: dict[str, tuple[str, ...]] = {
     "volume": (T + "test_gradients.py::test_volume_weighted_and_unweighted",),
+    "centre_of_mass": (T + "test_mass_properties.py::test_mp7_mp8_study_responses_value_and_gradient",),
+    "inertia": (T + "test_mass_properties.py::test_mp7_mp8_study_responses_value_and_gradient",),
     "dilated_volume": (T + "test_robust.py::test_gradcheck_robust_compliance_and_dilated_volume",),
     "local_volume": (T + "test_lengthscale.py::test_gradcheck_local_volume_and_grey",),
     "grey_level": (T + "test_lengthscale.py::test_gradcheck_local_volume_and_grey",),

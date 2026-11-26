@@ -105,9 +105,10 @@ physics  - physics model (state solve) (5)
                         merit=residual
   tensor_elasticity     element=null  solver=direct
 
-response  - objective or constraint response (23)
+response  - objective or constraint response (25)
   buckling                     load_factor=null  n_modes=6  rho=50.0  case=0  penal_g=3.0
                                scale=null  preload_case=null  exclude=null
+  centre_of_mass               axis=x
   compliance                   weights=null
   conduction_connectivity      sink=null  kmin_ratio=0.001  penal=3.0  aggregate=pnorm  p=8.0
                                eta=0.7  reference=solid
@@ -120,6 +121,7 @@ response  - objective or constraint response (23)
   end_strain_energy            weights=null
   frequency                    k=1  E_unit=1.0  rho_unit=1.0  length_unit=1.0
   grey_level                   source=xphys
+  inertia                      i=z  j=null
   local_volume                 t_max=null [length]  radius=null [elements]  member=null  p=16.0
                                aggregate=pmean  adaptive=0.0  outside=void  source=xphys
   mass                         (no parameters)

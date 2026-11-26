@@ -103,6 +103,7 @@ Yalnız sentetik kayıt var; kaynağı, sayfası ve lisansı bu çalışmada oku
 | Yanıt | elasticity | elasticity_gmg | modal | nonlinear_elasticity | tensor_elasticity |
 |:---|:---|:---|:---|:---|:---|
 | buckling | SUPPORTED | UNSUPPORTED (catalog) | UNSUPPORTED (catalog) | UNSUPPORTED (catalog) | NOT VERIFIED |
+| centre_of_mass | SUPPORTED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED |
 | compliance | SUPPORTED | SUPPORTED | UNSUPPORTED (catalog) | EXPERIMENTAL | SUPPORTED |
 | conduction_connectivity | SUPPORTED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED |
 | cost | SUPPORTED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED |
@@ -114,6 +115,7 @@ Yalnız sentetik kayıt var; kaynağı, sayfası ve lisansı bu çalışmada oku
 | end_strain_energy | UNSUPPORTED (component) | UNSUPPORTED (component) | UNSUPPORTED (component) | SUPPORTED | UNSUPPORTED (component) |
 | frequency | UNSUPPORTED (component) | UNSUPPORTED (component) | SUPPORTED | UNSUPPORTED (component) | NOT VERIFIED |
 | grey_level | SUPPORTED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED |
+| inertia | SUPPORTED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED |
 | local_volume | SUPPORTED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED |
 | mass | SUPPORTED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED |
 | maximize | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED |
@@ -132,6 +134,11 @@ Gerekçe ve kanıt (yalnız boş olmayanlar):
 - `buckling` × `elasticity_gmg`: UNSUPPORTED — buckling needs plain Elasticity (direct solver)
 - `buckling` × `modal`: UNSUPPORTED — needs the static state u; physics modal solves an eigenproblem only
 - `buckling` × `nonlinear_elasticity`: UNSUPPORTED — linear buckling about a linear prestress; not defined on the non-linear state
+- `centre_of_mass` × `elasticity`: SUPPORTED — tested with physics elasticity [test_mass_properties.py::test_mp7_mp8_study_responses_value_and_gradient]
+- `centre_of_mass` × `elasticity_gmg`: NOT VERIFIED — does not read the study's physics (read from the code); combination not tested
+- `centre_of_mass` × `modal`: NOT VERIFIED — does not read the study's physics (read from the code); combination not tested
+- `centre_of_mass` × `nonlinear_elasticity`: NOT VERIFIED — does not read the study's physics (read from the code); combination not tested
+- `centre_of_mass` × `tensor_elasticity`: NOT VERIFIED — does not read the study's physics (read from the code); combination not tested
 - `compliance` × `elasticity`: SUPPORTED [test_gradients.py::test_compliance_single_case; test_independent_vv.py::test_top88_fixed_design_objective_and_sensitivity]
 - `compliance` × `elasticity_gmg`: SUPPORTED [test_gmg.py::test_gradients; test_gmg.py::test_study_regression_against_direct]
 - `compliance` × `modal`: UNSUPPORTED — needs the static state u; physics modal solves an eigenproblem only
@@ -182,6 +189,11 @@ Gerekçe ve kanıt (yalnız boş olmayanlar):
 - `grey_level` × `modal`: NOT VERIFIED — does not read the study's physics (read from the code); combination not tested
 - `grey_level` × `nonlinear_elasticity`: NOT VERIFIED — does not read the study's physics (read from the code); combination not tested
 - `grey_level` × `tensor_elasticity`: NOT VERIFIED — does not read the study's physics (read from the code); combination not tested
+- `inertia` × `elasticity`: SUPPORTED — tested with physics elasticity [test_mass_properties.py::test_mp7_mp8_study_responses_value_and_gradient]
+- `inertia` × `elasticity_gmg`: NOT VERIFIED — does not read the study's physics (read from the code); combination not tested
+- `inertia` × `modal`: NOT VERIFIED — does not read the study's physics (read from the code); combination not tested
+- `inertia` × `nonlinear_elasticity`: NOT VERIFIED — does not read the study's physics (read from the code); combination not tested
+- `inertia` × `tensor_elasticity`: NOT VERIFIED — does not read the study's physics (read from the code); combination not tested
 - `local_volume` × `elasticity`: SUPPORTED — tested with physics elasticity [test_lengthscale.py::test_gradcheck_local_volume_and_grey]
 - `local_volume` × `elasticity_gmg`: NOT VERIFIED — does not read the study's physics (read from the code); combination not tested
 - `local_volume` × `modal`: NOT VERIFIED — does not read the study's physics (read from the code); combination not tested

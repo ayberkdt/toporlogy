@@ -5672,6 +5672,22 @@
    "class": "MultiplierUpdate"
   }
  },
+ "toporlogy.optimization.mass_responses": {
+  "CentreOfMass": {
+   "attrs": [
+    "name",
+    "needs"
+   ],
+   "class": "CentreOfMass"
+  },
+  "InertiaComponent": {
+   "attrs": [
+    "name",
+    "needs"
+   ],
+   "class": "InertiaComponent"
+  }
+ },
  "toporlogy.optimization.mode_tracking": {
   "Tracking": {
    "attrs": [],
