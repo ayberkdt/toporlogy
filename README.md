@@ -548,7 +548,7 @@ The research plan and its status are in [`docs/gelistirme_plani.md`](docs/gelist
 ## Development
 
 ```bash
-python -m pytest tests/toporlogy -m "not slow"                  # main suite (MAIN_SUITE_COUNT)
+python -m pytest tests/toporlogy -m "not slow"                  # main suite (1740 pass, 34 strict xfail on 26 Nov 2026)
 python -m pytest tests/toporlogy/test_baseline.py -m baseline   # bitwise baseline of the examples (~3.5 min)
 python -m pytest tests/toporlogy -m slow                        # pre-registered sweeps and full example runs (weekly in CI)
 ```

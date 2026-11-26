@@ -68,6 +68,7 @@ STATE = {  # response spec (objective) for a state response
     "stress_augmented_lagrangian": {"type": "stress_augmented_lagrangian", "objective": "volume",
                                     "sigma_lim": 1.0},
     "end_compliance": "end_compliance",
+    "end_strain_energy": "end_strain_energy",
 }
 EIGEN = {"frequency": {"type": "maximize", "response": {"type": "frequency"}},
          "eigenvalue": {"type": "maximize", "response": {"type": "eigenvalue"}},
@@ -98,7 +99,7 @@ def cell_probe(response: str, physics: str) -> dict[str, Any]:
 def cell_pattern(response: str, physics: str) -> str:
     if response in EIGEN:
         return r"needs physics modal"
-    if response == "end_compliance":
+    if response in ("end_compliance", "end_strain_energy"):
         return r"needs physics nonlinear_elasticity"
     if physics == "modal":
         return rf"unsupported combination \(catalog\): response {response} with physics modal: needs the static state u"
