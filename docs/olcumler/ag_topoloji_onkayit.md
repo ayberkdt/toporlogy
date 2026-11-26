@@ -136,3 +136,28 @@ başına alındı). Eşik değişmedi. (3) `Mass` / `Cost` ret denetimi fraksiyo
 `HelmholtzFilter` ön kayıttaki tek "sessizce yanlış" bileşendi; artık reddediyor. Ağ karşılığı olmayanlar için
 (`PeriodicAngleFilter`, AM, döküm, çok fazlı, gerilme, bağlantılılık, kütle özellikleri, sağlam gerçekleşmeler)
 ileti bunu açıkça söylüyor. Izgara fizikleri (`Elasticity`, `HeatConduction` …) kapsam dışı kaldı.
+
+## Ek ön kayıt: ızgara FE fiziklerinin ızgara dışı alanda açık reddi (GF1–GF3)
+
+Ön kayıt 2026-11-26 18:21 +0300, kod yazılmadan önce. RF1–RF4 halkaları ve yanıtları kapsadı, ızgara fiziklerini kapsam
+dışı bıraktı. Bu adımda `fem` altındaki, bir `Domain` alıp ızgara özniteliklerini (`edof`, `h`, `node_coords`, `nn`,
+`shape`) okuyan kurucular ve açık fonksiyonlar, ilk satırlarında `require_grid(domain, bileşen, alternatif)` çağırır.
+Ağ karşılığı yalnız elastisitede var (`MeshElasticity`); `fem` katmanı `optimization`'ı içe aktarmaz, alternatif yalnız
+iletide ad olarak geçer. Izgara alanında `require_grid` hiçbir şey yapmadan döner; ızgara davranışı bit düzeyinde aynı
+kalmalı.
+
+Reddedecekler: `Elasticity` ve `ElasticityGMG` (karşılık `MeshElasticity`); `TensorElasticity`, `Modal`,
+`HeatConduction`, `ThermoElastic`, `TransientHeat`, `Newmark`, `NonlinearElasticity`, `MindlinPlate`, `GridSPD` ve
+fonksiyonlar `element_nodes`, `assemble_conduction`, `nodal_source`, `hard_simply_supported`, `homogenize_elasticity`,
+`homogenize_conduction`, `periodic_map` (karşılık yok). Ret, boyut ya da eleman denetimlerinden önce gelir (3-B ağ
+`ElasticityGMG`'nin "3-D only" denetiminden, 2-B ağ `MindlinPlate`'in "2-D" denetiminden geçerdi). Kapsam dışı:
+`ConductivityInterp` (yalnız `frac` okur, ağda çalışır), `LinearBuckling` (alan değil `Elasticity` modeli alır; başka
+model türünü zaten `TypeError` ile reddediyor), `*Physics` sarmalayıcıları (`NewmarkPhysics`, `TransientHeatPhysics`,
+`ThermoElasticPhysics`, `PlatePhysics`: reddeden modelleri alır), `mechanisms` iç denetimleri (yalnız reddeden
+kuruculardan çağrılır), `fem.mesh` ve `fem.shell` (ağ / kabuk fizikleri).
+
+| # | Kontrol | Eşik |
+|:---|:---|:---|
+| GF1 | yukarıdaki 18 bileşen, RF1'in üç ızgara dışı alanında (2-B Q4 `MeshDomain`, 3-B `MeshDomain`, `ShellDomain`) | `ValueError`; iletide bileşenin adı, "grid", alan türü; `Elasticity` / `ElasticityGMG` iletisinde `MeshElasticity`, diğerlerinde "no mesh or shell counterpart"; başka tür istisna 0 |
+| GF2 | `ConductivityInterp` üç alanda; RF1–RF3, MD1–MD5, KS1–KS5 | hatasız, sonlu çıktı; hepsi geçer |
+| GF3 | ızgara davranışı ve katmanlar | `pytest -m baseline` 8 passed bit düzeyinde; dokunulan `fem` modüllerinin test dosyaları, mimari ve API yüzeyi testleri geçer |
