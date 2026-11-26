@@ -39,3 +39,12 @@ Komut: `python -m pytest tests/toporlogy/test_homogenization.py -q -p no:randoml
 
 Kapsam dışı (sonraki dilim): SUBC (çekiş sınır koşulu), RVE boyut/ağ duyarlılığı çalışması, eleman başına D,
 etkin özellik hedefli tasarım örneği (ör. negatif Poisson), lattice/dehomojenleştirme.
+
+## Ek ön kayıt: RVE boyutu ve ağ duyarlılığı (H10–H11)
+
+Ön kayıt 2026-11-26 04:55 +0300, bu iki kontrolün ilk koşusundan önce.
+
+| # | Kontrol | Eşik |
+|:---|:---|:---|
+| H10 | Periyodik hücreyi k × k kopyalamak (k = 2, 3; rastgele tasarım, 2-B) C_eff'i değiştirmez | ≤ 1e-11 göreli |
+| H11 | Kare delikli hücre (delik kenarı hücrenin yarısı, ızgaraya hizalı), n = 8, 16, 32, 64: C11 dizisi monoton, son iki farkın oranından gözlenen mertebe; Richardson değeri raporlanır | gözlenen mertebe ∈ [0,5; 2,5] (köşeli delik: tekillik nedeniyle 2'den düşük beklenir) ve son göreli değişim ≤ %2 |
