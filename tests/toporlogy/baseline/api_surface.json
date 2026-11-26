@@ -4775,6 +4775,16 @@
    "class": "MultiplierUpdate"
   }
  },
+ "toporlogy.optimization.mode_tracking": {
+  "Tracking": {
+   "attrs": [],
+   "class": "Tracking"
+  },
+  "clusters": "clusters(lam,cluster_tol)",
+  "mac": "mac(Phi,Psi,M)",
+  "subspace_angle": "subspace_angle(A,B,M)",
+  "track_modes": "track_modes(Phi_old,Phi_new,M,lam_old,cluster_tol)"
+ },
  "toporlogy.optimization.nonlinear": {
   "EndCompliance": {
    "attrs": [

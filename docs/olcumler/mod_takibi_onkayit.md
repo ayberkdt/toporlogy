@@ -16,3 +16,10 @@ arasındaki en büyük ana açı). İşaret, eşleşen modun MAC işaretine gör
 | MT4 | Gerçek modal örnek (kare kesitli konsol, `fem.modal`): iki yakın tasarım arasında ilk 6 mod takip edilir; ikili özdeğer kümesi tanınır | küme {1,2} ve {3,4} (ya da kayıtta ölçülen), alt uzay açısı ≤ 0,05 rad |
 | MT5 | Negatif kontrol: ilgisiz (rastgele) modlarla MAC köşegeni küçük | max MAC < 0,5 |
 | MT6 | Yanlış şekiller ve M pozitif tanımlı değil | açık `ValueError` |
+
+## Sonuç (2026-11-26, ilk koşu)
+
+`python -m pytest tests/toporlogy/test_mode_tracking.py -q -p no:randomly -s` → 6 passed. MT1–MT6 PASS.
+MT4 (10 × 2 × 2 H8 konsol, E'ye %2 rastgele değişim): özdeğerler 4.5614e-4 (×2), 9.5095e-3, 1.3749e-2 (×2),
+2.5274e-2; kümeler {0, 1} ve {3, 4} (sıfırdan sayılı: iki eğilme çifti, arada burulma), alt uzay açıları
+2.4e-4 … 1.3e-3 rad (≤ 0,05).
