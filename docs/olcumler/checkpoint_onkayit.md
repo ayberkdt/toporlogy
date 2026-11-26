@@ -37,3 +37,13 @@ bir eşik değişikliği değil, ölçülemez bir sütunun ayrılmasıdır; kay�
 Kapsam dışı: fiziğin kendi durumu (ör. nonlineer enerji interpolasyonunun uyarlamalı kesmesi, malzeme geçmişi)
 checkpoint'e yazılmaz; böyle bir fizikle sürdürülen koşu bit düzeyinde aynı olmayabilir (sınanmadı). YAML/CLI
 bağlantısı (`run.checkpoint_every`) yapılmadı.
+
+## Ek ön kayıt: YAML ve CLI (CK6–CK7)
+
+Ön kayıt 2026-11-26 08:26 +0300, kod yazılmadan önce. `run.checkpoint_every: k` (varsayılan 0 = yok) koşu klasörüne
+`checkpoint.ckpt` yazar; `python -m toporlogy run CONFIG --out DIR --resume` bitmemiş bir koşuyu oradan sürdürür.
+
+| # | Kontrol | Eşik |
+|:---|:---|:---|
+| CK6 | CLI: checkpoint_every 1 ile kesilen (5. iterasyonda) koşu `--resume` ile bitirilir; `result.npz` x'i kesintisiz CLI koşusununkiyle | bit düzeyinde aynı |
+| CK7 | `--resume` checkpoint olmayan klasörde | çıkış 2, açık mesaj |
