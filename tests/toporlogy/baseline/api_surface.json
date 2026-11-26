@@ -4107,6 +4107,27 @@
    "class": "StepRecord"
   }
  },
+ "toporlogy.fem.thermoelastic": {
+  "GridSPD": {
+   "attrs": [
+    "matrix",
+    "solve"
+   ],
+   "class": "GridSPD"
+  },
+  "ThermoElastic": {
+   "attrs": [
+    "displacement",
+    "element_stress",
+    "temperature",
+    "thermal_load"
+   ],
+   "class": "ThermoElastic"
+  },
+  "alpha_voigt": "alpha_voigt(alpha,dim)",
+  "thermal_beta": "thermal_beta(alpha,dim,nu,D,plane,C3)",
+  "thermal_load_matrix": "thermal_load_matrix(dim,beta,h,thickness)"
+ },
  "toporlogy.geometry": {
   "Ball": {
    "attrs": [

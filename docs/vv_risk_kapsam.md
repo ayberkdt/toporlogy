@@ -7,10 +7,10 @@ Kaynak: `tests/toporlogy/_vv_layers.py` (dosya → katman sınıflaması elle, d
 | U unit / property | 8/106 | 3/30 | — | 6/69 | 5/55 | 3/43 | 10/106 | 2/30 | 2/19 | 2/14 | 4/44 | — |
 | MP material point | 10/104 | — | — | 6/67 | 8/84 | — | 8/73 | 3/32 | 6/63 | 1/13 | 4/55 | — |
 | EL element patch / quadrature | 5/48 | — | — | 1/10 | 8/77 | 1/14 | 4/52 | 1/14 | 1/17 | — | 2/20 | — |
-| AS assembly / BC / reactions | 1/23 | 1/23 | 5/62 | — | 4/39 | 5/53 | 1/23 | — | — | — | — | — |
-| AN analytical / MMS | 6/63 | — | — | 3/35 | 13/130 | — | 10/111 | 3/41 | 3/41 | 1/13 | 2/20 | — |
+| AS assembly / BC / reactions | 2/32 | 1/23 | 5/62 | — | 5/48 | 5/53 | 1/23 | — | — | — | — | — |
+| AN analytical / MMS | 7/72 | — | — | 3/35 | 14/139 | — | 10/111 | 3/41 | 3/41 | 1/13 | 2/20 | — |
 | IS independent solver / implementation | 4/14 | — | — | — | 7/53 | 1/12 | 2/15 | — | 1/14 | — | — | — |
-| OG optimization / KKT / gradient | 7/82 | — | — | 5/56 | 11/123 | 4/48 | 18/156 | 13/137 | 6/70 | 2/30 | 2/30 | — |
+| OG optimization / KKT / gradient | 8/91 | — | — | 5/56 | 12/132 | 4/48 | 18/156 | 13/137 | 6/70 | 2/30 | 2/30 | — |
 | E2E end-to-end geometry | 2/38 | 5/39 | — | 2/13 | 2/38 | — | 7/61 | 1/21 | 4/38 | 1/10 | 10/67 | — |
 | IC integration / compatibility | 4/18 | 2/34 | — | 3/31 | 4/25 | — | 5/50 | 2/23 | 13/120 | 8/81 | 1/8 | 1/11 |
 | PF performance | — | — | 1/11 | — | 2/23 | 2/23 | — | — | — | — | — | — |
@@ -115,6 +115,7 @@ Katman sınıflaması (dosya → katmanlar):
 - `test_t10_convergence.py`: AN, E2E
 - `test_taylor_remainder.py`: OG
 - `test_tensor.py`: U
+- `test_thermoelastic.py`: AN, AS, OG
 - `test_timoshenko_cantilever.py`: AN
 - `test_units.py`: U, IC
 - `test_vtu.py`: U, IC
