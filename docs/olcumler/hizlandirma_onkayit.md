@@ -103,3 +103,27 @@ torch (MKL) ile, iş parçacığı torch'un ayarı (H1 altında 1). Varsayılan 
 Montaj (bincount), kalıntı denetimi, filtre, duyarlılık (çok yük durumlu einsum), `Volume`/`Embed` tensör önbelleği,
 MMA alt problemi, modal ve burkulma fiziği: H1–H3'ten sonra yeniden profillenir; uygulanacak olanlar için bu dosyaya
 **yeni zaman damgalı bölüm** eklenir (ilk ölçümlerinden önce). Uygulanmayanlar sonuç dosyasında ölçümüyle yazılır.
+
+## 2. Ek kayıt: H4 (2026-11-26 03:47:27 +0300, değişiklik yazılmadan ve ölçülmeden önce)
+
+H1–H3 sonrası keşif [K] (yeni kod, tek iş parçacığı, `cantilever3d` / `mbb2d`, 300 çağrı ortalaması, aynı süreç):
+`Study.constraint_values` çağrısı 964 / 847 µs; bunun 493 / 471 µs'si zincir (Embed → yoğunluk filtresi → izdüşüm →
+Passive), 166 / 153 µs'si `Volume` (her çağrıda `torch.as_tensor(domain.active)` ve `domain.n_active` = `active.sum()`),
+81 / 75 µs'si interpolasyon (`design/interp.py`, bu oturumun dosyası değil). OC bisection'ı iterasyon başına ~35 çağrı:
+bu boyutlarda iterasyonun %15–20'si (`hizlandirma_sonrasi.json`, küçük satırlar).
+
+Ayrıca [K]: `torch.set_num_threads` yük altında pahalı (6'ya dönüş 0,16–0,27 s, ardından ilk paralel işlem 0,3–0,7 s;
+1'e geçiş ilk seferden sonra ≤ 2 ms). H1 her `Study.run` başına bu bedeli bir kez öder; sonuç dosyasında ayrıca
+raporlanır (hızlı paket süresi dahil).
+
+### H4 — `Volume` ve `Passive`'in çağrı başı maliyeti
+
+`Volume`: etkin eleman maskesi tensörü ve `n_active` alan nesnesi başına önbellekte (aynı işlem, aynı toplam sırası).
+`Passive`: `torch.where(keep, 1, torch.where(off, 0, x))` yerine `x.masked_fill(off, 0).masked_fill(keep, 1)`
+(yalnız seçme; değer ve gradyan aynı).
+
+| # | Kontrol | Eşik |
+|---|---|---|
+| H4a | `Study.constraint_values` çağrı süresi, eski ve yeni uygulama aynı süreçte sırayla (cantilever3d, mbb2d) | ≥ %25 azalır |
+| H4b | `Volume` ve `Passive` çıktısı ve gradyanı eski uygulamayla (rastgele alan, keep/void/dış elemanlı alan, iki alan) | bit düzeyinde aynı |
+| H4c | K0 ve zincir gradyan testleri (`test_gradients.py`) | geçer |
