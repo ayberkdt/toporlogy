@@ -20,3 +20,18 @@ max_iter 1500, uniform start.
 
 Run: `python -m pytest tests/toporlogy/test_viscoelastic_minmax_switch.py -q -p no:randomly -m "slow or not slow"`
 (slow). First result appended below.
+
+## First result (run 2026-11-27 02:54–02:58 +0300 by the clock)
+
+1 passed on the first run (VM1, VM2, VM3).
+
+| design | J_A = f(10 s)ᵀu(10 s) | J_B = f(100 s)ᵀu(100 s) | max | iterations (stop, KKT) |
+|---|---|---|---|---|
+| min–max | 3.6751e-5 | 3.6723e-5 | **3.6751e-5** | 39 (kkt, 9.6e-5) |
+| A only | 3.4514e-5 | 902.8 | 902.8 | 108 (kkt) |
+| B only | 2008.3 | 3.3709e-6 | 2008.3 | 40 (kkt) |
+
+VM1: the min–max worst case is 4e-8 of the best single-design worst case (≤ 0.95 required). VM2: |J_A − J_B|/max =
+7.5e-4 (≤ 0.02). VM3: every run KKT-stopped. A design optimised for one load phase is near-singular for the other
+(void-like load path: compliances 1e3 against 1e-5); the min–max design balances the two phases. This is the
+setting where the min–max formulation is necessary, unlike the single constant load of VR1/KS3.
