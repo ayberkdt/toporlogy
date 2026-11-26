@@ -298,15 +298,16 @@ def poisson_uniaxial(C: Any, load: int, transverse: int) -> Any:
     if i == j or not (0 <= i < nn and 0 <= j < nn):
         raise ValueError(f"load and transverse must be distinct normal components in 0..{nn - 1}, got {load}, "
                          f"{transverse}")
+    x: Any
     if T._is_torch(C):
         import torch
-        e = torch.zeros(nv, dtype=C.dtype, device=C.device)
-        e[i] = 1.0
-        x = torch.linalg.solve(C, e)
+        et = torch.zeros(nv, dtype=C.dtype, device=C.device)
+        et[i] = 1.0
+        x = torch.linalg.solve(C, et)
     else:
-        e = np.zeros(nv)
-        e[i] = 1.0
-        x = np.linalg.solve(np.asarray(C, float), e)
+        en = np.zeros(nv)
+        en[i] = 1.0
+        x = np.linalg.solve(np.asarray(C, float), en)
     return -x[j] / x[i]
 
 

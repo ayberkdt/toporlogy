@@ -1,0 +1,193 @@
+{
+ "schema_version": 1,
+ "head": "07bd589",
+ "branch": "foundations/round-3",
+ "dirty": "dirty",
+ "updated_at": "2026-11-27 01:39 +0300",
+ "environment": "Windows 11, Python 3.12.1, numpy 2.2.6, scipy 1.14.1, torch 2.5.1+cu121 (CUDA present, not exercised), mpmath 1.3.0, scikit-fem 12.0.2, meshio absent; 12 logical CPUs; 16.7 GB RAM, about 2-4 GB free; C: 5.6 GB free (temp files on D:)",
+ "last_verified_checkpoint": "f1ff694 (baseline marker 8 passed, collection 2584 tests; logs/collect_f1ff694.txt, logs/baseline_marker_f1ff694.txt)",
+ "current": "integration of the WP11-WP14 material slices",
+ "units": [
+  {
+   "id": "WP01-baseline",
+   "priority": "P0",
+   "depends_on": [],
+   "state": "VERIFIED_SCOPE",
+   "evidence": "logs/collect_f1ff694.txt, logs/baseline_marker_f1ff694.txt, logs/ruff_df2ca78.txt (pass), logs/mypy_df2ca78.txt (1 error, fixed)",
+   "next_action": "full fast suite at the integration checkpoint"
+  },
+  {
+   "id": "WP02-conventions",
+   "priority": "P0",
+   "depends_on": [
+    "WP01-baseline"
+   ],
+   "state": "IN_PROGRESS",
+   "evidence": "MATERIAL_CONTRACT.md",
+   "next_action": "MATHEMATICAL_CONVENTIONS.md"
+  },
+  {
+   "id": "P01-contract",
+   "priority": "P0",
+   "depends_on": [],
+   "state": "VERIFIED_SCOPE",
+   "evidence": "prereg/P01_contract.md CT1-CT8 pass (df2ca78)",
+   "next_action": "FE coupling under WP17"
+  },
+  {
+   "id": "E04-poisson",
+   "priority": "P0",
+   "depends_on": [],
+   "state": "VERIFIED_SCOPE",
+   "evidence": "prereg/E04_poisson.md PO1-PO6 pass; E04_poisson_migration.json (df2ca78)",
+   "next_action": "README label"
+  },
+  {
+   "id": "L-solver",
+   "priority": "P0",
+   "depends_on": [],
+   "state": "IN_PROGRESS",
+   "evidence": "prereg/L_solver.md: 17 passed, L2c FAILED (strict xfail)",
+   "next_action": "commit; SOLVER_CONTRACT.md"
+  },
+  {
+   "id": "P-properties",
+   "priority": "P0",
+   "depends_on": [
+    "P01-contract"
+   ],
+   "state": "VERIFIED_SCOPE",
+   "evidence": "prereg/P_properties.md PP1-PP17 pass (939d04e, merged 07bd589)",
+   "next_action": "material-card YAML schema (P05) not done"
+  },
+  {
+   "id": "V-viscoelastic",
+   "priority": "P0",
+   "depends_on": [
+    "P01-contract"
+   ],
+   "state": "IN_PROGRESS",
+   "evidence": null,
+   "next_action": "subagent branch"
+  },
+  {
+   "id": "C-creep",
+   "priority": "P0",
+   "depends_on": [
+    "P01-contract"
+   ],
+   "state": "IN_PROGRESS",
+   "evidence": null,
+   "next_action": "subagent branch"
+  },
+  {
+   "id": "R-rate",
+   "priority": "P0",
+   "depends_on": [
+    "P01-contract"
+   ],
+   "state": "IN_PROGRESS",
+   "evidence": null,
+   "next_action": "subagent branch"
+  },
+  {
+   "id": "T-spectral",
+   "priority": "P0",
+   "depends_on": [],
+   "state": "IN_PROGRESS",
+   "evidence": null,
+   "next_action": "subagent branch"
+  },
+  {
+   "id": "WP06-fem-kernel",
+   "priority": "P0",
+   "depends_on": [],
+   "state": "PLANNED",
+   "evidence": null,
+   "next_action": "F1 reference-element contract tests; F4 reproduce T4/T10 historical rates"
+  },
+  {
+   "id": "WP17-history-fem",
+   "priority": "P1",
+   "depends_on": [
+    "V-viscoelastic",
+    "P01-contract"
+   ],
+   "state": "PLANNED",
+   "evidence": null,
+   "next_action": "minimal grid/mesh history adapter with physical models (H1, H2)"
+  },
+  {
+   "id": "WP16-cure",
+   "priority": "P1/P2",
+   "depends_on": [
+    "P-properties"
+   ],
+   "state": "PLANNED",
+   "evidence": null,
+   "next_action": "material-point cure kinetics TS1-TS5"
+  },
+  {
+   "id": "WP15-thermoplastics",
+   "priority": "P1/P2",
+   "depends_on": [
+    "P-properties",
+    "V-viscoelastic"
+   ],
+   "state": "PLANNED",
+   "evidence": null,
+   "next_action": "Avrami TP3/TP4"
+  },
+  {
+   "id": "WP20-identification",
+   "priority": "P1/P2",
+   "depends_on": [
+    "V-viscoelastic",
+    "C-creep"
+   ],
+   "state": "PLANNED",
+   "evidence": null,
+   "next_action": "Prony and Norton synthetic fits D4-D6"
+  },
+  {
+   "id": "WP07-WP10, WP18, WP19",
+   "priority": "P1/P2",
+   "depends_on": [
+    "WP06-fem-kernel"
+   ],
+   "state": "DEFERRED",
+   "evidence": null,
+   "next_action": "after the P0 gates"
+  }
+ ],
+ "next": [
+  "merge the WP12/WP13/WP14/T subagent branches as they report; regenerate api_surface, catalog and ledger",
+  "WP06 F1/F4 reference-element and convergence checks",
+  "WP17 minimal history adapter"
+ ],
+ "failed": [
+  "L2c: SPD factorization path does not detect a symmetric indefinite matrix (solution residual-checked and correct)",
+  "historical (not re-run): T4 L2 rate 1.796, T10 energy rate 1.788, shell drilling DL3"
+ ],
+ "api_changes": [
+  "EffectivePoisson / YAML effective_poisson: `convention` required (uniaxial | stiffness_ratio); historical value of the auxetic cell is nu21",
+  "MaterialRequest.step (TimeStep); drive_material_point(times, temperatures, t0, temperature0, store, strain0); NonlinearElasticity refuses physical=True models",
+  "Factorization.solve_transpose; solvers.diagnostics (new)",
+  "core.properties (new)"
+ ],
+ "runs": [
+  "collect-only f1ff694: 2584 collected, exit 0",
+  "pytest -m baseline f1ff694: 8 passed, exit 0",
+  "ruff check src tests df2ca78: exit 0",
+  "mypy df2ca78: exit 1 (1 error in poisson_uniaxial, fixed)",
+  "test_material_contract.py: 8 passed",
+  "test_poisson_convention + homogenization + start_design + auxetic: 41 passed, 1 xfailed",
+  "test_solver_diagnostics.py: 17 passed, 1 failed (L2c, now strict xfail)"
+ ],
+ "blockers": [
+  "CI logs (R11): no gh CLI on this machine",
+  "shell drilling reference (R08): memory",
+  "real material data (R12): none licensed",
+  "push/PR: needs the user's explicit approval"
+ ]
+}

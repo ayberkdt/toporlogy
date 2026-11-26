@@ -1,0 +1,3 @@
+src\toporlogy\core\linear_elastic.py:307: error: Incompatible types in assignment (expression has type "ndarray[tuple[int], dtype[float64]]", variable has type "Tensor")  [assignment]
+Found 1 error in 1 file (checked 159 source files)
+exit=1

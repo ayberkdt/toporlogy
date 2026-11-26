@@ -42,3 +42,15 @@ checked_residual) are not changed.
 | L5 | A = D S D, S SPD well conditioned (n = 30, seed 15), D = diag(logspace(−6, 6, n)): x₀ from a float32 solve (`numpy.linalg.solve` in float32) then `refine` with a float64 dense LU: the final ω ≤ 1e-14; the history is non-increasing until the stop, the stop reason is one of converged / stagnated / max_iter, and the iteration count ≤ max_iter | — | as stated |
 
 Run: `python -m pytest tests/toporlogy/test_solver_diagnostics.py -q -p no:randomly`. First result appended below.
+
+## First result (run 2026-11-27 01:30 +0300 by the clock, SHA fafb5af + module)
+
+`test_solver_diagnostics.py`: 17 passed, 1 failed on the first run.
+
+* L1a, L1b, L1n, L2a, L2b, L2d, L3, L4a, L4b, L4c, L5: PASS.
+* **L2c FAILED**: `Factorization(A, "spd")` (direct-splu) solved the symmetric indefinite 6×6 block matrix without
+  an error; relative residual 9.3e-17, solution correct to 2.2e-16. The SPD path does not detect indefiniteness.
+  Kept as a strict xfail with this value; ledger entry `ledger_additions/L_solver.json` (risk low: the answer is
+  residual-checked and correct; the structural claim is unverified). Follow-up: opt-in SPD verification.
+
+Regression: every test file that uses `Factorization` plus this file: 121 passed, 4 xfailed (historical), exit 0.

@@ -71,6 +71,19 @@ class Factorization:
             checked_residual(self._upper, X, Bm, self._norm1)
         return X.reshape(B.shape)
 
+    def solve_transpose(self, B: np.ndarray) -> np.ndarray:
+        """X with Aᵀ X = B (the adjoint solve), B (n,) or (n, k). For the symmetric structures this is :meth:`solve`;
+        for ``"general"`` the transposed SuperLU solve of the same factors, finiteness-checked."""
+        if self.structure != "general":
+            return self.solve(B)
+        B = np.asarray(B, float)
+        Bm = B.reshape(self.n, -1)
+        X = np.asarray(self.solver.solve(np.ascontiguousarray(Bm), trans="T")).reshape(Bm.shape)
+        self.n_solves += 1
+        if not np.isfinite(X).all():
+            raise SolveResidualError("the solution is not finite")
+        return X.reshape(B.shape)
+
 
 def jacobi_pcg(A: sp.spmatrix, b: np.ndarray, structure: str = "spd", rtol: float = 1e-10,
         maxiter: int | None = None) -> tuple[np.ndarray, int, bool]:

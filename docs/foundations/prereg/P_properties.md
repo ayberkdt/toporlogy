@@ -68,3 +68,9 @@ Limitations: synthetic numbers only; the 1e-16 agreements for linear E(T) are ex
 linear data). The admissibility scan at construction is a 257-point sample; PP17 shows a narrow dip between samples
 passes the constructor and is caught at evaluation. Only tests/toporlogy/test_properties.py was run. Units are
 documented strings; the dimensional unit checker was not extended.
+
+## Integrator note (merge, 2026-11-27)
+
+The timestamp written inside this preregistration ("01:27 +0300") is later than the commit that holds it
+(2bdf6bf, committer time 01:23 +0300). The commit time is the evidence of the preregistration order: 2bdf6bf
+(prereg) precedes 939d04e (code, tests, first results, 01:35). The text time is not reliable.
