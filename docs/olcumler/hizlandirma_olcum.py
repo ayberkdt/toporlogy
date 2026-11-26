@@ -76,13 +76,16 @@ def main() -> int:
     ap.add_argument("base", help="folder holding the base code's src/")
     ap.add_argument("out")
     ap.add_argument("--rows", nargs="*", default=list(ROWS))
+    ap.add_argument("--new-first", action="store_true", help="run the new code before the base code in every row "
+                    "(a second pass in the other order shows how much the order and the load drift matter)")
     a = ap.parse_args()
     out = Path(a.out)
     for group in a.rows:
         for tag, ex, sets, iters, rep, new_only in ROWS[group]:
-            if not new_only:
-                run("base", Path(a.base) / "src", out, tag, ex, sets, iters, rep)
-            run("new", REPO / "src", out, tag, ex, sets, iters, rep)
+            order = ["new"] if new_only else (["new", "base"] if a.new_first else ["base", "new"])
+            for code in order:
+                src = REPO / "src" if code == "new" else Path(a.base) / "src"
+                run(code, src, out, tag, ex, sets, iters, rep)
     return 0
 
 
