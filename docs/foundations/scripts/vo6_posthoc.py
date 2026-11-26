@@ -1,10 +1,12 @@
 """POST HOC study of VO6 (docs/foundations/prereg/VO_viscoelastic_topology.md): 40 vs 120 MMA iterations and a warm
 start from the instantaneous design. Writes docs/foundations/VO6_posthoc.json. About 6 min."""
-import sys, json
+import sys
+import json
 from pathlib import Path
 ROOT = Path(__file__).resolve().parents[3]
 sys.path[:0] = [str(ROOT / "src"), str(ROOT / "tests" / "toporlogy")]
-import numpy as np, torch
+import numpy as np
+import torch
 import test_viscoelastic_topology as T
 from toporlogy.fem.mesh.mesh import rectangle
 from toporlogy.optimization.viscoelastic_topology import ViscoelasticStructure, optimize_viscoelastic
