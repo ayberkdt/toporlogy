@@ -127,3 +127,14 @@ raporlanır (hızlı paket süresi dahil).
 | H4a | `Study.constraint_values` çağrı süresi, eski ve yeni uygulama aynı süreçte sırayla (cantilever3d, mbb2d) | ≥ %25 azalır |
 | H4b | `Volume` ve `Passive` çıktısı ve gradyanı eski uygulamayla (rastgele alan, keep/void/dış elemanlı alan, iki alan) | bit düzeyinde aynı |
 | H4c | K0 ve zincir gradyan testleri (`test_gradients.py`) | geçer |
+
+## Ek ön kayıt: CLI süreç başında torch iş parçacığı (TT1–TT2)
+
+Ön kayıt 2026-11-26 09:15 +0300, kod yazılmadan önce. `python -m toporlogy run` (tek koşu ve tarama) süreç başında
+`torch.set_num_threads(n)` çağırır; n = `TOPORLOGY_TORCH_THREADS` ortam değişkeni, yoksa 1 (`Study.run`'ın
+varsayılanı). Böylece her `Study.run` içindeki geçiş (ölçülen 0,2–0,7 s/koşu, yük altında) no-op olur.
+
+| # | Kontrol | Eşik |
+|:---|:---|:---|
+| TT1 | `pytest -m baseline` (örnekler CLI'dan koşuyor) | bit düzeyinde aynı |
+| TT2 | CLI koşusundan sonra süreçte `torch.get_num_threads()` = 1; ortam değişkeni 3 iken 3 | aynen |
