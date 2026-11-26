@@ -1,0 +1,12 @@
+[
+  {
+    "nodeid": "tests/toporlogy/test_viscoplastic.py::test_R3a_time_convergence_against_ode[0.001]",
+    "kind": "pre-registered check failed",
+    "model_backend": "numpy",
+    "reason": "Preregistered time-convergence hypothesis (error falls by a factor >= 1.5 per doubling of the increments, err(200) <= err(25)/5) does not apply at the rate 1e-3 1/s: end-stress errors against the ODE are 1.9e-8, 3.7e-8, 3.7e-8, 1.5e-8 Pa for n = 25, 50, 100, 200 (1 ulp of 2.2e7 Pa), because after the yield transient the response is on the quasi-static steady state, which backward Euler integrates exactly. The production code agrees with the ODE to roundoff; the hypothesis is wrong for this rate. Rates 0.1 and 1 1/s pass the same check.",
+    "risk": "low",
+    "resolution": "Kept as xfail(strict) with the measured values; a post hoc, clearly labelled check asserts agreement with the ODE to 1e-12 relative at this rate.",
+    "record": "docs/foundations/prereg/R_rate.md",
+    "slow": false
+  }
+]

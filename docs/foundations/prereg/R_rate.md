@@ -78,3 +78,32 @@ relative), and d ln sinh(x)/d ln x = x coth x ≈ x, so the relative error of an
 exactly zero, the plain ratio would be 0/0).
 
 Run: `python -m pytest tests/toporlogy/test_viscoplastic.py -q -p no:randomly`. First results are appended below.
+
+## First result (2026-11-27, 45 passed, 1 xfailed)
+
+| ID | Result | Measured |
+|---|---|---|
+| R1a | PASS | max error / σ_y 3.7e-16 |
+| R1b (P2) | PASS | yield stress rel error 4.4e-16 for E and 2E; slope ratio 2 within 2e-12; E-scaled-yield control detected |
+| R1c, R1d, R1e | PASS | closed forms ≤ 1e-9 σ_y; legacy cross-check ≤ 1e-10 |
+| R2a | PASS | Δp rel error 0 (m = 1), 8.3e-16 (m = 2), 2.9e-16 (m = 0.5) |
+| R2b | PASS | FD tangent error 9.8e-12 (m = 1), 4.0e-11 (m = 2), 2.9e-12 (m = 0.5); elastic-tangent control 4.5e-2, 9.8e-2, 2.3e-2 |
+| R2c | PASS | elastic below yield, dt = 0 no flow, missing step raises ValueError |
+| R3a, rate 0.1 | PASS | end-stress error 0.61, 0.020, 1.5e-3, 2.4e-4 Pa for n = 25, 50, 100, 200; Richardson 3.9e-11 |
+| R3a, rate 1 | PASS | error 1.35e4, 5.47e3, 2.43e3, 1.14e3 Pa (ratios 2.5, 2.2, 2.1); Richardson 4.7e-6 |
+| R3a, rate 1e-3 | **FAIL, xfail(strict)** | errors 1.9e-8, 3.7e-8, 3.7e-8, 1.5e-8 Pa: 1 ulp of 2.2e7 Pa, no first-order series. The hypothesis, not the production code, is wrong: after the yield transient the response is on the quasi-static steady state (constant overstress, p linear in t) where backward Euler is exact. Ledger entry `ledger_additions/R_rate.json`; a post hoc check (not preregistered) asserts agreement with the ODE to 1e-12 relative |
+| R3b, R3c | PASS | ODE end stresses 2.22e7 < 2.48e7 < 3.12e7 Pa; PhysicalJ2 rate independent to 1e-12; τ0 limits within thresholds |
+| R4a | PASS | overstress 7.9e6 Pa at hold start, 5.45 Pa at 1e4 s (continuous estimate 4.8 Pa); end stress 2.5e-7 rel to equilibrium |
+| R4b | PASS | no flow below yield |
+| R5a, R5b, R5c | PASS | round trip 1.7e-16; value error 0.044 of the amended threshold; extreme arguments without warnings |
+| R6a | PASS | closed-form error / b0 ≤ 1.2e-15 (tension, compression, associated and non-associated, h = 0 and 50 MPa) |
+| R6b | PASS | flipped-sign tension strength is 1.5 times the production plateau |
+| R6c | PASS | apex and hydrostatic closed forms ≤ 1e-12 |
+| R6d | PASS | cone FD error ≤ 9.5e-11 (associated), ≤ 7.8e-11 (non-associated); asymmetry 1.5e-16 (associated), 0.22 (non-associated); apex FD ≤ 1e-6 |
+| R6e, R6f, R6g | PASS | refusals; dissipation ≥ −1e-6 J/m³; inadmissible-region closed form matches |
+| R7a, R7b, R7d | PASS | dissipation ≥ −1e-6 J/m³; bitwise rollback and restart; evaluate packing and plane strain |
+| R7c | PASS | energy-balance discrepancy / W: 1.3e-3, 5.7e-4, 2.8e-4 for n = 100, 200, 400 |
+
+Set-up fix after the first run (no threshold touched): R6f used a strain (STEP1) that lies on the apex branch for the
+non-associated model, while its plastic-volume check needs the cone branch; it now uses a strain with a small trace
+and asserts the branch.
