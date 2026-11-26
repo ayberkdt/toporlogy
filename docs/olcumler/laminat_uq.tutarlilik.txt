@@ -1,0 +1,5 @@
+set tutarlılığı (3 figür): 0 HATA · 2 UYARI · 0 BİLGİ · SET TUTARLI
+  [UYARI] isaret-boyu        isaret boyu figürden figüre değişiyor — 4.49 pt: laminat_uq_yakinsama · 7.97 pt: laminat_uq_pareto · 5.92 pt: laminat_uq_rom
+          → aynı rol aynı kalınlık; vurgu/bağlam farkı figür içinde kalsın  [06 T6: APSStyleGuide §II.S.1 ('consistent line widths'); tolerans datawiz-secimi]
+  [UYARI] cizim-alani-hizasi web-640: çizim alanının sol kenarı figürden figüre 4.1 pt oynuyor — laminat_uq_yakinsama 15.8 mm, laminat_uq_pareto 14.5 mm, laminat_uq_rom 16.0 mm
+          → alt alta duran figürlerde eksenler aynı hizada olsun: S.kenar(*S.kenar_oner()) ile sabit kenar, sonra figürleri yeniden üret  [06 T15: Wilke2019Ch21 §21.2 (paneller hizalı) — figürler arasına genişletme datawiz-secimi]

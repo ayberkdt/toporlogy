@@ -2,7 +2,7 @@
 
 `tests/toporlogy/test_catalog_ledger.py` bu kütüğü toplanan testlerle karşılaştırır: her xfail strict (XPASS koşuyu kırar), kütük toplanan strict xfail listesiyle ve test kaynaklarındaki atlama noktalarıyla birebir aynı. Beklenen başarısızlık PASS sayılmaz; atlanan bir arka ucun testi NOT VERIFIED'dır. Yeniden üretim: `python tests/toporlogy/test_catalog_ledger.py --write`.
 
-Toplam 25 strict xfail (7 tanesi yavaş pakette), 15 atlama noktası.
+Toplam 29 strict xfail (8 tanesi yavaş pakette), 15 atlama noktası.
 
 Risk düzeyleri: **low** ölçüt ya da kontrolün kendisi; kod sonucu başka testle doğrulanmış; **medium** açıklanmamış sayısal fark ya da referans yeniden üretilemiyor; **high** kullanıcıya görünen sessiz kabul (yanlış sonuç üretebilir).
 
@@ -35,6 +35,10 @@ Risk düzeyleri: **low** ölçüt ya da kontrolün kendisi; kod sonucu başka te
 | `test_units.py::test_u8_compliance_in_mm_and_n_scales_exactly` | pre-registered check failed | mbb2d, Elasticity Q4 direct (CPU) | mm/N uyum oranı beklenen 1000²/210000'den 3,75e-12 göreli sapıyor, eşik 1e-12; girdiler bit düzeyinde doğru ölçekli (post hoc) | low | koşul sayısına ölçekli eşikle yeni ön kayıt | docs/olcumler/birimler_onkayit.md | — |
 | `test_homogenization.py::test_h7_taylor_remainder_order` | pre-registered check failed | fem.homogenization, periodic Q4 (CPU) | Taylor kalanı mertebesi ilk adım çiftinde 2,25 > 2,2 (sonra 2,10, 2,05); gradyan merkezi farkla ≤ 1e-6 | low | yok (ölçütün adım seçimi); post hoc asimptotik aralıkta 2,05–2,01 | docs/olcumler/homojenlestirme_onkayit.md | — |
 | `test_implicit.py::test_i3_taylor_remainder_order` | pre-registered check failed | optimization.implicit, dense autograd Jacobian (CPU) | Taylor kalanı mertebesi 2,91–3,14: bu yönde vᵀHv = 0,006, üçüncü türev −16,4; kübik terim baskın. Gradyan merkezi farkla geçiyor | low | yok (ölçütün yön/adım seçimi); post hoc küçük adımlarda 1,92–1,98 | docs/olcumler/ortuk_turev_onkayit.md | — |
+| `test_uq.py::test_u10c_robust_design_beats_the_nominal_one_on_held_out_scenarios` | pre-registered check failed | Study + Elasticity Q4 + ScenarioCompliance (CPU) | gürbüz tasarım ayrılmış senaryolarda nominalden biraz kötü (ortalama+3std 102,23 / 101,80); yerel minimum, bu problemde kazanç alanı yok | low | gürbüz tasarım için ayrışan bir problem ve başlangıç stratejisiyle yeni ön kayıt | docs/olcumler/laminat_uq.md | evet |
+| `test_pareto.py::test_p4c_epsilon_constraint_reaches_the_weighted_point` | pre-registered check failed | Study + MMA, iki yük durumu, ε-kısıt (CPU) | varsayılan başlangıçtan ε-kısıt başka yerel minimuma yakınsıyor (c1 123,77 / 111,50) | low | ε-kısıt için sürekleme / komşu noktadan sıcak başlangıç, yeni ön kayıtla | docs/olcumler/laminat_uq.md | — |
+| `test_rom.py::test_r5b_compliance_gap_equals_the_energy_error` | pre-registered check failed | PODModel, Elasticity Q4 (CPU, doğrudan) | s − s_r iki yakın sayının farkı; e²'ye göre 1e-6 yuvarlamanın altında (en çok 2,3e-5; s'ye göre 1,3e-12) | low | toleransı uyum büyüklüğüne göre tanımlayan yeni ön kayıt | docs/olcumler/laminat_uq.md | — |
+| `test_rom.py::test_r6_a_basis_for_one_load_fails_on_another` | pre-registered check failed | PODModel, eğitim dışı yük (CPU) | ön kayıtlı hata düzeyi (>= 0,5) tutmadı; ölçülen 0,293, sınır yine de uyarıyor | low | başarısızlık düzeyi için gerekçeli yeni ön kayıt | docs/olcumler/laminat_uq.md | — |
 
 ## 2. Atlama noktaları
 

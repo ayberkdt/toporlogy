@@ -2434,6 +2434,56 @@
    "class": "Domain"
   }
  },
+ "toporlogy.core.laminate": {
+  "Laminate": {
+   "attrs": [
+    "A",
+    "B",
+    "D",
+    "Q_plies",
+    "Qbar",
+    "abd",
+    "alpha_bar",
+    "angles",
+    "classification",
+    "from_angles",
+    "n_plies",
+    "ply_stresses",
+    "response",
+    "stresses_at",
+    "thermal_resultants",
+    "thickness",
+    "thicknesses",
+    "z"
+   ],
+   "class": "Laminate"
+  },
+  "LaminateState": {
+   "attrs": [
+    "dT0",
+    "dT1"
+   ],
+   "class": "LaminateState"
+  },
+  "Ply": {
+   "attrs": [
+    "alpha"
+   ],
+   "class": "Ply"
+  },
+  "PlyStresses": {
+   "attrs": [],
+   "class": "PlyStresses"
+  },
+  "abd_design_derivatives": "abd_design_derivatives(laminate)",
+  "abd_matrix": "abd_matrix(Qbar,thicknesses)",
+  "complementary_energy": "complementary_energy(Q,angles_deg,thicknesses,resultants)",
+  "in_plane_rotation": "in_plane_rotation(angles_deg)",
+  "ply_interfaces": "ply_interfaces(thicknesses)",
+  "ply_reduced_stiffness": "ply_reduced_stiffness(material)",
+  "transformed_reduced_stiffness": "transformed_reduced_stiffness(Q,angles_deg)",
+  "transformed_thermal_expansion": "transformed_thermal_expansion(alpha,angles_deg)"
+ },
  "toporlogy.core.linear_elastic": {
   "ElasticTensor": {
    "attrs": [
@@ -4655,6 +4705,31 @@
   "min_frequency_constraint": "min_frequency_constraint(f_min,n_modes,rho,E_unit,rho_unit,length_unit)",
   "omega_squared_factor": "omega_squared_factor(E_unit,rho_unit,length_unit)"
  },
+ "toporlogy.optimization.identification": {
+  "DATA_KINDS": "<tuple>",
+  "GaussianPrior": {
+   "attrs": [],
+   "class": "GaussianPrior"
+  },
+  "Identification": {
+   "attrs": [
+    "identifiable"
+   ],
+   "class": "Identification"
+  },
+  "Observations": {
+   "attrs": [
+    "description"
+   ],
+   "class": "Observations"
+  },
+  "RANK_RTOL": "<float>",
+  "central_jacobian": "central_jacobian(model,theta,scale,rel_step)",
+  "check_jacobian": "check_jacobian(model,jacobian,theta,scale)",
+  "identify": "identify(model,observations,theta0,bounds,names,jacobian,scale,prior,rank_rtol)",
+  "multi_start_identify": "multi_start_identify(model,observations,bounds,names,n_starts,seed,agree_rtol,kwargs)",
+  "weighted_rms": "weighted_rms(model,observations,theta)"
+ },
  "toporlogy.optimization.implicit": {
   "ImplicitSolveError": {
    "attrs": [
@@ -4694,6 +4769,26 @@
    ],
    "class": "SingularJacobian"
   }
+ },
+ "toporlogy.optimization.laminate_failure": {
+  "FailureMode": {
+   "attrs": [
+    "active",
+    "component",
+    "sign",
+    "value"
+   ],
+   "class": "FailureMode"
+  },
+  "FirstPlyFailure": {
+   "attrs": [],
+   "class": "FirstPlyFailure"
+  },
+  "PLY_CRITERIA": "<tuple>",
+  "failure_modes": "failure_modes(criterion,strength,alpha)",
+  "first_ply_failure": "first_ply_failure(laminate,strength,criterion,N,M,dT0,dT1,alpha)",
+  "load_factor_to_failure": "load_factor_to_failure(stress_mechanical,stress_residual,modes)",
+  "ply_failure_index": "ply_failure_index(stress_material,criterion,strength,alpha)"
  },
  "toporlogy.optimization.lengthscale": {
   "GreyLevel": {
@@ -4796,6 +4891,26 @@
    ],
    "class": "EndCompliance"
   }
+ },
+ "toporlogy.optimization.pareto": {
+  "CaseCompliance": {
+   "attrs": [
+    "name",
+    "needs"
+   ],
+   "class": "CaseCompliance"
+  },
+  "ParetoPoint": {
+   "attrs": [
+    "message"
+   ],
+   "class": "ParetoPoint"
+  },
+  "dominates": "dominates(a,b,tol)",
+  "epsilon_constraint": "epsilon_constraint(objectives,primary,epsilon,bounds,n_starts,seed,tol)",
+  "nondominated": "nondominated(F,tol)",
+  "normalise_weights": "normalise_weights(weights)",
+  "weighted_sum": "weighted_sum(objectives,weights,bounds,ideal,scale,n_starts,seed)"
  },
  "toporlogy.optimization.responses": {
   "Compliance": {
@@ -4989,6 +5104,35 @@
   "project": "project(xt,beta,eta)",
   "robust_chain_settings": "robust_chain_settings(min_solid,min_void,h,dim,eta_max,kernel)"
  },
+ "toporlogy.optimization.rom": {
+  "AffineSystem": {
+   "attrs": [
+    "from_elasticity",
+    "n",
+    "q",
+    "snapshots",
+    "solve",
+    "stiffness"
+   ],
+   "class": "AffineSystem"
+  },
+  "PODModel": {
+   "attrs": [
+    "rank",
+    "reduced_coefficients",
+    "solve"
+   ],
+   "class": "PODModel"
+  },
+  "ReducedSolution": {
+   "attrs": [
+    "approximate"
+   ],
+   "class": "ReducedSolution"
+  },
+  "pod_basis": "pod_basis(snapshots,rank)",
+  "projection_error": "projection_error(snapshots,V)"
+ },
  "toporlogy.optimization.strength": {
   "CRITERIA": "<tuple>",
   "Criterion": {
@@ -5142,6 +5286,97 @@
    ],
    "class": "Study"
   }
+ },
+ "toporlogy.optimization.uq": {
+  "Estimate": {
+   "attrs": [
+    "reliable",
+    "standard_error"
+   ],
+   "class": "Estimate"
+  },
+  "FailedSamplesError": {
+   "attrs": [
+    "add_note",
+    "args",
+    "with_traceback"
+   ],
+   "class": "FailedSamplesError"
+  },
+  "InadmissibleSampleError": {
+   "attrs": [
+    "add_note",
+    "args",
+    "with_traceback"
+   ],
+   "class": "InadmissibleSampleError"
+  },
+  "MIN_TAIL_SAMPLES": "<int>",
+  "Parameter": {
+   "attrs": [
+    "admissible",
+    "fixed",
+    "lognormal",
+    "metadata",
+    "normal",
+    "ppf",
+    "source",
+    "uniform",
+    "unit"
+   ],
+   "class": "Parameter"
+  },
+  "ParameterSpace": {
+   "attrs": [
+    "check",
+    "correlation",
+    "dim",
+    "joint_check",
+    "names",
+    "nominal",
+    "sample",
+    "transform"
+   ],
+   "class": "ParameterSpace"
+  },
+  "Propagation": {
+   "attrs": [
+    "n_failed",
+    "sample_values"
+   ],
+   "class": "Propagation"
+  },
+  "RISK_MEASURES": "<tuple>",
+  "SAMPLING_METHODS": "<tuple>",
+  "SampleSet": {
+   "attrs": [
+    "row"
+   ],
+   "class": "SampleSet"
+  },
+  "ScenarioCompliance": {
+   "attrs": [
+    "name",
+    "needs",
+    "scenario_values"
+   ],
+   "class": "ScenarioCompliance"
+  },
+  "SobolIndices": {
+   "attrs": [],
+   "class": "SobolIndices"
+  },
+  "cvar_estimate": "cvar_estimate(y,alpha,level)",
+  "exceedance_probability": "exceedance_probability(y,threshold,level)",
+  "load_scenarios": "load_scenarios(basis,coefficients)",
+  "mean_estimate": "mean_estimate(y,level)",
+  "parameter_table": "parameter_table(space)",
+  "propagate": "propagate(model,samples,map_fn)",
+  "quantile_estimate": "quantile_estimate(y,alpha,level)",
+  "replicated_mean": "replicated_mean(model,space,n,method,seeds,level)",
+  "risk_measure": "risk_measure(values,measure,k,alpha)",
+  "sobol_indices": "sobol_indices(model,space,n_base,seed)",
+  "variance_estimate": "variance_estimate(y,level)"
  },
  "toporlogy.optimizers": {
   "BetaContinuation": {

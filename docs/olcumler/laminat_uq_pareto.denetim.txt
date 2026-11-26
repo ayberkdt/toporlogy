@@ -1,0 +1,9 @@
+figür denetimi: 0 HATA · 0 UYARI · 4 BİLGİ · TESLİM EDİLEBİLİR
+  [BİLGİ] birim              eksen 0: x etiketi birim içermiyor: 'Birinci amaç f₁'
+          → birimsizse sorun yok; değilse '(birim)' ekle  [Wilke2019 W6]
+  [BİLGİ] birim              eksen 0: y etiketi birim içermiyor: 'İkinci amaç f₂'
+          → birimsizse sorun yok; değilse '(birim)' ekle  [Wilke2019 W6]
+  [BİLGİ] birim              eksen 1: x etiketi birim içermiyor: 'Birinci yük durumu uyumu c₁'
+          → birimsizse sorun yok; değilse '(birim)' ekle  [Wilke2019 W6]
+  [BİLGİ] birim              eksen 1: y etiketi birim içermiyor: 'İkinci yük durumu uyumu c₂'
+          → birimsizse sorun yok; değilse '(birim)' ekle  [Wilke2019 W6]

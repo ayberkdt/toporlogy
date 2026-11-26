@@ -76,6 +76,11 @@ FILE_LAYERS: dict[str, tuple[str, ...]] = {
     "test_sweep_resume.py": ("IC",),
     "test_tsai_wu_admissibility.py": ("MP",),
     "test_auxetic_cell.py": ("OG", "E2E"),
+    "test_laminate.py": ("U", "MP", "AN"),
+    "test_uq.py": ("U", "AN", "OG"),
+    "test_pareto.py": ("AN", "OG"),
+    "test_identification.py": ("MP", "OG"),
+    "test_rom.py": ("IS", "AN"),
 }
 
 
