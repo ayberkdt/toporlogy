@@ -14,7 +14,11 @@ the temperature gradient (k_ij = (1/|Y|) T_iᵀ K T_j). The energy form is self-
 to an element modulus is dC_ij/dE_e = (1/|Y|) u_i^eᵀ K_e⁰ u_j^e with the unit-modulus element matrix K_e⁰.
 
 ``bc="kubc"`` gives the kinematic bound instead (u = ε̄ x on the whole boundary): it is stiffer than the periodic
-value in the Loewner order. Pre-registered checks: ``docs/olcumler/homojenlestirme_onkayit.md`` (H1-H9).
+value in the Loewner order. ``bc="subc"`` gives the static bound (uniform traction t = σ̄ n on the boundary; elasticity
+only): the consistent load of a constant σ̄ is Σ_e B_eᵀ σ̄ V_e (divergence theorem, B at the centroid integrates the
+linear B exactly), the rigid motion is held by the fewest DOFs, the mean strain is a column of the compliance S and
+C = S⁻¹ is softer than the periodic value: C_SUBC ≤ C_PBC ≤ C_KUBC. Pre-registered checks:
+``docs/olcumler/homojenlestirme_onkayit.md`` (H1-H14).
 """
 from __future__ import annotations
 
@@ -31,7 +35,7 @@ from toporlogy.fem.heat import conduction_matrix, element_nodes
 
 __all__ = ["Homogenized", "homogenize_elasticity", "homogenize_conduction", "periodic_map", "BCS"]
 
-BCS = ("periodic", "kubc")
+BCS = ("periodic", "kubc", "subc")
 
 
 @dataclass
@@ -130,9 +134,54 @@ def _solve(domain: Domain, K: sp.csr_matrix, U_aff: np.ndarray, dpn: int, bc: st
     raise ValueError(f"bc: {' | '.join(BCS)}, got {bc!r}")
 
 
+def _rigid_dofs(domain: Domain) -> np.ndarray:
+    """The fewest DOFs that hold the rigid motion of a box: the origin node in every direction, plus the node at
+    (L, 0[, 0]) across the x axis and, in 3-D, the node at (0, H, 0) along z."""
+    idx = _grid_index(domain)
+    dim, sh = domain.dim, np.asarray(domain.shape)
+
+    def node(at: list[int]) -> int:
+        return int(np.flatnonzero(np.all(idx == np.asarray(at), axis=1))[0])
+    o = node([0] * dim)
+    a = node([int(sh[0])] + [0] * (dim - 1))
+    out = [dim * o + c for c in range(dim)] + [dim * a + c for c in range(1, dim)]
+    if dim == 3:
+        out.append(dim * node([0, int(sh[1]), 0]) + 2)
+    return np.array(out, np.int64)
+
+
+def _effective_subc(domain: Domain, K: sp.csr_matrix) -> Homogenized:
+    from toporlogy.fem.elements import b_centroid_h8, b_centroid_q4
+    dim = domain.dim
+    Bc = (b_centroid_q4() if dim == 2 else b_centroid_h8()) / domain.h
+    ve = domain.h ** dim * (domain.thickness if dim == 2 else 1.0)
+    edof = np.asarray(domain.edof)[domain.active_elements]
+    k = Bc.shape[0]
+    n = domain.ndof
+    F = np.zeros((n, k))
+    for j in range(k):
+        fe = Bc.T @ np.eye(k)[j] * ve                              # same for every element (constant σ̄)
+        np.add.at(F[:, j], edof, np.broadcast_to(fe, edof.shape))
+    fixed = _rigid_dofs(domain)
+    free = np.setdiff1d(np.arange(n), fixed)
+    Kc = K.tocsc()
+    lu = spla.splu(Kc[free][:, free].tocsc())
+    U = np.zeros((n, k))
+    for j in range(k):
+        U[free, j] = lu.solve(F[free, j])
+    vol = _volume(domain)
+    S = np.einsum("ab,eaj->bj", Bc.T, U[edof]) * ve / vol           # mean strain per unit stress
+    S = 0.5 * (S + S.T)
+    return Homogenized(np.linalg.inv(S), U, vol, "subc", None)
+
+
 def _effective(domain: Domain, K: sp.csr_matrix, KE: np.ndarray, dpn: int, kind: str, bc: str,
                sensitivities: bool) -> Homogenized:
     _check_cell(domain)
+    if bc == "subc":
+        if kind != "elasticity" or sensitivities:
+            raise ValueError("bc subc: elasticity only, without sensitivities")
+        return _effective_subc(domain, K)
     U = _solve(domain, K, _unit_cases(domain, kind), dpn, bc)
     vol = _volume(domain)
     C = (U.T @ (K @ U)) / vol

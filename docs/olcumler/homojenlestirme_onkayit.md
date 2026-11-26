@@ -78,3 +78,8 @@ S'nin sütunudur, C_SUBC = S⁻¹.
 |:---|:---|:---|
 | H13 | Homojen hücre (2-B, 3-B): C_SUBC = E D | ≤ 1e-10 göreli |
 | H14 | Rastgele ve gözenekli hücrede hiyerarşi C_SUBC ≤ C_PBC ≤ C_KUBC (Loewner) | farkların özdeğerleri ≥ −1e-10 · ‖C‖ |
+
+### H13–H14 sonucu (ilk koşu)
+
+PASS: homojen hücrede (2-B, 3-B) C_SUBC = E D ≤ 1e-10; rastgele ve gözenekli hücrede C_SUBC ≤ C_PBC ≤ C_KUBC.
+Gözenekli 8 × 7 hücre (3 × 4 delik, E = 1e-3): C11 / E0 = 0,60621 (SUBC), 0,66892 (PBC), 0,67564 (KUBC).

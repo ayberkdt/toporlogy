@@ -233,3 +233,25 @@ def test_h12_homogenize_post_step() -> None:
     direct = homogenize_elasticity(d, E[d.active_elements], NU).C
     assert _rel(np.array(out["C"]), 2.0 * D_plane_stress(NU)) <= 1e-12
     assert np.array_equal(np.array(out["C"]), direct)
+
+
+@pytest.mark.parametrize("shape", [(6, 5), (3, 4, 3)])
+def test_h13_subc_homogeneous_cell(shape: tuple[int, ...]) -> None:
+    d = Domain(shape, h=0.7, thickness=0.4)
+    D = D_plane_stress(NU) if d.dim == 2 else D_iso(NU)
+    assert _rel(homogenize_elasticity(d, np.full(d.n_active, 2.5), NU, bc="subc").C, 2.5 * D) <= 1e-10
+
+
+@pytest.mark.parametrize("kind", ["random", "porous"])
+def test_h14_bound_hierarchy(kind: str) -> None:
+    d = Domain((8, 7))
+    if kind == "random":
+        E = _random_E(d, 9)
+    else:
+        g = np.ones(d.shape)
+        g[2:6, 2:5] = 1e-3
+        E = g.ravel()
+    Cs, Cp, Ck = (homogenize_elasticity(d, E, NU, bc=b).C for b in ("subc", "periodic", "kubc"))
+    tol = 1e-10 * np.abs(Cp).max()
+    assert np.linalg.eigvalsh(Cp - Cs).min() >= -tol
+    assert np.linalg.eigvalsh(Ck - Cp).min() >= -tol
