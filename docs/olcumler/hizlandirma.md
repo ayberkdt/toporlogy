@@ -35,13 +35,22 @@ haritasıyla kurulması (H2). İsteğe bağlı üçüncüsü süpernodal Cholesk
 | H4b | Çıktı ve gradyan bit düzeyinde aynı | tam | aynı | PASS (geri alınan kodda) |
 
 Kaynaklar: testler `tests/toporlogy/test_speedups.py` (çıktılar `hizlandirma_testler_ilk.txt`, P1 sonrası
-`hizlandirma_testler_p1.txt`), K0 `hizlandirma_baseline_oncesi.txt` / `hizlandirma_baseline_sonrasi.txt`, hız
+`hizlandirma_testler_p1.txt`), K0 `hizlandirma_baseline_oncesi.txt` (taban) / `hizlandirma_baseline_sonrasi.txt` (`6805a10`) / `hizlandirma_baseline_son.txt` (son SHA `9fb9741`: yedi örnek fark 0; cantilever3d C: diski dolduğu için ilk koşuda `OSError`, D: üzerinde geçici klasörle yeniden koşuda bit düzeyinde), hızlı paket `hizlandirma_hizli_paket.txt`, hız
 `hizlandirma_sonrasi.json` (geçiş 1), `hizlandirma_sonrasi_2.json` (geçiş 2), `hizlandirma_h2.json`,
 `hizlandirma_h4.json`, `hizlandirma_p1.json`, `hizlandirma_iplik_ab.json`.
 
 H3a ve H4a başarısız. H3a ön kayıtlı uygulamayla ölçüldü; ardından yapılan iyileştirme (P1, §3) ön kayıt dışıdır ve
 H3a'nın sonucunu değiştirmez. H2b'nin protokol sonucu geçti, ama aynı süreçte izole edilen ölçüm 3-B satırda etkinin
 %5'in altında kaldığını gösteriyor; geçişi yük gürültüsü sağladı.
+
+## 0a. Hızlı paket [Ö]
+
+`python -m pytest tests/toporlogy -m "not slow" -q -p no:randomly` (05:13–05:45, kod `9fb9741`'den önceki hâl):
+**1174 passed, 4 skipped, 67 deselected, 23 xfailed, 3 failed** (`hizlandirma_hizli_paket.txt`). Üç hata bu dalın:
+`NotPositiveDefiniteError` adı `core.linear_elastic`'te de vardı (`test_architecture`; Cholesky'ninki
+`CholeskyPivotError` oldu), yeni strict xfail kütükte yoktu ve risk matrisi eskiydi (`test_catalog_ledger` ×2;
+`docs/vv_kutugu.json`'a girdi, iki belge yeniden üretildi). Düzeltmeden sonra bu üç dosya ve `test_api_surface.py`,
+`test_speedups.py`: 46 passed, 1 xfailed. Bütün paket düzeltmeden sonra yeniden koşulmadı.
 
 ## 1. Ortam ve yöntem [Ö]
 

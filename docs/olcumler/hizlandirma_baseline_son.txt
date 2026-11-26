@@ -1,0 +1,22 @@
+# K0 on 9fb9741 (2026-11-26). Full run: 7 passed, cantilever3d FAILED with OSError [Errno 28] No space left on device (drive C: 100 % full, 496 MB free; the example's run folder is under the system temp). Re-run of cantilever3d alone with TMP/TEMP and --basetemp on drive D: passed bitwise (output at the end).
+
+tests\toporlogy\test_baseline.py:69: RuntimeError
+----------------------------- verification status -----------------------------
+pardiso  NOT VERIFIED  no test of this backend was selected
+gmsh     NOT VERIFIED  no test of this backend was selected
+cuda     NOT VERIFIED  no test of this backend was selected
+baseline bitwise       reference environment: x, xphys and geometry files compared bit for bit
+  eigenfrequency2d       max relative difference 0.00e+00
+  lbracket_bore3d        max relative difference 0.00e+00
+  mbb2d                  max relative difference 0.00e+00
+  multiload3d            max relative difference 0.00e+00
+  split_connectivity2d   max relative difference 0.00e+00
+  symmetric_am3d         max relative difference 0.00e+00
+=========================== short test summary info ===========================
+FAILED tests/toporlogy/test_baseline.py::test_example_matches_baseline[cantilever3d]
+1 failed, 7 passed in 260.15s (0:04:20)
+
+## re-run: tests/toporlogy/test_baseline.py::test_example_matches_baseline[cantilever3d] (basetemp on D:)
+baseline bitwise       reference environment: x, xphys and geometry files compared bit for bit
+  cantilever3d           max relative difference 0.00e+00
+1 passed in 39.02s
