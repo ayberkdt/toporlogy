@@ -19,3 +19,10 @@ constitutive kernel, independent global algebra and stress control).
 | H6e | rollback: a creep step forced to fail (max_iter = 0) leaves the committed state of H6a unchanged and the repeated step equals the uninterrupted run | bitwise | `np.array_equal` |
 
 Run: `python -m pytest tests/toporlogy/test_history_physical.py -q -p no:randomly`. First result appended below.
+
+## First result (run 2026-11-27 02:36 +0300 by the clock)
+
+5 passed on the first run. Largest relative difference of the end displacement against 2 ε_xx of the material point
+over all 16 steps: H6a Norton 1.1e-11 (final strain 1.04e-2), H6b Perzyna 1.1e-11 (6.17e-2), H6c generalized
+Maxwell 5.8e-16 (3.25e-4), H6d physical J2 1.8e-14 (6.17e-2: Perzyna at τ0 = 10 s has relaxed to the
+rate-independent curve by 1000 s); H6e rollback bitwise. Threshold 1e-8 everywhere.
