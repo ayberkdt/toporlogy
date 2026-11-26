@@ -73,7 +73,7 @@ _MESH = ("general meshes (toporlogy.fem.mesh); signed detJ checked at every quad
          "degenerate cells refused; distorted-mesh patch test and MMS rates measured")
 ELEMENTS: tuple[Element, ...] = (
     Element("Q4", 2, "square", 4, 2, "bilinear", "2 x 2 Gauss", ("elasticity", "modal", "nonlinear_elasticity",
-                                                                  "tensor_elasticity"),
+                                                                  "tensor_elasticity", "thermoelastic"),
             "shear-locks in bending (parasitic shear)", _GRID, ("andreassen_2011", "cook_2002"),
             (T + "test_fem_mms.py::test_manufactured_solution_converges_at_second_order",
              T + "test_skfem_crosscheck.py::test_x1_stiffness",
@@ -86,7 +86,7 @@ ELEMENTS: tuple[Element, ...] = (
              T + "test_buckling_physics.py::test_gradient_q4im_with_modes_in_kg"),
             "fem/elements.py: ke_q4im_from_D"),
     Element("H8", 3, "cube", 8, 3, "trilinear", "2 x 2 x 2 Gauss",
-            ("elasticity", "elasticity_gmg", "modal", "nonlinear_elasticity", "tensor_elasticity"),
+            ("elasticity", "elasticity_gmg", "modal", "nonlinear_elasticity", "tensor_elasticity", "thermoelastic"),
             "shear-locks in bending", _GRID,
             ("liu_tovar_2014", "cook_2002"),
             (T + "test_fem_mms.py::test_manufactured_solution_converges_at_second_order",
@@ -220,6 +220,15 @@ PHYSICS: tuple[Physics, ...] = (
              T + "test_material_design.py::test_g1_compliance_gradient_finite_difference"),
             "per-element elasticity tensor C_e (MaterialField of interpolation tensor_phases); the scalar grid the "
             "study passes is only checked against the field"),
+    Physics("thermoelastic", "K(E) u = f + f_th(E), f_th = sum_e E_e G dT_e (one-way, small strain, prescribed "
+                             "uniform temperature rise)", "K(E) and f_th(E), both linear in the element moduli",
+            "symmetric positive definite on the free DOFs", "direct (GridSPD supernodal / SuperLU factor)",
+            ("cpu",), (2, 3), ("Q4", "H8"), "axis-aligned fixed DOFs, one support set",
+            "direct solve (GridSPD)", "assembled sparse K and its factor",
+            (T + "test_thermoelastic_study.py::test_ts2_value_equals_direct_thermoelastic",
+             T + "test_thermoelastic_study.py::test_ts3_gradient_finite_difference",
+             T + "test_thermoelastic.py::test_te1_free_expansion"),
+            "E_active scales ONE unit D (per-element D refused) and the thermal load; compliance is F_totᵀ U"),
 )
 
 
@@ -809,7 +818,7 @@ class Cell:
     enforced: str = ""                    # UNSUPPORTED: component | catalog | first_evaluation
 
 
-PHYS = ("elasticity", "elasticity_gmg", "modal", "nonlinear_elasticity", "tensor_elasticity")
+PHYS = ("elasticity", "elasticity_gmg", "modal", "nonlinear_elasticity", "tensor_elasticity", "thermoelastic")
 
 # responses that do not read the study's physics (no state solve, or an own auxiliary solve); evidence with elasticity
 PHYSICS_INDEPENDENT: dict[str, tuple[str, ...]] = {
@@ -853,7 +862,10 @@ RESPONSE_MATRIX: dict[str, dict[str, Cell]] = {
                                   "Compliance); only end_compliance is tested"),
         tensor_elasticity=Cell(SUPPORTED, (
             T + "test_material_design.py::test_k8b_scalar_limit_matches_multiphase_simp",
-            T + "test_material_design.py::test_g1_compliance_gradient_finite_difference"))),
+            T + "test_material_design.py::test_g1_compliance_gradient_finite_difference")),
+        thermoelastic=Cell(SUPPORTED, (T + "test_thermoelastic_study.py::test_ts2_value_equals_direct_thermoelastic",
+                                       T + "test_thermoelastic_study.py::test_ts3_gradient_finite_difference"),
+                           "c = F_totᵀ U with the design-dependent thermal load")),
     "robust_compliance": _row(
         elasticity=Cell(SUPPORTED, (T + "test_robust.py::test_gradcheck_robust_compliance_and_dilated_volume",)),
         modal=_NO_STATE),

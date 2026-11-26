@@ -4958,6 +4958,14 @@
    ],
    "class": "ThermoElastic"
   },
+  "ThermoElasticPhysics": {
+   "attrs": [
+    "name",
+    "solve",
+    "total_load"
+   ],
+   "class": "ThermoElasticPhysics"
+  },
   "alpha_voigt": "alpha_voigt(alpha,dim)",
   "thermal_beta": "thermal_beta(alpha,dim,nu,D,plane,C3)",
   "thermal_load_matrix": "thermal_load_matrix(dim,beta,h,thickness)"

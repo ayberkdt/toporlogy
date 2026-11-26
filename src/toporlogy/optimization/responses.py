@@ -71,7 +71,12 @@ class Compliance(Response):
     def per_case(self, ctx: EvalContext) -> torch.Tensor:
         if ctx.U is None or ctx.F is None:
             raise ValueError("Compliance needs U and F")
-        F = torch.as_tensor(ctx.F, dtype=ctx.U.dtype, device=ctx.U.device)
+        total = getattr(ctx.physics, "total_load", None)
+        if total is not None:                  # design-dependent load (thermoelastic): c = F_tot(E)ᵀ U
+            act = torch.as_tensor(ctx.domain.active_elements, dtype=torch.long, device=ctx.E.device)
+            F = total(ctx.E.reshape(-1)[act], ctx.F)
+        else:
+            F = torch.as_tensor(ctx.F, dtype=ctx.U.dtype, device=ctx.U.device)
         return (F * ctx.U).sum(dim=0)
 
     def __call__(self, ctx: EvalContext) -> torch.Tensor:

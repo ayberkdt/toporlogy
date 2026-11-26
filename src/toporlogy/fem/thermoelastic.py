@@ -13,8 +13,10 @@ modes, so Q4IM / H8IM are refused.
 :class:`ThermoElastic` couples a :class:`GridSPD` heat solve (−div(k ∇T) = q) and an elastic solve; both are torch
 autograd functions with derivatives with respect to the element coefficients *and* the right-hand side, so a
 response of the displacement differentiates through the design-dependent thermal load and through the temperature.
-Pre-registered checks: ``docs/olcumler/termoelastisite_onkayit.md`` (TE1-TE9). Not here: two-way coupling, transient
-heat, temperature-dependent material, the Study / YAML integration.
+Pre-registered checks: ``docs/olcumler/termoelastisite_onkayit.md`` (TE1-TE9). :class:`ThermoElasticPhysics` is the
+Study physics with a prescribed temperature (YAML ``physics: {type: thermoelastic, alpha, delta_T}``; TS1-TS6 in
+``docs/olcumler/termoelastik_study_onkayit.md``). Not here: two-way coupling, transient heat, temperature-dependent
+material, a design-dependent temperature.
 """
 from __future__ import annotations
 
@@ -30,7 +32,7 @@ from toporlogy.fem.elements import (D_iso, D_plane_strain, D_plane_stress, _B_un
 from toporlogy.fem.grid_spd import GridSPD
 from toporlogy.fem.heat import conduction_matrix, element_nodes
 
-__all__ = ["ThermoElastic", "thermal_beta", "thermal_load_matrix", "alpha_voigt"]
+__all__ = ["ThermoElastic", "ThermoElasticPhysics", "thermal_beta", "thermal_load_matrix", "alpha_voigt"]
 
 _IN_PLANE = [0, 1, 5]
 
@@ -142,3 +144,31 @@ class ThermoElastic:
         dT = (np.asarray(T, float) - self.T_ref)[self.enodes].mean(axis=1)
         eps = np.asarray(u, float)[self.edof] @ B.T
         return np.asarray(E, float)[:, None] * (eps @ self.D.T - np.outer(dT, self.beta))
+
+
+class ThermoElasticPhysics:
+    """Study physics: elasticity under the mechanical loads plus the thermal load of a prescribed nodal temperature
+    ``T`` (design independent). ``solve(E, F)`` → U (ndof, n_cases) with u_c = K(E)⁻¹ (F_c + F_th(E));
+    ``total_load(E, F)`` → F + F_th(E), which :class:`~toporlogy.optimization.responses.Compliance` uses
+    (c = F_totᵀ U). Both differentiate in E through the stiffness and the thermal load."""
+
+    name = "thermoelastic"
+
+    def __init__(self, te: ThermoElastic, T: Any) -> None:
+        T = np.asarray(T, float).reshape(-1)
+        if T.shape != (te.domain.nn,):
+            raise ValueError(f"T must have {te.domain.nn} entries (nodes), got {T.shape}")
+        self.te, self.domain, self.T = te, te.domain, T
+        self.n_solves = 0
+
+    def total_load(self, E: torch.Tensor, F: Any) -> torch.Tensor:
+        F2 = torch.as_tensor(np.asarray(F, float), dtype=E.dtype)
+        F2 = F2[:, None] if F2.ndim == 1 else F2
+        if F2.shape[0] != self.domain.ndof:
+            raise ValueError(f"loads have {F2.shape[0]} rows, the domain {self.domain.ndof} DOFs")
+        return F2 + self.te.thermal_load(E, torch.as_tensor(self.T, dtype=E.dtype))[:, None]
+
+    def solve(self, E: torch.Tensor, F: Any) -> torch.Tensor:
+        Ft = self.total_load(E, F)
+        self.n_solves += 1
+        return torch.stack([self.te.mech.solve(E, Ft[:, c]) for c in range(Ft.shape[1])], dim=1)

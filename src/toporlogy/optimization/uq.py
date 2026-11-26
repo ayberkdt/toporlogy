@@ -513,8 +513,8 @@ class ScenarioCompliance(Response):
     def scenario_values(self, ctx: EvalContext) -> torch.Tensor:
         if ctx.U is None or ctx.F is None:
             raise ValueError("ScenarioCompliance needs U and F")
-        F = torch.as_tensor(ctx.F, dtype=ctx.U.dtype, device=ctx.U.device)
-        return (F * ctx.U).sum(dim=0)
+        from toporlogy.optimization.responses import Compliance
+        return Compliance().per_case(ctx)                  # F_cᵀ U_c, with the physics' total load if it has one
 
     def __call__(self, ctx: EvalContext) -> torch.Tensor:
         return self.scale * risk_measure(self.scenario_values(ctx), self.measure, self.k, self.alpha)

@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from typing import Any
 
+import numpy as np
+
 from toporlogy.configuration.helpers import checked_selector, material_model
 from toporlogy.configuration.registry import BuildContext, register
 
@@ -114,5 +116,32 @@ def register_physics() -> None:
                                    min_step=min_step, warm_start=warm_start, solver=solver, line_search=line_search,
                                    merit=merit)
 
+    def thermoelastic(ctx: BuildContext, alpha: Any = None, delta_T: float = 0.0, element: str | None = None) -> Any:
+        """Linear elasticity with the thermal load of a uniform temperature rise delta_T (one-way, small strain;
+        fem.thermoelastic, docs/olcumler/termoelastik_study_onkayit.md). alpha: thermal expansion (number or
+        symmetric tensor); nu, plane and D from material. compliance is then F_totᵀ U with the design-dependent
+        thermal load. Q4 / H8; supports: zero displacements along x / y / z only, one support set."""
+        from toporlogy.fem.thermoelastic import ThermoElastic, ThermoElasticPhysics
+        bcs, d = ctx.bc, ctx.domain
+        if alpha is None:
+            raise ValueError("thermoelastic needs alpha (thermal expansion coefficient)")
+        if len({id(bcs.constraints(i)) for i in range(len(bcs.cases))}) > 1:
+            raise ValueError("thermoelastic needs one support set (no per-case supports)")
+        cs = bcs.constraints(0)
+        if cs.needs_extension:
+            raise ValueError("thermoelastic supports zero displacements along x / y / z only (no oblique rollers, "
+                             "pinned bores or springs)")
+        mm = material_model(ctx)
+        D = None if mm.elasticity is None else np.asarray(mm.elasticity, float)
+        if D is not None and D.ndim != 2:
+            raise ValueError("thermoelastic needs one material D (no per-element material field)")
+        plane = str(ctx.material.get("plane", "stress")) if d.dim == 2 else "stress"
+        if d.dim == 2 and plane == "strain" and mm.orthotropic:
+            raise ValueError("thermoelastic in plane strain is isotropic only (the thermal stress uses the 3-D "
+                             "isotropic C)")
+        te = ThermoElastic(d, cs.fixed, alpha, nu=float(ctx.material["nu"]), element=element, plane=plane, D=D)
+        return ThermoElasticPhysics(te, np.full(d.nn, te.T_ref + float(delta_T)))
+
+    register("physics", "thermoelastic", thermoelastic, types={"alpha": None})
     register("physics", "nonlinear_elasticity", nonlinear_elasticity, nested={"solver": "solver"},
              units={"min_step": "load factor"})

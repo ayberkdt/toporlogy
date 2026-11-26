@@ -29,7 +29,8 @@
     "elasticity",
     "modal",
     "nonlinear_elasticity",
-    "tensor_elasticity"
+    "tensor_elasticity",
+    "thermoelastic"
    ],
    "locking": "shear-locks in bending (parasitic shear)",
    "distortion": "regular grid, undistorted unit square/cube elements only (no Jacobian varies)",
@@ -81,7 +82,8 @@
     "elasticity_gmg",
     "modal",
     "nonlinear_elasticity",
-    "tensor_elasticity"
+    "tensor_elasticity",
+    "thermoelastic"
    ],
    "locking": "shear-locks in bending",
    "distortion": "regular grid, undistorted unit square/cube elements only (no Jacobian varies)",
@@ -506,6 +508,33 @@
     "tests/toporlogy/test_material_design.py::test_g1_compliance_gradient_finite_difference"
    ],
    "scalar_modulus": "per-element elasticity tensor C_e (MaterialField of interpolation tensor_phases); the scalar grid the study passes is only checked against the field"
+  },
+  {
+   "id": "thermoelastic",
+   "residual": "K(E) u = f + f_th(E), f_th = sum_e E_e G dT_e (one-way, small strain, prescribed uniform temperature rise)",
+   "tangent": "K(E) and f_th(E), both linear in the element moduli",
+   "matrix": "symmetric positive definite on the free DOFs",
+   "solve": "direct (GridSPD supernodal / SuperLU factor)",
+   "devices": [
+    "cpu"
+   ],
+   "dims": [
+    2,
+    3
+   ],
+   "elements": [
+    "Q4",
+    "H8"
+   ],
+   "supports": "axis-aligned fixed DOFs, one support set",
+   "convergence": "direct solve (GridSPD)",
+   "memory": "assembled sparse K and its factor",
+   "evidence": [
+    "tests/toporlogy/test_thermoelastic_study.py::test_ts2_value_equals_direct_thermoelastic",
+    "tests/toporlogy/test_thermoelastic_study.py::test_ts3_gradient_finite_difference",
+    "tests/toporlogy/test_thermoelastic.py::test_te1_free_expansion"
+   ],
+   "scalar_modulus": "E_active scales ONE unit D (per-element D refused) and the thermal load; compliance is F_totᵀ U"
   }
  ],
  "solvers": [
@@ -1111,7 +1140,8 @@
    "elasticity_gmg",
    "modal",
    "nonlinear_elasticity",
-   "tensor_elasticity"
+   "tensor_elasticity",
+   "thermoelastic"
   ],
   "physics_x_response": {
    "buckling": {
@@ -1147,6 +1177,12 @@
      "evidence": [],
      "reason": "",
      "enforced": ""
+    },
+    "thermoelastic": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "",
+     "enforced": ""
     }
    },
    "centre_of_mass": {
@@ -1177,6 +1213,12 @@
      "enforced": ""
     },
     "tensor_elasticity": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "does not read the study's physics (read from the code); combination not tested",
+     "enforced": ""
+    },
+    "thermoelastic": {
      "status": "NOT VERIFIED",
      "evidence": [],
      "reason": "does not read the study's physics (read from the code); combination not tested",
@@ -1224,6 +1266,15 @@
      ],
      "reason": "",
      "enforced": ""
+    },
+    "thermoelastic": {
+     "status": "SUPPORTED",
+     "evidence": [
+      "tests/toporlogy/test_thermoelastic_study.py::test_ts2_value_equals_direct_thermoelastic",
+      "tests/toporlogy/test_thermoelastic_study.py::test_ts3_gradient_finite_difference"
+     ],
+     "reason": "c = F_totᵀ U with the design-dependent thermal load",
+     "enforced": ""
     }
    },
    "compliance_case": {
@@ -1254,6 +1305,12 @@
      "enforced": ""
     },
     "tensor_elasticity": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "",
+     "enforced": ""
+    },
+    "thermoelastic": {
      "status": "NOT VERIFIED",
      "evidence": [],
      "reason": "",
@@ -1292,6 +1349,12 @@
      "evidence": [],
      "reason": "does not read the study's physics (read from the code); combination not tested",
      "enforced": ""
+    },
+    "thermoelastic": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "does not read the study's physics (read from the code); combination not tested",
+     "enforced": ""
     }
    },
    "cost": {
@@ -1322,6 +1385,12 @@
      "enforced": ""
     },
     "tensor_elasticity": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "does not read the study's physics (read from the code); combination not tested",
+     "enforced": ""
+    },
+    "thermoelastic": {
      "status": "NOT VERIFIED",
      "evidence": [],
      "reason": "does not read the study's physics (read from the code); combination not tested",
@@ -1360,6 +1429,12 @@
      "evidence": [],
      "reason": "does not read the study's physics (read from the code); combination not tested",
      "enforced": ""
+    },
+    "thermoelastic": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "does not read the study's physics (read from the code); combination not tested",
+     "enforced": ""
     }
    },
    "dilated_volume": {
@@ -1390,6 +1465,12 @@
      "enforced": ""
     },
     "tensor_elasticity": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "does not read the study's physics (read from the code); combination not tested",
+     "enforced": ""
+    },
+    "thermoelastic": {
      "status": "NOT VERIFIED",
      "evidence": [],
      "reason": "does not read the study's physics (read from the code); combination not tested",
@@ -1432,6 +1513,12 @@
      "evidence": [],
      "reason": "",
      "enforced": ""
+    },
+    "thermoelastic": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "",
+     "enforced": ""
     }
    },
    "effective_poisson": {
@@ -1466,6 +1553,12 @@
      "evidence": [],
      "reason": "does not read the study's physics (read from the code); combination not tested",
      "enforced": ""
+    },
+    "thermoelastic": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "does not read the study's physics (read from the code); combination not tested",
+     "enforced": ""
     }
    },
    "effective_stiffness": {
@@ -1496,6 +1589,12 @@
      "enforced": ""
     },
     "tensor_elasticity": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "does not read the study's physics (read from the code); combination not tested",
+     "enforced": ""
+    },
+    "thermoelastic": {
      "status": "NOT VERIFIED",
      "evidence": [],
      "reason": "does not read the study's physics (read from the code); combination not tested",
@@ -1535,6 +1634,12 @@
      "evidence": [],
      "reason": "",
      "enforced": ""
+    },
+    "thermoelastic": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "",
+     "enforced": ""
     }
    },
    "end_compliance": {
@@ -1566,6 +1671,12 @@
      "enforced": ""
     },
     "tensor_elasticity": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "",
+     "enforced": ""
+    },
+    "thermoelastic": {
      "status": "NOT VERIFIED",
      "evidence": [],
      "reason": "",
@@ -1604,6 +1715,12 @@
      "evidence": [],
      "reason": "needs physics nonlinear_elasticity",
      "enforced": "component"
+    },
+    "thermoelastic": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "",
+     "enforced": ""
     }
    },
    "frequency": {
@@ -1635,6 +1752,12 @@
      "enforced": "component"
     },
     "tensor_elasticity": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "",
+     "enforced": ""
+    },
+    "thermoelastic": {
      "status": "NOT VERIFIED",
      "evidence": [],
      "reason": "",
@@ -1673,6 +1796,12 @@
      "evidence": [],
      "reason": "does not read the study's physics (read from the code); combination not tested",
      "enforced": ""
+    },
+    "thermoelastic": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "does not read the study's physics (read from the code); combination not tested",
+     "enforced": ""
     }
    },
    "inertia": {
@@ -1703,6 +1832,12 @@
      "enforced": ""
     },
     "tensor_elasticity": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "does not read the study's physics (read from the code); combination not tested",
+     "enforced": ""
+    },
+    "thermoelastic": {
      "status": "NOT VERIFIED",
      "evidence": [],
      "reason": "does not read the study's physics (read from the code); combination not tested",
@@ -1741,6 +1876,12 @@
      "evidence": [],
      "reason": "does not read the study's physics (read from the code); combination not tested",
      "enforced": ""
+    },
+    "thermoelastic": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "does not read the study's physics (read from the code); combination not tested",
+     "enforced": ""
     }
    },
    "mass": {
@@ -1775,6 +1916,12 @@
      "evidence": [],
      "reason": "does not read the study's physics (read from the code); combination not tested",
      "enforced": ""
+    },
+    "thermoelastic": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "does not read the study's physics (read from the code); combination not tested",
+     "enforced": ""
     }
    },
    "maximize": {
@@ -1803,6 +1950,12 @@
      "enforced": ""
     },
     "tensor_elasticity": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "composite: the weakest status of its parts",
+     "enforced": ""
+    },
+    "thermoelastic": {
      "status": "NOT VERIFIED",
      "evidence": [],
      "reason": "composite: the weakest status of its parts",
@@ -1842,6 +1995,12 @@
      "evidence": [],
      "reason": "",
      "enforced": ""
+    },
+    "thermoelastic": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "",
+     "enforced": ""
     }
    },
    "min_frequency": {
@@ -1873,6 +2032,12 @@
      "enforced": "component"
     },
     "tensor_elasticity": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "",
+     "enforced": ""
+    },
+    "thermoelastic": {
      "status": "NOT VERIFIED",
      "evidence": [],
      "reason": "",
@@ -1911,6 +2076,12 @@
      "evidence": [],
      "reason": "does not read the study's physics (read from the code); combination not tested",
      "enforced": ""
+    },
+    "thermoelastic": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "does not read the study's physics (read from the code); combination not tested",
+     "enforced": ""
     }
    },
    "robust_compliance": {
@@ -1941,6 +2112,12 @@
      "enforced": ""
     },
     "tensor_elasticity": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "",
+     "enforced": ""
+    },
+    "thermoelastic": {
      "status": "NOT VERIFIED",
      "evidence": [],
      "reason": "",
@@ -1980,6 +2157,12 @@
      "evidence": [],
      "reason": "",
      "enforced": ""
+    },
+    "thermoelastic": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "",
+     "enforced": ""
     }
    },
    "stress": {
@@ -2011,6 +2194,12 @@
      "enforced": ""
     },
     "tensor_elasticity": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "",
+     "enforced": ""
+    },
+    "thermoelastic": {
      "status": "NOT VERIFIED",
      "evidence": [],
      "reason": "",
@@ -2049,6 +2238,12 @@
      "evidence": [],
      "reason": "",
      "enforced": ""
+    },
+    "thermoelastic": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "",
+     "enforced": ""
     }
    },
    "volume": {
@@ -2083,6 +2278,12 @@
      "evidence": [],
      "reason": "does not read the study's physics (read from the code); combination not tested",
      "enforced": ""
+    },
+    "thermoelastic": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "does not read the study's physics (read from the code); combination not tested",
+     "enforced": ""
     }
    },
    "weighted_sum": {
@@ -2111,6 +2312,12 @@
      "enforced": ""
     },
     "tensor_elasticity": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "composite: the weakest status of its parts",
+     "enforced": ""
+    },
+    "thermoelastic": {
      "status": "NOT VERIFIED",
      "evidence": [],
      "reason": "composite: the weakest status of its parts",

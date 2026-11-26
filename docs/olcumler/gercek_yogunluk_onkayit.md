@@ -43,3 +43,7 @@ düştü (interpolasyon 2 × 2 alanın `frac`'ıyla kurulmuştu; ölçüm değil
 E4b'nin ön kayıtlı tasarımı ayırt edici değil (post hoc gözlem): rastgele x süzgeçten sonra kesmenin (0,1) çok
 üstünde, γ iki kuralda da doymuş. Post hoc, ölçütsüz: x ∈ [0,02; 0,3] tasarımda (x̄ ∈ [0,066; 0,255]) eski kuralın
 γ hatası p = 1: 0,983, p = 2: 0,982, p = 3: 0,001 (E_min tabanı); yeni kural ≤ 4,4e-16.
+
+Var olan nonlineer testler bu değişiklikle (`test_nonlinear.py`, `test_model_epoch.py`, `test_nonlinear_solvers.py`,
+`test_nonlinear_orientation.py`, `test_taylor_remainder.py`, `test_frame_invariance.py`, `test_fem_mms_extended.py`):
+146 passed, 14 xfailed (bilinen strict xfail'lar), 0 failed, 21 dk 54 s. İlk deneme `timeout 1200` ile kesildi (sonuç yok).
