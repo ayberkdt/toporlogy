@@ -1,0 +1,9 @@
+set tutarlılığı (3 figür): 0 HATA · 4 UYARI · 0 BİLGİ · SET TUTARLI
+  [UYARI] isaret-boyu        isaret boyu figürden figüre değişiyor — 7.97 pt: fem_genel_nu · 5 pt: fem_genel_konsol · 5.92 pt: fem_genel_yakinsama
+          → aynı rol aynı kalınlık; vurgu/bağlam farkı figür içinde kalsın  [06 T6: APSStyleGuide §II.S.1 ('consistent line widths'); tolerans datawiz-secimi]
+  [UYARI] cizim-alani-hizasi web-640: çizim alanının sol kenarı figürden figüre 5.5 pt oynuyor — fem_genel_nu 9.7 mm, fem_genel_konsol 8.9 mm, fem_genel_yakinsama 10.8 mm
+          → alt alta duran figürlerde eksenler aynı hizada olsun: S.kenar(*S.kenar_oner()) ile sabit kenar, sonra figürleri yeniden üret  [06 T15: Wilke2019Ch21 §21.2 (paneller hizalı) — figürler arasına genişletme datawiz-secimi]
+  [UYARI] renk-anlam         fem_genel_nu, fem_genel_yakinsama: #56b4e9 farklı varlıklar için kullanılmış — TH T6-T3: fem_genel_nu, fem_genel_yakinsama · TH T6-T3, p: fem_genel_yakinsama
+          → bir renk = bir varlık; yeni varlığa setten yeni renk (Seti.varlik)  [06 T1/T2: Qu2018 C1.4, C2.4; UrbanStyle; DatawrapperColors2018; TableauBlueprint; Few2008Color; Kosslyn2012 — işaret/çizgi tipi datawiz-secimi]
+  [UYARI] izgara             izgara figürden figüre değişiyor — kategori: fem_genel_nu · değer: fem_genel_konsol · değer+kategori: fem_genel_yakinsama
+          → aynı tema her figürde: Seti.figur(...)  [06 T6: AIAAFig; ElsevierSizing; Kosslyn2012 (anlamsız görsel değişim)]

@@ -3,7 +3,7 @@ identifiability from the SVD of the weighted Jacobian, multi-start and held-out 
 
 Residuals: r_i = (m_i(θ) − y_i) / σ_i, plus (θ_j − p_j) / s_j for a prior. The solver is SciPy
 ``least_squares`` (trust-region reflective, bounds) in scaled coordinates q = θ / scale. The Jacobian is the caller's
-analytic one or central differences; check an analytic one with :func:`check_jacobian`.
+analytic one or central differences; check an analytic one with :func:`verify_model_jacobian`.
 
 Identifiability (data only, prior excluded): J = ∂r/∂q at the estimate, SVD J = U Σ Vᵀ. ``rank`` counts
 σ_i > rank_rtol σ_max; the rows of Vᵀ beyond it (``null_space``, columns, in q coordinates) are parameter
@@ -29,7 +29,7 @@ import numpy as np
 from scipy.optimize import least_squares
 from scipy.stats import qmc
 
-__all__ = ["Observations", "GaussianPrior", "Identification", "central_jacobian", "check_jacobian", "identify",
+__all__ = ["Observations", "GaussianPrior", "Identification", "central_jacobian", "verify_model_jacobian", "identify",
            "multi_start_identify", "weighted_rms", "DATA_KINDS", "RANK_RTOL"]
 
 DATA_KINDS = ("synthetic", "measured")
@@ -103,7 +103,7 @@ def central_jacobian(model: Model, theta: Any, scale: Any, rel_step: float = 1e-
     return np.column_stack(cols)
 
 
-def check_jacobian(model: Model, jacobian: Model, theta: Any, scale: Any) -> float:
+def verify_model_jacobian(model: Model, jacobian: Model, theta: Any, scale: Any) -> float:
     """max |J − J_fd| (columns scaled by ``scale``) over max |J_fd| (scaled)."""
     s = np.asarray(scale, float)
     ja = np.asarray(jacobian(np.asarray(theta, float)), float) * s

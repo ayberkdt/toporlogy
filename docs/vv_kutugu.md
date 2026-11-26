@@ -2,7 +2,7 @@
 
 `tests/toporlogy/test_catalog_ledger.py` bu kütüğü toplanan testlerle karşılaştırır: her xfail strict (XPASS koşuyu kırar), kütük toplanan strict xfail listesiyle ve test kaynaklarındaki atlama noktalarıyla birebir aynı. Beklenen başarısızlık PASS sayılmaz; atlanan bir arka ucun testi NOT VERIFIED'dır. Yeniden üretim: `python tests/toporlogy/test_catalog_ledger.py --write`.
 
-Toplam 30 strict xfail (8 tanesi yavaş pakette), 15 atlama noktası.
+Toplam 37 strict xfail (10 tanesi yavaş pakette), 16 atlama noktası.
 
 Risk düzeyleri: **low** ölçüt ya da kontrolün kendisi; kod sonucu başka testle doğrulanmış; **medium** açıklanmamış sayısal fark ya da referans yeniden üretilemiyor; **high** kullanıcıya görünen sessiz kabul (yanlış sonuç üretebilir).
 
@@ -40,6 +40,13 @@ Risk düzeyleri: **low** ölçüt ya da kontrolün kendisi; kod sonucu başka te
 | `test_rom.py::test_r5b_compliance_gap_equals_the_energy_error` | pre-registered check failed | PODModel, Elasticity Q4 (CPU, doğrudan) | s − s_r iki yakın sayının farkı; e²'ye göre 1e-6 yuvarlamanın altında (en çok 2,3e-5; s'ye göre 1,3e-12) | low | toleransı uyum büyüklüğüne göre tanımlayan yeni ön kayıt | docs/olcumler/laminat_uq.md | — |
 | `test_rom.py::test_r6_a_basis_for_one_load_fails_on_another` | pre-registered check failed | PODModel, eğitim dışı yük (CPU) | ön kayıtlı hata düzeyi (>= 0,5) tutmadı; ölçülen 0,293, sınır yine de uyarıyor | low | başarısızlık düzeyi için gerekçeli yeni ön kayıt | docs/olcumler/laminat_uq.md | — |
 | `test_newmark.py::test_nd1_second_order_against_the_modal_solution` | pre-registered check failed | fem.dynamics_newmark, Q4 (CPU) | mertebe 4 (3,97–4,00) çünkü ölçüm t = 2T'de, sin(ωt) = 0: Δt² faz hatası yer değiştirmeye δ²/2 olarak giriyor | low | yok (ölçüm noktası seçimi); post hoc t = 2,25T'de 1,98–2,00 | docs/olcumler/newmark_onkayit.md | — |
+| `test_mesh_assembly.py::test_g4_curved_facet_traction[Q9]` | pre-registered check failed | general mesh Q9 facet loads (CPU) | G4 eğri L3 yüzü, varsayılan yüz kuralı: Σf − t·yay uzunluğu = 1,5e-5 > 1e-12 (yay uzunluğu integrandı √polinom, varsayılan derece-6 kural tam değil) | low | ön kayıt beklentisi hatalıydı; derece-40 kuralla post hoc varyant geçiyor (test_g4_curved_facet_traction_posthoc_high_order_rule) | docs/olcumler/fem_genel.md | — |
+| `test_mesh_assembly.py::test_g4_curved_facet_traction[T6]` | pre-registered check failed | general mesh T6 facet loads (CPU) | G4 eğri L3 yüzü, varsayılan yüz kuralı: 1,5e-5 > 1e-12 | low | post hoc derece-40 varyantı geçiyor | docs/olcumler/fem_genel.md | — |
+| `test_mesh_assembly.py::test_g5_3d_face_held_in_x_only_preregistered` | pre-registered check failed | general mesh H8 support-rank check (CPU) | G5 ön kaydı bir yüzü yalnız x'te tutunca 5 serbest rijit mod bekledi; ölçülen 3 (x = 0 düzleminde u_x = 0, y ve z eksenleri etrafındaki dönmeyi de tutar) | low | beklenti yanlıştı, tanı doğru; post hoc test 3'ü doğruluyor | docs/olcumler/fem_genel.md | — |
+| `test_mesh_verification.py::test_v3_mms_convergence_on_distorted_mesh[T4]` | pre-registered check failed | general mesh T4, SuperLU (CPU) | V3 T4 (n = 4, 8, 16) L2 mertebesi 1,796 < 1,8; asimptotik öncesi | low | bir düzey daha (16 → 24) 1,92 / 0,97 veriyor (post hoc, yavaş paket) | docs/olcumler/fem_genel.md | evet |
+| `test_mesh_verification.py::test_v3_mms_convergence_on_distorted_mesh[T10]` | pre-registered check failed | general mesh T10, SuperLU (CPU) | V3 T10 (n = 2, 4, 8) enerji mertebesi 1,788 < 1,8; asimptotik öncesi | low | bir düzey daha (8 → 12) 3,00 / 1,89 veriyor (post hoc, yavaş paket) | docs/olcumler/fem_genel.md | evet |
+| `test_mesh_locking.py::test_l1b_displacement_elements_lock[T4-6]` | pre-registered check failed | general mesh T4 3-D (CPU) | L1b T4 n = 6: oran 3,7 < 5; e(0,4999) = 0,996 (tam kilitlenme) ama kaba ağda e(0,3) = 0,27 oranı 3,8 ile sınırlıyor | low | ölçüt bu ağ için kötü kurulmuş; n = 12'de oran 12,5 (post hoc) | docs/olcumler/fem_genel.md | — |
+| `test_mesh_locking.py::test_l4_condition_number_grows_100_fold` | pre-registered check failed | general mesh Q4 plane strain, SuperLU (CPU) | L4: κ₁(0,4999)/κ₁(0,3) = 68 < 100 (n = 16'da κ'nın h⁻² bileşeni ν = 0,3'te baskın) | low | ayrım iddiası (ölçekleme ve iyileştirme çözümü değiştirmiyor, hata oranı ≥ 5) ayrı testte geçiyor | docs/olcumler/fem_genel.md | — |
 
 ## 2. Atlama noktaları
 
@@ -60,3 +67,4 @@ Risk düzeyleri: **low** ölçüt ya da kontrolün kendisi; kod sonucu başka te
 | test_symmetry.py | `pytest.importorskip("pyvista")` | pyvista | simetri son işlem denetimi | NOT VERIFIED |
 | test_t10_convergence.py | `pytest.importorskip("gmsh")` | gmsh | T10 ağ yakınsaması | NOT VERIFIED |
 | test_vtu.py | `vtk = pytest.importorskip("vtk")` | vtk (post extra) | VTU dosyasının bağımsız okuyucuyla okunması ve hücre boyutları (W2, W3) | NOT VERIFIED |
+| test_mesh_verification.py | `skfem = pytest.importorskip("skfem")` | scikit-fem (dev extra) | V2 genel ağ çapraz denetimi (T3, T6, T4, T10, Q4, Q9, H8) | NOT VERIFIED |

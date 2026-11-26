@@ -151,7 +151,7 @@ def identification_record() -> dict:
                                              n_starts=16, seed=5, jacobian=jac)
     mis, mis_rms = TI.mismatch_case()
     return {"data_kind": "synthetic", "names": list(TI.NAMES), "true": TI.TRUE.tolist(),
-            "I1_jacobian_error": ident.check_jacobian(TI.model_of(TI.TRAIN), jac, TI.START, TI.START),
+            "I1_jacobian_error": ident.verify_model_jacobian(TI.model_of(TI.TRAIN), jac, TI.START, TI.START),
             "noise_free": pack(clean), "noise_free_max_rel_error": float(np.abs(clean.theta / TI.TRUE - 1).max()),
             "noisy": pack(noisy), "noisy_z": ((noisy.theta - TI.TRUE) / noisy.std).tolist(),
             "noisy_held_out_rms": ident.weighted_rms(TI.model_of(TI.HELD), held, noisy.theta),

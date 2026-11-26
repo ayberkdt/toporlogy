@@ -306,6 +306,76 @@
    "resolution": "yok (ölçüm noktası seçimi); post hoc t = 2,25T'de 1,98–2,00",
    "record": "docs/olcumler/newmark_onkayit.md",
    "slow": false
+  },
+  {
+   "nodeid": "tests/toporlogy/test_mesh_assembly.py::test_g4_curved_facet_traction[Q9]",
+   "kind": "pre-registered check failed",
+   "model_backend": "general mesh Q9 facet loads (CPU)",
+   "reason": "G4 eğri L3 yüzü, varsayılan yüz kuralı: Σf − t·yay uzunluğu = 1,5e-5 > 1e-12 (yay uzunluğu integrandı √polinom, varsayılan derece-6 kural tam değil)",
+   "risk": "low",
+   "resolution": "ön kayıt beklentisi hatalıydı; derece-40 kuralla post hoc varyant geçiyor (test_g4_curved_facet_traction_posthoc_high_order_rule)",
+   "record": "docs/olcumler/fem_genel.md",
+   "slow": false
+  },
+  {
+   "nodeid": "tests/toporlogy/test_mesh_assembly.py::test_g4_curved_facet_traction[T6]",
+   "kind": "pre-registered check failed",
+   "model_backend": "general mesh T6 facet loads (CPU)",
+   "reason": "G4 eğri L3 yüzü, varsayılan yüz kuralı: 1,5e-5 > 1e-12",
+   "risk": "low",
+   "resolution": "post hoc derece-40 varyantı geçiyor",
+   "record": "docs/olcumler/fem_genel.md",
+   "slow": false
+  },
+  {
+   "nodeid": "tests/toporlogy/test_mesh_assembly.py::test_g5_3d_face_held_in_x_only_preregistered",
+   "kind": "pre-registered check failed",
+   "model_backend": "general mesh H8 support-rank check (CPU)",
+   "reason": "G5 ön kaydı bir yüzü yalnız x'te tutunca 5 serbest rijit mod bekledi; ölçülen 3 (x = 0 düzleminde u_x = 0, y ve z eksenleri etrafındaki dönmeyi de tutar)",
+   "risk": "low",
+   "resolution": "beklenti yanlıştı, tanı doğru; post hoc test 3'ü doğruluyor",
+   "record": "docs/olcumler/fem_genel.md",
+   "slow": false
+  },
+  {
+   "nodeid": "tests/toporlogy/test_mesh_verification.py::test_v3_mms_convergence_on_distorted_mesh[T4]",
+   "kind": "pre-registered check failed",
+   "model_backend": "general mesh T4, SuperLU (CPU)",
+   "reason": "V3 T4 (n = 4, 8, 16) L2 mertebesi 1,796 < 1,8; asimptotik öncesi",
+   "risk": "low",
+   "resolution": "bir düzey daha (16 → 24) 1,92 / 0,97 veriyor (post hoc, yavaş paket)",
+   "record": "docs/olcumler/fem_genel.md",
+   "slow": true
+  },
+  {
+   "nodeid": "tests/toporlogy/test_mesh_verification.py::test_v3_mms_convergence_on_distorted_mesh[T10]",
+   "kind": "pre-registered check failed",
+   "model_backend": "general mesh T10, SuperLU (CPU)",
+   "reason": "V3 T10 (n = 2, 4, 8) enerji mertebesi 1,788 < 1,8; asimptotik öncesi",
+   "risk": "low",
+   "resolution": "bir düzey daha (8 → 12) 3,00 / 1,89 veriyor (post hoc, yavaş paket)",
+   "record": "docs/olcumler/fem_genel.md",
+   "slow": true
+  },
+  {
+   "nodeid": "tests/toporlogy/test_mesh_locking.py::test_l1b_displacement_elements_lock[T4-6]",
+   "kind": "pre-registered check failed",
+   "model_backend": "general mesh T4 3-D (CPU)",
+   "reason": "L1b T4 n = 6: oran 3,7 < 5; e(0,4999) = 0,996 (tam kilitlenme) ama kaba ağda e(0,3) = 0,27 oranı 3,8 ile sınırlıyor",
+   "risk": "low",
+   "resolution": "ölçüt bu ağ için kötü kurulmuş; n = 12'de oran 12,5 (post hoc)",
+   "record": "docs/olcumler/fem_genel.md",
+   "slow": false
+  },
+  {
+   "nodeid": "tests/toporlogy/test_mesh_locking.py::test_l4_condition_number_grows_100_fold",
+   "kind": "pre-registered check failed",
+   "model_backend": "general mesh Q4 plane strain, SuperLU (CPU)",
+   "reason": "L4: κ₁(0,4999)/κ₁(0,3) = 68 < 100 (n = 16'da κ'nın h⁻² bileşeni ν = 0,3'te baskın)",
+   "risk": "low",
+   "resolution": "ayrım iddiası (ölçekleme ve iyileştirme çözümü değiştirmiyor, hata oranı ≥ 5) ayrı testte geçiyor",
+   "record": "docs/olcumler/fem_genel.md",
+   "slow": false
   }
  ],
  "skips": [
@@ -412,6 +482,13 @@
    "site": "vtk = pytest.importorskip(\"vtk\")",
    "backend": "vtk (post extra)",
    "covers": "VTU dosyasının bağımsız okuyucuyla okunması ve hücre boyutları (W2, W3)",
+   "status_when_skipped": "NOT VERIFIED"
+  },
+  {
+   "file": "tests/toporlogy/test_mesh_verification.py",
+   "site": "skfem = pytest.importorskip(\"skfem\")",
+   "backend": "scikit-fem (dev extra)",
+   "covers": "V2 genel ağ çapraz denetimi (T3, T6, T4, T10, Q4, Q9, H8)",
    "status_when_skipped": "NOT VERIFIED"
   }
  ]

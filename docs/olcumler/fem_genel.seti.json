@@ -1,0 +1,107 @@
+{
+ "_aciklama": "datawiz figür seti: bütün figürler bu sözleşmeyle üretilir. Elle düzenlenebilir; renk/birim değiştirirsen bütün figürleri yeniden üret.",
+ "surum": 1,
+ "dergi": "web",
+ "hedef": "web-640",
+ "ortam": "web",
+ "palet": "okabe-ito",
+ "koyu": false,
+ "etiket_bicimi": "parantez",
+ "cift_kodlama": true,
+ "ondalik_ayirici": ",",
+ "varliklar": {
+  "Q4": {
+   "renk": "#0072b2",
+   "baglam": false,
+   "isaret": "o",
+   "cizgi": "-",
+   "sira": 0
+  },
+  "T3": {
+   "renk": "#d55e00",
+   "baglam": false,
+   "isaret": "s",
+   "cizgi": "--",
+   "sira": 1
+  },
+  "Q9": {
+   "renk": "#009e73",
+   "baglam": false,
+   "isaret": "^",
+   "cizgi": "-.",
+   "sira": 2
+  },
+  "T6": {
+   "renk": "#cc79a7",
+   "baglam": false,
+   "isaret": "D",
+   "cizgi": ":",
+   "sira": 3
+  },
+  "Q4IM (ızgara)": {
+   "renk": "#e69f00",
+   "baglam": false,
+   "isaret": "v",
+   "cizgi": [
+    0,
+    [
+     5,
+     1
+    ]
+   ],
+   "sira": 4
+  },
+  "TH T6-T3": {
+   "renk": "#56b4e9",
+   "baglam": false,
+   "isaret": "P",
+   "cizgi": [
+    0,
+    [
+     3,
+     1,
+     1,
+     1,
+     1,
+     1
+    ]
+   ],
+   "sira": 5
+  },
+  "TH Q9-Q4": {
+   "renk": "#000000",
+   "baglam": false,
+   "isaret": "X",
+   "cizgi": [
+    0,
+    [
+     1,
+     1
+    ]
+   ],
+   "sira": 6
+  },
+  "H8": {
+   "renk": "#919191",
+   "baglam": true,
+   "isaret": null,
+   "cizgi": "--",
+   "sira": 7
+  },
+  "T10": {
+   "renk": "#919191",
+   "baglam": true,
+   "isaret": null,
+   "cizgi": ":",
+   "sira": 8
+  }
+ },
+ "nicelikler": {},
+ "siralar": {},
+ "haritalar": {},
+ "figurler": {
+  "fem_genel_nu": "fem_genel_nu.dw.json",
+  "fem_genel_konsol": "fem_genel_konsol.dw.json",
+  "fem_genel_yakinsama": "fem_genel_yakinsama.dw.json"
+ }
+}

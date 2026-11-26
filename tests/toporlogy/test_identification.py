@@ -83,7 +83,7 @@ def noisy(values: np.ndarray, level: float, seed: int, description: str) -> I.Ob
 
 def test_i1_analytic_jacobian_matches_central_differences() -> None:
     for coupons in (TRAIN, HELD):
-        err = I.check_jacobian(model_of(coupons), jacobian_of(coupons), START, START)
+        err = I.verify_model_jacobian(model_of(coupons), jacobian_of(coupons), START, START)
         assert err <= 1e-6, err
 
 
@@ -186,4 +186,4 @@ def test_bad_input_is_refused() -> None:
         I.identify(model_of(TRAIN), obs, START, (LOW, HIGH), NAMES[:2])
     # a wrong analytic Jacobian is caught
     wrong = lambda t: 1.01 * jacobian_of(TRAIN)(t)                                # noqa: E731
-    assert I.check_jacobian(model_of(TRAIN), wrong, START, START) > 1e-3
+    assert I.verify_model_jacobian(model_of(TRAIN), wrong, START, START) > 1e-3
