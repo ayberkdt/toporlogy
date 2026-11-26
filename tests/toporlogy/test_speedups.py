@@ -176,10 +176,8 @@ def test_h3c_partial_volumes_keep_void(shape, element):
     assert dc <= 1e-10 and du <= 1e-7
 
 
-@pytest.mark.xfail(strict=True, raises=NotImplementedError,
-                   reason="H3c oblique support: ConstrainedElasticity (boundary/constrained.py, not this session's "
-                          "file) changes the elimination order and gives no elimination_blocks(); the cholesky "
-                          "solver refuses it (measured 26 Nov 2026: NotImplementedError)")
+# H3c oblique support: first run (26 Nov 2026) NotImplementedError (no elimination_blocks in ConstrainedElasticity);
+# the blocks were added afterwards and the pre-registered comparison (<= 1e-7) runs unchanged.
 def test_h3c_oblique_support():
     shape = (8, 5, 5)
     d = T.Domain(shape)

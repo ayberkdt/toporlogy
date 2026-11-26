@@ -241,3 +241,9 @@ python -m pytest tests/toporlogy/test_baseline.py -m baseline
 ```
 
 `hizlandirma_h4.py` H4 kodunu (`5302c67`) ister. Keşif profili: `hizlandirma_oncesi.json` (taban, ön kayıttan önce).
+
+## Birleştirmeden sonra: H3c eğik mesnet (2026-11-26)
+
+`boundary/constrained.py` `ConstrainedElasticity.elimination_blocks()` eklendi (üst sınıfın parça boyları, yerel
+çerçevede kısıtlanan bilinmeyenler düşülerek). Ön kayıtlı H3c karşılaştırması (SuperLU ile ≤ 1e-7) değişmeden
+geçiyor; strict xfail ve kütük girdisi kaldırıldı.
