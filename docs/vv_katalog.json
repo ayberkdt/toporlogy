@@ -1226,6 +1226,40 @@
      "enforced": ""
     }
    },
+   "compliance_case": {
+    "elasticity": {
+     "status": "SUPPORTED",
+     "evidence": [
+      "tests/toporlogy/test_yaml_research_responses.py::test_value_and_gradient"
+     ],
+     "reason": "",
+     "enforced": ""
+    },
+    "elasticity_gmg": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "",
+     "enforced": ""
+    },
+    "modal": {
+     "status": "UNSUPPORTED",
+     "evidence": [],
+     "reason": "needs the static state u; physics modal solves an eigenproblem only",
+     "enforced": "catalog"
+    },
+    "nonlinear_elasticity": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "",
+     "enforced": ""
+    },
+    "tensor_elasticity": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "",
+     "enforced": ""
+    }
+   },
    "conduction_connectivity": {
     "elasticity": {
      "status": "SUPPORTED",
@@ -1816,6 +1850,41 @@
      "status": "SUPPORTED",
      "evidence": [
       "tests/toporlogy/test_robust.py::test_gradcheck_robust_compliance_and_dilated_volume"
+     ],
+     "reason": "",
+     "enforced": ""
+    },
+    "elasticity_gmg": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "",
+     "enforced": ""
+    },
+    "modal": {
+     "status": "UNSUPPORTED",
+     "evidence": [],
+     "reason": "needs the static state u; physics modal solves an eigenproblem only",
+     "enforced": "catalog"
+    },
+    "nonlinear_elasticity": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "",
+     "enforced": ""
+    },
+    "tensor_elasticity": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "",
+     "enforced": ""
+    }
+   },
+   "scenario_compliance": {
+    "elasticity": {
+     "status": "SUPPORTED",
+     "evidence": [
+      "tests/toporlogy/test_yaml_research_responses.py::test_value_and_gradient",
+      "tests/toporlogy/test_uq.py::test_u10b_robust_gradients_match_finite_differences"
      ],
      "reason": "",
      "enforced": ""

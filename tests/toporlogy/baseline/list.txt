@@ -105,11 +105,12 @@ physics  - physics model (state solve) (5)
                         merit=residual
   tensor_elasticity     element=null  solver=direct
 
-response  - objective or constraint response (25)
+response  - objective or constraint response (27)
   buckling                     load_factor=null  n_modes=6  rho=50.0  case=0  penal_g=3.0
                                scale=null  preload_case=null  exclude=null
   centre_of_mass               axis=x
   compliance                   weights=null
+  compliance_case              case=0
   conduction_connectivity      sink=null  kmin_ratio=0.001  penal=3.0  aggregate=pnorm  p=8.0
                                eta=0.7  reference=solid
   cost                         (no parameters)
@@ -132,6 +133,7 @@ response  - objective or constraint response (25)
   phase_volume                 phases=null  weighted=false
   robust_compliance            realisations=["eroded", "intermediate", "dilated"]  aggregate=ks
                                rho=50.0  p=16.0  scale=null  weights=null
+  scenario_compliance          measure=mean  k=0.0  alpha=0.95  scale=1.0
   stress                       sigma_lim=null [force/length^2]  aggregate=pnorm  parameter=8.0
                                q=0.5  adaptive=0.5  exclude=null  cases=null  criterion=null
   stress_augmented_lagrangian  objective=?  sigma_lim=null [force/length^2]  form=polynomial

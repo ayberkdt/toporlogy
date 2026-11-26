@@ -69,6 +69,8 @@ STATE = {  # response spec (objective) for a state response
                                     "sigma_lim": 1.0},
     "end_compliance": "end_compliance",
     "end_strain_energy": "end_strain_energy",
+    "scenario_compliance": "scenario_compliance",
+    "compliance_case": "compliance_case",
 }
 EIGEN = {"frequency": {"type": "maximize", "response": {"type": "frequency"}},
          "eigenvalue": {"type": "maximize", "response": {"type": "eigenvalue"}},

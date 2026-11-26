@@ -855,6 +855,13 @@ RESPONSE_MATRIX: dict[str, dict[str, Cell]] = {
     "robust_compliance": _row(
         elasticity=Cell(SUPPORTED, (T + "test_robust.py::test_gradcheck_robust_compliance_and_dilated_volume",)),
         modal=_NO_STATE),
+    "scenario_compliance": _row(
+        elasticity=Cell(SUPPORTED, (T + "test_yaml_research_responses.py::test_value_and_gradient",
+                                    T + "test_uq.py::test_u10b_robust_gradients_match_finite_differences")),
+        modal=_NO_STATE),
+    "compliance_case": _row(
+        elasticity=Cell(SUPPORTED, (T + "test_yaml_research_responses.py::test_value_and_gradient",)),
+        modal=_NO_STATE),
     "displacement": _row(
         elasticity=Cell(SUPPORTED, (T + "test_gradients.py::test_non_self_adjoint_displacement",
                                     T + "test_compose.py::test_displacement_value_and_gradient")),

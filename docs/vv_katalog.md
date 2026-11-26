@@ -105,6 +105,7 @@ Yalnız sentetik kayıt var; kaynağı, sayfası ve lisansı bu çalışmada oku
 | buckling | SUPPORTED | UNSUPPORTED (catalog) | UNSUPPORTED (catalog) | UNSUPPORTED (catalog) | NOT VERIFIED |
 | centre_of_mass | SUPPORTED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED |
 | compliance | SUPPORTED | SUPPORTED | UNSUPPORTED (catalog) | EXPERIMENTAL | SUPPORTED |
+| compliance_case | SUPPORTED | NOT VERIFIED | UNSUPPORTED (catalog) | NOT VERIFIED | NOT VERIFIED |
 | conduction_connectivity | SUPPORTED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED |
 | cost | SUPPORTED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED |
 | coupling_compliance | SUPPORTED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED |
@@ -123,6 +124,7 @@ Yalnız sentetik kayıt var; kaynağı, sayfası ve lisansı bu çalışmada oku
 | min_frequency | UNSUPPORTED (component) | UNSUPPORTED (component) | SUPPORTED | UNSUPPORTED (component) | NOT VERIFIED |
 | phase_volume | SUPPORTED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED |
 | robust_compliance | SUPPORTED | NOT VERIFIED | UNSUPPORTED (catalog) | NOT VERIFIED | NOT VERIFIED |
+| scenario_compliance | SUPPORTED | NOT VERIFIED | UNSUPPORTED (catalog) | NOT VERIFIED | NOT VERIFIED |
 | stress | SUPPORTED | NOT VERIFIED | UNSUPPORTED (catalog) | NOT VERIFIED | NOT VERIFIED |
 | stress_augmented_lagrangian | SUPPORTED | NOT VERIFIED | UNSUPPORTED (catalog) | NOT VERIFIED | NOT VERIFIED |
 | volume | SUPPORTED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED |
@@ -144,6 +146,8 @@ Gerekçe ve kanıt (yalnız boş olmayanlar):
 - `compliance` × `modal`: UNSUPPORTED — needs the static state u; physics modal solves an eigenproblem only
 - `compliance` × `nonlinear_elasticity`: EXPERIMENTAL — same number as end_compliance by construction (EndCompliance subclasses Compliance); only end_compliance is tested [test_nonlinear.py::test_v6_end_compliance_gradient_finite_difference]
 - `compliance` × `tensor_elasticity`: SUPPORTED [test_material_design.py::test_k8b_scalar_limit_matches_multiphase_simp; test_material_design.py::test_g1_compliance_gradient_finite_difference]
+- `compliance_case` × `elasticity`: SUPPORTED [test_yaml_research_responses.py::test_value_and_gradient]
+- `compliance_case` × `modal`: UNSUPPORTED — needs the static state u; physics modal solves an eigenproblem only
 - `conduction_connectivity` × `elasticity`: SUPPORTED — tested with physics elasticity [test_connectivity.py::test_gradcheck_conduction_connectivity]
 - `conduction_connectivity` × `elasticity_gmg`: NOT VERIFIED — does not read the study's physics (read from the code); combination not tested
 - `conduction_connectivity` × `modal`: NOT VERIFIED — does not read the study's physics (read from the code); combination not tested
@@ -224,6 +228,8 @@ Gerekçe ve kanıt (yalnız boş olmayanlar):
 - `phase_volume` × `tensor_elasticity`: NOT VERIFIED — does not read the study's physics (read from the code); combination not tested
 - `robust_compliance` × `elasticity`: SUPPORTED [test_robust.py::test_gradcheck_robust_compliance_and_dilated_volume]
 - `robust_compliance` × `modal`: UNSUPPORTED — needs the static state u; physics modal solves an eigenproblem only
+- `scenario_compliance` × `elasticity`: SUPPORTED [test_yaml_research_responses.py::test_value_and_gradient; test_uq.py::test_u10b_robust_gradients_match_finite_differences]
+- `scenario_compliance` × `modal`: UNSUPPORTED — needs the static state u; physics modal solves an eigenproblem only
 - `stress` × `elasticity`: SUPPORTED [test_stress.py::test_gradient_aggregated_stress; test_independent_stress.py::test_s2_von_mises_index]
 - `stress` × `modal`: UNSUPPORTED — needs the static state u; physics modal solves an eigenproblem only
 - `stress` × `nonlinear_elasticity`: NOT VERIFIED — builds; the small-strain stress of the stress response on a large-displacement state is not a verified measure (risk)

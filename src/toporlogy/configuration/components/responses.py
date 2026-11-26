@@ -247,6 +247,24 @@ def register_responses() -> None:
         from toporlogy.optimization.mass_responses import InertiaComponent
         return InertiaComponent(i, j, float(ctx.material.get("rho", 1.0)))
 
+    def scenario_compliance(ctx: BuildContext, measure: str = "mean", k: float = 0.0, alpha: float = 0.95,
+                            scale: float = 1.0) -> Any:
+        """Risk measure of the compliances of all load cases, each case one scenario of an uncertain load: measure
+        mean | mean_std (mean + k std) | cvar (level alpha); one factorisation for every scenario
+        (optimization.uq, docs/olcumler/laminat_uq.md)."""
+        from toporlogy.optimization.uq import ScenarioCompliance
+        return ScenarioCompliance(measure, k, alpha, scale)
+
+    def compliance_case(ctx: BuildContext, case: int = 0) -> Any:
+        """Compliance F_c.u_c of one load case (0-based): objective or epsilon-constraint of a trade-off between load
+        cases (optimization.pareto)."""
+        from toporlogy.optimization.pareto import CaseCompliance
+        if not 0 <= int(case) < int(ctx.n_cases):
+            raise ValueError(f"case {case}: the config has {ctx.n_cases} load case(s)")
+        return CaseCompliance(int(case))
+
+    register("response", "scenario_compliance", scenario_compliance)
+    register("response", "compliance_case", compliance_case)
     register("response", "centre_of_mass", centre_of_mass)
     register("response", "inertia", inertia)
     register("response", "stress", stress, nested={"exclude": "shape[]"}, units={"sigma_lim": "force/length^2"})
