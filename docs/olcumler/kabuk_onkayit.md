@@ -630,3 +630,184 @@ Kod ve koşular `ag_topoloji_onkayit.md` AC1–AC8 sonucunda. Testler `tests/top
 
 Her mesnet kümesi kendi `FlatShell`'ini kurar (eleman matrisleri küme başına yeniden hesaplanır). Kalan: nokta
 momenti, jeodezik filtre mesafesi, VTU'da gerilme / kabuk kesit kuvvetleri.
+
+## Ek ön kayıt: kalınlık yönü düzeltmeli referansla drilling 1e-2 / 1e-1 ayrımı (DL0–DL6)
+
+Ön kayıt 2026-11-27 00:13 +0300, yeni ölçüm kodu yazılmadan önce (HEAD `443a487`). Ön kayıttan önce yalnız çözücü ve
+bellek denemeleri yapıldı: (i) DB'de ölçülmüş iki ağda beş çözücü kurgusu (varsayılan SuperLU `MMD_AT_PLUS_A`;
+kütüphanenin iç içe bölme sırası ile SuperLU ve süperdüğümlü Cholesky; aşağıdaki "çift düzlemli" iç içe bölme ile
+SuperLU ve Cholesky): 32 × 24 × 2 (beşi) ve 64 × 48 × 1 (yalnız Cholesky, çift düzlemli), t = 0,05; uyumlar DB2 / DB1
+kayıtlarıyla aynı, beş kurgu on basamakta aynı; (ii) yeni ağlarda yalnız çarpanlama süresi ve tepe bellek (uyum
+hesaplanmadı, yazdırılmadı), Cholesky + çift düzlemli bölme, t = 0,05: 16 × 12 × {1, 2, 4, 8} 0,46 / 0,53 / 0,67 /
+0,95 GB, 32 × 24 × {1, 3, 4} 0,67 / 1,21 / 1,48 GB, en uzun 9 s; 64 × 48 × 1 (tam çözüm) 1,49 GB (varsayılan SuperLU
+DB'de 1,8 GB). O an boş fiziksel bellek 3,1 GB. Kütüphanenin iç içe bölmesi (`solvers.ordering`) ikinci derece ağda
+ayırıcı olmayan düzlem seçebiliyor (tek indisli düğüm düzlemi T10 hücrelerini ayırmaz): 32 × 24 × 2'de SuperLU dolgusu
+88,9 M, MMD ile 33,9 M; yalnız çift indisli (eleman sınırındaki) düzlemlerle bölünce SuperLU 32,6 M, Cholesky 18,5 M
+(yalnız L). Bu sıra test dosyasında yazılır, kütüphaneye girmez.
+
+Soru: DB4'te en kötü durum hatası E(1e-2) = %0,66, E(1e-1) = %0,38; fark (0,28 puan) tek T10 katmanının sertliği (DB2:
+t = 0,05 radyalde nr = 2 %0,30 daha yumuşak) ve düzlem içi Richardson hatası (en çok %0,22) mertebesindeydi. Kalınlık
+yönü hatası ayrıca kestirilip referans düzeltilince 1e-2 ile 1e-1 ayrılıyor mu; daha büyük drilling değerleri daha mı
+iyi; varsayılan `DRILL` = 1e-1 kalmalı mı?
+
+**Nicelikler.** Geometri, malzeme, ankastre, yama yükleri, c = Fᵀu ve dört durum k (t ∈ {0,01; 0,05} × köşe / radyal)
+DB ile aynı. c(N, n): T10, düzlem içi ağ N, kalınlık yönünde n katman.
+* Katman dizisi: 16 × 12 için n ∈ {1, 2, 4, 8}, 32 × 24 için n ∈ {1, 2, 4} (oran 2). Bu ağların hepsi süperdüğümlü
+  Cholesky ve çift düzlemli iç içe bölme ile çözülür (DL0 bu çözücüyü varsayılana karşı denetler).
+* Katman Richardson'ı (DB formülünün n'deki eşi): Δ₁ = c(N, 2) − c(N, 1), Δ₂ = c(N, 4) − c(N, 2),
+  c_L(N) = c(N, 4) + Δ₂² / (Δ₁ − Δ₂), p_L = log₂(Δ₁/Δ₂); katman düzeltmesi r(N) = c_L(N) / c(N, 1) − 1; katman
+  kestirim hatası e_L(N) = \|c_L(N) − c(N, 4)\| / c(N, 1). İhmal edilebilir dizi: max(\|Δ₁\|, \|Δ₂\|) ≤ 1e-5 · c(N, 1)
+  ise c_L(N) yerine c(N, 4), e_L(N) = \|Δ₂\| / c(N, 1) + 1e-5.
+* Düzlem içi referans c_∞(k): DB1'in kendisi (T10, n = 1, 16 × 12 / 32 × 24 / 64 × 48, varsayılan çözücü, yeniden
+  hesaplanır), ε_in(k) = \|c_∞ − c₃\| / c_∞ (DB'deki tanım).
+* Düzeltilmiş referans: c_D(k) = c_∞(k) · (1 + r(32 × 24, k)).
+* Hata bütçesi (göreli): B(k) = ε_in(k) + e_L(32 × 24, k) + m(k), m(k) = \|r(32 × 24, k) − r(16 × 12, k)\|
+  (düzeltmenin düzlem içi ağa bağlılığı; düzeltme ağ ikilemesinde en az birinci mertebeden yakınsıyorsa 32 × 24'ten
+  sonraki değişimin üst sınırı).
+* Kabuk: α ∈ {1e-3, 1e-2, 3e-2, 1e-1, 3e-1, 1}, `FlatShell(…, drill=α)`, 32 × 24, 64 × 48, 128 × 96 **yeniden
+  hesaplanır** (DB testleri yalnız 1e-5 … 1e-1'i ölçtü ve belgeye iki ondalıkla yazıldı; 3e-2, 3e-1, 1 yeni).
+  d(α, k) = c_kabuk(α, 128 × 96, k) / c_D(k) − 1, E(α) = max_k \|d(α, k)\|. İkinci kabuk değişkeni: kabuğun kendi
+  Richardson değeri (32 × 24 / 64 × 48 / 128 × 96, `richardson`); tek yönlü ve büzülen değilse o (α, k) için 128 × 96
+  değeri.
+
+| # | Kontrol | Eşik |
+|:---|:---|:---|
+| DL0 | kurulum (hızlı, varsayılan takım): düğümler (2nθ+1, 2nz+1, 2nr+1) C sıralı ızgarada (her düğümün eşlenmemiş kutu koordinatı kendi ızgara noktasında); Cholesky + çift düzlemli bölme ile c, varsayılan çözücüye (`ElasticProblem.solve`) karşı, 16 × 12 × 2, iki t, iki yük | ızgara: ≤ 1e-12 mutlak; c farkı ≤ 1e-10 göreli |
+| DL1 | katman yakınsaması: her N ∈ {16 × 12, 32 × 24} ve her k için Δ₁ Δ₂ > 0 ve \|Δ₂\| < \|Δ₁\|, ya da ihmal edilebilir dizi | her biri (8 durum) |
+| DL2 | katman kestiriminin geçerliliği (16 × 12): \|c(16 × 12, 8) − c_L(16 × 12)\| / c(16 × 12, 1) | ≤ max(e_L(16 × 12), 1e-6), her k |
+| DL3 | katman düzeltmesinin düzlem içi ağdan bağımsızlığı: \|r(32 × 24) − r(16 × 12)\| | ≤ max(0,25 · \|r(32 × 24)\|, 1e-4), her k |
+| DL4 | kabuk ağ yakınsaması (DB3 ölçütü, altı α): \|c(128 × 96) − c(64 × 48)\| / c(128 × 96) | ≤ %1, her α ve k |
+| DL5 | karar kuralının sonucu α* (aşağıda) = `toporlogy.fem.shell.DRILL` | eşit |
+| DL6 | kayıt (eşiksiz): katman tablosu c(N, n), p_L, r, e_L; c_∞, c_D, B ve bileşenleri; d(α, k) ve E(α) iki kabuk değişkeniyle; ayrılabilirlik sınırları (aşağıda); basit kıyas \|E(1e-2) − E(1e-1)\| ile max_k B(k); koşullu 64 × 48 × 2 | — |
+
+DL3 eşiğinin gerekçesi: düzeltme 32 × 24'te ölçülüp 64 × 48 referansına uygulanıyor; ağ ikilemesinde dörtte birden çok
+değişmesi toplanabilir (ağdan bağımsız) düzeltme varsayımını zayıflatır. 1e-4 tabanı (0,01 puan) incelenen farkın
+(0,28 puan) otuzda biri; düzeltmesi çok küçük durumlarda göreli kıyasın anlamsızlaşmasını önler.
+
+**Ayrılabilirlik.** α ile β ayrılabilir ⇔ her durumun referansı kendi bütçesi içinde bağımsız oynatıldığında
+E(α) − E(β)'nin işareti değişmiyor: c_D(k) · (1 + s_k B(k)), s_k [−1, 1]'de uçlar dahil 41 eşit aralıklı nokta, 41⁴
+birleşimin hepsinde ve iki kabuk değişkeninin ikisinde de E(α) − E(β) aynı işaretli ve sıfırdan farklı. Kaydedilen: bu
+ızgarada E(1e-2) − E(1e-1)'in en küçüğü ve en büyüğü. Gerekçe: E dört durum üzerinden bir maksimum; bir durumun referans
+hatası o durumdaki iki α'nın d'sini birlikte kaydırır. Bu yüzden "\|E(1e-2) − E(1e-1)\| > max_k B(k)" kıyası hem
+gereksiz katı olabilir (referansı belirsiz durum iki α için aynı d'yi veriyorsa sıralamayı değiştiremez) hem gereksiz
+gevşek (belirsiz bir durum oynatılınca en kötü durum hâline gelip sıralamayı çevirebilir). Karar ızgaradaki işaretle
+verilir, basit kıyas yalnız kayıttır. Kabuk ağ hatası bütçede yok; yerine iki kabuk değişkeni (128 × 96 ve kabuğun kendi
+Richardson'ı) geçer.
+
+**Karar kuralı.** Önkoşullar: DB1 (yeniden hesaplanan düzlem içi referans: tek yönlü, büzülen, ε_in ≤ %1), DL1, DL2,
+DL3, DL4 tutuyor. Biri tutmazsa kural uygulanmaz, α* = 1e-1 (değişmez), tutmayan kontrol strict xfail, sonuç "ayrılamıyor
+(önkoşul tutmadı)". Tutarsa: α_en = argmin_α E(α) (128 × 96 değişkeni, oynatmasız; eşitlikte log ölçekte 1e-1'e yakın
+olan). α_en = 1e-1 ise α* = 1e-1. α_en ≠ 1e-1 ve α_en ile 1e-1 ayrılabilir ise α* = α_en; ayrılamıyorsa α* = 1e-1. Sorunun
+yanıtı (1e-2 ile 1e-1 ayrılabilir mi) bütçe ve ızgaradaki sınırlarla ayrıca yazılır.
+
+Eski sayılarla beklenti (ön kayıt anında bilinen DB değerlerinden; ölçüm değil): DB2'nin nr = 2 farkları (3,4e-6 /
+1,2e-3 / 2,2e-4 / 3,0e-3) r'nin kabaca alt sınırı; t = 0,05 radyalde düzeltme +%0,3'ün üstündeyse orada d(1e-1) sıfıra,
+d(1e-2) +%0,3'e yaklaşır. t = 0,01 radyalde ε_in = %0,22 ve d(1e-2) ≈ d(1e-1) (−0,04 / −0,05); bu durumun bütçesi
+büyükse oynatmada iki α'nın en kötü durumu birlikte o olabilir ve ayrılabilirlik bozulabilir. Sonuç önceden belli değil.
+
+**Koşullu kayıt: 64 × 48 × 2.** Kestirilen tepe bellek ≈ 2,7 GB (Cholesky, çift düzlemli bölme; 32 × 24'te katman
+başına artıştan). Koşu başında boş fiziksel bellek ≥ 3,8 GB ise koşulur, değilse koşulmaz ve "bellek yüzünden
+koşulmadı" yazılır. Koşulursa yalnız kayıt (karara girmez): r₂(N) = c(N, 2) / c(N, 1) − 1, N = 16 × 12, 32 × 24,
+64 × 48.
+
+**Varsayılan değişirse.** `DRILL` = α*; `test_shell.py`, `test_shell_study.py`, `test_shell_drilling.py`,
+`test_shell_yaml.py`, `test_shell_yaml_ext.py`, `test_shell_yaml_comb.py` ve `test_shell_reference.py` yeniden koşulur
+(DB4 eski kuralı 1e-5 … 1e-1 arasında tek katmanlı referansla uyguluyor ve 1e-1 diyor; yeni varsayılanla DB4'ün
+`DRILL` kıyası, DB kuralının sonucunun kayıtlı değerine (1e-1) kıyasa çevrilir; varsayılanı bundan sonra DL5 bağlar). Ön kayıtlı eşiği yeni varsayılanla
+tutmayan kontrol ölçülen değerle strict xfail (eşik gevşetilmez); değişen ölçülen değerler burada yazılır; eski sonuç
+bölümleri eski sayılarıyla ve bir notla kalır; yeni varsayılanla tutmaya başlayan strict xfail KB3 gibi α üzerinden
+parametrelenir (eski α kolu eski ölçümüyle strict xfail kalır, varsayılan kolu geçer). Sonra gerekiyorsa
+`_vv_layers.py --write`, `test_api_surface.py --write`, `test_units.py --write`; `test_api_surface.py
+test_catalog_ledger.py test_architecture.py`, `-m baseline` (bit düzeyinde) ve `-m "not slow"` takımı. Varsayılan
+değişmezse yeni testler ve defter testi.
+
+Kurallar: ilk koşuda tutmayan kontrol, ölçülen değeriyle `xfail(strict=True)` olur ve `docs/vv_kutugu.json`'a girer;
+eşik gevşetilmez; test kurulum hatası (ölçüm değil) düzeltilebilir ama burada yazılır; ilk koşudan sonra eklenen kontrol
+"post hoc" diye işaretlenir. DL0 varsayılan takımda, DL1–DL6 `@pytest.mark.slow`; testler
+`tests/toporlogy/test_shell_reference.py`.
+
+### DL0–DL6 sonucu (ilk ölçüm, 2026-11-27)
+
+`tests/toporlogy/test_shell_reference.py` (DL0 iki test varsayılan takımda; DL1–DL6 25 test `slow`). Değerler `-s`
+çıktısından (`dl_first_run.log`, `dl_second_run.log`, `dl_xfail_check.log`; `.claude/tmp-toporlogy/drillref`).
+
+**Kurulum düzeltmesi (ölçüm değil).** İlk koşuda t = 0,01'in bütün katmanlı çözümleri, ön kayıtta olmayan kendi artık
+denetimimde durdu: max \|K x − F\| / max \|F\| ≤ 1e-8 istemiştim, kötü koşullu ince katıda 1,3e-8 ve 2,2e-8 çıktı. Bu
+denetim kütüphanenin kendi denetimiyle (`fem.elastic.checked_residual`: göreli artık ya da geri hata) değiştirildi; çözüm
+aynı, yalnız kabul ölçütü değişti. Bu yüzden t = 0,01'in DL1–DL3 değerleri ve DL5–DL6 ikinci koşudan; t = 0,05 değerleri
+iki koşuda aynı. Başka düzeltme yok.
+
+**Ön kayıtlı kural uygulanmadı: DL3 dört durumun üçünde tutmadı.** Katman düzeltmesi düzlem içi ağa bağlı, yani
+32 × 24'te ölçülen düzeltme 64 × 48 referansına toplanamıyor. Kural gereği α* = 1e-1, **varsayılan değişmedi**;
+sonuç "ayrılamıyor (önkoşul tutmadı)". Önkoşullar tutsaydı da sonuç aynı olurdu (aşağıda): 1e-2 ile 1e-1 bütçe içinde
+ayrılmıyor, en küçük E'yi veren 3e-2 de 1e-1'den ayrılmıyor.
+
+| # | Durum | Ölçülen |
+|:---|:---|:---|
+| DL0 t = 0,05 | PASS | ızgara 0; Cholesky ile varsayılan SuperLU farkı 4,1e-12 |
+| DL0 t = 0,01 | **xfail** | ızgara 0; fark **1,2e-9** > 1e-10 (iki doğrudan çözücünün yuvarlama farkı, kötü koşullu ince katı; ölçülen katman etkilerinden dört mertebe küçük, karar önkoşulu değil) |
+| DL1 | PASS (8) | hepsi tek yönlü ve büzülen; 32 × 24, t = 0,01 köşe ihmal edilebilir dizi (\|Δ\| ≤ 1e-5 c) |
+| DL2 | PASS (4) | \|c(16 × 12, 8) − c_L\| / c₁: 1,65e-5 / 1,57e-4 / 4,37e-6 / 4,82e-5 (sınır 2,76e-5 / 5,20e-4 / 7,73e-6 / 3,89e-4; t = 0,01 köşe / radyal, t = 0,05 köşe / radyal) |
+| DL3 t = 0,01 köşe | PASS | \|r₃₂ − r₁₆\| 7,56e-5 ≤ 1e-4 |
+| DL3 t = 0,01 radyal | **xfail** | 2,23e-3 > 4,25e-4 (r: 3,93e-3 → 1,70e-3) |
+| DL3 t = 0,05 köşe | **xfail** | 1,115e-4 > 1,0e-4 (r: 1,66e-4 → 2,77e-4) |
+| DL3 t = 0,05 radyal | **xfail** | 1,86e-3 > 9,19e-4 (r: 5,53e-3 → 3,68e-3) |
+| DL4 | PASS | 64 × 48 → 128 × 96 en büyük değişim (altı α içinde) 9,7e-4 / 5,0e-3 / 8,9e-4 / 2,1e-3 |
+| DL5 | PASS | önkoşul DL3 tutmadı ⇒ α* = 1e-1 = `DRILL` |
+| DL6 | kayıt | aşağıda; 64 × 48 × 2 **bellek yüzünden koşulmadı** (koşu başında boş bellek 2,45 GB < 3,8 GB) |
+
+**Katman yakınsaması (T10).** c(N, n) / c(N, 1) − 1; p_L, r = c_L / c(N, 1) − 1 ve e_L ön kayıttaki gibi.
+
+| N | t/R | Yük | n = 2 | n = 4 | n = 8 | p_L | r | e_L |
+|:---|---:|:---|---:|---:|---:|---:|---:|---:|
+| 16 × 12 | 0,01 | köşe | +3,71e-5 | +5,82e-5 | +6,93e-5 | 0,82 | +8,58e-5 | 2,8e-5 |
+| 16 × 12 | 0,01 | radyal | +2,50e-3 | +3,41e-3 | +3,78e-3 | 1,46 | +3,93e-3 | 5,2e-4 |
+| 16 × 12 | 0,05 | köşe | +1,30e-4 | +1,58e-4 | +1,70e-4 | 2,21 | +1,66e-4 | 7,7e-6 |
+| 16 × 12 | 0,05 | radyal | +4,07e-3 | +5,14e-3 | +5,49e-3 | 1,91 | +5,53e-3 | 3,9e-4 |
+| 32 × 24 | 0,01 | köşe | +3,39e-6 | +1,03e-5 | — | (ihmal) | +1,03e-5 | 1,7e-5 |
+| 32 × 24 | 0,01 | radyal | +1,18e-3 | +1,54e-3 | — | 1,71 | +1,70e-3 | 1,6e-4 |
+| 32 × 24 | 0,05 | köşe | +2,22e-4 | +2,66e-4 | — | 2,34 | +2,77e-4 | 1,1e-5 |
+| 32 × 24 | 0,05 | radyal | +2,96e-3 | +3,54e-3 | — | 2,36 | +3,68e-3 | 1,4e-4 |
+
+32 × 24'te n = 2 farkları DB2 kaydıyla aynı (3,4e-6 / 1,2e-3 / 2,2e-4 / 3,0e-3). Katman yönünde Richardson iyi çalışıyor
+(DL2: n = 8 değeri kestirimin kendi hata payı içinde), ama düzeltmenin kendisi düzlem içi ağla değişiyor: radyal yükte
+ağ ikilenince t = 0,01'de 0,43, t = 0,05'te 0,66 katına iniyor, t = 0,05 köşede 1,67 katına çıkıyor. Tek katmanın hatası
+saf kalınlık yönü hatası değil, düzlem içi çözünürlükle etkileşen bir hata (yama ve ankastre kenarı çevresindeki
+kalınlık yönü değişimi); 64 × 48'deki değeri bu iki ağdan güvenle kestirilemiyor.
+
+**Düzeltilmiş referans ve bütçe** (önkoşul tutmadığı için karara girmedi; kayıt).
+
+| t/R | Yük | c_∞ (n = 1) | c_D | B | ε_in | e_L | m |
+|---:|:---|---:|---:|---:|---:|---:|---:|
+| 0,01 | köşe | 380,5989 | 380,6028 | 4,8e-4 | 3,9e-4 | 1,7e-5 | 7,6e-5 |
+| 0,01 | radyal | 30 223,13 | 30 274,49 | 4,6e-3 | 2,2e-3 | 1,6e-4 | 2,2e-3 |
+| 0,05 | köşe | 69,50617 | 69,52543 | 3,4e-4 | 2,2e-4 | 1,1e-5 | 1,1e-4 |
+| 0,05 | radyal | 1 150,710 | 1 154,939 | 2,7e-3 | 7,0e-4 | 1,4e-4 | 1,9e-3 |
+
+**Kabuk / c_D − 1 (yüzde), 128 × 96.** Kabuk değerleri yeniden hesaplandı; 1e-3, 1e-2, 1e-1 düzeltmesiz c_∞'a
+bölününce DB tablosuyla iki ondalıkta aynı (yeni α'lar düzeltmesiz c_∞'a göre E: 3e-2 %0,46, 3e-1 %0,36, 1 %0,35; hepsi
+t = 0,05 radyalde). Son sütun ikinci değişkenle (kabuğun kendi Richardson'ı) E.
+
+| α | t = 0,01 köşe | t = 0,01 radyal | t = 0,05 köşe | t = 0,05 radyal | E | E (Richardson) |
+|:---|---:|---:|---:|---:|---:|---:|
+| 1e-3 | +0,020 | −0,115 | +0,514 | +2,826 | 2,826 | 2,888 |
+| 1e-2 | +0,015 | −0,207 | +0,143 | +0,295 | 0,295 | 0,361 |
+| 3e-2 | +0,014 | −0,214 | +0,112 | +0,089 | **0,214** | 0,155 |
+| 1e-1 | +0,014 | −0,217 | +0,100 | +0,015 | 0,217 | 0,130 |
+| 3e-1 | +0,012 | −0,220 | +0,096 | −0,008 | 0,220 | 0,126 |
+| 1 | +0,007 | −0,225 | +0,090 | −0,022 | 0,225 | **0,124** |
+
+E(1e-2) − E(1e-1): 128 × 96 ile +0,078 puan, bütçe ızgarasında [−0,145; +0,281]; kabuk Richardson'ı ile +0,231, ızgarada
+[−0,050; +0,280]. İşaret ikisinde de değişiyor ⇒ **1e-2 ile 1e-1 ayrılamıyor**. 1e-1'den ayrılan tek değer 1e-3 (daha
+kötü); 3e-2, 3e-1, 1 ayrılmıyor. Basit kıyas (kayıt): \|E(1e-2) − E(1e-1)\| = 0,078 puan < max_k B = 0,457 puan.
+
+Okuma. Katman düzeltmesi t = 0,05 radyal durumu belirgin değiştiriyor: DB'de d(1e-1) = +0,38, burada +0,015 (32 × 24
+düzeltmesiyle); bu durumda 1e-2 hâlâ +0,30 yumuşak. Ama düzeltilince en kötü durum α ≥ 3e-2 için t = 0,01 radyale
+geçiyor (kabuk %0,21–0,23 sert); orada bütün α'lar hemen aynı d'yi veriyor ve o durumun bütçesi en büyük (%0,46:
+düzlem içi Richardson %0,22 ve düzeltmenin ağa bağlılığı %0,22). E en kötü durum üzerinden alındığı için bu belirsizlik
+sıralamayı çevirebiliyor. Post hoc, karar dışı: yalnız t = 0,05 radyal durumuna bakılsa da \|d(1e-2)\| − \|d(1e-1)\|
+bütçe içinde işaret değiştiriyor (referans +%0,27 kayınca d(1e-2) ≈ +0,03, d(1e-1) ≈ −0,25). Yani bu referansla 1e-2,
+3e-2, 1e-1, 3e-1 ve 1 arasında seçim yapılamaz; hepsi dört durumda c_D'nin %0,3'ü içinde, 1e-3 değil (t = 0,05 radyalde
++%2,8). Ayırmak için gereken: düzeltmenin düzlem içi ağdan bağımsız olduğu bir ağ (64 × 48 × 2 ve 64 × 48 × 4; tahmini
+≥ 2,7 GB, bu koşuda boş bellek 1,1–2,5 GB arasıydı) ya da t = 0,01 radyalde daha sıkı bir düzlem içi referans (dördüncü
+düzlem içi ağ).
