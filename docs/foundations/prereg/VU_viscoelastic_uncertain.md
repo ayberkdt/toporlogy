@@ -37,3 +37,8 @@ optimisation side: on this problem class the spectral uncertainty of the bulk re
 (std/mean) almost independently of the topology, so topology optimisation can do little against it; and design
 comparisons at the 0.1–1 % level need a KKT-residual stop and multiple starts before any claim. Follow-up: KKT
 residual stopping criterion for MMA (the optimiser module), multi-start comparisons.
+
+## Correction (2026-11-27, after KS2/KS3)
+
+The explanation above that the step-size stop causes the objective gap is refuted by `prereg/KS_kkt_stop.md`: with
+KKT-stopped runs (residual ≤ 1e-4) the same gaps remain; the runs end at different stationary points.

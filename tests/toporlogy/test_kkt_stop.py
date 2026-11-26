@@ -34,6 +34,9 @@ def _w(xp):
 
 
 @pytest.mark.slow
+@pytest.mark.xfail(strict=True, reason="pre-registered KS2 FAILED: with both runs KKT-stopped (residuals 6.9e-5, "
+                   "8.1e-5) the robust design's mean+2std is 1.408537e-4 vs 1.404853e-4 for the nominal design (+0.26 %): "
+                   "different stationary points, not a stopping artefact")
 def test_ks2_ks4_robust_with_kkt_stop() -> None:
     st, times = _mbb()
     sts = _set(st.mesh, times, st.loads, np.setdiff1d(np.arange(st.ndof), st.free), SAMPLES)
@@ -52,6 +55,9 @@ def test_ks2_ks4_robust_with_kkt_stop() -> None:
 
 
 @pytest.mark.slow
+@pytest.mark.xfail(strict=True, reason="pre-registered KS3 FAILED: all four runs KKT-stopped (residual <= 9.2e-5); "
+                   "min-max worst 1.215313e-4 vs 1.211352e-4 for the t = 100 s design (+0.33 %): a different "
+                   "stationary point")
 def test_ks3_ks4_minmax_with_kkt_stop() -> None:
     st, times = _mbb()
     ks = [0, _step_of(times, 10.0), len(times) - 1]

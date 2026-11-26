@@ -37,3 +37,8 @@ Run: `python -m pytest tests/toporlogy/test_viscoelastic_robust.py -q -p no:rand
   point. Strict xfail with these values; ledger `ledger_additions/VR_viscoelastic_robust.json`.
 * Follow-up (not done): a min–max study with time-varying loads or several load cases, where the active time
   changes with the design; a KKT-residual stop instead of the step-size stop.
+
+## Correction (2026-11-27, after KS2/KS3)
+
+The explanation above that the step-size stop causes the objective gap is refuted by `prereg/KS_kkt_stop.md`: with
+KKT-stopped runs (residual ≤ 1e-4) the same gaps remain; the runs end at different stationary points.

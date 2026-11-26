@@ -776,6 +776,26 @@
    "resolution": "hypothesis too strong for a nonconvex problem with different iteration paths; a min-max study needs time-varying loads or several load cases, and a convergence test on the KKT residual rather than the step size",
    "record": "docs/foundations/prereg/VR_viscoelastic_robust.md",
    "slow": false
+  },
+  {
+   "nodeid": "tests/toporlogy/test_kkt_stop.py::test_ks2_ks4_robust_with_kkt_stop",
+   "kind": "pre-registered check failed",
+   "model_backend": "optimization.viscoelastic_topology robust (9 samples) + MMA, KKT stop 1e-4, CPU",
+   "reason": "both runs KKT-stationary (6.9e-5, 8.1e-5); robust design mean+2std 1.408537e-4 vs 1.404853e-4 for the nominal design (+0.26 %): different local optima of a nonconvex problem, not a stopping artefact",
+   "risk": "low",
+   "resolution": "hypothesis assumed one optimum; comparisons of designs at the 0.1-1 % level need multi-start / continuation, and claims of robust benefit need a larger, more uncertain problem",
+   "record": "docs/foundations/prereg/KS_kkt_stop.md",
+   "slow": true
+  },
+  {
+   "nodeid": "tests/toporlogy/test_kkt_stop.py::test_ks3_ks4_minmax_with_kkt_stop",
+   "kind": "pre-registered check failed",
+   "model_backend": "optimization.viscoelastic_topology min-max (bound formulation) + MMA, KKT stop 1e-4, CPU",
+   "reason": "all runs KKT-stationary (<= 9.2e-5); min-max worst case 1.215313e-4 vs 1.211352e-4 for the single t = 100 s design (+0.33 %): a different stationary point",
+   "risk": "low",
+   "resolution": "as KS2; with a constant load the min-max reduces to J(100 s) and the bound formulation follows a different path",
+   "record": "docs/foundations/prereg/KS_kkt_stop.md",
+   "slow": true
   }
  ],
  "skips": [
