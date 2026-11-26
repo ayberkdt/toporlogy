@@ -224,18 +224,23 @@ class OptimizeResult:
     objectives: np.ndarray | None = None      # J at each of the objective steps for the returned design
     converged: bool = False
     iterations: int = 0
+    termination: str = "max_iter"             # max_iter | design_change | kkt
+    kkt_residual: float | None = None         # diagnostics.kkt_estimate of the last analysed iterate
 
 
 def optimize_viscoelastic(structure: ViscoelasticStructure | RobustViscoelastic, volume: float, rmin: float,
                           step_index: int = -1,
                           penal: float = 3.0, emin: float = 1e-9, max_iter: int = 40, move: float = 0.2,
                           x0: np.ndarray | None = None, steps: Sequence[int] | None = None,
-                          tol: float = 0.0) -> OptimizeResult:
+                          tol: float = 0.0, kkt_tol: float | None = None) -> OptimizeResult:
     """Minimise the compliance f_nᵀ u_n at step ``step_index`` (−1: the last, the service time), or with ``steps``
     (several step indices) the worst of them, min max_k J_k, by the bound formulation min z s.t.
     J_k/c_ref − z ≤ 0 (z an extra variable in [0, 1], c_ref = 1.5 max_k J_k(x0); ``prereg/VR_viscoelastic_robust.md``);
     volume fraction ≤ ``volume``; centroid density filter of radius ``rmin``; SIMP weights; MMA. Stops after
-    ``max_iter`` iterations or when the largest change of the variables is below ``tol`` (``converged``)."""
+    ``max_iter`` iterations, when the largest change of the variables is below ``tol``, or — with ``kkt_tol`` — when
+    the first-order optimality residual of the current iterate (:func:`~toporlogy.optimization.diagnostics.
+    kkt_estimate` on the normalised problem passed to MMA) is ≤ ``kkt_tol`` (``prereg/KS_kkt_stop.md``)."""
+    from toporlogy.optimization.diagnostics import kkt_estimate
     from toporlogy.optimization.mesh_topology import MeshDensityFilter
     from toporlogy.optimizers.mma import MMA
     filt = MeshDensityFilter(structure.mesh, rmin)
@@ -251,6 +256,8 @@ def optimize_viscoelastic(structure: ViscoelasticStructure | RobustViscoelastic,
     c0: float | None = None
     z = 0.0
     converged = False
+    termination = "max_iter"
+    kkt: float | None = None
     it = 0
 
     def evaluate(x: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
@@ -274,6 +281,11 @@ def optimize_viscoelastic(structure: ViscoelasticStructure | RobustViscoelastic,
             c0 = c if c0 is None else c0
             hist["f0"].append(c)
             hist["volume"].append(v)
+            if kkt_tol is not None:
+                kkt = float(kkt_estimate(x, dJ[0] / c0, np.array([v / volume - 1.0]), gv)["residual"])
+                if kkt <= kkt_tol:
+                    converged, termination = True, "kkt"
+                    break
             xn = opt.step(x, c / c0, dJ[0] / c0, np.array([v / volume - 1.0]), gv)
             change = float(np.abs(xn - x).max())
         else:
@@ -290,20 +302,25 @@ def optimize_viscoelastic(structure: ViscoelasticStructure | RobustViscoelastic,
             dg[0, :-1] = gv[0]
             dg[1:, :-1] = dJ / c0
             dg[1:, -1] = -1.0
+            if kkt_tol is not None:
+                kkt = float(kkt_estimate(y, df0, g, dg)["residual"])
+                if kkt <= kkt_tol:
+                    converged, termination = True, "kkt"
+                    break
             yn = opt.step(y, z, df0, g, dg)
             change = float(np.abs(yn - y).max())
             xn, z = yn[:-1], float(yn[-1])
         hist["change"].append(change)
         x = xn
         if change < tol:
-            converged = True
+            converged, termination = True, "design_change"
             break
     xp = filt(x)
     wt = torch.as_tensor(emin + xp ** penal * (1.0 - emin), dtype=torch.float64)
     with torch.no_grad():
         comp = structure.response(wt).compliance
     Jf = np.array([float(comp[k]) for k in ks])
-    res = OptimizeResult(x, xp, float(Jf.max()), float(vw @ xp), hist, Jf, converged, it)
+    res = OptimizeResult(x, xp, float(Jf.max()), float(vw @ xp), hist, Jf, converged, it, termination, kkt)
     if minmax:
         res.history["z"] = [z]
         res.history["c_ref"] = [float(c0 if c0 is not None else 1.0)]

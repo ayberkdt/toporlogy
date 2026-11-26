@@ -2961,6 +2961,47 @@
   "stiffness_coefficients": "stiffness_coefficients(C)",
   "symmetric_basis": "symmetric_basis(k)"
  },
+ "toporlogy.core.micromechanics": {
+  "EffectiveIsotropic": {
+   "attrs": [],
+   "class": "EffectiveIsotropic"
+  },
+  "HSBounds": {
+   "attrs": [],
+   "class": "HSBounds"
+  },
+  "InterpolatedModuli": {
+   "attrs": [],
+   "class": "InterpolatedModuli"
+  },
+  "InterpolationCheck": {
+   "attrs": [],
+   "class": "InterpolationCheck"
+  },
+  "IsoPhase": {
+   "attrs": [
+    "from_E_nu",
+    "is_void",
+    "nu"
+   ],
+   "class": "IsoPhase"
+  },
+  "VOID": "<IsoPhase>",
+  "check_fractions": "check_fractions(f,n)",
+  "dilute_sphere": "dilute_sphere(f,matrix,inclusion)",
+  "eshelby_sphere": "eshelby_sphere(nu)",
+  "hs_bounds": "hs_bounds(f,phases,dim)",
+  "hs_void_ramp_parameters": "hs_void_ramp_parameters(nu,dim,plane)",
+  "interpolate_moduli": "interpolate_moduli(x,phase_a,phase_b,scheme,dim)",
+  "interpolation_admissibility": "interpolation_admissibility(law,param,nu,dim,plane,n,tol)",
+  "mass_to_volume_fractions": "mass_to_volume_fractions(w,rho)",
+  "mixture_density": "mixture_density(v,rho)",
+  "mori_tanaka_sphere": "mori_tanaka_sphere(f,matrix,inclusion)",
+  "required_interpolation_parameters": "required_interpolation_parameters(nu,dim,plane)",
+  "reuss": "reuss(f,phases)",
+  "voigt": "voigt(f,phases)",
+  "volume_to_mass_fractions": "volume_to_mass_fractions(v,rho)"
+ },
  "toporlogy.core.properties": {
   "Constant": {
    "attrs": [
@@ -6968,6 +7009,13 @@
   "variance_estimate": "variance_estimate(y,level)"
  },
  "toporlogy.optimization.viscoelastic_topology": {
+  "RobustViscoelastic": {
+   "attrs": [
+    "response",
+    "samples"
+   ],
+   "class": "RobustViscoelastic"
+  },
   "ViscoelasticResult": {
    "attrs": [],
    "class": "ViscoelasticResult"
@@ -6978,7 +7026,7 @@
    ],
    "class": "ViscoelasticStructure"
   },
-  "optimize_viscoelastic": "optimize_viscoelastic(structure,volume,rmin,step_index,penal,emin,max_iter,move,x0,steps,tol)"
+  "optimize_viscoelastic": "optimize_viscoelastic(structure,volume,rmin,step_index,penal,emin,max_iter,move,x0,steps,tol,kkt_tol)"
  },
  "toporlogy.optimizers": {
   "BetaContinuation": {
