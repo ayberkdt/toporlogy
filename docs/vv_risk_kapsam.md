@@ -34,6 +34,7 @@ Katman sınıflaması (dosya → katmanlar):
 - `test_anisotropy.py`: U, MP
 - `test_api_surface.py`: IC
 - `test_architecture.py`: IC
+- `test_auxetic_cell.py`: OG, E2E
 - `test_baseline.py`: IC
 - `test_baseline_policy.py`: IC
 - `test_bc.py`: AS

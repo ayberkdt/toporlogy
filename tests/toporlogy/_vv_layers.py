@@ -63,7 +63,7 @@ FILE_LAYERS: dict[str, tuple[str, ...]] = {
     "test_symmetry.py": ("U", "E2E"), "test_t10_convergence.py": ("AN", "E2E"), "test_taylor_remainder.py": ("OG",),
     "test_timoshenko_cantilever.py": ("AN",), "test_anisotropy.py": ("U", "MP"), "test_linear_elastic.py": ("U", "MP"),
     "test_tensor.py": ("U",), "test_stress_recovery.py": ("EL", "AN"), "test_stress_singularity.py": ("AN",),
-    "test_stress_lbracket.py": ("OG", "E2E"), "test_stress_zero_density.py": ("U", "OG"), "test_vtu.py": ("U", "IC"), "test_units.py": ("U", "IC"), "test_material_catalog.py": ("MP", "IC"), "test_homogenization.py": ("AN", "OG"), "test_thermoelastic.py": ("AN", "AS", "OG"), "test_mass_properties.py": ("U", "AN", "OG"), "test_implicit.py": ("U", "OG"), "test_mode_tracking.py": ("U", "AN"), "test_sweep_resume.py": ("IC",), "test_tsai_wu_admissibility.py": ("MP",),
+    "test_stress_lbracket.py": ("OG", "E2E"), "test_stress_zero_density.py": ("U", "OG"), "test_vtu.py": ("U", "IC"), "test_units.py": ("U", "IC"), "test_material_catalog.py": ("MP", "IC"), "test_homogenization.py": ("AN", "OG"), "test_thermoelastic.py": ("AN", "AS", "OG"), "test_mass_properties.py": ("U", "AN", "OG"), "test_implicit.py": ("U", "OG"), "test_mode_tracking.py": ("U", "AN"), "test_sweep_resume.py": ("IC",), "test_tsai_wu_admissibility.py": ("MP",), "test_auxetic_cell.py": ("OG", "E2E"),
 }
 
 
