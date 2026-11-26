@@ -129,8 +129,10 @@ def _values(el: ET.Element) -> np.ndarray:
 
 
 def read_vtu(path: str | Path) -> VtuData:
-    """Read a file written by :func:`write_vtu` (ASCII UnstructuredGrid, one piece)."""
-    root = ET.parse(Path(path)).getroot()
+    """Read a file written by :func:`write_vtu` (ASCII UnstructuredGrid, one piece). Meant for files of this
+    library: the standard-library parser expands no external entities, and expat ≥ 2.4 limits entity expansion
+    (2.5.0 measured here), but do not read untrusted files with it."""
+    root = ET.parse(Path(path)).getroot()  # noqa: S314 - own files; see the docstring
     grid = root.find("UnstructuredGrid")
     piece = grid.find("Piece") if grid is not None else None
     if grid is None or piece is None:

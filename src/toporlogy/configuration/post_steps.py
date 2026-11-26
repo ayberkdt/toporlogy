@@ -351,6 +351,8 @@ def register_post_steps() -> None:
                     point[f"displacement_{c}"] = u
                 E0 = getattr(study.interp, "E0", None)
                 try:
+                    if E0 is None:
+                        raise ValueError("the interpolation has no E0")
                     from toporlogy.optimization.stress_recovery import StressRecovery
                     cen = StressRecovery(study.physics, U, float(E0)).centroids()
                     vm = cen.von_mises()
