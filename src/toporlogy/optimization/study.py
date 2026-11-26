@@ -196,6 +196,7 @@ class Study:
         if len(set(keys)) != len(keys):
             raise ValueError(f"constraint names must be unique: {keys}; set Constraint(name=...)")
         self._active = torch.as_tensor(domain.active_elements, dtype=torch.long)
+        self._install_density_map()
         self.n_evaluations = 0
         self.config: dict[str, Any] | None = None          # resolved declarative config, when built from one
         # A first link that maps a reduced variable vector z → design vector (symmetry, extrusion, pattern) declares
@@ -233,6 +234,28 @@ class Study:
                              f"or constraint; got {bad}")
 
     # ------------------------------------------------------------------ evaluation
+    def _install_density_map(self) -> None:
+        """Give a non-linear physics with energy interpolation the real density x̄ = E⁻¹(E) of this study's SIMP /
+        RAMP interpolation (current exponent; docs/olcumler/gercek_yogunluk_onkayit.md). Other interpolations keep
+        the physics' own rule."""
+        from toporlogy.design.interp import RAMP, SIMP, inverse_modulus
+        ph = self.physics
+        if getattr(ph, "interpolation", None) is None or not hasattr(ph, "density_map"):
+            return
+        old = ph.density_map
+        if old is not None and not getattr(old, "from_study", False):
+            return                                         # set by the user: kept
+        if not isinstance(self.interp, (SIMP, RAMP)):
+            ph.density_map = None
+            return
+        interp = self.interp
+        frac = np.asarray(self.domain.frac, float).reshape(-1)[self._active.numpy()]
+
+        def density(E: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+            return inverse_modulus(interp, E, frac)
+        density.from_study = True                          # type: ignore[attr-defined]
+        ph.density_map = density
+
     def _needs(self, responses: Sequence[Response]) -> set[str]:
         out: set[str] = set()
         for r in responses:

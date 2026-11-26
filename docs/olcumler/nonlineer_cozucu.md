@@ -135,6 +135,7 @@ CPU, SuperLU/PARDISO yolu değişmedi (sürümler JSON'da `environment`).
   (yorum üssü 3 kalırsa) en büyük hata 0,385 (ρ = 0,19) / 0,148 (ρ = 0,30); kesme 0,1'de 0,364 / 0,115: γ yanlış
   yoğunlukta değerlendiriliyor. Fizik yoğunluğu değil modülü görüyor; gerçek ρ'nun rezidüye geçmesi `Study`
   arayüzünü gerektiriyor (perf / material-design dosyaları; sonuç notunda "gereken değişiklik").
+  Düzeltildi: `Study` SIMP / RAMP interpolasyonunun tersini fiziğe veriyor (`gercek_yogunluk_onkayit.md`, E4a–E4f).
 
 ### D (V4 neo-Hooke strict xfail'ının nedeni)
 

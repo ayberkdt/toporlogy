@@ -25,3 +25,21 @@ Değişiklik:
 
 Var olan nonlineer Study testleri (V6, model dönemi, çözücü seçenekleri) artık γ'yı gerçek yoğunlukta
 değerlendirir; sayıları değişir, ölçütleri değişmez. Bir ölçüt düşerse strict xfail olarak ölçülen değerle kaydedilir.
+
+## Sonuç (ilk ölçüm, 2026-11-26)
+
+`tests/toporlogy/test_real_density.py` (14 test). İlk iki koşuda E4a'nın 8 durumu testin kendi kurulum hatasıyla
+düştü (interpolasyon 2 × 2 alanın `frac`'ıyla kurulmuştu; ölçüm değil); örneklem biçimli alanla düzeltildi, eşik aynı.
+
+| # | Durum | Ölçülen |
+|:---|:---|:---|
+| E4a | PASS | en büyük fark 1,1e-16 (SIMP p = 1, 2, 3; RAMP q = 8; frac 1 ve 0,5); dx̄/dE · dE/dx̄ = 1, göreli ≤ 1e-5 |
+| E4b | PASS | 0 (p = 1, 2, 3; 16 × 6 kiriş, rastgele x) |
+| E4c | PASS | 1,2e-9 göreli (p = 2, uç uyumu, kesme 0,1) |
+| E4d | PASS | pasif boşluklu tasarımda gradyan ve değer sonlu |
+| E4e | PASS | Study'siz fizikte `density_map` None, γ eski kuralla bit düzeyinde aynı |
+| E4f | PASS | `pytest -m baseline`: 8 passed, bit düzeyinde aynı |
+
+E4b'nin ön kayıtlı tasarımı ayırt edici değil (post hoc gözlem): rastgele x süzgeçten sonra kesmenin (0,1) çok
+üstünde, γ iki kuralda da doymuş. Post hoc, ölçütsüz: x ∈ [0,02; 0,3] tasarımda (x̄ ∈ [0,066; 0,255]) eski kuralın
+γ hatası p = 1: 0,983, p = 2: 0,982, p = 3: 0,001 (E_min tabanı); yeni kural ≤ 4,4e-16.

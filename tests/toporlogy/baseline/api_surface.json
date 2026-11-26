@@ -3360,6 +3360,7 @@
   "hashin_shtrikman_bounds": "hashin_shtrikman_bounds(x,bulk,shear,dim)",
   "hashin_shtrikman_moduli": "hashin_shtrikman_moduli(x,E,nu,dim)",
   "hs_admissible_exponents": "hs_admissible_exponents(nu,dim,plane)",
+  "inverse_modulus": "inverse_modulus(interp,E,frac)",
   "simp_admissible_penal": "simp_admissible_penal(nu,dim)"
  },
  "toporlogy.design.manufacturing": {

@@ -151,13 +151,19 @@ class EnergyInterpolation:
         if self.policy not in CUTOFF_POLICIES:
             raise ValueError(f"energy interpolation policy: {' | '.join(CUTOFF_POLICIES)}, got {self.policy!r}")
 
-    def gamma(self, E: np.ndarray, cutoff: float) -> tuple[np.ndarray, np.ndarray]:
-        """(γ, dγ/dE) per element for moduli E (> 0) and the given cutoff."""
-        p = self.density_exponent
-        rho = (np.asarray(E, float) / self.E0) ** (1.0 / p)
+    def gamma(self, E: np.ndarray, cutoff: float,
+              density: tuple[np.ndarray, np.ndarray] | None = None) -> tuple[np.ndarray, np.ndarray]:
+        """(γ, dγ/dE) per element for moduli E (> 0) and the given cutoff. ``density`` = (ρ, dρ/dE): the real
+        density of the design (``NonlinearElasticity.density_map``); default ρ̃ = (E/E0)^(1/p)."""
+        if density is None:
+            p = self.density_exponent
+            rho = (np.asarray(E, float) / self.E0) ** (1.0 / p)
+            drho = rho / (p * np.asarray(E, float))
+        else:
+            rho, drho = (np.asarray(a, float) for a in density)
         z = self.beta * (rho - cutoff)
         g = 0.5 * (1.0 + np.tanh(0.5 * z))                    # = exp(βρ)/(exp(βc)+exp(βρ)), overflow-free
-        dg = self.beta * g * (1.0 - g) * rho / (p * np.asarray(E, float))
+        dg = self.beta * g * (1.0 - g) * drho
         return g, dg
 
 
@@ -381,6 +387,9 @@ class NonlinearElasticity:
         if self.stateful and warm_start:
             raise ValueError("warm_start is refused for path-dependent models (the state depends on the path)")
         self.interpolation = energy_interpolation
+        # E (active elements) -> (rho, drho/dE) of the real density; set by Study from its SIMP / RAMP
+        # interpolation (docs/olcumler/gercek_yogunluk_onkayit.md). None: rho = (E/E0)^(1/p).
+        self.density_map: Any = None
         self.load_steps, self.max_iter, self.rtol, self.min_step = int(load_steps), int(max_iter), float(rtol), \
             float(min_step)
         self.newton_settings = NewtonSettings(max_iter=self.max_iter, rtol=self.rtol, eta_tol=ETA_TOL,
@@ -522,7 +531,11 @@ class NonlinearElasticity:
     def _gamma(self, E: np.ndarray, cutoff: float | None) -> tuple[np.ndarray, np.ndarray]:
         if self.interpolation is None:
             return np.ones(len(E)), np.zeros(len(E))
-        return self.interpolation.gamma(E, self.interpolation.cutoff if cutoff is None else cutoff)
+        return self.interpolation.gamma(E, self.interpolation.cutoff if cutoff is None else cutoff,
+                                        self._density(E))
+
+    def _density(self, E: np.ndarray) -> tuple[np.ndarray, np.ndarray] | None:
+        return None if self.density_map is None else self.density_map(np.asarray(E, float))
 
     def element_state(self, u: np.ndarray, E: np.ndarray, cutoff: float | None = None, need_K: bool = True,
                       need_dE: bool = False, state: dict[str, np.ndarray] | None = None,
@@ -718,11 +731,12 @@ class NonlinearElasticity:
         it = self.interpolation
         if it is None or cutoff is None or it.cutoff_step <= 0:
             return None
-        g0 = it.gamma(E, cutoff)[0]
+        dens = self._density(E)
+        g0 = it.gamma(E, cutoff, dens)[0]
         c = cutoff
         while c + it.cutoff_step <= it.cutoff_max + 1e-12:
             c = min(c + it.cutoff_step, it.cutoff_max)
-            if np.abs(it.gamma(E, c)[0] - g0).max() > 1e-3:
+            if np.abs(it.gamma(E, c, dens)[0] - g0).max() > 1e-3:
                 return c
         return None
 

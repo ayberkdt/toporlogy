@@ -34,6 +34,7 @@ from __future__ import annotations
 
 from typing import Any
 
+import numpy as np
 import torch
 
 from toporlogy.core.linear_elastic import isotropic_moduli, plane_bulk_modulus
@@ -41,7 +42,7 @@ from toporlogy.references import cite
 from toporlogy.core.domain import Domain
 
 __all__ = ["SIMP", "RAMP", "HashinShtrikman", "hashin_shtrikman_moduli", "hashin_shtrikman_bounds",
-           "simp_admissible_penal", "hs_admissible_exponents"]
+           "simp_admissible_penal", "hs_admissible_exponents", "inverse_modulus"]
 
 
 def _bulk_shear(E: float, nu: float, dim: int, plane: str = "stress") -> tuple[float, float]:
@@ -133,6 +134,31 @@ class RAMP(torch.nn.Module):
     def forward(self, xphys: torch.Tensor) -> torch.Tensor:
         Emin = self.emin_ratio * self.E0
         return (Emin + xphys / (1.0 + self.q * (1.0 - xphys)) * (self.E0 - Emin)) * self.frac.to(xphys.dtype)
+
+
+def inverse_modulus(interp: torch.nn.Module, E: np.ndarray, frac: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    """(x̄, dx̄/dE) of moduli ``E`` under a SIMP or RAMP interpolation with its current parameters (a scheduled
+    exponent is read at the call) and volume fractions ``frac`` (same shape, > 0). x̄ is clipped to [0, 1];
+    dx̄/dE = 0 where dE/dx̄ = 0 (x̄ = 0 with p > 1). Used by the energy interpolation of the non-linear physics
+    (``docs/olcumler/gercek_yogunluk_onkayit.md``)."""
+    E = np.asarray(E, float)
+    frac = np.asarray(frac, float)
+    if not isinstance(interp, (SIMP, RAMP)):
+        raise ValueError(f"inverse_modulus: SIMP or RAMP interpolation only, got {type(interp).__name__}")
+    E0 = interp.E0
+    Emin = interp.emin_ratio * E0
+    t = np.clip((E / frac - Emin) / (E0 - Emin), 0.0, 1.0)          # x^p (SIMP) or x / (1 + q (1 − x)) (RAMP)
+    if isinstance(interp, SIMP):
+        p = float(interp.penal)
+        x = t ** (1.0 / p)
+        dEdx = p * x ** (p - 1.0) * (E0 - Emin) * frac if p != 1.0 else (E0 - Emin) * frac
+    else:
+        q = float(interp.q)
+        x = t * (1.0 + q) / (1.0 + q * t)                            # inverse of t = x / (1 + q (1 − x))
+        dEdx = (1.0 + q) / (1.0 + q * (1.0 - x)) ** 2 * (E0 - Emin) * frac
+    with np.errstate(divide="ignore"):
+        dx = np.where(dEdx > 0, 1.0 / np.where(dEdx > 0, dEdx, 1.0), 0.0)
+    return x, dx
 
 
 @cite("hashin_shtrikman_1963", note="HS upper bounds for void inclusions, written from the general two-phase form; "
