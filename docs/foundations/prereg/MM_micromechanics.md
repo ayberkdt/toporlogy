@@ -131,3 +131,43 @@ with phase A = r × B (same ν) equals SIMP with p = 1 and emin_ratio r.
 | MMI2 | Two-solid interpolation: endpoints exact, K,G,E > 0 on a grid (also crossed pair), ordering Reuss ≤ HS− ≤ HS+ ≤ Voigt, dK/dx, dG/dx equal analytic Voigt/Reuss derivatives and a central difference (h = 1e-6) for all four schemes; Voigt with equal ν equals `SIMP(p=1, emin_ratio=r)` | closed forms, finite difference | endpoints 1e-14; derivative 1e-6 rel of the scale |
 
 Run: `python -m pytest tests/toporlogy/test_micromechanics.py -q -p no:randomly`. First results are appended below.
+
+## First result (run 2026-11-27 02:40 +0300 clock; time of this entry 2026-11-27 02:42 +0300; SHA a81d242 + module + test file)
+
+`python -m pytest tests/toporlogy/test_micromechanics.py -q -p no:randomly`: 67 passed on the first complete run. One earlier
+partial run (with `-x`) stopped at a test set-up error: `SIMP/RAMP.forward` takes the grid-shaped density (`domain.shape`), the
+test passed a flat vector. Fixed in the test (reshape to `d.shape`) in MMI1-regression and MMI2-legacy; no threshold changed.
+Measured values (script outside the repository, same functions as the tests):
+
+| ID | Result |
+|---|---|
+| MM1a identical phases and endpoints | PASS (exact to 1e-13 as preregistered) |
+| MM1b ordered pair vs textbook form | PASS (rel ≤ 1e-12) |
+| MM1c void | PASS; hollow-sphere Lamé vs HS+ K: 0.0 (f_void = 0.6) |
+| MM1d coated spheres | PASS; ordered pair: abs(K_coated − K_HS±) ≤ 1.8e-15 (3 fractions); crossed pair: both coating orders equal the lower and the upper bound to 1e-15 (e.g. f1 = 0.5: 2.5366 and 4.4248) |
+| MM2a Eshelby sphere | PASS (≤ 1e-14, ν from −0.4 to 0.45) |
+| MM2b tensor schemes vs closed forms | PASS (rel ≤ 1e-12, isotropy error ≤ 1e-13) |
+| MM2c MT − dilute | PASS; relative increment difference −1.302e-3 (f = 1e-3), −6.516e-4 (f = 5e-4) as predicted by f a/(1+(1−f)a) |
+| MM2d MT = HS form with the matrix | PASS: stiff matrix: MT/HS+ − 1 = −4.4e-16 (K), 4.4e-16 (G); versus HS−: +1.94 (K), +1.85 (G) |
+| MM2e contrast | PASS |
+| MM3 fractions | PASS |
+| MM4a layered cell vs Backus | PASS, relative difference 1.1e-14 |
+| MM4b Loewner Voigt/Reuss | PASS (layered: min eig ratios −7e-16, +9e-16; random cells: +0.25…0.28 and +0.12…0.15) |
+| MM4c random cell vs 2-D HS (measured) | PASS for all 5 seeds: κ_cell 2.147–2.254 in [1.533, 2.600]; μ_cell 1.213–1.262 in [0.813, 1.360] |
+| E7 | PASS (200 draws, at least 20 crossed; invalid fractions and phases rejected) |
+| MMI1 | PASS; p_min = 3.0769 (2-D, ν = 0.3), 3.0 (2-D, ν = 1/3), 2.625 (3-D, ν = 0.3); p_min − 0.05 violates at x ≈ 0.99, margin −2.0e-4 to −2.9e-4 |
+| MMI2 | PASS |
+
+Three wording errors found, recorded as failed predictions of the wording (not code or test failures):
+
+1. The brief (and the line in my own table, MM2d) said that Mori–Tanaka for a stiff matrix and soft inclusions equals the
+   HS **lower** bound. The derivation (§2b) and the measurement say **upper** (4e-16); versus the lower bound it differs by
+   +194 % (K). The tests assert the derived statement.
+2. Table row MM1a said the dilute scheme returns the pure inclusion at f = 1. That is false by construction (first-order
+   scheme): for the test pair (K = 10, G = 6 matrix; K = 2, G = 1 inclusion) it returns K = −4.4 at f = 1. The test asserts
+   exact f = 0 and identical-phase behaviour only, and records that f = 1 is not recovered. Mori–Tanaka does recover f = 1.
+3. §1 said a crossed-pair HS bound is "attained by no known microstructure". For the bulk bound that is wrong: the coated-sphere
+   assemblages attain both bulk bounds (above). For the shear bound of a crossed pair no attaining microstructure was checked.
+   The module docstring and `MICROMECHANICS.md` carry the corrected statement.
+
+No ledger addition: every preregistered check passed (the wording corrections concern statements, not thresholds).
