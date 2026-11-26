@@ -16,6 +16,12 @@ refusing linear physics, so a configuration says which quantity it optimises.
 the explicit part is ∂W_e/∂E_e at fixed u (:meth:`NonlinearElasticity.element_energies`). For a hyperelastic model
 under a dead load W ≠ ½ Fᵀu in general (they coincide for linear elasticity). Valid for the cutoff of the solve:
 across an adaptive cutoff change the response is discontinuous.
+
+Path-dependent materials (J2 plasticity): :class:`EndCompliance` works unchanged (the solve's backward is the path
+adjoint, :mod:`toporlogy.fem.nonlinear`). :class:`PlasticDissipation` is the energy dissipated along the
+proportional load path, ``Σ_c w_c Σ_k Σ_e E_e Σ_g w σ_y Δα`` (the increments recorded by the solve of the same
+evaluation); its gradient is one path-adjoint pass with the dissipation's explicit derivatives in u_k and s_{k−1}
+(:meth:`NonlinearElasticity.path_adjoint_gradient`). Classical derivative for the plastic set of the solve.
 """
 from __future__ import annotations
 
@@ -26,7 +32,7 @@ import torch
 
 from toporlogy.optimization.responses import Compliance, EvalContext, Response
 
-__all__ = ["EndCompliance", "EndStrainEnergy"]
+__all__ = ["EndCompliance", "EndStrainEnergy", "PlasticDissipation"]
 
 
 class EndCompliance(Compliance):
@@ -95,3 +101,43 @@ class _StrainEnergy(torch.autograd.Function):
         s = float(g)
         return (torch.from_numpy(s * ctx.gE).to(device=ctx.dev, dtype=ctx.dtype),
                 torch.from_numpy(s * ctx.gU).to(device=ctx.dev, dtype=torch.float64), None, None, None)
+
+
+class PlasticDissipation(Response):
+    """``Σ_c w_c D_c``: the plastic dissipation of each case along its proportional load path (module notes; weights
+    default 1). Needs a path-dependent :class:`~toporlogy.fem.nonlinear.NonlinearElasticity` (e.g. J2 plasticity)."""
+
+    name = "plastic_dissipation"
+    needs = frozenset({"u"})
+
+    def __init__(self, weights: Any = None) -> None:
+        self.weights = None if weights is None else np.asarray(weights, float).reshape(-1)
+
+    def __call__(self, ctx: EvalContext) -> torch.Tensor:
+        from toporlogy.fem.nonlinear import NonlinearElasticity
+        phys = ctx.physics
+        if not isinstance(phys, NonlinearElasticity) or not phys.stateful:
+            raise ValueError("plastic_dissipation needs NonlinearElasticity physics with a path-dependent material")
+        if ctx.U is None:
+            raise ValueError("plastic_dissipation needs U (the solve that records the load path)")
+        act = torch.as_tensor(ctx.domain.active_elements, dtype=torch.long, device=ctx.E.device)
+        E = ctx.E.reshape(-1)[act]
+        paths = list(phys.last_paths)
+        w = np.ones(len(paths)) if self.weights is None else self.weights
+        if len(w) != len(paths):
+            raise ValueError(f"{len(w)} weights for {len(paths)} load cases")
+        return _Dissipation.apply(E, phys, paths, w)
+
+
+class _Dissipation(torch.autograd.Function):
+    @staticmethod
+    def forward(ctx: Any, E: torch.Tensor, phys: Any, paths: list[Any], w: np.ndarray) -> torch.Tensor:
+        En = E.detach().cpu().double().numpy().copy()
+        total = phys.path_dissipation(En, paths, w)
+        ctx.phys, ctx.paths, ctx.w, ctx.En, ctx.dev, ctx.dtype = phys, paths, w, En, E.device, E.dtype
+        return torch.tensor(total, dtype=torch.float64, device=E.device)
+
+    @staticmethod
+    def backward(ctx: Any, g: torch.Tensor) -> tuple[Any, None, None, None]:
+        dE = ctx.phys.path_adjoint_gradient(ctx.En, ctx.paths, dissipation_weights=ctx.w)
+        return torch.from_numpy(float(g) * dE).to(device=ctx.dev, dtype=ctx.dtype), None, None, None

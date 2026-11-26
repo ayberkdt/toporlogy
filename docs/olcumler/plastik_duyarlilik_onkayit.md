@@ -65,3 +65,67 @@ ile 20 yük adımı arasında J ve gradyanın göreli farkı (ayrıklaştırma e
 
 Kurallar: başarısız kontrol ölçülen değerle strict xfail olur; eşik gevşetilmez; ilk koşudan sonra eklenen kontrol
 "post hoc" etiketlenir. Ölçülen değerler bu dosyanın sonuna yazılır.
+
+## Sonuç (ilk ölçüm, 2026-11-26)
+
+Kaynak: `tests/toporlogy/test_plastic_sensitivity.py`, `python -m pytest ... -s` çıktısı
+(`.claude/tmp-toporlogy/plastic-sensitivity/run1.log`, `run2.log`). İlk koşuda (run1) 2 test düştü: PS6 (aşağıda,
+gerçek sonuç) ve ölçüm testi — ikincisi ölçüm değil, `print` içindeki "→" karakterinin cp1254 konsolda
+kodlanamaması (`UnicodeEncodeError`); değerler hesaplanmıştı, karakter "->" yapıldı. İkinci koşu (run2): 16 passed,
+1 xfailed (PS6, strict). Değerler run1 ile run2'de aynı.
+
+| # | Durum | Ölçülen |
+|:---|:---|:---|
+| PS0 | PASS | Q4 iki durum: 5 plastik artış, 0 bölme, plastik kümeler 8 bileşenin 16 çözümünde aynı; Voce: 5 / 0 / aynı; H8: 4 / 0 / aynı |
+| PS1 | PASS | Q4: `LinearElastic`'e 8,6e-14, `Elasticity`'ye 6,0e-13; H8: 5,9e-14 / 9,8e-14; adjoint çözümü 1 (elastik yolda tek çözüm) |
+| PS2a | PASS | 1,9e-8 (bileşenler 11, 19, 20, 9 plastik noktalı; 14, 35, 25, 30 elastik) |
+| PS2b | PASS | Voce 3,0e-8 |
+| PS2c | PASS | H8 9,8e-8 |
+| PS3a | PASS | 17/20 plastik nokta; doğrusal 4,7e-10, Voce 2,8e-9 |
+| PS3b | PASS | doğrusal 4,1e-16, Voce 5,0e-16 |
+| PS4 | PASS | D = 7,998e-6 > 0; 2,9e-8 |
+| PS5 | PASS | iterasyon algoritmik 29, süreklilik 74; uç uyumu 5,1e-11, dissipasyon 7,1e-11 |
+| PS6 | **FAIL** (strict xfail) | son tanjant gradyanı 8 bileşende FD'den 3,15e-3 ayrılıyor; eşik ≥ 1e-2 |
+| PS7 | PASS | parmak izi 13/13 bit düzeyinde (değişiklikten önce 12:36'da ve sonra); `pytest -m baseline` 8 passed, 7 örneğin hepsinde en büyük bağıl fark 0; yavaş paketler: aşağıda |
+| PS8 | PASS | 7,2e-7 (561 plastik nokta-artış) |
+| PS9 | PASS | dört kapalı-hata sözleşmesi açık hatayla |
+
+PS6 okuması: yol adjoint'i FD'ye 1,9e-8 ile uyuyor, son tanjant kestirimi 3,15e-3 ile; fark beş mertebe, ama
+ön kayıtlı eşik (≥ 1e-2) tutmadı. 1,6 × ilk akma yükünde plastisite sınırlı (elemanların %35'inde plastik nokta)
+ve seçilen 8 bileşenin en büyüğü kök elemanında; orada son tanjant kestirimi gerçeğe yakın.
+
+Post hoc (eşiksiz ölçüm, `test_ps6_posthoc_last_tangent_error_versus_load`; referans PS2a'da doğrulanmış
+yol adjoint'i, tek yük durumu, BÜTÜN gradyan vektörü): ‖g_son − g_yol‖∞/‖g_yol‖∞ = 2,3e-2 (1,6 ×, plastik noktalı
+eleman oranı 0,35), 1,8e-2 (2,5 ×, 0,58), 1,3e-2 (3,5 ×, 0,75). Hata yükle büyümüyor,
+azalıyor (test ilk koşuda "grows_with_plasticity" adını taşıyordu; ölçüme göre yeniden adlandırıldı): bu yük aralığında son tanjant kısayolunun hatası plastisite yayıldıkça küçülüyor. Hata 1–2 % ama sıfır
+değil ve yönü bilinmiyor; kısayol bir gradyan olarak kullanılamaz.
+
+Diğer post hoc testler (eşik PS4 / PS3a'nınki): `test_ps4_study_plastic_dissipation_gradient` (Study içinden
+dissipasyon, x'e göre) 1,2e-6, D = 4,654e-5; `test_ps3_evaluate_vjp_conventions_match_evaluate` (Voigt / grad
+sarmalayıcısı) 2-B 4,4e-9, 3-B 2,6e-9. PS2b/PS2c testleri dissipasyon gradyanını da yazdırıyor (ön kayıtsız):
+Voce 4,1e-8, H8 1,5e-7.
+
+Ölçüm (eşiksiz): 10 artışın 5'inde adjoint çözümü (sağ tarafı sıfır olan elastik artışlar atlandı); ileri 0,26–0,33
+s, geri 0,09–0,11 s (12 × 4 Q4). 10 → 20 yük adımı: J göreli 8,3e-4, gradyan göreli 1,5e-3 (geri Euler yol
+ayrıklaştırması; her ayrıklaştırma için adjoint tam).
+
+Ön kayıtta ayrıntısı verilmemiş seçim (ilk koşudan önce yapıldı): "8 bileşen, tohum 4, en az 4'ü plastik noktalı" —
+plastik noktalı elemanlardan 4, olmayanlardan 4, ikisi de `default_rng(4)` ile.
+
+Kodda: `J2Plasticity.update_vjp` / `evaluate_vjp` (`core/constitutive.py`), `LoadPath`, `last_paths`,
+`path_adjoint_gradient`, `path_dissipation` (`fem/nonlinear.py`), `PlasticDissipation`
+(`optimization/nonlinear.py`). `test_nonlinear_solvers.py::test_stateful_model_refuses_...`'ın `solve` reddi
+maddesi ön kayıtta yazıldığı gibi kaldırıldı (yerine PS9). Kütük: PS6 `docs/vv_kutugu.json`'a eklendi.
+
+Kısıtlar (modül notlarında): türev, çözümün plastik kümesi ve artış dizisi için klasik türev; orantılı yükleme
+(`solve`); boşaltmalı yol (`solve_history`) türevlenebilir değil; YAML'da J2 yok (yalnız API).
+
+Yavaş paketler (PS7): `test_nonlinear.py`, `test_model_epoch.py`, `test_nonlinear_solvers.py`,
+`test_nonlinear_orientation.py`, `test_taylor_remainder.py`, `test_frame_invariance.py`, `test_fem_mms_extended.py`
+ve yeni dosya birlikte: 162 passed, 15 xfailed, 0 failed, 21 dk 52 s (`slow2.log`). Önceki kayıt bu yedi dosya için
+146 passed, 14 xfailed (`gercek_yogunluk_onkayit.md`); fark yeni dosyanın 16 passed + 1 xfailed'ı (PS6). Bundan
+önceki bir koşu (`slow.log`) 4 testte `MemoryError` verdi (makinede aynı anda başka bir koşu belleği tüketti;
+1,5–3,5 MiB'lık ayırmalar başarısız) — ölçüm değil, tek başına yeniden koşuldu. Sözleşme testleri (`test_catalog`,
+`test_catalog_ledger`, `test_compatibility`, `test_api_surface`, `test_units`) birlikte: 108 passed, 1 xfailed,
+1 failed — kütük testi, PS6 kütükte olmadığı için (beklenen; girdi eklendi); sonra `test_catalog_ledger` tek
+başına 7 passed. `ruff check src tests` temiz; mypy dokunulan 4 kaynak dosyada temiz. Tam paket (~2 saat) koşulmadı.

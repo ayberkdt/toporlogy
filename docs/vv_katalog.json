@@ -457,10 +457,10 @@
   },
   {
    "id": "nonlinear_elasticity",
-   "residual": "r(u; E) = f_int(u) - f = 0 (total Lagrangian, SVK or neo-Hooke; API: small-strain models of core.constitutive incl. J2 plasticity, no sensitivity)",
+   "residual": "r(u; E) = f_int(u) - f = 0 (total Lagrangian, SVK or neo-Hooke; API: small-strain models of core.constitutive incl. J2 plasticity, design sensitivity by the path adjoint over the load increments)",
    "tangent": "consistent tangent K_T(u)",
    "matrix": "symmetric; positive definite only on the stable branch",
-   "solve": "general Newton (solvers.newton) with load steps; arc length / displacement control through continuation_problem (API); one adjoint solve with K_T per case",
+   "solve": "general Newton (solvers.newton) with load steps; arc length / displacement control through continuation_problem (API); one adjoint solve with K_T per case (path-dependent: at most one per load increment)",
    "devices": [
     "cpu"
    ],
@@ -478,7 +478,8 @@
    "evidence": [
     "tests/toporlogy/test_nonlinear.py::test_v3_consistent_tangent_finite_difference",
     "tests/toporlogy/test_nonlinear.py::test_v5_large_deflection_cantilever_elastica",
-    "tests/toporlogy/test_nonlinear.py::test_v6_end_compliance_gradient_finite_difference"
+    "tests/toporlogy/test_nonlinear.py::test_v6_end_compliance_gradient_finite_difference",
+    "tests/toporlogy/test_plastic_sensitivity.py::test_ps2a_ps4_q4_linear_hardening_two_cases"
    ],
    "scalar_modulus": "E_active through an energy interpolation; general D with material svk only"
   },

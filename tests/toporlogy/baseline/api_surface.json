@@ -2447,13 +2447,15 @@
     "conservative",
     "dkappa",
     "evaluate",
+    "evaluate_vjp",
     "hardening_energy",
     "initial_state",
     "kappa",
     "kinematics",
     "name",
     "state_fields",
-    "update"
+    "update",
+    "update_vjp"
    ],
    "class": "J2Plasticity"
   },
@@ -4888,6 +4890,10 @@
    ],
    "class": "EnergyInterpolation"
   },
+  "LoadPath": {
+   "attrs": [],
+   "class": "LoadPath"
+  },
   "MATERIALS": "<tuple>",
   "NonlinearConvergenceError": {
    "attrs": [
@@ -4910,6 +4916,8 @@
     "internal_force",
     "min_det_f",
     "n_elements",
+    "path_adjoint_gradient",
+    "path_dissipation",
     "reset_model",
     "solve",
     "solve_history",
@@ -5741,6 +5749,13 @@
     "needs"
    ],
    "class": "EndStrainEnergy"
+  },
+  "PlasticDissipation": {
+   "attrs": [
+    "name",
+    "needs"
+   ],
+   "class": "PlasticDissipation"
   }
  },
  "toporlogy.optimization.pareto": {

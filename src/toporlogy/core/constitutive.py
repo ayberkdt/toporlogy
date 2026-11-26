@@ -34,7 +34,10 @@ compressible, isotropic; plane strain, plane stress by a local Newton on S₃₃
 (small strain, any unit D), :class:`J2Plasticity` (small strain, associative von Mises plasticity with isotropic
 hardening, linear plus optional Voce saturation; radial return with the consistent algorithmic tangent; 3-D and
 plane strain; plane stress is refused — it needs a local condensation that is not implemented). J2 is a
-small-strain model: no large-deformation support is claimed.
+small-strain model: no large-deformation support is claimed. Optional protocol method of a path-dependent model,
+``evaluate_vjp(kin, params, committed, stress_bar, state_bar, dissipation_bar) -> (grad_bar, committed_bar)``: the
+vector-Jacobian product of one update (J2: :meth:`J2Plasticity.evaluate_vjp`, closed form); the design-sensitivity
+path adjoint of :mod:`toporlogy.fem.nonlinear` needs it.
 
 Oracles: :func:`energy_oracle` differentiates a torch energy ψ(E_voigt) twice (autograd) for the stress and tangent
 of an energy-based model; :func:`svk_energy_torch` and :func:`neo_hooke_energy_torch` are written from the energy
@@ -567,6 +570,82 @@ class J2Plasticity:
         else:
             S, C = sig[:, _VA, _VB], C6
         return MaterialResponse(S, C, psi, trial, self.sy * diag["delta_alpha"], diag)
+
+    # ---------------------------------------------------------------- vector-Jacobian product of the update
+    def update_vjp(self, eps: np.ndarray, committed: Mapping[str, np.ndarray], sig_bar: np.ndarray | None = None,
+                   ep_bar: np.ndarray | None = None, alpha_bar: np.ndarray | None = None,
+                   dalpha_bar: np.ndarray | None = None) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+        """Cotangents (ε̄, ε̄_p^n, ᾱ_n) of the return mapping (ε, ε_p^n, α_n) → (σ, ε_p, α, Δα) of :meth:`update`
+        for the output cotangents σ̄ (n, 3, 3), ε̄_p (n, 3, 3), ᾱ (n,), Δᾱ (n,) (None = 0). Tensors are contracted
+        with ``:``; the plastic set is the one of :meth:`update` at these inputs (one-sided derivative; a point with
+        f* = 0 exactly is taken as elastic). Derived here (``docs/olcumler/plastik_duyarlilik_onkayit.md``): with
+        s* = 2μ(dev ε − ε_p^n), r = ‖s*‖, n̂ = s*/r, s = s* − √6 μ Δγ n̂, ε_p = ε_p^n + √(3/2) Δγ n̂, α = α_n + Δγ and
+        dΔγ = (√(3/2) n̂:ds* − κ' dα_n)/(3μ + κ'), κ' = κ'(α_n + Δγ), dn̂ = (ds* − n̂ (n̂:ds*))/r:
+
+            c = −√6 μ σ̄:n̂ + √(3/2) ε̄_p:n̂ + ᾱ + Δᾱ ,   T̄ = Δγ (−√6 μ σ̄ + √(3/2) ε̄_p) ,
+            s̄* = σ̄ + (T̄ − (n̂:T̄) n̂)/r + c √(3/2) n̂/(3μ + κ')       (elastic points: s̄* = σ̄) ,
+            ε̄ = K tr(σ̄) 1 + 2μ dev s̄* ,   ε̄_p^n = ε̄_p − 2μ s̄* ,   ᾱ_n = ᾱ − c κ'/(3μ + κ')  (elastic: ᾱ) ."""
+        n = len(eps)
+        z3 = np.zeros((n, 3, 3))
+        sb = z3 if sig_bar is None else np.asarray(sig_bar, float)
+        eb = z3 if ep_bar is None else np.asarray(ep_bar, float)
+        ab = np.zeros(n) if alpha_bar is None else np.asarray(alpha_bar, float)
+        db = np.zeros(n) if dalpha_bar is None else np.asarray(dalpha_bar, float)
+        _sig, _C, trial, diag, _psi = self.update(eps, committed, MaterialRequest(tangent=False))
+        plastic = diag["plastic"] > 0.5
+        eye = np.eye(3)
+        s_bar = sb.copy()
+        a_n_bar = ab.copy()
+        if plastic.any():
+            ep_n = np.asarray(committed["plastic_strain"])[plastic]
+            e = eps[plastic]
+            dev = e - (np.trace(e, axis1=1, axis2=2) / 3.0)[:, None, None] * eye
+            s_tr = 2.0 * self.mu * (dev - ep_n)
+            r = np.sqrt(np.einsum("nij,nij->n", s_tr, s_tr))
+            nh = s_tr / r[:, None, None]
+            dg = diag["delta_alpha"][plastic]
+            dk = self.dkappa(trial["alpha"][plastic])
+            den = 3.0 * self.mu + dk
+            sp_, ep_ = sb[plastic], eb[plastic]
+            r6, r15 = math.sqrt(6.0), math.sqrt(1.5)
+            c = (-r6 * self.mu * np.einsum("nij,nij->n", sp_, nh) + r15 * np.einsum("nij,nij->n", ep_, nh)
+                 + ab[plastic] + db[plastic])
+            Tb = dg[:, None, None] * (-r6 * self.mu * sp_ + r15 * ep_)
+            PT = Tb - np.einsum("nij,nij->n", nh, Tb)[:, None, None] * nh
+            s_bar[plastic] = sp_ + PT / r[:, None, None] + (c * r15 / den)[:, None, None] * nh
+            a_n_bar[plastic] = ab[plastic] - c * dk / den
+        tr_s = np.trace(sb, axis1=1, axis2=2)
+        dev_sbar = s_bar - (np.trace(s_bar, axis1=1, axis2=2) / 3.0)[:, None, None] * eye
+        eps_bar = (self.K * tr_s)[:, None, None] * eye + 2.0 * self.mu * dev_sbar
+        ep_n_bar = eb - 2.0 * self.mu * s_bar
+        return eps_bar, ep_n_bar, a_n_bar
+
+    def evaluate_vjp(self, kin: Kinematics, params: Mapping[str, Any] | None, committed: Mapping[str, np.ndarray],
+                     stress_bar: np.ndarray | None = None, state_bar: Mapping[str, np.ndarray] | None = None,
+                     dissipation_bar: np.ndarray | None = None) -> tuple[np.ndarray, dict[str, np.ndarray]]:
+        """Vector-Jacobian product of :meth:`evaluate` in its own conventions: cotangents of the Voigt ``stress``
+        (n, nv), of the trial state (``plastic_strain`` (n, 3, 3), ``alpha`` (n,)) and of the ``dissipation`` σ_y Δα
+        (n,) → cotangents of the displacement gradient ``grad`` (n, dim, dim) and of the committed state (same
+        fields). Used by the path adjoint of :class:`toporlogy.fem.nonlinear.NonlinearElasticity`."""
+        _check_kin(self, kin)
+        eps = self._strain3(kin)
+        n, dim = kin.n, kin.dim
+        sig_bar = None
+        if stress_bar is not None:
+            Sb = np.asarray(stress_bar, float)
+            sig_bar = np.zeros((n, 3, 3))
+            pairs = T.VOIGT_3D if dim == 3 else ((0, 0), (1, 1), (0, 1))
+            for v, (i, j) in enumerate(pairs):
+                if i == j:
+                    sig_bar[:, i, i] = Sb[:, v]
+                else:                                  # σ symmetric: S̄_v dσ_ij = ½S̄_v (dσ_ij + dσ_ji)
+                    sig_bar[:, i, j] = sig_bar[:, j, i] = 0.5 * Sb[:, v]
+        sb = {} if state_bar is None else state_bar
+        db = None if dissipation_bar is None else self.sy * np.asarray(dissipation_bar, float)
+        eps_bar, ep_n_bar, a_n_bar = self.update_vjp(eps, committed, sig_bar, sb.get("plastic_strain"),
+                                                     sb.get("alpha"), db)
+        H_bar = 0.5 * (eps_bar + np.swapaxes(eps_bar, 1, 2))[:, :dim, :dim]   # ε = sym H (embedded in 3-D)
+        return H_bar, {"plastic_strain": ep_n_bar, "alpha": a_n_bar}
 
 
 # ----------------------------------------------------------------------------------------------- AD oracle

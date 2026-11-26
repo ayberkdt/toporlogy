@@ -526,6 +526,16 @@
    "resolution": "yok (problem kurulumu)",
    "record": "docs/olcumler/model_donemi_onkayit.md",
    "slow": false
+  },
+  {
+   "nodeid": "tests/toporlogy/test_plastic_sensitivity.py::test_ps6_last_tangent_gradient_differs_from_finite_differences",
+   "kind": "pre-registered check failed",
+   "model_backend": "NonlinearElasticity + J2Plasticity Q4 düzlem gerinim konsol, iki yük durumu (CPU)",
+   "reason": "negatif kontrol: tarihçeyi yok sayan son tanjant gradyanı 8 bileşende FD'den yalnız 3,15e-3 ayrılıyor, eşik ≥ 1e-2 (yol adjoint'i 1,9e-8)",
+   "risk": "low",
+   "resolution": "kontrolün kendisi (ayırt edicilik); yol adjoint'i PS2a/PS4'te FD ile doğrulandı; post hoc tam gradyan vektöründe son tanjant hatası 1,3e-2–2,3e-2",
+   "record": "docs/olcumler/plastik_duyarlilik_onkayit.md",
+   "slow": false
   }
  ],
  "skips": [
