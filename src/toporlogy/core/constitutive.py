@@ -39,6 +39,16 @@ small-strain model: no large-deformation support is claimed. Optional protocol m
 vector-Jacobian product of one update (J2: :meth:`J2Plasticity.evaluate_vjp`, closed form); the design-sensitivity
 path adjoint of :mod:`toporlogy.fem.nonlinear` needs it.
 
+Physical time (``docs/foundations/MATERIAL_CONTRACT.md``): a history model whose response depends on the actual
+time or temperature (viscoelasticity, creep, viscoplasticity, cure) reads ``request.step``, a :class:`TimeStep`
+(t_n, Δt ≥ 0 in seconds or one declared consistent unit, temperatures in kelvin at t_n and t_{n+1}). The load factor
+and the optimisation iteration are not time; a model that needs a step and gets none raises. Such a model takes its
+parameters in physical units and sets ``physical = True``; the FE physics that scale every law by the element
+modulus (:mod:`toporlogy.fem.nonlinear`) refuse it, since its yield stress, viscosity and relaxation times must not
+scale with E_e. :func:`small_strain_history_evaluate` is the shared ``evaluate`` of 3-D small-strain history models
+written as ``update(eps (n, 3, 3), committed, request) -> HistoryUpdate`` (plane strain by embedding, plane stress
+refused). :func:`drive_material_point` takes optional step ``times`` and ``temperatures``.
+
 Oracles: :func:`energy_oracle` differentiates a torch energy ψ(E_voigt) twice (autograd) for the stress and tangent
 of an energy-based model; :func:`svk_energy_torch` and :func:`neo_hooke_energy_torch` are written from the energy
 alone (not from the analytic stress). :func:`drive_material_point` integrates a mixed strain/stress-controlled
@@ -58,7 +68,8 @@ from toporlogy.core.linear_elastic import isotropic_moduli
 from toporlogy.references import cite
 
 __all__ = ["KINEMATICS", "ConstitutiveFailure", "InadmissibleState", "ReturnMappingFailure", "Kinematics",
-           "MaterialRequest", "MaterialResponse", "ConstitutiveModel", "StateStore", "SaintVenantKirchhoff", "NeoHooke",
+           "TimeStep", "MaterialRequest", "MaterialResponse", "ConstitutiveModel", "StateStore", "HistoryUpdate",
+           "require_step", "small_strain_history_evaluate", "SaintVenantKirchhoff", "NeoHooke",
            "LinearElastic",
            "J2Plasticity", "neo_hooke_response", "energy_oracle", "svk_energy_torch", "neo_hooke_energy_torch",
            "MaterialPointHistory", "drive_material_point"]
@@ -113,14 +124,73 @@ class Kinematics:
         return int(self.grad.shape[0])
 
 
+def _temperature(v: Any, what: str) -> float | np.ndarray | None:
+    if v is None:
+        return None
+    a = np.asarray(v, float)
+    if not (np.all(np.isfinite(a)) and np.all(a > 0.0)):
+        raise ValueError(f"TimeStep: {what} is an absolute temperature in kelvin and must be finite and > 0, got {v!r}")
+    if a.ndim == 0:
+        return float(a)
+    if a.ndim != 1:
+        raise ValueError(f"TimeStep: {what} must be a scalar or an (n,) array, got shape {a.shape}")
+    a = a.copy()
+    a.setflags(write=False)
+    return a
+
+
+@dataclass(frozen=True)
+class TimeStep:
+    """One physical time increment from t_n = ``t`` to t_n + ``dt``. Time in seconds (or one declared consistent
+    unit), ``dt`` >= 0 (0: an instantaneous probe); ``temperature`` T_{n+1} and ``temperature_prev`` T_n in kelvin
+    (scalars or (n,) arrays; None for an isothermal model; ``temperature_prev`` defaults to ``temperature``)."""
+
+    t: float
+    dt: float
+    temperature: float | np.ndarray | None = None
+    temperature_prev: float | np.ndarray | None = None
+
+    def __post_init__(self) -> None:
+        t, dt = float(self.t), float(self.dt)
+        if not (math.isfinite(t) and math.isfinite(dt) and dt >= 0.0):
+            raise ValueError(f"TimeStep: t must be finite and dt finite and >= 0, got t={self.t!r}, dt={self.dt!r}")
+        object.__setattr__(self, "t", t)
+        object.__setattr__(self, "dt", dt)
+        T1 = _temperature(self.temperature, "temperature")
+        T0 = _temperature(self.temperature_prev, "temperature_prev")
+        if T0 is not None and T1 is None:
+            raise ValueError("TimeStep: temperature_prev given without temperature")
+        object.__setattr__(self, "temperature", T1)
+        object.__setattr__(self, "temperature_prev", T1 if T0 is None else T0)
+
+    @property
+    def t_next(self) -> float:
+        return self.t + self.dt
+
+
 @dataclass(frozen=True)
 class MaterialRequest:
     """What to compute: ``energy`` (if the model defines one), ``tangent``; ``tangent_kind`` algorithmic (the
-    consistent tangent of the update, default) or continuum (the rate tangent; for diagnostics only)."""
+    consistent tangent of the update, default) or continuum (the rate tangent; for diagnostics only); ``step``: the
+    physical :class:`TimeStep` of a time- or temperature-dependent model (None for the rate-independent laws)."""
 
     energy: bool = False
     tangent: bool = True
     tangent_kind: str = "algorithmic"
+    step: TimeStep | None = None
+
+
+def require_step(model: Any, request: MaterialRequest, temperature: bool = False) -> TimeStep:
+    """``request.step`` of a model that needs physical time (and a temperature if ``temperature``); ValueError
+    otherwise: a load factor or an iteration count is never taken for time."""
+    st = request.step
+    name = getattr(model, "name", type(model).__name__)
+    if st is None:
+        raise ValueError(f"{name} needs the physical time step: pass MaterialRequest(step=TimeStep(t, dt, ...)); "
+                         "a load factor is not time")
+    if temperature and st.temperature is None:
+        raise ValueError(f"{name} needs the temperature (kelvin) in the time step")
+    return st
 
 
 _DEFAULT_REQUEST = MaterialRequest()
@@ -694,6 +764,47 @@ def energy_oracle(psi: Callable[[Any], Any], Ev: np.ndarray) -> tuple[float, np.
     return float(val.detach()), g.detach().numpy(), Hs.detach().numpy()
 
 
+# ----------------------------------------------------------------------------------------------- history models
+@dataclass
+class HistoryUpdate:
+    """Result of ``update(eps, committed, request)`` of a 3-D small-strain history model: stress (n, 3, 3),
+    algorithmic tangent (n, 6, 6) in the Voigt convention of this module (or None), trial state, diagnostics, stored
+    energy (n,) or None (not defined), dissipation increment (n,) or None (not defined)."""
+
+    stress: np.ndarray
+    tangent: np.ndarray | None
+    trial_state: dict[str, np.ndarray]
+    diagnostics: dict[str, np.ndarray] = field(default_factory=dict)
+    energy: np.ndarray | None = None
+    dissipation: np.ndarray | None = None
+
+
+def small_strain_history_evaluate(model: Any, kin: Kinematics, committed: Mapping[str, np.ndarray],
+                                  request: MaterialRequest) -> MaterialResponse:
+    """The ``evaluate`` of a 3-D small-strain model with ``update(eps (n, 3, 3), committed, request) ->
+    HistoryUpdate``: eps = sym H; 2-D plane strain is embedded (eps_zz = 0; sigma_zz in the diagnostics), 2-D plane
+    stress is refused (stress control of a material point: :func:`drive_material_point`)."""
+    _check_kin(model, kin)
+    if kin.dim == 2 and kin.plane != "strain":
+        raise ValueError(f"{model.name}: in 2-D plane strain only (plane stress needs a local condensation of the "
+                         "history that is not implemented)")
+    eps = 0.5 * (kin.grad + np.swapaxes(kin.grad, 1, 2))
+    if kin.dim == 2:
+        e3 = np.zeros((kin.n, 3, 3))
+        e3[:, :2, :2] = eps
+        eps = e3
+    u = model.update(eps, committed, request)
+    sig, C6 = u.stress, u.tangent
+    diag = dict(u.diagnostics)
+    if kin.dim == 2:
+        diag["sigma_zz"] = sig[:, 2, 2].copy()
+        S = np.stack([sig[:, 0, 0], sig[:, 1, 1], sig[:, 0, 1]], axis=1)
+        C = None if C6 is None else C6[:, _IP2][:, :, _IP2]
+    else:
+        S, C = sig[:, _VA, _VB], C6
+    return MaterialResponse(S, C, u.energy, u.trial_state, u.dissipation, diag)
+
+
 # ----------------------------------------------------------------------------------------------- material point
 @dataclass
 class MaterialPointHistory:
@@ -708,28 +819,62 @@ class MaterialPointHistory:
     plastic_work: np.ndarray
     yield_residual: np.ndarray
     iterations: list[int]
+    times: np.ndarray | None = None
+    temperatures: np.ndarray | None = None
+    diagnostics: list[dict[str, float]] = field(default_factory=list)
 
 
 def drive_material_point(model: Any, strain: Sequence[Sequence[float]], stress: Sequence[Sequence[float]],
-                         control: Sequence[bool], tol: float = 1e-14, max_iter: int = 25) -> MaterialPointHistory:
+                         control: Sequence[bool], tol: float = 1e-14, max_iter: int = 25,
+                         times: Sequence[float] | None = None, temperatures: Sequence[float] | None = None,
+                         t0: float = 0.0, temperature0: float | None = None,
+                         store: StateStore | None = None, strain0: Sequence[float] | None = None
+                         ) -> MaterialPointHistory:
     """Integrate a small-strain 3-D material point along a mixed path. ``control`` (6,) marks the Voigt components
     whose STRAIN is prescribed (True) — the others have their STRESS prescribed. ``strain`` / ``stress`` (k, 6):
     targets per step (only the controlled entries of each are read). The unknown strains are found per step by Newton
     with the model's tangent (the elastic one ``Ce6`` in the first iteration when the model has it;
-    ‖σ_free − target‖∞ ≤ ``tol``); the state is committed after each converged step."""
+    ‖σ_free − target‖∞ ≤ ``tol``); the state is committed after each converged step, never inside the Newton loop.
+
+    ``times`` (k,): the physical time at the end of each step (non-decreasing, >= ``t0``); every evaluation of step k
+    then gets ``MaterialRequest(step=TimeStep(t_{k-1}, t_k - t_{k-1}, T_k, T_{k-1}))`` with ``temperatures`` (k,) in
+    kelvin and the initial temperature ``temperature0`` (required with ``temperatures``). Without ``times`` the
+    request carries no step (rate-independent laws). Restart: ``store`` (a :class:`StateStore` holding the committed
+    state to continue from) and ``strain0`` (6,), the strain of that state (the first Newton guess)."""
     ctrl = np.asarray(control, bool)
     free = ~ctrl
     eps_t = np.asarray(strain, float)
     sig_t = np.asarray(stress, float)
-    store = StateStore(model, 1)
-    e = np.zeros(6)
+    k_steps = len(eps_t)
+    tt = None if times is None else np.asarray(times, float).reshape(-1)
+    TT = None if temperatures is None else np.asarray(temperatures, float).reshape(-1)
+    if tt is not None and (tt.shape != (k_steps,) or not np.all(np.isfinite(tt))
+                           or np.any(np.diff(np.concatenate([[float(t0)], tt])) < 0.0)):
+        raise ValueError(f"times must be {k_steps} finite non-decreasing values >= t0")
+    if TT is not None:
+        if tt is None:
+            raise ValueError("temperatures need times (a temperature history is a function of physical time)")
+        if TT.shape != (k_steps,) or temperature0 is None:
+            raise ValueError(f"temperatures must be {k_steps} values and temperature0 the initial temperature")
+    store = StateStore(model, 1) if store is None else store
+    e = np.zeros(6) if strain0 is None else np.asarray(strain0, float).reshape(6).copy()
     out_e, out_s, states, en, dis, wp, yr, its = [], [], [], [], [], [], [], []
-    for k in range(len(eps_t)):
+    dg: list[dict[str, float]] = []
+    for k in range(k_steps):
         e = e.copy()
         e[ctrl] = eps_t[k, ctrl]
+        step = None
+        if tt is not None:
+            tp = float(t0) if k == 0 else float(tt[k - 1])
+            if TT is None:
+                step = TimeStep(tp, float(tt[k]) - tp)
+            else:
+                Tp = float(temperature0) if k == 0 else float(TT[k - 1])  # type: ignore[arg-type]
+                step = TimeStep(tp, float(tt[k]) - tp, float(TT[k]), Tp)
+        req = MaterialRequest(energy=True, step=step)
         for it in range(max_iter + 1):
             H = T.voigt_to_strain(e)[None]
-            r = model.evaluate(Kinematics(H, "small"), None, store.committed, MaterialRequest(energy=True))
+            r = model.evaluate(Kinematics(H, "small"), None, store.committed, req)
             res = r.stress[0, free] - sig_t[k, free]
             if not free.any() or np.abs(res).max() <= tol:
                 break
@@ -751,5 +896,8 @@ def drive_material_point(model: Any, strain: Sequence[Sequence[float]], stress: 
         wp.append(float(r.diagnostics.get("plastic_work", np.zeros(1))[0]))
         yr.append(float(r.diagnostics.get("yield_residual", np.zeros(1))[0]))
         its.append(it)
+        dg.append({name: float(np.asarray(v).reshape(-1)[0]) for name, v in r.diagnostics.items()
+                   if np.asarray(v).size >= 1})
     return MaterialPointHistory(np.array(out_e), np.array(out_s), states, np.array(en), np.array(dis), np.array(wp),
-                                np.array(yr), its)
+                                np.array(yr), its, None if tt is None else tt.copy(),
+                                None if TT is None else TT.copy(), dg)
