@@ -9,7 +9,8 @@ deflection differentiates in the moduli (and in the load) with autograd.
 
 :func:`navier_deflection` is the Navier series of the hard simply supported rectangle under uniform pressure (Mindlin,
 or Kirchhoff with ``kirchhoff=True``), derived in ``docs/olcumler/plaka_onkayit.md``. Pre-registered checks: PL1-PL7
-there. Not here: Study / YAML integration, membrane coupling (shells), distorted elements.
+there. :class:`PlatePhysics` is the Study physics (PQ1-PQ4). Not here: YAML integration, membrane coupling
+(shells), distorted elements.
 """
 from __future__ import annotations
 
@@ -23,7 +24,8 @@ from toporlogy.core.domain import Domain
 from toporlogy.fem.grid_spd import GridSPD
 from toporlogy.fem.heat import element_nodes
 
-__all__ = ["MindlinPlate", "plate_element_matrix", "hard_simply_supported", "navier_deflection", "SHEAR_FACTOR"]
+__all__ = ["MindlinPlate", "PlatePhysics", "plate_element_matrix", "hard_simply_supported", "navier_deflection",
+           "SHEAR_FACTOR"]
 
 SHEAR_FACTOR = 5.0 / 6.0
 _CORNERS = np.array([[-1.0, -1.0], [1.0, -1.0], [1.0, 1.0], [-1.0, 1.0]])   # corner order of the grid elements
@@ -127,6 +129,26 @@ class MindlinPlate:
         """DOF vector (3 nn,) for moduli ``E`` (n_active,) and load ``F`` (3 nn,); differentiable in both."""
         E = torch.as_tensor(E, dtype=torch.float64)
         return self.spd.solve(E, torch.as_tensor(np.asarray(F, float), dtype=E.dtype))
+
+
+class PlatePhysics:
+    """Study physics of a :class:`MindlinPlate`: ``solve(E, F)`` → U (3 nn, n_cases), differentiable in E.
+    ``state_dofs`` tells :class:`~toporlogy.optimization.study.Study` the length of a load vector (3 per node)."""
+
+    name = "plate"
+
+    def __init__(self, plate: MindlinPlate) -> None:
+        self.plate, self.domain = plate, plate.domain
+        self.state_dofs = plate.ndof
+        self.n_solves = 0
+
+    def solve(self, E: torch.Tensor, F: Any) -> torch.Tensor:
+        F2 = np.asarray(F, float)
+        F2 = F2[:, None] if F2.ndim == 1 else F2
+        if F2.shape[0] != self.state_dofs:
+            raise ValueError(f"plate loads have {F2.shape[0]} rows, the plate {self.state_dofs} DOFs (3 per node)")
+        self.n_solves += 1
+        return torch.stack([self.plate.solve(E, F2[:, c]) for c in range(F2.shape[1])], dim=1)
 
 
 def navier_deflection(a: float, b: float, t: float, E: float, nu: float, q: float, x: float, y: float,

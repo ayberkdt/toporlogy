@@ -182,8 +182,9 @@ class Study:
         self.move_beta_ref = None if move_beta_ref is None else float(move_beta_ref)
         F = np.asarray(loads, float)
         self.F = F[:, None] if F.ndim == 1 else F
-        if self.F.shape[0] != domain.ndof:
-            raise ValueError(f"loads have {self.F.shape[0]} rows, the domain {domain.ndof} DOFs")
+        n_state = int(getattr(physics, "state_dofs", domain.ndof))     # plate: 3 per node
+        if self.F.shape[0] != n_state:
+            raise ValueError(f"loads have {self.F.shape[0]} rows, the physics {n_state} state DOFs")
         self.objective, self.constraints = objective, list(constraints)
         self.optimizer, self.schedule, self.recorder = optimizer, schedule or Schedule(), recorder
         if optimizer.max_constraints is not None and len(self.constraints) > optimizer.max_constraints:

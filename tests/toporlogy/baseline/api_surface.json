@@ -4928,6 +4928,13 @@
    ],
    "class": "MindlinPlate"
   },
+  "PlatePhysics": {
+   "attrs": [
+    "name",
+    "solve"
+   ],
+   "class": "PlatePhysics"
+  },
   "SHEAR_FACTOR": "<float>",
   "hard_simply_supported": "hard_simply_supported(domain)",
   "navier_deflection": "navier_deflection(a,b,t,E,nu,q,x,y,terms,kirchhoff)",

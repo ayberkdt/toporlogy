@@ -104,3 +104,54 @@ def test_navier_series_truncation_is_small() -> None:
         b = navier_deflection(1.0, 1.0, 1 / ratio, 1.0, NU, 1.0, 0.5, 0.5, terms=799)
         print(f"truncation a/t={ratio:g}: {abs(a - b) / abs(b):.2e}")
         assert abs(a - b) <= 1e-3 * abs(b)
+
+
+def _plate_study(n: int = 12, volume: float = 0.4):
+    from toporlogy.design.chain import Chain, DensityFilter, Embed, Passive
+    from toporlogy.design.interp import SIMP
+    from toporlogy.fem.plate import PlatePhysics
+    from toporlogy.optimization.responses import Compliance, Volume
+    from toporlogy.optimization.study import Constraint, Study
+    from toporlogy.optimizers.mma import MMA
+    d = Domain((n, n), h=1.0 / n)
+    plate = MindlinPlate(d, 0.02, NU, hard_simply_supported(d))
+    F = plate.pressure_load(1.0)
+    st = Study(d, PlatePhysics(plate), F, Chain([Embed(d), DensityFilter(d, 1.5), Passive(d)]),
+               SIMP(d, E0=1.0, penal=3.0, emin_ratio=1e-6), Compliance(), [Constraint(Volume(), volume)], MMA())
+    return d, plate, F, st
+
+
+def test_pq1_pq2_study_value_and_gradient() -> None:
+    d, plate, F, st = _plate_study()
+    x = 0.2 + 0.7 * np.random.default_rng(6).random(st.n_var)
+    v = np.random.default_rng(7).normal(size=st.n_var)
+    ev = st.evaluate(x)
+    E = st.interp(torch.as_tensor(ev.xphys)).reshape(-1)[torch.as_tensor(d.active_elements)]
+    c = float(torch.as_tensor(F) @ plate.solve(E, F))
+    assert abs(ev.f0 - c) <= 1e-12 * abs(c)                                              # PQ1
+    s = 1e-6
+    fd = (st.evaluate(x + s * v, False).f0 - st.evaluate(x - s * v, False).f0) / (2 * s)
+    print(f"PQ2: rel {abs(ev.df0 @ v - fd) / abs(fd):.2e}")
+    assert abs(ev.df0 @ v - fd) <= 1e-6 * abs(fd)                                         # PQ2
+
+
+def test_pq3_plate_optimisation_runs() -> None:
+    d, plate, F, st = _plate_study(n=24)
+    res = st.run(max_iter=30)
+    c0 = res.history["f0"][0]
+    print(f"PQ3: compliance {c0:.4e} -> {res.objective:.4e}, volume {res.constraint_values['volume']:.4f}")
+    assert res.objective < c0
+    assert res.constraint_values["volume"] <= 0.4 * (1 + 1e-3)
+
+
+def test_pq4_wrong_load_rows_refused() -> None:
+    from toporlogy.design.chain import Chain, Embed
+    from toporlogy.design.interp import SIMP
+    from toporlogy.fem.plate import PlatePhysics
+    from toporlogy.optimization.responses import Compliance
+    from toporlogy.optimization.study import Study
+    from toporlogy.optimizers.mma import MMA
+    d = Domain((4, 4))
+    plate = MindlinPlate(d, 0.1, NU, hard_simply_supported(d))
+    with pytest.raises(ValueError, match=f"{3 * d.nn} state DOFs"):
+        Study(d, PlatePhysics(plate), np.zeros(d.ndof), Chain([Embed(d)]), SIMP(d), Compliance(), [], MMA())

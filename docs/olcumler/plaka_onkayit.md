@@ -53,3 +53,9 @@ Navier serisinin kesilmesi (eşiksiz kayıt ölçümü): 399 → 799 terimde de�
 | PQ2 | Study gradyanı merkezi farkla | ≤ 1e-6 göreli |
 | PQ3 | 24 × 24 sert basit mesnetli plaka, düzgün basınç, hacim ≤ 0,4, 30 MMA iterasyonu | son uyum < ilk uyum; hacim ≤ 0,4 (1 + 1e-3) |
 | PQ4 | elastik çalışmalar etkilenmez; yanlış satırlı yük | `pytest -m baseline` bit düzeyinde; açık hata `state_dofs` sayısını söyler |
+
+### PQ1–PQ4 sonucu (ilk ölçüm)
+
+Hepsi ilk koşuda geçti (`test_plate.py::test_pq1_pq2_…`, `::test_pq3_…`, `::test_pq4_…`). PQ1 ≤ 1e-12 (eşik
+geçildi; değer ayrıca yazdırılmadı); PQ2 2,6e-7 göreli; PQ3 24 × 24 plaka, uyum 3,62e4 → 1,58e4 (30 iterasyon), hacim
+0,3997; PQ4 baseline 8 passed bit düzeyinde, yanlış satırlı yük "48 state DOFs" iletisiyle reddedildi.
