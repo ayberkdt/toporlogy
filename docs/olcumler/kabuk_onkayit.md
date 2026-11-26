@@ -187,3 +187,30 @@ sonrası düzeltme yok; ilk koşudan sonra yalnız mypy için `sd: Any` tip notu
 
 Kalan: YAML (`domain: {type: shell}`), ızgaraya özgü bileşenlerin kabuk alanında açık hatası, jeodezik filtre
 mesafesi, drilling ölçeğinin (α) eğri kabuk optimizasyonuna etkisi (kayıt ölçümünde uyumun %5,4'ü kadar).
+
+## Ek ön kayıt: drilling ölçeğine duyarlılık (DR0–DR3)
+
+Ön kayıt 2026-11-26 17:51 +0300, ölçüm kodu yazılmadan ve koşulmadan önce. Soru: varsayılan α = 1e-3 (γ_d = α G t)
+eğri dilimin statik uyumunu ve kısa bir kabuk optimizasyonunu ne kadar etkiliyor? α ∈ {1e-5, 1e-4, 1e-3, 1e-2, 1e-1}.
+Bu turda varsayılan değişmez (aşağıdaki karar kuralı); kural tutmazsa başarısız diye yazılır (strict xfail).
+
+Ortak geometri: R = 1, 90° açık dilim, L = 1, ν = 0,3, ilk halka (z = 0) altı DOF ile ankastre, E = 1 (statik).
+Yükler: (köşe) son düğümde (z = L, θ = 90°) birim z kuvveti, önceki kayıt ölçümünün yükü; (radyal) serbest halkanın
+orta düğümünde içe radyal birim kuvvet, KS3'ün yükü. Kalınlıklar t/R = 0,01 ve 0,05.
+
+| # | Kontrol | Eşik |
+|:---|:---|:---|
+| DR0 | kurulum: 8 × 6, t = 0,05, köşe yükü, α = 1e-4 / 1e-3 / 1e-2 uyumu = önceki kayıt 184,90 / 177,27 / 175,33 | her biri ±0,005 mutlak (kaydın iki ondalığı) |
+| DR1 | statik, 16 × 12 ağ: her kalınlık (0,01; 0,05) ve her yük (köşe, radyal) için \|c(1e-4) − c(1e-2)\| / c(1e-3) | ≤ %1 (dört durumun her biri) |
+| DR2 | optimizasyon, KS3 kurulumu (16 × 12, radyal yük, `Chain([Embed, MeshFilterLink(0,15), Passive])`, `SIMP(p = 3, E_min = 1e-9)`, `MeshVolume` ≤ 0,4, `MMA`, `max_iter = 30`, varsayılan `tol`), t = 0,05 ve t = 0,01: α = 1e-4 ile 1e-2 arasında (a) \|c_son(1e-4) − c_son(1e-2)\| / c_son(1e-3), (b) alanla ağırlıklı L1 Σ A_e \|x̄_a − x̄_b\| / Σ A_e | (a) ≤ %2, (b) ≤ 0,05 (iki kalınlığın her biri) |
+| DR3 | kayıt (eşiksiz): beş α için statik uyum 8 × 6, 16 × 12, 32 × 24 ağlarında (iki kalınlık, iki yük), α = 1e-3'e göre bağıl fark; optimizasyonda beş α için son uyum, iterasyon sayısı, hacim, α = 1e-3 tasarımına göre max \|x̄_a − x̄_b\| ve L1; her son tasarımın α = 1e-3 fiziğiyle yeniden değerlendirilen uyumu / α = 1e-3 tasarımınınki | — |
+
+Karar kuralı. DR1 ve DR2 tutarsa α = 1e-3 bu kurulumlarda kabul edilebilir: α 1e-4 ile 1e-2 arasında değişince statik
+uyum %1'den, optimize uyum %2'den az değişir ve tasarım (L1) 0,05'ten az kayar. Tutmazsa varsayılan bu turda
+**değişmez**: hangi α'nın "doğru" olduğunu söyleyecek bir referans (drilling'den bağımsız çözüm) bu ölçümde yok; kural
+başarısız diye kaydedilir, test strict xfail olur, sonraki adım referansla ayrı bir ön kayıttır. DR3'teki ağ
+incelmesiyle farkın küçülüp küçülmediği yalnız kayıttır.
+
+Kurallar: ilk koşuda tutmayan kontrol, ölçülen değeriyle `xfail(strict=True)` olur ve `docs/vv_kutugu.json`'a girer;
+eşik gevşetilmez; test kurulum hatası (ölçüm değil) düzeltilebilir ama burada yazılır; ilk koşudan sonra eklenen kontrol
+"post hoc" diye işaretlenir.
