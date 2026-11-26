@@ -25,14 +25,14 @@ import scipy.sparse as sp
 from toporlogy.core.linear_elastic import NotPositiveDefiniteError, check_positive_definite
 from toporlogy.fem.mechanisms import MechanismError
 from toporlogy.fem.mesh import kernels as kn
-from toporlogy.fem.mesh.assembly import Pattern, scatter
+from toporlogy.fem.mesh.assembly import Pattern, assemble_vector
 from toporlogy.fem.mesh.linear import Factorization
 from toporlogy.fem.mesh.mesh import Mesh
 from toporlogy.fem.mesh.quadrature import rule
 from toporlogy.fem.mesh.reference import get
 
 __all__ = ["Dirichlet", "UnsupportedBoundaryCondition", "Solution", "ElasticProblem", "HeatProblem",
-           "rigid_modes", "zero_energy_modes"]
+           "rigid_modes", "stiffness_nullity"]
 
 
 class UnsupportedBoundaryCondition(ValueError):
@@ -109,7 +109,7 @@ def rigid_modes(X: np.ndarray, ncomp: int) -> np.ndarray:
     return np.column_stack(cols)
 
 
-def zero_energy_modes(K: np.ndarray, rtol: float = 1e-10) -> int:
+def stiffness_nullity(K: np.ndarray, rtol: float = 1e-10) -> int:
     """Number of eigenvalues of a small dense symmetric K with |λ| ≤ rtol · max |λ| (oracle use only)."""
     w = np.linalg.eigvalsh(0.5 * (K + K.T))
     return int((np.abs(w) <= rtol * np.abs(w).max()).sum())
@@ -183,7 +183,7 @@ class _Linear:
         """Consistent global load of a body force b (vector per unit volume; constant or callable of x)."""
         g = self.geom if degree is None else kn.geometry(self.ref, self.mesh.cell_points(), rule(self.ref.cell, degree))
         fe = kn.body_load(g, b, self.ncomp, self.thickness)
-        return scatter(self.ndof, self.cell_dofs, fe)
+        return assemble_vector(self.ndof, self.cell_dofs, fe)
 
     # ------------------------------------------------------------------ supports and solve
     def _check_supports(self, constrained: np.ndarray) -> None:
@@ -292,12 +292,12 @@ class ElasticProblem(_Linear):
     def traction(self, facets: np.ndarray, t: Any, degree: int | None = None) -> np.ndarray:
         """Consistent global load of a traction vector t (force per area; constant or callable of x)."""
         fg, f = self.facet_geometry(facets, degree)
-        return scatter(self.ndof, self.facet_dofs(f), kn.facet_load(fg, traction=t, thickness=self.thickness))
+        return assemble_vector(self.ndof, self.facet_dofs(f), kn.facet_load(fg, traction=t, thickness=self.thickness))
 
     def pressure(self, facets: np.ndarray, p: Any, degree: int | None = None) -> np.ndarray:
         """Consistent global load of a pressure p (t = −p n, n the outward normal)."""
         fg, f = self.facet_geometry(facets, degree)
-        return scatter(self.ndof, self.facet_dofs(f), kn.facet_load(fg, pressure=p, thickness=self.thickness))
+        return assemble_vector(self.ndof, self.facet_dofs(f), kn.facet_load(fg, pressure=p, thickness=self.thickness))
 
     def constrain(self, kind: str, *args: Any, **kwargs: Any) -> None:
         """Placeholder of the constraint kinds the general mesh does not implement; always raises."""
@@ -310,7 +310,7 @@ class ElasticProblem(_Linear):
         g = kn.geometry(self.ref, self.mesh.cell_points(), rule(self.ref.cell, 2 * self.ref.degree))
         M = kn.mass(g, rho, self.ncomp, self.thickness)
         if lumped:
-            return sp.diags(scatter(self.ndof, self.cell_dofs, kn.lumped_mass_hrz(M))).tocsr()
+            return sp.diags(assemble_vector(self.ndof, self.cell_dofs, kn.lumped_mass_hrz(M))).tocsr()
         return self.pattern.assemble(M)
 
     def strain(self, u: np.ndarray, degree: int | None = None) -> tuple[np.ndarray, kn.Geometry]:
@@ -398,12 +398,14 @@ class HeatProblem(_Linear):
         self._robin_cells = np.union1d(getattr(self, "_robin_cells", np.zeros(0, np.int64)), f[:, 0])
         self._invalidate()
         self._checked.clear()
-        return scatter(self.ndof, dofs, kn.facet_load(fg, traction=h * T_inf, ncomp=1, thickness=self.thickness))
+        fe = kn.facet_load(fg, traction=h * T_inf, ncomp=1, thickness=self.thickness)
+        return assemble_vector(self.ndof, dofs, fe)
 
     def flux(self, facets: np.ndarray, q: Any) -> np.ndarray:
         """Load of a prescribed inward heat flux q (per area) on ``facets``."""
         fg, f = self.facet_geometry(facets)
-        return scatter(self.ndof, self.facet_dofs(f), kn.facet_load(fg, traction=q, ncomp=1, thickness=self.thickness))
+        fe = kn.facet_load(fg, traction=q, ncomp=1, thickness=self.thickness)
+        return assemble_vector(self.ndof, self.facet_dofs(f), fe)
 
     def _check_supports(self, constrained: np.ndarray) -> None:
         """Every connected piece needs a Dirichlet temperature or a convection facet (else T is free up to a

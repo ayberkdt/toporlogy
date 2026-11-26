@@ -13,7 +13,7 @@ from toporlogy.core.linear_elastic import isotropic_plane_strain, isotropic_plan
 from toporlogy.fem.elements import ke_h8_from_D, ke_q4_from_D
 from toporlogy.fem.mesh import (DegenerateElementError, ElasticProblem, InvertedElementError, Mesh, box, get,
                                 rectangle, straighten)
-from toporlogy.fem.mesh.problem import zero_energy_modes
+from toporlogy.fem.mesh.problem import stiffness_nullity
 from toporlogy.fem.mesh.quadrature import MEASURE, rule
 from toporlogy.fem.mesh.reference import monomial_exponents
 
@@ -162,7 +162,7 @@ def test_e8_general_q4_h8_equal_grid_element_matrices():
 def test_e9_reduced_integration_q4_shows_two_hourglass_modes():
     K = ElasticProblem(rectangle(1, 1, element="Q4"), _D(2), degree=1).element_stiffness()[0]
     assert len(rule("quad", 1).weights) == 1
-    assert zero_energy_modes(K) == 3 + 2
+    assert stiffness_nullity(K) == 3 + 2
 
 
 @pytest.mark.parametrize("name", SOLID)

@@ -69,8 +69,11 @@ class MixedElasticity:
         if mesh.dim == 2 and plane != "strain":
             raise ValueError("the mixed u-p formulation is for plane strain and 3-D; plane stress has no "
                              "incompressibility constraint (λ* = 2λμ/(λ+2μ) is bounded): use ElasticProblem")
-        if not mu > 0 or not lam > -2 * mu / mesh.dim:
-            raise ValueError("μ > 0 and λ > −2μ/dim (positive bulk modulus) are required")
+        if not mu > 0 or not lam > -2 * mu / 3:
+            raise ValueError("μ > 0 and λ > −2μ/3 (positive bulk modulus) are required")
+        if lam == 0:
+            raise ValueError("λ = 0 (ν = 0): the pressure p = −λ div u vanishes identically and the pressure block "
+                             "−M/λ is undefined; use ElasticProblem")
         if pressure not in ("vertex", "P0"):
             raise ValueError("pressure: vertex | P0")
         self.mesh = mesh

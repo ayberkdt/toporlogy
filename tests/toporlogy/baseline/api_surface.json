@@ -1854,6 +1854,70 @@
   "resolve": "resolve(raw)",
   "study_from_dict": "study_from_dict(d,overrides)"
  },
+ "toporlogy.configuration.catalog": {
+  "BENCHMARKS": "<tuple>",
+  "Benchmark": {
+   "attrs": [
+    "note",
+    "validation"
+   ],
+   "class": "Benchmark"
+  },
+  "COMPOSITE_RESPONSES": "<tuple>",
+  "Cell": {
+   "attrs": [
+    "enforced",
+    "evidence",
+    "reason"
+   ],
+   "class": "Cell"
+  },
+  "ELEMENTS": "<tuple>",
+  "EXPERIMENTAL": "<str>",
+  "Element": {
+   "attrs": [],
+   "class": "Element"
+  },
+  "MATERIALS": "<tuple>",
+  "MaterialRecord": {
+   "attrs": [
+    "note",
+    "used_by"
+   ],
+   "class": "MaterialRecord"
+  },
+  "NOT_VERIFIED": "<str>",
+  "PHYSICS": "<tuple>",
+  "PHYSICS_INDEPENDENT": "<dict>",
+  "Physics": {
+   "attrs": [],
+   "class": "Physics"
+  },
+  "RESPONSE_MATRIX": "<dict>",
+  "RULES": "<tuple>",
+  "Rule": {
+   "attrs": [
+    "enforced",
+    "evidence",
+    "reason"
+   ],
+   "class": "Rule"
+  },
+  "SCHEMA_VERSION": "<str>",
+  "SOLVERS": "<tuple>",
+  "STATUSES": "<tuple>",
+  "SUPPORTED": "<str>",
+  "Solver": {
+   "attrs": [],
+   "class": "Solver"
+  },
+  "UNSUPPORTED": "<str>",
+  "as_dict": "as_dict()",
+  "check_build": "check_build(resolved,physics,responses)",
+  "render_markdown": "render_markdown(data)",
+  "status": "status(physics,response)",
+  "write": "write(folder)"
+ },
  "toporlogy.configuration.components": {
   "annotations": "<_Feature>",
   "register_all": "register_all()"
@@ -3891,6 +3955,332 @@
   "fixed_dof_rows": "fixed_dof_rows(fixed,dim)",
   "zero_energy_modes": "zero_energy_modes(domain,elements,rows,tol,max_unknowns)"
  },
+ "toporlogy.fem.mesh": {
+  "DegenerateElementError": {
+   "attrs": [
+    "add_note",
+    "args",
+    "code",
+    "with_traceback"
+   ],
+   "class": "DegenerateElementError"
+  },
+  "Dirichlet": {
+   "attrs": [
+    "fixed"
+   ],
+   "class": "Dirichlet"
+  },
+  "ELEMENTS": "<dict>",
+  "ElasticProblem": {
+   "attrs": [
+    "K",
+    "body_force",
+    "constrain",
+    "element_stiffness",
+    "element_values",
+    "errors",
+    "facet_dofs",
+    "facet_geometry",
+    "factorization",
+    "mass",
+    "pressure",
+    "set_D",
+    "solve",
+    "strain",
+    "stress",
+    "traction"
+   ],
+   "class": "ElasticProblem"
+  },
+  "HeatProblem": {
+   "attrs": [
+    "K",
+    "body_force",
+    "element_values",
+    "facet_dofs",
+    "facet_geometry",
+    "factorization",
+    "flux",
+    "robin",
+    "solve"
+   ],
+   "class": "HeatProblem"
+  },
+  "InvertedElementError": {
+   "attrs": [
+    "add_note",
+    "args",
+    "code",
+    "with_traceback"
+   ],
+   "class": "InvertedElementError"
+  },
+  "Mesh": {
+   "attrs": [
+    "boundary_facets",
+    "boundary_nodes",
+    "cell_centroids",
+    "cell_dofs",
+    "cell_points",
+    "components",
+    "dim",
+    "dofs",
+    "facet_nodes",
+    "facets_where",
+    "from_domain",
+    "is_boundary",
+    "n_cells",
+    "n_nodes",
+    "nodes_where",
+    "ref",
+    "used_nodes"
+   ],
+   "class": "Mesh"
+  },
+  "MixedElasticity": {
+   "attrs": [
+    "inf_sup",
+    "nu",
+    "pressure_error",
+    "solve",
+    "system"
+   ],
+   "class": "MixedElasticity"
+  },
+  "UnsupportedBoundaryCondition": {
+   "attrs": [
+    "add_note",
+    "args",
+    "code",
+    "with_traceback"
+   ],
+   "class": "UnsupportedBoundaryCondition"
+  },
+  "box": "box(nx,ny,nz,lx,ly,lz,element,origin)",
+  "get": "get(name)",
+  "perturb": "perturb(mesh,amplitude,seed,curved)",
+  "rectangle": "rectangle(nx,ny,lx,ly,element,origin)",
+  "straighten": "straighten(mesh)"
+ },
+ "toporlogy.fem.mesh.assembly": {
+  "Pattern": {
+   "attrs": [
+    "assemble",
+    "nnz"
+   ],
+   "class": "Pattern"
+  },
+  "assemble_vector": "assemble_vector(n,dofs,fe)"
+ },
+ "toporlogy.fem.mesh.benchmarks": {
+  "MIXED": "<dict>",
+  "cantilever_case": "cantilever_case(method,slenderness,ny,nx,nu,dim)",
+  "cantilever_energy": "cantilever_energy(P,D,L,E,nu,width)",
+  "mms_case": "mms_case(method,n,nu,fixed,variant,distort,seed,dim,plane)",
+  "moduli": "moduli(nu,fixed)"
+ },
+ "toporlogy.fem.mesh.kernels": {
+  "DETJ_TOL": "<float>",
+  "DegenerateElementError": {
+   "attrs": [
+    "add_note",
+    "args",
+    "code",
+    "with_traceback"
+   ],
+   "class": "DegenerateElementError"
+  },
+  "FacetGeometry": {
+   "attrs": [],
+   "class": "FacetGeometry"
+  },
+  "Geometry": {
+   "attrs": [],
+   "class": "Geometry"
+  },
+  "InvertedElementError": {
+   "attrs": [
+    "add_note",
+    "args",
+    "code",
+    "with_traceback"
+   ],
+   "class": "InvertedElementError"
+  },
+  "body_load": "body_load(g,b,ncomp,thickness)",
+  "check_jacobian": "check_jacobian(detJ,scale,cells,what)",
+  "conduction": "conduction(g,k,thickness)",
+  "element_scale": "element_scale(ref,X)",
+  "facet_geometry": "facet_geometry(facet_ref,Xf,cell_centroid,degree)",
+  "facet_load": "facet_load(fg,traction,pressure,ncomp,thickness)",
+  "facet_mass": "facet_mass(fg,coef,thickness)",
+  "facet_reference": "facet_reference(ref)",
+  "geometry": "geometry(ref,X,q,cells,check)",
+  "gradients": "gradients(g,Ue)",
+  "lumped_mass_hrz": "lumped_mass_hrz(M)",
+  "mass": "mass(g,rho,ncomp,thickness)",
+  "stiffness": "stiffness(g,D,thickness)",
+  "stiffness_degree": "stiffness_degree(ref)",
+  "strain_matrix": "strain_matrix(dNdx)"
+ },
+ "toporlogy.fem.mesh.linear": {
+  "Factorization": {
+   "attrs": [
+    "fill_nnz",
+    "solve"
+   ],
+   "class": "Factorization"
+  },
+  "STRUCTURES": "<tuple>",
+  "condition_1norm": "condition_1norm(A,factor)",
+  "jacobi_pcg": "jacobi_pcg(A,b,structure,rtol,maxiter)",
+  "jacobi_scaled": "jacobi_scaled(A)"
+ },
+ "toporlogy.fem.mesh.manufactured": {
+  "Manufactured": {
+   "attrs": [
+    "body_force",
+    "c",
+    "divergence",
+    "grad",
+    "grad_lap_psi",
+    "incompressible_limit",
+    "lam_c",
+    "lap_psi",
+    "laplacian",
+    "pressure",
+    "u"
+   ],
+   "class": "Manufactured"
+  }
+ },
+ "toporlogy.fem.mesh.mesh": {
+  "Mesh": {
+   "attrs": [
+    "boundary_facets",
+    "boundary_nodes",
+    "cell_centroids",
+    "cell_dofs",
+    "cell_points",
+    "components",
+    "dim",
+    "dofs",
+    "facet_nodes",
+    "facets_where",
+    "from_domain",
+    "is_boundary",
+    "n_cells",
+    "n_nodes",
+    "nodes_where",
+    "ref",
+    "used_nodes"
+   ],
+   "class": "Mesh"
+  },
+  "box": "box(nx,ny,nz,lx,ly,lz,element,origin)",
+  "perturb": "perturb(mesh,amplitude,seed,curved)",
+  "rectangle": "rectangle(nx,ny,lx,ly,element,origin)",
+  "straighten": "straighten(mesh)"
+ },
+ "toporlogy.fem.mesh.mixed": {
+  "MixedElasticity": {
+   "attrs": [
+    "inf_sup",
+    "nu",
+    "pressure_error",
+    "solve",
+    "system"
+   ],
+   "class": "MixedElasticity"
+  },
+  "MixedSolution": {
+   "attrs": [],
+   "class": "MixedSolution"
+  },
+  "deviatoric_D": "deviatoric_D(dim,mu)"
+ },
+ "toporlogy.fem.mesh.problem": {
+  "Dirichlet": {
+   "attrs": [
+    "fixed"
+   ],
+   "class": "Dirichlet"
+  },
+  "ElasticProblem": {
+   "attrs": [
+    "K",
+    "body_force",
+    "constrain",
+    "element_stiffness",
+    "element_values",
+    "errors",
+    "facet_dofs",
+    "facet_geometry",
+    "factorization",
+    "mass",
+    "pressure",
+    "set_D",
+    "solve",
+    "strain",
+    "stress",
+    "traction"
+   ],
+   "class": "ElasticProblem"
+  },
+  "HeatProblem": {
+   "attrs": [
+    "K",
+    "body_force",
+    "element_values",
+    "facet_dofs",
+    "facet_geometry",
+    "factorization",
+    "flux",
+    "robin",
+    "solve"
+   ],
+   "class": "HeatProblem"
+  },
+  "Solution": {
+   "attrs": [],
+   "class": "Solution"
+  },
+  "UnsupportedBoundaryCondition": {
+   "attrs": [
+    "add_note",
+    "args",
+    "code",
+    "with_traceback"
+   ],
+   "class": "UnsupportedBoundaryCondition"
+  },
+  "rigid_modes": "rigid_modes(X,ncomp)",
+  "stiffness_nullity": "stiffness_nullity(K,rtol)"
+ },
+ "toporlogy.fem.mesh.quadrature": {
+  "MEASURE": "<dict>",
+  "QuadratureRule": {
+   "attrs": [],
+   "class": "QuadratureRule"
+  },
+  "gauss_legendre": "gauss_legendre(n)",
+  "rule": "rule(cell,degree)"
+ },
+ "toporlogy.fem.mesh.reference": {
+  "ELEMENTS": "<dict>",
+  "ReferenceElement": {
+   "attrs": [
+    "grad",
+    "n_nodes",
+    "shape",
+    "vertex_weights"
+   ],
+   "class": "ReferenceElement"
+  },
+  "get": "get(name)",
+  "monomial_exponents": "monomial_exponents(element)"
+ },
  "toporlogy.fem.modal": {
   "Modal": {
    "attrs": [
@@ -4821,6 +5211,74 @@
   },
   "centroid_stress": "centroid_stress(domain,U,nu,E0,elements)",
   "von_mises_matrix": "von_mises_matrix(dim)"
+ },
+ "toporlogy.optimization.stress_recovery": {
+  "CornerField": {
+   "attrs": [
+    "kind",
+    "measure",
+    "von_mises"
+   ],
+   "class": "CornerField"
+  },
+  "ElementField": {
+   "attrs": [
+    "kind",
+    "measure",
+    "von_mises"
+   ],
+   "class": "ElementField"
+  },
+  "ElementMaximum": {
+   "attrs": [
+    "kind"
+   ],
+   "class": "ElementMaximum"
+  },
+  "NodalField": {
+   "attrs": [
+    "kind",
+    "measure",
+    "von_mises"
+   ],
+   "class": "NodalField"
+  },
+  "PointField": {
+   "attrs": [
+    "energy_density",
+    "kind",
+    "measure",
+    "von_mises"
+   ],
+   "class": "PointField"
+  },
+  "StressRecovery": {
+   "attrs": [
+    "centroids",
+    "extrapolated",
+    "integration_points",
+    "ip_maximum",
+    "nodal_averaged",
+    "patch_recovered"
+   ],
+   "class": "StressRecovery"
+  }
+ },
+ "toporlogy.optimization.stress_singularity": {
+  "CONVERGED": "<str>",
+  "NOT_CONVERGED": "<str>",
+  "NOT_VERIFIED": "<str>",
+  "PeakAssessment": {
+   "attrs": [],
+   "class": "PeakAssessment"
+  },
+  "RegionStress": {
+   "attrs": [],
+   "class": "RegionStress"
+  },
+  "SINGULAR": "<str>",
+  "assess_peak": "assess_peak(h,peak,rel_tol,ratio_min,noise)",
+  "region_stress": "region_stress(values,points,lo,hi,weights)"
  },
  "toporlogy.optimization.study": {
   "Constraint": {

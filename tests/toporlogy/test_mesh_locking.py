@@ -10,7 +10,7 @@ import pytest
 from toporlogy.core.linear_elastic import isotropic_plane_strain
 from toporlogy.fem.mesh import Dirichlet, ElasticProblem, MixedElasticity, rectangle
 from toporlogy.fem.mesh.benchmarks import cantilever_case, cantilever_energy, mms_case, moduli
-from toporlogy.fem.mesh.linear import Factorization, condition_1norm, jacobi_scaled, pcg
+from toporlogy.fem.mesh.linear import Factorization, condition_1norm, jacobi_scaled, jacobi_pcg
 from toporlogy.fem.mesh.manufactured import Manufactured
 
 N2, N3 = 16, 6
@@ -165,7 +165,7 @@ def _l4(nu):
         r = f[free] - K @ s.u[free, 0]
         d_ref = np.abs(fac.solve(r)).max() / np.abs(s.u[free, 0]).max()
         e = P.errors(s.u[:, 0], ms.u, ms.grad)["l2"]
-        _, it, conv = pcg(K, f[free])
+        _, it, conv = jacobi_pcg(K, f[free])
         _L4[nu] = (kap, d_scaled, d_ref, e, it, conv)
         print(f"\n  L4 Q4 nu={nu}: kappa {kap:.2e}, scaled-solve change {d_scaled:.1e}, refinement {d_ref:.1e}, "
               f"e_L2 {e:.3e}, PCG {it} it ({conv})")
@@ -192,4 +192,4 @@ def test_l4_pcg_refused_for_the_indefinite_mixed_system():
     import scipy.sparse as sp
     K = sp.bmat([[mx.A, mx.B.T], [mx.B, -mx.M / 100.0]], format="csr")
     with pytest.raises(ValueError, match="symmetric positive definite"):
-        pcg(K, np.ones(K.shape[0]), structure="symmetric_indefinite")
+        jacobi_pcg(K, np.ones(K.shape[0]), structure="symmetric_indefinite")

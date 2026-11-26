@@ -28,7 +28,7 @@ sys.path.insert(0, str(REPO / "src"))
 from toporlogy.core.linear_elastic import isotropic_plane_strain  # noqa: E402
 from toporlogy.fem.mesh import Dirichlet, ElasticProblem, MixedElasticity, perturb, rectangle  # noqa: E402
 from toporlogy.fem.mesh.benchmarks import cantilever_case, mms_case, moduli  # noqa: E402
-from toporlogy.fem.mesh.linear import Factorization, condition_1norm, jacobi_scaled, pcg  # noqa: E402
+from toporlogy.fem.mesh.linear import Factorization, condition_1norm, jacobi_scaled, jacobi_pcg  # noqa: E402
 from toporlogy.fem.mesh.manufactured import Manufactured  # noqa: E402
 
 NUS = (-0.9, -0.5, 0.0, 0.3, 0.45, 0.49, 0.499, 0.4999)
@@ -81,7 +81,10 @@ def nu_sweep(quick: bool) -> list[dict]:
         for meth in two + ([] if quick else three):
             n = 16 if meth in two else 6
             for nu in nus + ((0.5,) if meth.startswith(("TH", "Q4-P0")) else ()):
-                rows.append(mms_case(meth, n, nu, fixed=fixed))
+                try:
+                    rows.append(mms_case(meth, n, nu, fixed=fixed))
+                except ValueError as e:                 # mixed u-p at lambda = 0 is refused
+                    rows.append({"method": meth, "n": n, "nu": nu, "fixed": fixed, "refused": str(e)})
         for meth in ("Q4", "T3"):
             for nu in nus:
                 rows.append(mms_case(meth, 16, nu, fixed=fixed, plane="stress"))
@@ -189,7 +192,7 @@ def conditioning(quick: bool) -> list[dict]:
         fs = Factorization(Ks, "spd")
         us = sc * fs.solve(sc * f[free])
         r = f[free] - K @ s.u[free, 0]
-        _, it, conv = pcg(K, f[free])
+        _, it, conv = jacobi_pcg(K, f[free])
         rows.append({"method": "Q4", "nu": nu, "kappa1": condition_1norm(K, fac),
                      "kappa1_jacobi": condition_1norm(Ks, fs),
                      "scaled_solve_change": float(np.abs(us - s.u[free, 0]).max() / np.abs(s.u[free, 0]).max()),
@@ -203,7 +206,7 @@ def conditioning(quick: bool) -> list[dict]:
         f2 = mx.disp.body_force(lambda X, ms=ms, mu=mu: ms.body_force(mu, X), degree=8)
         so = mx.solve(f2, bc)
         try:
-            pcg(Km, np.ones(Km.shape[0]), structure="symmetric_indefinite")
+            jacobi_pcg(Km, np.ones(Km.shape[0]), structure="symmetric_indefinite")
             refused = False
         except ValueError:
             refused = True

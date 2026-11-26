@@ -58,6 +58,8 @@ FILE_LAYERS: dict[str, tuple[str, ...]] = {
     "test_registry_features.py": ("IC",), "test_regression.py": ("IS", "OG"), "test_research_examples.py": ("IC",),
     "test_residual.py": ("AS",), "test_result_contract.py": ("IC", "OG"), "test_robust.py": ("OG",),
     "test_sdf_contract.py": ("E2E",), "test_simpl.py": ("OG",), "test_skfem_crosscheck.py": ("IS", "EL"),
+    "test_mesh_elements.py": ("U", "EL"), "test_mesh_assembly.py": ("EL", "AS"),
+    "test_mesh_verification.py": ("IS", "AN"), "test_mesh_locking.py": ("AN", "IS"),
     "test_strength.py": ("MP",), "test_stress.py": ("AN", "OG"), "test_study_options.py": ("IC",),
     "test_sweep_connectivity.py": ("E2E",), "test_sweep_post.py": ("E2E",), "test_symmetric_ties.py": ("E2E",),
     "test_symmetry.py": ("U", "E2E"), "test_t10_convergence.py": ("AN", "E2E"), "test_taylor_remainder.py": ("OG",),

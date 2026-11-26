@@ -24,14 +24,14 @@ import numpy as np
 
 from toporlogy.references import cite
 
-__all__ = ["Rule", "gauss_legendre", "rule", "MEASURE"]
+__all__ = ["QuadratureRule", "gauss_legendre", "rule", "MEASURE"]
 
 MEASURE = {"line": 2.0, "quad": 4.0, "hex": 8.0, "tri": 0.5, "tet": 1.0 / 6.0}
 _DIM = {"line": 1, "quad": 2, "hex": 3, "tri": 2, "tet": 3}
 
 
 @dataclass(frozen=True)
-class Rule:
+class QuadratureRule:
     """Points (nq, dim) on a reference cell, weights (nq,), and the polynomial degree integrated exactly."""
 
     cell: str
@@ -87,7 +87,7 @@ _KA, _KB = 0.5854101966249685, 0.1381966011250105        # Keast (1986) 4-point 
 
 
 @cache
-def _rule_cached(cell: str, degree: int) -> Rule:
+def _rule_cached(cell: str, degree: int) -> QuadratureRule:
     if cell not in MEASURE:
         raise ValueError(f"unknown reference cell {cell!r}: {' | '.join(MEASURE)}")
     if degree < 0:
@@ -96,21 +96,21 @@ def _rule_cached(cell: str, degree: int) -> Rule:
     if cell in ("line", "quad", "hex"):
         n = max(1, math.ceil((degree + 1) / 2))
         P, W = _tensor(n, dim)
-        return Rule(cell, P, W, 2 * n - 1, f"gauss-legendre {'x'.join([str(n)] * dim)}")
+        return QuadratureRule(cell, P, W, 2 * n - 1, f"gauss-legendre {'x'.join([str(n)] * dim)}")
     if degree <= 1:
         c = np.full((1, dim), 1.0 / (dim + 1))
-        return Rule(cell, c, np.array([MEASURE[cell]]), 1, "centroid")
+        return QuadratureRule(cell, c, np.array([MEASURE[cell]]), 1, "centroid")
     if degree == 2 and cell == "tri":
         P = np.array([[1 / 6, 1 / 6], [2 / 3, 1 / 6], [1 / 6, 2 / 3]])
-        return Rule(cell, P, np.full(3, 1 / 6), 2, "triangle 3-point")
+        return QuadratureRule(cell, P, np.full(3, 1 / 6), 2, "triangle 3-point")
     if degree == 2 and cell == "tet":
         P = np.array([[_KB, _KB, _KB], [_KA, _KB, _KB], [_KB, _KA, _KB], [_KB, _KB, _KA]])
-        return Rule(cell, P, np.full(4, 1 / 24), 2, "keast 4-point")
+        return QuadratureRule(cell, P, np.full(4, 1 / 24), 2, "keast 4-point")
     P, W = _collapsed(cell, degree)
-    return Rule(cell, P, W, degree, f"collapsed gauss-legendre ({len(W)} points)")
+    return QuadratureRule(cell, P, W, degree, f"collapsed gauss-legendre ({len(W)} points)")
 
 
-def rule(cell: str, degree: int) -> Rule:
+def rule(cell: str, degree: int) -> QuadratureRule:
     """A rule on ``cell`` exact for every polynomial of total degree ≤ ``degree`` (hypercubes: in each variable)."""
     r = _rule_cached(cell, int(degree))
     r.points.setflags(write=False)

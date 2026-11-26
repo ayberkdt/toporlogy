@@ -10,7 +10,7 @@ from __future__ import annotations
 import numpy as np
 import scipy.sparse as sp
 
-__all__ = ["Pattern", "scatter"]
+__all__ = ["Pattern", "assemble_vector"]
 
 
 class Pattern:
@@ -61,6 +61,6 @@ class Pattern:
         return A
 
 
-def scatter(n: int, dofs: np.ndarray, fe: np.ndarray) -> np.ndarray:
+def assemble_vector(n: int, dofs: np.ndarray, fe: np.ndarray) -> np.ndarray:
     """Global vector (n,) of element vectors fe (ne, m) at element DOFs ``dofs`` (ne, m)."""
     return np.bincount(np.asarray(dofs, np.int64).ravel(), weights=np.asarray(fe, float).ravel(), minlength=n)

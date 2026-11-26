@@ -68,6 +68,8 @@ class Element:
 
 
 _GRID = "regular grid, undistorted unit square/cube elements only (no Jacobian varies)"
+_MESH = ("general meshes (toporlogy.fem.mesh); signed detJ checked at every quadrature point and node, inverted or "
+         "degenerate cells refused; distorted-mesh patch test and MMS rates measured")
 ELEMENTS: tuple[Element, ...] = (
     Element("Q4", 2, "square", 4, 2, "bilinear", "2 x 2 Gauss", ("elasticity", "modal", "nonlinear_elasticity"),
             "shear-locks in bending (parasitic shear)", _GRID, ("andreassen_2011", "cook_2002"),
@@ -102,6 +104,45 @@ ELEMENTS: tuple[Element, ...] = (
             (T + "test_post_verify.py::test_t10_patch_uniaxial_tension",
              T + "test_t10_convergence.py::test_mesh_convergence_needs_three_sizes"),
             "post/verify.py (verification of the finished surface only; needs gmsh)"),
+    # general-mesh elements (03_FEM_ELEMENTS, docs/olcumler/fem_genel.md): Python API only, no YAML physics yet
+    *(Element(f"mesh:{name}", dim, geom, nodes, dim, interp, quad, (), lock, _MESH, refs,
+              (T + "test_mesh_elements.py::test_e4_completeness",
+               T + "test_mesh_assembly.py::test_g2_affine_patch_test",
+               T + "test_mesh_verification.py::test_v2_scikit_fem_stiffness_load_and_solution",
+               T + "test_mesh_verification.py::test_v3_mms_convergence_on_distorted_mesh"),
+              "fem/mesh (ElasticProblem)")
+      for name, dim, geom, nodes, interp, quad, lock, refs in (
+          ("Q4", 2, "quadrilateral", 4, "bilinear (isoparametric)", "2 x 2 Gauss",
+           "shear-locks on elongated elements (R = 0.29 at aspect 5); volumetric locking in plane strain (L2 error "
+           "0.94 at nu = 0.4999, n = 16)", ("cook_2002", "zienkiewicz_taylor_2013")),
+          ("Q9", 2, "quadrilateral", 9, "biquadratic Lagrange (isoparametric)", "3 x 3 Gauss",
+           "no shear locking measured (R >= 0.9997, aspect up to 5); partial volumetric locking (L2 error 0.013 at "
+           "nu = 0.4999 vs 3.5e-4 at 0.3)", ("zienkiewicz_taylor_2013",)),
+          ("T3", 2, "triangle", 3, "linear", "centroid (exact for B^T D B)",
+           "locks in bending and volumetrically (L2 error 0.97 at nu = 0.4999)", ("cook_2002",)),
+          ("T6", 2, "triangle", 6, "quadratic", "3-point (degree 2)",
+           "partial volumetric locking (L2 error 0.018 at nu = 0.4999)", ("zienkiewicz_taylor_2013",
+                                                                          "dunavant_1985")),
+          ("H8", 3, "hexahedron", 8, "trilinear (isoparametric)", "2 x 2 x 2 Gauss",
+           "shear-locks on elongated elements (R = 0.24 at aspect 5); volumetric locking", ("cook_2002",)),
+          ("T4", 3, "tetrahedron", 4, "linear", "centroid (exact for B^T D B)",
+           "locks volumetrically (L2 error 0.996 at nu = 0.4999, n = 6)", ("cook_2002",)),
+          ("T10", 3, "tetrahedron", 10, "quadratic (gmsh node order)", "4-point Keast (degree 2)",
+           "curved T10 fails the patch test with the 4-point rule (1.7e-4); a degree-3 rule passes",
+           ("keast_1986", "zienkiewicz_taylor_2013")))),
+    *(Element(f"mesh:{name}", dim, geom, nodes, dim, interp + " displacement + continuous linear pressure "
+              "(Taylor-Hood u-p, sigma = 2 mu eps - p I, p = -lambda div u)", quad, (),
+              "locking-free near and at nu = 0.5 (L1c, L1e); inf-sup constant bounded under refinement (L2)",
+              _MESH + "; plane strain and 3-D only (plane stress refused), lambda = 0 refused",
+              ("zienkiewicz_taylor_2013",),
+              (T + "test_mesh_locking.py::test_l1c_taylor_hood_does_not_lock",
+               T + "test_mesh_locking.py::test_l1e_taylor_hood_converges_near_and_at_incompressibility",
+               T + "test_mesh_locking.py::test_l2_taylor_hood_inf_sup_is_bounded"),
+              "fem/mesh/mixed.py (MixedElasticity)")
+      for name, dim, geom, nodes, interp, quad in (
+          ("TH-T6T3", 2, "triangle", 6, "quadratic", "3-point (degree 2)"),
+          ("TH-Q9Q4", 2, "quadrilateral", 9, "biquadratic", "3 x 3 Gauss"),
+          ("TH-T10T4", 3, "tetrahedron", 10, "quadratic", "4-point Keast (degree 2)"))),
 )
 
 
@@ -736,6 +777,20 @@ RULES: tuple[Rule, ...] = (
          enforced="component"),
     Rule("cuda_gmg", {"physics": "elasticity_gmg", "device": "cuda"}, NOT_VERIFIED,
          "no GPU in CI or in this record"),
+    Rule("mesh_grid_equivalence", {"element": "mesh:Q4|mesh:H8", "mesh": "from_domain"}, SUPPORTED,
+         "the general mesh of a Domain reproduces the grid path (K <= 1e-14, u <= 1e-12)",
+         (T + "test_mesh_assembly.py::test_g1_from_domain_q4_equals_grid_path",
+          T + "test_mesh_assembly.py::test_g1_from_domain_h8_equals_grid_path")),
+    Rule("mesh_material_field", {"element": "mesh:*", "material": "per_cell_D"}, SUPPORTED,
+         evidence=(T + "test_mesh_assembly.py::test_g9_two_material_bar",
+                   T + "test_mesh_assembly.py::test_g8_pattern_reuse")),
+    Rule("mesh_nearly_incompressible_displacement_only", {"element": "mesh:Q4|mesh:T3|mesh:H8|mesh:T4",
+                                                           "material": "nu_near_0.5"}, EXPERIMENTAL,
+         "runs, but locks (L2 error 0.94-0.996 at nu = 0.4999): use the Taylor-Hood elements",
+         (T + "test_mesh_locking.py::test_l1b_displacement_elements_lock",)),
+    Rule("mesh_incompressible_mixed", {"element": "mesh:TH-*", "material": "nu_0.5"}, SUPPORTED,
+         "lambda = inf exact; the zero-mean pressure gauge is added when the constant pressure is in the null space",
+         (T + "test_mesh_locking.py::test_l1e_taylor_hood_converges_near_and_at_incompressibility",)),
 )
 
 

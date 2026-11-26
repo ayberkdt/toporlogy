@@ -110,11 +110,9 @@ def test_g1_from_domain_h8_equals_grid_path():
 
 
 # ---------------------------------------------------------------------------------------------- G2, G3
-@pytest.mark.parametrize("plane", ["stress", "strain"])
-@pytest.mark.parametrize("name", SOLID)
+@pytest.mark.parametrize("name,plane", [(n, p) for n in SOLID for p in (("stress", "strain") if get(n).dim == 2
+                                                                         else ("3d",))])
 def test_g2_affine_patch_test(name, plane):
-    if get(name).dim == 3 and plane == "stress":
-        pytest.skip("3-D has no plane assumption")
     m = _mesh(name)
     D = _D(m.dim, plane=plane)
     eu, es, s, P = _patch(m, D, thickness=0.7 if m.dim == 2 else 1.0)
@@ -409,3 +407,9 @@ def test_m2_heat_patch_and_robin(name):
     assert e1 <= 1e-10 and e2 <= 1e-10
     with pytest.raises(MechanismError):
         HeatProblem(m).solve(np.zeros(H.ndof))
+
+
+def test_g6_mixed_refuses_lambda_zero_posthoc():
+    """Post hoc (found by the nu sweep at nu = 0, not pre-registered): lambda = 0 has no pressure block."""
+    with pytest.raises(ValueError, match="lambda|λ = 0"):
+        MixedElasticity(rectangle(2, 2, element="T6"), 1.0, 0.0)

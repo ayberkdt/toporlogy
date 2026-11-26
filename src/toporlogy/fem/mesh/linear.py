@@ -4,7 +4,7 @@
   with diagonal pivots — valid for SPD matrices only);
 * ``"symmetric_indefinite"`` / ``"general"``: SciPy SuperLU with threshold partial pivoting (saddle-point systems of
   the mixed u-p formulation); never the SPD path;
-* :func:`pcg`: Jacobi-preconditioned conjugate gradients, refused for anything but ``"spd"``.
+* :func:`jacobi_pcg`: Jacobi-preconditioned conjugate gradients, refused for anything but ``"spd"``.
 
 A :class:`Factorization` is bound to one matrix; solving many right-hand sides reuses it, and a different matrix
 needs a new object (no silent reuse of a stale factor). Every solve is checked with
@@ -22,7 +22,7 @@ from toporlogy.fem.elastic import checked_residual, matrix_norm1
 from toporlogy.fem.mechanisms import SolveResidualError
 from toporlogy.solvers.direct import DirectSolver
 
-__all__ = ["STRUCTURES", "Factorization", "pcg", "condition_1norm", "jacobi_scaled"]
+__all__ = ["STRUCTURES", "Factorization", "jacobi_pcg", "condition_1norm", "jacobi_scaled"]
 
 STRUCTURES = ("spd", "symmetric_indefinite", "general")
 
@@ -72,7 +72,7 @@ class Factorization:
         return X.reshape(B.shape)
 
 
-def pcg(A: sp.spmatrix, b: np.ndarray, structure: str = "spd", rtol: float = 1e-10,
+def jacobi_pcg(A: sp.spmatrix, b: np.ndarray, structure: str = "spd", rtol: float = 1e-10,
         maxiter: int | None = None) -> tuple[np.ndarray, int, bool]:
     """Jacobi-preconditioned CG: (x, iterations, converged). Refused unless ``structure == "spd"``."""
     if structure != "spd":

@@ -16,7 +16,7 @@ from typing import Any
 
 import numpy as np
 
-from toporlogy.fem.mesh.quadrature import Rule, rule
+from toporlogy.fem.mesh.quadrature import QuadratureRule, rule
 from toporlogy.fem.mesh.reference import ReferenceElement, get
 
 __all__ = ["InvertedElementError", "DegenerateElementError", "DETJ_TOL", "Geometry", "geometry", "check_jacobian",
@@ -84,7 +84,7 @@ class Geometry:
     physical gradients dNdx (ne, nq, n_nodes, dim), N (nq, n_nodes) and dV = w detJ (ne, nq)."""
 
     ref: ReferenceElement
-    rule: Rule
+    rule: QuadratureRule
     x: np.ndarray
     J: np.ndarray
     detJ: np.ndarray
@@ -98,7 +98,7 @@ def _jacobian(X: np.ndarray, dN: np.ndarray) -> np.ndarray:
     return np.swapaxes(X, 1, 2)[:, None] @ dN[None]
 
 
-def geometry(ref: ReferenceElement, X: np.ndarray, q: Rule, cells: np.ndarray | None = None,
+def geometry(ref: ReferenceElement, X: np.ndarray, q: QuadratureRule, cells: np.ndarray | None = None,
              check: bool = True) -> Geometry:
     """Map rule ``q`` onto the cells with node coordinates X (ne, n_nodes, dim); detJ checked unless ``check`` is
     False (only for tests that need the raw values)."""
