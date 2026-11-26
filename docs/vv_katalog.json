@@ -30,7 +30,9 @@
     "modal",
     "nonlinear_elasticity",
     "tensor_elasticity",
-    "thermoelastic"
+    "thermoelastic",
+    "transient_heat",
+    "dynamics_newmark"
    ],
    "locking": "shear-locks in bending (parasitic shear)",
    "distortion": "regular grid, undistorted unit square/cube elements only (no Jacobian varies)",
@@ -83,7 +85,9 @@
     "modal",
     "nonlinear_elasticity",
     "tensor_elasticity",
-    "thermoelastic"
+    "thermoelastic",
+    "transient_heat",
+    "dynamics_newmark"
    ],
    "locking": "shear-locks in bending",
    "distortion": "regular grid, undistorted unit square/cube elements only (no Jacobian varies)",
@@ -535,6 +539,60 @@
     "tests/toporlogy/test_thermoelastic.py::test_te1_free_expansion"
    ],
    "scalar_modulus": "E_active scales ONE unit D (per-element D refused) and the thermal load; compliance is F_totᵀ U"
+  },
+  {
+   "id": "transient_heat",
+   "residual": "C(x) dT/dt + K(E) T = q, theta-method (C/dt + theta K) T_n+1 = (C/dt - (1 - theta) K) T_n + q",
+   "tangent": "C/dt + theta K, linear in the element conductivities and capacities",
+   "matrix": "symmetric positive definite (C SPD: capacity_min_ratio > 0)",
+   "solve": "direct (GridSPD supernodal / SuperLU factor), one factorisation per evaluation",
+   "devices": [
+    "cpu"
+   ],
+   "dims": [
+    2,
+    3
+   ],
+   "elements": [
+    "Q4",
+    "H8"
+   ],
+   "supports": "heat sinks = nodes of support type fixed (every component), one support set",
+   "convergence": "direct solve per step (GridSPD); time-step order measured (TH1, TH5)",
+   "memory": "assembled sparse system and its factor; the autograd graph holds every step (no checkpointing)",
+   "evidence": [
+    "tests/toporlogy/test_transient_study.py::test_hs1_value_equals_direct_run",
+    "tests/toporlogy/test_transient_study.py::test_hs3_gradient_finite_difference",
+    "tests/toporlogy/test_transient_heat.py::test_th1_time_order"
+   ],
+   "scalar_modulus": "E_active scales the conductivity (k = conductivity E / E0); capacity linear in the physical density x"
+  },
+  {
+   "id": "dynamics_newmark",
+   "residual": "M(x) u'' + C u' + K(E) u = s(t) F (Newmark average acceleration, from rest, Rayleigh C = a M + b K)",
+   "tangent": "K_eff = K + c0 M + c1 C, linear in E and rho",
+   "matrix": "symmetric positive definite (M SPD: rhomin_ratio > 0)",
+   "solve": "direct (GridSPD supernodal / SuperLU factor): K_eff and M factorised once per evaluation",
+   "devices": [
+    "cpu"
+   ],
+   "dims": [
+    2,
+    3
+   ],
+   "elements": [
+    "Q4",
+    "H8"
+   ],
+   "supports": "axis-aligned fixed DOFs, one support set, one load case",
+   "convergence": "direct solve per step (GridSPD); energy conservation and time-step order measured (ND1, ND2)",
+   "memory": "assembled sparse K_eff and M with their factors; the autograd graph holds every step",
+   "evidence": [
+    "tests/toporlogy/test_transient_study.py::test_ds1_value_equals_direct_run",
+    "tests/toporlogy/test_transient_study.py::test_ds3_gradient_finite_difference",
+    "tests/toporlogy/test_newmark.py::test_nd2_energy_is_conserved_without_damping_and_load"
+   ],
+   "scalar_modulus": "E_active scales ONE unit D (per-element D refused); mass linear in the physical density x"
   }
  ],
  "solvers": [
@@ -1141,7 +1199,9 @@
    "modal",
    "nonlinear_elasticity",
    "tensor_elasticity",
-   "thermoelastic"
+   "thermoelastic",
+   "transient_heat",
+   "dynamics_newmark"
   ],
   "physics_x_response": {
    "buckling": {
@@ -1183,6 +1243,18 @@
      "evidence": [],
      "reason": "",
      "enforced": ""
+    },
+    "transient_heat": {
+     "status": "UNSUPPORTED",
+     "evidence": [],
+     "reason": "needs the static state u; the transient physics integrates a time history (no static state)",
+     "enforced": "catalog"
+    },
+    "dynamics_newmark": {
+     "status": "UNSUPPORTED",
+     "evidence": [],
+     "reason": "needs the static state u; the transient physics integrates a time history (no static state)",
+     "enforced": "catalog"
     }
    },
    "centre_of_mass": {
@@ -1219,6 +1291,18 @@
      "enforced": ""
     },
     "thermoelastic": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "does not read the study's physics (read from the code); combination not tested",
+     "enforced": ""
+    },
+    "transient_heat": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "does not read the study's physics (read from the code); combination not tested",
+     "enforced": ""
+    },
+    "dynamics_newmark": {
      "status": "NOT VERIFIED",
      "evidence": [],
      "reason": "does not read the study's physics (read from the code); combination not tested",
@@ -1275,6 +1359,18 @@
      ],
      "reason": "c = F_totᵀ U with the design-dependent thermal load",
      "enforced": ""
+    },
+    "transient_heat": {
+     "status": "UNSUPPORTED",
+     "evidence": [],
+     "reason": "needs the static state u; the transient physics integrates a time history (no static state)",
+     "enforced": "catalog"
+    },
+    "dynamics_newmark": {
+     "status": "UNSUPPORTED",
+     "evidence": [],
+     "reason": "needs the static state u; the transient physics integrates a time history (no static state)",
+     "enforced": "catalog"
     }
    },
    "compliance_case": {
@@ -1315,6 +1411,18 @@
      "evidence": [],
      "reason": "",
      "enforced": ""
+    },
+    "transient_heat": {
+     "status": "UNSUPPORTED",
+     "evidence": [],
+     "reason": "needs the static state u; the transient physics integrates a time history (no static state)",
+     "enforced": "catalog"
+    },
+    "dynamics_newmark": {
+     "status": "UNSUPPORTED",
+     "evidence": [],
+     "reason": "needs the static state u; the transient physics integrates a time history (no static state)",
+     "enforced": "catalog"
     }
    },
    "conduction_connectivity": {
@@ -1351,6 +1459,18 @@
      "enforced": ""
     },
     "thermoelastic": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "does not read the study's physics (read from the code); combination not tested",
+     "enforced": ""
+    },
+    "transient_heat": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "does not read the study's physics (read from the code); combination not tested",
+     "enforced": ""
+    },
+    "dynamics_newmark": {
      "status": "NOT VERIFIED",
      "evidence": [],
      "reason": "does not read the study's physics (read from the code); combination not tested",
@@ -1395,6 +1515,18 @@
      "evidence": [],
      "reason": "does not read the study's physics (read from the code); combination not tested",
      "enforced": ""
+    },
+    "transient_heat": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "does not read the study's physics (read from the code); combination not tested",
+     "enforced": ""
+    },
+    "dynamics_newmark": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "does not read the study's physics (read from the code); combination not tested",
+     "enforced": ""
     }
    },
    "coupling_compliance": {
@@ -1435,6 +1567,18 @@
      "evidence": [],
      "reason": "does not read the study's physics (read from the code); combination not tested",
      "enforced": ""
+    },
+    "transient_heat": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "does not read the study's physics (read from the code); combination not tested",
+     "enforced": ""
+    },
+    "dynamics_newmark": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "does not read the study's physics (read from the code); combination not tested",
+     "enforced": ""
     }
    },
    "dilated_volume": {
@@ -1471,6 +1615,18 @@
      "enforced": ""
     },
     "thermoelastic": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "does not read the study's physics (read from the code); combination not tested",
+     "enforced": ""
+    },
+    "transient_heat": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "does not read the study's physics (read from the code); combination not tested",
+     "enforced": ""
+    },
+    "dynamics_newmark": {
      "status": "NOT VERIFIED",
      "evidence": [],
      "reason": "does not read the study's physics (read from the code); combination not tested",
@@ -1519,6 +1675,72 @@
      "evidence": [],
      "reason": "",
      "enforced": ""
+    },
+    "transient_heat": {
+     "status": "UNSUPPORTED",
+     "evidence": [],
+     "reason": "needs the static state u; the transient physics integrates a time history (no static state)",
+     "enforced": "catalog"
+    },
+    "dynamics_newmark": {
+     "status": "UNSUPPORTED",
+     "evidence": [],
+     "reason": "needs the static state u; the transient physics integrates a time history (no static state)",
+     "enforced": "catalog"
+    }
+   },
+   "dynamic_compliance": {
+    "elasticity": {
+     "status": "UNSUPPORTED",
+     "evidence": [],
+     "reason": "needs physics dynamics_newmark",
+     "enforced": "component"
+    },
+    "elasticity_gmg": {
+     "status": "UNSUPPORTED",
+     "evidence": [],
+     "reason": "needs physics dynamics_newmark",
+     "enforced": "component"
+    },
+    "modal": {
+     "status": "UNSUPPORTED",
+     "evidence": [],
+     "reason": "needs physics dynamics_newmark",
+     "enforced": "component"
+    },
+    "nonlinear_elasticity": {
+     "status": "UNSUPPORTED",
+     "evidence": [],
+     "reason": "needs physics dynamics_newmark",
+     "enforced": "component"
+    },
+    "tensor_elasticity": {
+     "status": "UNSUPPORTED",
+     "evidence": [],
+     "reason": "needs physics dynamics_newmark",
+     "enforced": "component"
+    },
+    "thermoelastic": {
+     "status": "UNSUPPORTED",
+     "evidence": [],
+     "reason": "needs physics dynamics_newmark",
+     "enforced": "component"
+    },
+    "transient_heat": {
+     "status": "UNSUPPORTED",
+     "evidence": [],
+     "reason": "needs physics dynamics_newmark",
+     "enforced": "component"
+    },
+    "dynamics_newmark": {
+     "status": "SUPPORTED",
+     "evidence": [
+      "tests/toporlogy/test_transient_study.py::test_ds1_value_equals_direct_run",
+      "tests/toporlogy/test_transient_study.py::test_ds2_value_equals_dense_newmark",
+      "tests/toporlogy/test_transient_study.py::test_ds3_gradient_finite_difference"
+     ],
+     "reason": "time-averaged (trapezoid); the autograd graph holds every step",
+     "enforced": ""
     }
    },
    "effective_poisson": {
@@ -1559,6 +1781,18 @@
      "evidence": [],
      "reason": "does not read the study's physics (read from the code); combination not tested",
      "enforced": ""
+    },
+    "transient_heat": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "does not read the study's physics (read from the code); combination not tested",
+     "enforced": ""
+    },
+    "dynamics_newmark": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "does not read the study's physics (read from the code); combination not tested",
+     "enforced": ""
     }
    },
    "effective_stiffness": {
@@ -1595,6 +1829,18 @@
      "enforced": ""
     },
     "thermoelastic": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "does not read the study's physics (read from the code); combination not tested",
+     "enforced": ""
+    },
+    "transient_heat": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "does not read the study's physics (read from the code); combination not tested",
+     "enforced": ""
+    },
+    "dynamics_newmark": {
      "status": "NOT VERIFIED",
      "evidence": [],
      "reason": "does not read the study's physics (read from the code); combination not tested",
@@ -1640,6 +1886,18 @@
      "evidence": [],
      "reason": "",
      "enforced": ""
+    },
+    "transient_heat": {
+     "status": "UNSUPPORTED",
+     "evidence": [],
+     "reason": "needs physics modal",
+     "enforced": "component"
+    },
+    "dynamics_newmark": {
+     "status": "UNSUPPORTED",
+     "evidence": [],
+     "reason": "needs physics modal",
+     "enforced": "component"
     }
    },
    "end_compliance": {
@@ -1681,6 +1939,18 @@
      "evidence": [],
      "reason": "",
      "enforced": ""
+    },
+    "transient_heat": {
+     "status": "UNSUPPORTED",
+     "evidence": [],
+     "reason": "needs physics nonlinear_elasticity",
+     "enforced": "component"
+    },
+    "dynamics_newmark": {
+     "status": "UNSUPPORTED",
+     "evidence": [],
+     "reason": "needs physics nonlinear_elasticity",
+     "enforced": "component"
     }
    },
    "end_strain_energy": {
@@ -1721,6 +1991,18 @@
      "evidence": [],
      "reason": "",
      "enforced": ""
+    },
+    "transient_heat": {
+     "status": "UNSUPPORTED",
+     "evidence": [],
+     "reason": "needs physics nonlinear_elasticity",
+     "enforced": "component"
+    },
+    "dynamics_newmark": {
+     "status": "UNSUPPORTED",
+     "evidence": [],
+     "reason": "needs physics nonlinear_elasticity",
+     "enforced": "component"
     }
    },
    "frequency": {
@@ -1762,6 +2044,18 @@
      "evidence": [],
      "reason": "",
      "enforced": ""
+    },
+    "transient_heat": {
+     "status": "UNSUPPORTED",
+     "evidence": [],
+     "reason": "needs physics modal",
+     "enforced": "component"
+    },
+    "dynamics_newmark": {
+     "status": "UNSUPPORTED",
+     "evidence": [],
+     "reason": "needs physics modal",
+     "enforced": "component"
     }
    },
    "grey_level": {
@@ -1798,6 +2092,18 @@
      "enforced": ""
     },
     "thermoelastic": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "does not read the study's physics (read from the code); combination not tested",
+     "enforced": ""
+    },
+    "transient_heat": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "does not read the study's physics (read from the code); combination not tested",
+     "enforced": ""
+    },
+    "dynamics_newmark": {
      "status": "NOT VERIFIED",
      "evidence": [],
      "reason": "does not read the study's physics (read from the code); combination not tested",
@@ -1842,6 +2148,18 @@
      "evidence": [],
      "reason": "does not read the study's physics (read from the code); combination not tested",
      "enforced": ""
+    },
+    "transient_heat": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "does not read the study's physics (read from the code); combination not tested",
+     "enforced": ""
+    },
+    "dynamics_newmark": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "does not read the study's physics (read from the code); combination not tested",
+     "enforced": ""
     }
    },
    "local_volume": {
@@ -1878,6 +2196,18 @@
      "enforced": ""
     },
     "thermoelastic": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "does not read the study's physics (read from the code); combination not tested",
+     "enforced": ""
+    },
+    "transient_heat": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "does not read the study's physics (read from the code); combination not tested",
+     "enforced": ""
+    },
+    "dynamics_newmark": {
      "status": "NOT VERIFIED",
      "evidence": [],
      "reason": "does not read the study's physics (read from the code); combination not tested",
@@ -1922,6 +2252,18 @@
      "evidence": [],
      "reason": "does not read the study's physics (read from the code); combination not tested",
      "enforced": ""
+    },
+    "transient_heat": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "does not read the study's physics (read from the code); combination not tested",
+     "enforced": ""
+    },
+    "dynamics_newmark": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "does not read the study's physics (read from the code); combination not tested",
+     "enforced": ""
     }
    },
    "maximize": {
@@ -1956,6 +2298,18 @@
      "enforced": ""
     },
     "thermoelastic": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "composite: the weakest status of its parts",
+     "enforced": ""
+    },
+    "transient_heat": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "composite: the weakest status of its parts",
+     "enforced": ""
+    },
+    "dynamics_newmark": {
      "status": "NOT VERIFIED",
      "evidence": [],
      "reason": "composite: the weakest status of its parts",
@@ -2001,6 +2355,18 @@
      "evidence": [],
      "reason": "",
      "enforced": ""
+    },
+    "transient_heat": {
+     "status": "UNSUPPORTED",
+     "evidence": [],
+     "reason": "needs physics modal",
+     "enforced": "component"
+    },
+    "dynamics_newmark": {
+     "status": "UNSUPPORTED",
+     "evidence": [],
+     "reason": "needs physics modal",
+     "enforced": "component"
     }
    },
    "min_frequency": {
@@ -2042,6 +2408,18 @@
      "evidence": [],
      "reason": "",
      "enforced": ""
+    },
+    "transient_heat": {
+     "status": "UNSUPPORTED",
+     "evidence": [],
+     "reason": "needs physics modal",
+     "enforced": "component"
+    },
+    "dynamics_newmark": {
+     "status": "UNSUPPORTED",
+     "evidence": [],
+     "reason": "needs physics modal",
+     "enforced": "component"
     }
    },
    "phase_volume": {
@@ -2078,6 +2456,18 @@
      "enforced": ""
     },
     "thermoelastic": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "does not read the study's physics (read from the code); combination not tested",
+     "enforced": ""
+    },
+    "transient_heat": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "does not read the study's physics (read from the code); combination not tested",
+     "enforced": ""
+    },
+    "dynamics_newmark": {
      "status": "NOT VERIFIED",
      "evidence": [],
      "reason": "does not read the study's physics (read from the code); combination not tested",
@@ -2122,6 +2512,18 @@
      "evidence": [],
      "reason": "",
      "enforced": ""
+    },
+    "transient_heat": {
+     "status": "UNSUPPORTED",
+     "evidence": [],
+     "reason": "needs the static state u; the transient physics integrates a time history (no static state)",
+     "enforced": "catalog"
+    },
+    "dynamics_newmark": {
+     "status": "UNSUPPORTED",
+     "evidence": [],
+     "reason": "needs the static state u; the transient physics integrates a time history (no static state)",
+     "enforced": "catalog"
     }
    },
    "scenario_compliance": {
@@ -2163,6 +2565,18 @@
      "evidence": [],
      "reason": "",
      "enforced": ""
+    },
+    "transient_heat": {
+     "status": "UNSUPPORTED",
+     "evidence": [],
+     "reason": "needs the static state u; the transient physics integrates a time history (no static state)",
+     "enforced": "catalog"
+    },
+    "dynamics_newmark": {
+     "status": "UNSUPPORTED",
+     "evidence": [],
+     "reason": "needs the static state u; the transient physics integrates a time history (no static state)",
+     "enforced": "catalog"
     }
    },
    "stress": {
@@ -2204,6 +2618,18 @@
      "evidence": [],
      "reason": "",
      "enforced": ""
+    },
+    "transient_heat": {
+     "status": "UNSUPPORTED",
+     "evidence": [],
+     "reason": "needs the static state u; the transient physics integrates a time history (no static state)",
+     "enforced": "catalog"
+    },
+    "dynamics_newmark": {
+     "status": "UNSUPPORTED",
+     "evidence": [],
+     "reason": "needs the static state u; the transient physics integrates a time history (no static state)",
+     "enforced": "catalog"
     }
    },
    "stress_augmented_lagrangian": {
@@ -2244,6 +2670,72 @@
      "evidence": [],
      "reason": "",
      "enforced": ""
+    },
+    "transient_heat": {
+     "status": "UNSUPPORTED",
+     "evidence": [],
+     "reason": "needs the static state u; the transient physics integrates a time history (no static state)",
+     "enforced": "catalog"
+    },
+    "dynamics_newmark": {
+     "status": "UNSUPPORTED",
+     "evidence": [],
+     "reason": "needs the static state u; the transient physics integrates a time history (no static state)",
+     "enforced": "catalog"
+    }
+   },
+   "transient_thermal_compliance": {
+    "elasticity": {
+     "status": "UNSUPPORTED",
+     "evidence": [],
+     "reason": "needs physics transient_heat",
+     "enforced": "component"
+    },
+    "elasticity_gmg": {
+     "status": "UNSUPPORTED",
+     "evidence": [],
+     "reason": "needs physics transient_heat",
+     "enforced": "component"
+    },
+    "modal": {
+     "status": "UNSUPPORTED",
+     "evidence": [],
+     "reason": "needs physics transient_heat",
+     "enforced": "component"
+    },
+    "nonlinear_elasticity": {
+     "status": "UNSUPPORTED",
+     "evidence": [],
+     "reason": "needs physics transient_heat",
+     "enforced": "component"
+    },
+    "tensor_elasticity": {
+     "status": "UNSUPPORTED",
+     "evidence": [],
+     "reason": "needs physics transient_heat",
+     "enforced": "component"
+    },
+    "thermoelastic": {
+     "status": "UNSUPPORTED",
+     "evidence": [],
+     "reason": "needs physics transient_heat",
+     "enforced": "component"
+    },
+    "transient_heat": {
+     "status": "SUPPORTED",
+     "evidence": [
+      "tests/toporlogy/test_transient_study.py::test_hs1_value_equals_direct_run",
+      "tests/toporlogy/test_transient_study.py::test_hs2_value_equals_dense_theta_method",
+      "tests/toporlogy/test_transient_study.py::test_hs3_gradient_finite_difference"
+     ],
+     "reason": "time-averaged (trapezoid); the autograd graph holds every step",
+     "enforced": ""
+    },
+    "dynamics_newmark": {
+     "status": "UNSUPPORTED",
+     "evidence": [],
+     "reason": "needs physics transient_heat",
+     "enforced": "component"
     }
    },
    "volume": {
@@ -2284,6 +2776,18 @@
      "evidence": [],
      "reason": "does not read the study's physics (read from the code); combination not tested",
      "enforced": ""
+    },
+    "transient_heat": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "does not read the study's physics (read from the code); combination not tested",
+     "enforced": ""
+    },
+    "dynamics_newmark": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "does not read the study's physics (read from the code); combination not tested",
+     "enforced": ""
     }
    },
    "weighted_sum": {
@@ -2318,6 +2822,18 @@
      "enforced": ""
     },
     "thermoelastic": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "composite: the weakest status of its parts",
+     "enforced": ""
+    },
+    "transient_heat": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "composite: the weakest status of its parts",
+     "enforced": ""
+    },
+    "dynamics_newmark": {
      "status": "NOT VERIFIED",
      "evidence": [],
      "reason": "composite: the weakest status of its parts",

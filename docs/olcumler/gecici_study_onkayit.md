@@ -86,3 +86,46 @@ Ortak:
 
 Bir kontrol ilk koşuda tutmazsa eşik gevşetilmez: strict xfail olur ve ölçülen değer burada yazılır. İlk koşudan
 sonra eklenen kontrol "post hoc" diye işaretlenir.
+
+## Sonuç (ilk koşu, 2026-11-26)
+
+İlk koşu: `python -m pytest tests/toporlogy/test_transient_study.py -q -p no:randomly -s` → 35 passed, 1 failed
+(çıktı `D:/Masaustu/Topology Optimization/.claude/tmp-toporlogy/transient-dynamics/first_run.txt`). Başarısız tek
+durum HS6 "roller"; strict xfail oldu (aşağıda), `docs/vv_kutugu.json`'a yazıldı.
+
+| # | Durum | Ölçülen |
+|:---|:---|:---|
+| HS1 | PASS | J = 388,288609173, doğrudan koşu aynı; göreli fark 0 |
+| HS2 | PASS | yoğun θ-yöntemi J = 360,640678183; göreli fark 1,6e-16 |
+| HS3 | PASS | 2-B θ = ½: 6,1e-11; 3-B θ = 1: 3,7e-10 göreli |
+| HS4 | PASS | λ₁ = 4,981e-3, J / (qᵀK⁻¹q) − 1 = −5,21e-3 (eşik 1e-2). Ön kayıttaki "kuramsal sapma ≤ 5e-3" sürekli zaman içindi; geri Euler'in ayrık sönüm hızı ln(1 + λΔt)/Δt = 0,953 λ₁ olduğundan ayrık sınır ≈ 5,25e-3: ölçülen değer bununla uyumlu |
+| HS5 | PASS | 5 MMA iterasyonu sonlu; amaç 403,242 → 402,252 (azalma küçük: %0,25) |
+| HS6 | 10/11 PASS, 1 strict xfail | "roller": kurulum açık hatayla reddedildi, ama fizikten önce yapı denetimi düşürdü ("supports: rigid-body: 1 unrestrained rigid-body mode(s) … translation along (0, 1)"); beklenen "every component" iletisi gelmedi. Sonda (tek mesnet yalnız x'i tutuyor) mekanik olarak eksik mesnetliydi. **Post hoc** `roller_posthoc` (x = min kenarı ankastre + bir noktada yalnız y): fizik denetimine ulaşır, beklenen iletiyle geçer |
+| HS7 | PASS | gradyanlı değerlendirmede 1 faktörizasyon |
+| DS1 | PASS | J = 147,858290729, doğrudan koşu aynı; göreli fark 0 |
+| DS2 | PASS | yoğun ivme biçimi Newmark (half_sine, Rayleigh 0,01 / 0,02) J = 11,9574123125; göreli fark 7,4e-16 |
+| DS3 | PASS | 2-B half_sine + Rayleigh: 1,5e-10; 3-B step: 6,8e-11 göreli |
+| DS4 | PASS | T₁ = 349,8, J / (FᵀK⁻¹F) − 1 = 1,38e-3 (eşik 1e-2; kuramsal ≤ 3,2e-3) |
+| DS5 | PASS | 5 MMA iterasyonu sonlu; amaç 100,339 → 44,177 |
+| DS6 | PASS | 11 durumun hepsi beklenen iletiyle. "yük durumuna özel mesnet" ayrı bir denetimle değil "exactly one load case" kuralıyla düşüyor (tek yük durumunda özel mesnet varsayılanın yerine geçer, ayrı takım oluşmaz) |
+| DS7 | PASS | K_eff 1, kütle 1 faktörizasyon |
+| G1 | PASS | `pytest -m baseline`: 8 passed (bit düzeyinde karşılaştırmalı baseline testleri) |
+| G1b | öngörü kısmen yanlış | `resolved_configs.json` `test_units.py --write` sonrası değişmedi (öngörüldüğü gibi). `list.txt`'de içerik öngörüldüğü gibi (physics 6 → 8, response 29 → 31, iki fizik ve iki yanıt satırı), ama en uzun ad `transient_thermal_compliance` sütun genişliğini büyüttüğü için **bütün** yanıt satırları yeniden hizalandı (yalnız boşluk); öngörü bunu hesaba katmamıştı |
+
+Kod dışı değişiklikler: `configuration/schema.py` `NO_LOAD_PHYSICS = ("modal", "transient_heat")`, `resolve.py` ve
+`build.py` "modal ise yük durumu isteğe bağlı" denetimini bu kümeye bağladı (modal için davranış aynı;
+`test_config.py` 17 passed). `tests/toporlogy/test_compatibility.py`'ye iki fiziğin sondaları ve `thermoelastic`'e
+`alpha` eklendi (yeni UNSUPPORTED hücreler bu fiziklerde de sonda istiyor): 106 passed. Katalog: iki fizik kaydı,
+`transient_thermal_compliance × transient_heat` ve `dynamic_compliance × dynamics_newmark` SUPPORTED; statik durum
+okuyan yanıtlar bu iki fizikle UNSUPPORTED (katalog), öz değer ve end_* yanıtları UNSUPPORTED (bileşen); hacim gibi
+fizikten bağımsız yanıtlar katalogda NOT VERIFIED kalır (`status()` yalnız elasticity ile SUPPORTED der).
+
+Koşulan diğer testler (her biri ayrı süreç, sırayla): `test_catalog.py` 16, `test_catalog_ledger.py` 7,
+`test_api_surface.py` 2, `test_units.py` 22 + 1 xfailed (önceden var), `test_transient_heat.py` 8,
+`test_newmark.py` 6 + 1 xfailed (ND1, önceden var), `test_thermoelastic_study.py` 10 passed. Ruff ve mypy dokunulan
+dosyalarda temiz. Tam takım koşulmadı.
+
+Yapılmayan: adjoint'te kontrol noktası (bellek adım sayısıyla doğrusal büyür), tasarıma bağlı ısı girişi, ısı
+kaynağının zaman profili, birden çok yük durumu ile dinamik, iki aralıklı kütle, başlangıç koşulunun YAML'dan
+verilmesi (dinamikte u₀ = v₀ = 0), örnek YAML dosyası (çözülmüş yapılandırma anlık görüntüsünü değiştirmemek için
+eklenmedi).

@@ -2,7 +2,7 @@
 """
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, cast
 
 import numpy as np
 
@@ -143,5 +143,89 @@ def register_physics() -> None:
         return ThermoElasticPhysics(te, np.full(d.nn, te.T_ref + float(delta_T)))
 
     register("physics", "thermoelastic", thermoelastic, types={"alpha": None})
+
+    def _grid_element(physics: str, dim: int, element: str | None) -> str:
+        want = "Q4" if dim == 2 else "H8"
+        if element is not None and element != want:
+            raise ValueError(f"{physics} supports Q4 (2-D) and H8 (3-D) only, got {element!r} in {dim}-D")
+        return want
+
+    def _time_grid(physics: str, dt: float | None, n_steps: int | None) -> None:
+        if dt is None or n_steps is None:
+            raise ValueError(f"{physics} needs dt and n_steps (the time step and the number of steps)")
+
+    def transient_heat(ctx: BuildContext, dt: float | None = None, n_steps: int | None = None, theta: float = 1.0,
+                       conductivity: float = 1.0, capacity: float = 1.0, capacity_min_ratio: float = 1e-3,
+                       initial_temperature: float = 0.0, sink_temperature: float = 0.0, source_density: float = 0.0,
+                       power: float = 0.0, source: Any = None, element: str | None = None) -> Any:
+        """Transient heat conduction C(x) dT/dt + K(E) T = q by the theta-method (theta 1 backward Euler, 0.5
+        Crank-Nicolson; fem.transient_heat, docs/olcumler/gecici_study_onkayit.md): conductivity k = conductivity x
+        E / E0, capacity c = capacity x (capacity_min_ratio + (1 - capacity_min_ratio) x). The supports are the heat
+        sinks (T = sink_temperature on their nodes; support type fixed); no load_cases: the heat input is
+        source_density (per volume, every active element) and / or power (total) spread over the nodes of source.
+        Response transient_thermal_compliance. Q4 / H8."""
+        from toporlogy.fem.transient_heat import TransientHeat, TransientHeatPhysics, nodal_source
+        d = ctx.domain
+        if ctx.config.get("load_cases"):
+            raise ValueError("transient_heat takes no load_cases: the heat input is physics.source_density and / or "
+                             "physics.power at physics.source")
+        _time_grid("transient_heat", dt, n_steps)
+        _grid_element("transient_heat", d.dim, element)
+        cs = ctx.bc.constraints(0)
+        if cs.needs_extension:
+            raise ValueError("transient_heat: the supports are heat sinks; zero displacements along x / y / z only (no "
+                             "oblique rollers, pinned bores or springs)")
+        nodes, count = np.unique(np.asarray(cs.fixed, np.int64) // d.dim, return_counts=True)
+        if np.any(count != d.dim):
+            raise ValueError("transient_heat: the supports are heat sinks (temperature fixed on their nodes); use "
+                             "support type fixed on every component (a node with only some components fixed is no "
+                             "sink)")
+        q = nodal_source(d, source_density) if source_density else np.zeros(d.nn)
+        if power:
+            if source is None:
+                raise ValueError("transient_heat: power needs source (a selector)")
+            at = np.asarray(checked_selector(ctx, source, "source").select(d), np.int64)
+            np.add.at(q, at, float(power) / at.size)
+        elif source is not None:
+            raise ValueError("transient_heat: source needs power (the total heat input)")
+        heat = TransientHeat(d, nodes, float(sink_temperature), theta=theta)
+        return TransientHeatPhysics(heat, q, cast(float, dt), cast(int, n_steps), T0=float(initial_temperature),
+                                    conductivity=conductivity, E0=float(ctx.material["E0"]), capacity=capacity,
+                                    capacity_min_ratio=capacity_min_ratio)
+
+    def dynamics_newmark(ctx: BuildContext, dt: float | None = None, n_steps: int | None = None,
+                         profile: str = "step", pulse_duration: float | None = None, period: float | None = None,
+                         rayleigh_alpha: float = 0.0, rayleigh_beta: float = 0.0, rhomin_ratio: float = 1e-6,
+                         element: str | None = None) -> Any:
+        """Linear structural dynamics M(x) u'' + C u' + K(E) u = s(t) F from rest by Newmark average acceleration
+        (fem.dynamics_newmark, docs/olcumler/gecici_study_onkayit.md): consistent mass rho = material.rho x
+        (rhomin_ratio + (1 - rhomin_ratio) x), Rayleigh C = rayleigh_alpha M + rayleigh_beta K, F the single load
+        case, profile step | half_sine (pulse_duration) | sine (period). Response dynamic_compliance. Q4 / H8, one
+        material D; supports: zero displacements along x / y / z only, one load case."""
+        from toporlogy.fem.dynamics_newmark import Newmark, NewmarkPhysics
+        bcs, d = ctx.bc, ctx.domain
+        _time_grid("dynamics_newmark", dt, n_steps)
+        el = _grid_element("dynamics_newmark", d.dim, element)
+        if int(ctx.n_cases) != 1:
+            raise ValueError(f"dynamics_newmark needs exactly one load case (no combinations), got {ctx.n_cases}")
+        cs = bcs.constraints(0)
+        if cs.needs_extension:
+            raise ValueError("dynamics_newmark supports zero displacements along x / y / z only (no oblique rollers, "
+                             "pinned bores or springs)")
+        if rayleigh_alpha < 0 or rayleigh_beta < 0:
+            raise ValueError(f"Rayleigh coefficients must be >= 0, got {rayleigh_alpha}, {rayleigh_beta}")
+        mm = material_model(ctx)
+        D = None if mm.elasticity is None else np.asarray(mm.elasticity, float)
+        if D is not None and D.ndim != 2:
+            raise ValueError("dynamics_newmark needs one material D (no per-element material field)")
+        nm = Newmark(d, cs.fixed, nu=float(ctx.material["nu"]), D=D, element=el,
+                     rayleigh=(float(rayleigh_alpha), float(rayleigh_beta)))
+        return NewmarkPhysics(nm, cast(float, dt), cast(int, n_steps), profile=profile, pulse_duration=pulse_duration,
+                              period=period, rho0=float(ctx.material.get("rho", 1.0)), rhomin_ratio=rhomin_ratio)
+
+    register("physics", "transient_heat", transient_heat, nested={"source": "selector"},
+             units={"dt": "time"})
+    register("physics", "dynamics_newmark", dynamics_newmark,
+             units={"dt": "time", "pulse_duration": "time", "period": "time"})
     register("physics", "nonlinear_elasticity", nonlinear_elasticity, nested={"solver": "solver"},
              units={"min_step": "load factor"})

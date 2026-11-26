@@ -20,7 +20,8 @@ unit, e.g. m; ``E0`` is force/length² (Pa with N and m); forces are force units
                                                                     # objective end_compliance)
     supports:                                                       # *required*, >= 1 (bc supports)
       - {type: fixed, where: {type: plane, axis: x, at: min}, dofs: x}
-    load_cases:                                                     # *required* (optional for physics modal)
+    load_cases:                                                     # *required* (optional for physics modal,
+                                                                    # transient_heat)
       - name: tip                  # [case<i>]
         weight: 1.0                # [1.0] used by compliance
         supports: null             # [null] own supports of this case (null = the supports above)
@@ -101,7 +102,9 @@ SCHEMA_KEYS = ("name", "domain", "material", "physics", "supports", "load_cases"
                "output", "post", "provenance", "schema_version", "units")
 
 
-_REQUIRED = ("domain", "supports")                     # load_cases too, unless physics is modal
+_REQUIRED = ("domain", "supports")                     # load_cases too, unless the physics takes no static load
+# physics without static loads: load_cases optional (modal: eigenproblem; transient_heat: heat input in physics)
+NO_LOAD_PHYSICS = ("modal", "transient_heat")
 
 
 _MATERIAL = {"E0": Param("E0", 1.0, float, unit="force/length^2"), "nu": Param("nu", 0.3, float),

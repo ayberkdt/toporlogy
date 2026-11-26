@@ -526,6 +526,16 @@
    "resolution": "yok (problem kurulumu)",
    "record": "docs/olcumler/model_donemi_onkayit.md",
    "slow": false
+  },
+  {
+   "nodeid": "tests/toporlogy/test_transient_study.py::test_hs6_rejects[roller]",
+   "kind": "pre-registered check failed",
+   "model_backend": "configuration build + transient_heat (CPU)",
+   "reason": "kurulum açık hatayla reddediliyor, ama fizikten önce yapı denetimi (rijit cisim modu) reddediyor; beklenen ileti 'every component' gelmiyor: sonda mekanik olarak eksik mesnetli kurulmuştu (post hoc roller_posthoc fizik denetimine ulaşıyor ve geçiyor)",
+   "risk": "low",
+   "resolution": "yok (sonda kurulumu); post hoc sonda roller_posthoc",
+   "record": "docs/olcumler/gecici_study_onkayit.md",
+   "slow": false
   }
  ],
  "skips": [
