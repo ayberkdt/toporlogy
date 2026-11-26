@@ -10,7 +10,9 @@ from __future__ import annotations
 
 import argparse
 import contextlib
+import hashlib
 import json
+import os
 import sys
 import time
 from collections.abc import Sequence
@@ -171,6 +173,34 @@ def _default_folder(cfg: dict[str, Any], suffix: str = "") -> Path:
     return p
 
 
+def _write_manifest(path: Path, manifest: dict[str, Any]) -> None:
+    """Atomic: a temporary file next to it, then os.replace (a reader never sees half a file)."""
+    tmp = path.with_suffix(".json.tmp")
+    tmp.write_text(json.dumps(manifest, indent=1, default=repr) + "\n", encoding="utf-8")
+    os.replace(tmp, path)
+
+
+def _environment() -> dict[str, Any]:
+    import platform
+
+    import numpy
+    import torch
+
+    from toporlogy.execution.record import git_revision
+    return {"python": platform.python_version(), "numpy": numpy.__version__, "torch": torch.__version__,
+            "platform": platform.platform(), "git": git_revision(Path(__file__).parent)}
+
+
+def _peak_memory() -> int | None:
+    """Peak memory of this process so far (bytes; Windows peak working set, elsewhere RSS), None without psutil."""
+    try:
+        import psutil
+    except ImportError:
+        return None
+    info = psutil.Process().memory_info()
+    return int(getattr(info, "peak_wset", info.rss))
+
+
 def _finished(folder: Path) -> bool:
     return (folder / "summary.json").is_file() or (folder / "result.json").is_file()
 
@@ -219,9 +249,14 @@ def cmd_run(a: argparse.Namespace) -> int:
         if a.sweep:
             return _run_sweep(a, raw)
         setup = build_setup(raw, a.set)
+        setup.study.torch_threads = None          # the command set torch's threads once (_with_torch_threads)
     except ConfigError as e:
         return report_config_error(e, src, "validate")
     folder = Path(a.out) if a.out else _default_folder(setup.config)
+    resume = bool(getattr(a, "resume", False))
+    if resume and not (folder / "checkpoint.ckpt").is_file():
+        err(kv("ERROR", f"--resume: {folder} has no checkpoint.ckpt (set run.checkpoint_every > 0 to write one)"))
+        return EXIT_CONFIG
     if _finished(folder):
         err(kv("ERROR", f"{folder} already holds a finished run; it is not overwritten"))
         err(kv("NEXT", f"{PROG} run {src} --out <new folder>"))
@@ -231,7 +266,8 @@ def cmd_run(a: argparse.Namespace) -> int:
     for w in setup.warnings:
         out(kv("warning", w))
     prog = None if a.quiet else Progress(setup.study.objective.name, setup.constraint_names)
-    sm = run_setup(setup, folder, progress=prog, source=str(src), overrides=a.set, post_progress=_post_line)
+    sm = run_setup(setup, folder, progress=prog, source=str(src), overrides=a.set, post_progress=_post_line,
+                   resume=resume)
     out(kv("RESULT", _result_line(sm)))
     out(kv("NEXT", _next_after_run(sm, folder, src)))
     return EXIT_OK if sm["status"] == STATUS_OK else EXIT_FAIL
@@ -262,28 +298,68 @@ def _run_sweep(a: argparse.Namespace, raw: dict[str, Any]) -> int:
         raise ConfigError(problems)
     first = resolve(apply_overrides(base, combos[0]))
     root = Path(a.out) if a.out else _default_folder(first, "_sweep")
-    if root.is_dir() and any(_finished(x) for x in root.iterdir() if x.is_dir()):
-        err(kv("ERROR", f"{root} already holds sweep runs; they are not overwritten"))
-        err(kv("NEXT", f"{PROG} run {a.config} --sweep ... --out <new folder>"))
-        return EXIT_CONFIG
     n = len(combos)
-    out(kv("SWEEP", f"{n} runs over {' x '.join(f'{k} ({len(v)})' for k, v in sweep)} -> {root}"))
+    width = len(str(n))
+    request = {"config": str(a.config), "set": list(a.set), "sweep": [[k, list(v)] for k, v in sweep],
+               "base": base}
+    digest = hashlib.sha256(json.dumps(request, sort_keys=True, default=repr).encode()).hexdigest()
+    folders = [f"{i:0{width}d}_{combination_label(c)}" for i, c in enumerate(combos, 1)]
+    manifest_path = root / "sweep_manifest.json"
+    resume = bool(getattr(a, "resume", False))
+    if resume:
+        if not manifest_path.is_file():
+            err(kv("ERROR", f"--resume: {root} has no sweep_manifest.json"))
+            return EXIT_CONFIG
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        if manifest.get("request_sha256") != digest:
+            old = manifest.get("request", {})
+            diff = [k for k in ("config", "set", "sweep", "base") if old.get(k) != json.loads(
+                json.dumps(request[k], default=repr))]
+            err(kv("ERROR", f"--resume: {root} holds another sweep (different {', '.join(diff) or 'request'})"))
+            return EXIT_CONFIG
+    elif root.is_dir() and any(_finished(x) for x in root.iterdir() if x.is_dir()):
+        err(kv("ERROR", f"{root} already holds sweep runs; they are not overwritten"))
+        err(kv("NEXT", f"{PROG} run {a.config} --sweep ... --out <new folder>  (or --resume to continue it)"))
+        return EXIT_CONFIG
+    else:
+        manifest = {"schema": 1, "request": json.loads(json.dumps(request, default=repr)), "request_sha256": digest,
+                    "environment": _environment(),
+                    "runs": [{"index": i, "folder": f, "values": dict(c), "status": "pending", "seconds": None,
+                              "peak_memory_bytes": None}
+                             for i, (f, c) in enumerate(zip(folders, combos, strict=True), 1)]}
+    root.mkdir(parents=True, exist_ok=True)
+    _write_manifest(manifest_path, manifest)
+    out(kv("SWEEP", f"{n} runs over {' x '.join(f'{k} ({len(v)})' for k, v in sweep)} -> {root}"
+           + (" (resumed)" if resume else "")))
     rows: list[dict[str, Any]] = []
     worst = EXIT_OK
-    width = len(str(n))
     for i, combo in enumerate(combos, 1):
-        label = combination_label(combo)
-        sub = root / f"{i:0{width}d}_{label}"
+        sub = root / folders[i - 1]
+        entry = manifest["runs"][i - 1]
         head = f"[{i:>{width}}/{n}] " + "  ".join(f"{k}={v}" for k, v in combo)
+        if resume and (sub / "summary.json").is_file():
+            sm = json.loads((sub / "summary.json").read_text(encoding="utf-8"))
+            print(f"{head}  done before, not re-run  {sm['status']}", flush=True)
+            rows.append({"index": i, "folder": sub.name, "values": dict(combo), **sm})
+            if sm["status"] != STATUS_OK and worst == EXIT_OK:
+                worst = EXIT_FAIL
+            continue
         print(head, end="", flush=True)
         try:
             setup = build_setup(base, combo)
+            setup.study.torch_threads = None      # set once for the whole sweep (_with_torch_threads)
         except ConfigError as e:
             print(f"  config error: {e}", flush=True)
             rows.append({"index": i, "folder": sub.name, "values": dict(combo), "status": "config error"})
+            entry["status"] = "config error"
+            _write_manifest(manifest_path, manifest)
             worst = EXIT_CONFIG
             continue
+        t0 = time.perf_counter()
         sm = run_setup(setup, sub, source=str(a.config), overrides=[*a.set, *(f"{k}={v}" for k, v in combo)])
+        entry.update(status="done", run_status=sm["status"],
+                     seconds=time.perf_counter() - t0, peak_memory_bytes=_peak_memory())
+        _write_manifest(manifest_path, manifest)
         print(f"  {sm['status']}  {sm['objective_name']} {fobj(sm['objective'])}  {sm['iterations']} it  "
               f"{fsec(sm['seconds'])} s", flush=True)
         rows.append({"index": i, "folder": sub.name, "values": dict(combo), **sm})
@@ -522,6 +598,9 @@ def parser() -> argparse.ArgumentParser:
     r.add_argument("--sweep", action="append", default=[], metavar="KEY.PATH=V1,V2",
                    help="run every combination of the listed values (repeatable: cartesian product)")
     r.add_argument("-q", "--quiet", action="store_true", help="no per-iteration lines")
+    r.add_argument("--resume", action="store_true",
+                   help="continue in --out: a sweep (same request; finished runs are not re-run) or one run "
+                        "from its checkpoint.ckpt (run.checkpoint_every > 0)")
     v = sub.add_parser("validate", help="check a config and print the problem summary (no solve)")
     v.add_argument("config", help="YAML or JSON config file")
     v.add_argument("--set", action="append", default=[], metavar="KEY.PATH=VALUE", help="override (repeatable)")
@@ -544,6 +623,28 @@ def main(argv: Sequence[str] | None = None) -> int:
     a = parser().parse_args(args)
     handlers = {"run": cmd_run, "validate": cmd_validate, "show": cmd_show, "compare": cmd_compare,
                 "list": cmd_list}
+    if a.command == "run":
+        return _with_torch_threads(lambda: _dispatch(handlers, a))
+    return _dispatch(handlers, a)
+
+
+def _with_torch_threads(fn: Any) -> int:
+    """Set torch's threads once for the whole command (TOPORLOGY_TORCH_THREADS, default 1 = Study.run's default), so
+    every Study.run of a sweep finds them set and does not switch; restored afterwards."""
+    import torch
+    before = torch.get_num_threads()
+    n = int(os.environ.get("TOPORLOGY_TORCH_THREADS", "1"))
+    if n < 1:
+        raise ValueError("TOPORLOGY_TORCH_THREADS must be >= 1")
+    torch.set_num_threads(n)
+    try:
+        out: int = fn()
+        return out
+    finally:
+        torch.set_num_threads(before)
+
+
+def _dispatch(handlers: dict[str, Any], a: argparse.Namespace) -> int:
     try:
         return handlers[a.command](a)
     except ConfigError as e:

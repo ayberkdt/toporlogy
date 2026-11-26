@@ -35,6 +35,7 @@ def fingerprint() -> dict[str, np.ndarray]:
     from toporlogy.core import material as M
     from toporlogy.design import interp
     from toporlogy.fem import elements as el
+    from toporlogy.core import constitutive
     from toporlogy.fem import nonlinear as nl
     from toporlogy.optimization import strength as st
     from toporlogy.optimization.stress import von_mises_matrix
@@ -89,7 +90,7 @@ def fingerprint() -> dict[str, np.ndarray]:
         out[f"nl_detm1_{dim}"] = detm1(H)
         out[f"nl_detm1_small{dim}"] = detm1(1e-9 * H)
     H3 = 0.2 * rng.standard_normal((25, 3, 3))
-    S, C, psi = nl.neo_hooke_response(green(H3), detm1(H3), 1.3, 0.4, True)
+    S, C, psi = constitutive.neo_hooke_response(green(H3), detm1(H3), 1.3, 0.4, True)
     out["nh_S"], out["nh_C"], out["nh_psi"] = S, C, psi
     out["simp_penal"] = np.array([[interp.simp_admissible_penal(v, d) for v in nus] for d in (2, 3)])
     x = torch.linspace(0.0, 1.0, 11, dtype=torch.float64)

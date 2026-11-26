@@ -57,6 +57,8 @@ class Domain:
         self.dim = len(self.shape)
         self.h = float(h)
         self.thickness = float(thickness)
+        if not (np.isfinite(self.thickness) and self.thickness > 0):
+            raise ValueError(f"thickness > 0 is required (finite), got {thickness!r}")
         self.origin: np.ndarray = np.zeros(self.dim) if origin is None else np.asarray(origin, float).reshape(self.dim)
         self.frac = np.ones(self.shape) if frac is None else np.asarray(frac, float).reshape(self.shape).copy()
         if (self.frac < 0).any() or (self.frac > 1).any():

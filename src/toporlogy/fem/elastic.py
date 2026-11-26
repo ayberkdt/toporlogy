@@ -29,7 +29,7 @@ import torch
 from toporlogy.core.domain import Domain
 from toporlogy.fem.mechanisms import SolveResidualError, check_moduli, check_supports, fixed_dof_rows
 from toporlogy.solvers.direct import DirectSolver
-from toporlogy.solvers.ordering import nested_dissection_dofs
+from toporlogy.solvers.ordering import nested_dissection_blocks
 
 __all__ = ["Elasticity", "element_matrix", "ORDERINGS", "GROUPED_MAX", "RESIDUAL_TOL", "BACKWARD_TOL", "ResidualReport",
            "checked_residual", "matrix_norm1"]
@@ -126,6 +126,7 @@ class Elasticity:
         self._P = sp.csr_matrix((np.zeros(len(ukey)), (ukey // nf, ukey % nf)), shape=(nf, nf))
         self.solver = solver if solver is not None else DirectSolver()
         self._order: np.ndarray | None = None                      # nested dissection of the reduced system, lazy
+        self._blocks: np.ndarray | None = None                     # its parts (unknowns per part), with _order
         self._token = 0                                            # increments with every factorisation
         self._factored_E: np.ndarray | None = None
         self.n_solves = 0
@@ -196,8 +197,19 @@ class Elasticity:
         """Nested dissection order of the reduced system (index into :attr:`free`), computed once."""
         if self._order is None:
             d = self.domain
-            self._order = nested_dissection_dofs(tuple(n + 1 for n in d.shape), d.dim, self.free)
+            self._order, self._blocks = nested_dissection_blocks(tuple(n + 1 for n in d.shape), d.dim, self.free)
         return self._order
+
+    def elimination_blocks(self) -> np.ndarray:
+        """Unknowns per part (leaf box, separator plane) of :meth:`elimination_order`, consecutive in that order: the
+        dense blocks of the supernodal Cholesky (``DirectSolver("cholesky")``). A subclass that changes the order
+        must give its own blocks."""
+        if type(self).elimination_order is not Elasticity.elimination_order:
+            raise NotImplementedError(f"{type(self).__name__} changes the elimination order but gives no "
+                                      "elimination_blocks(): the 'cholesky' direct solver needs both")
+        self.elimination_order()
+        assert self._blocks is not None
+        return self._blocks
 
     def _kinematic_rows(self) -> dict[int, np.ndarray]:
         """Support rows per node acting on its displacement (fixed DOFs: unit rows); see :mod:`.mechanisms`."""
@@ -218,7 +230,8 @@ class Elasticity:
         self._A = self.matrix(E_active)
         self._A_norm1 = matrix_norm1(self._A)
         if isinstance(self.solver, DirectSolver) and self.ordering == "nested_dissection":
-            self.solver.factor(self._A, order=self.elimination_order())
+            blocks = self.elimination_blocks() if self.solver.method == "cholesky" else None
+            self.solver.factor(self._A, order=self.elimination_order(), blocks=blocks)
         else:
             self.solver.factor(self._A)
         self._factored_E = E_active.copy()
@@ -232,10 +245,21 @@ class Elasticity:
         X[self.free] = x
         return X
 
-    def solve_numpy(self, E_active: np.ndarray, F: np.ndarray) -> np.ndarray:
-        """U (ndof, n_cases) for moduli ``E_active`` and loads ``F`` (ndof,) or (ndof, n_cases); no autograd."""
+    def _loads(self, F: np.ndarray) -> np.ndarray:
+        """Loads as (ndof, n_cases), refused with a clear message when the rows do not match or a value is not
+        finite (docs/vv_fault_injection.md: inf_load_solve, load_wrong_rows_solve)."""
         F2 = np.asarray(F, float)
         F2 = F2[:, None] if F2.ndim == 1 else F2
+        n = self.domain.ndof
+        if F2.ndim != 2 or F2.shape[0] != n:
+            raise ValueError(f"load F has shape {np.shape(F)}; expected {n} rows (DOFs), one column per load case")
+        if not np.isfinite(F2).all():
+            raise ValueError("load F must be finite (NaN or Inf found)")
+        return F2
+
+    def solve_numpy(self, E_active: np.ndarray, F: np.ndarray) -> np.ndarray:
+        """U (ndof, n_cases) for moduli ``E_active`` and loads ``F`` (ndof,) or (ndof, n_cases); no autograd."""
+        F2 = self._loads(F)
         self.factor(E_active)
         self.n_solves += 1
         return self._solve_free(F2)
@@ -261,9 +285,7 @@ class Elasticity:
     # ------------------------------------------------------------------ autograd
     def solve(self, E_active: torch.Tensor, F: np.ndarray) -> torch.Tensor:
         """Differentiable ``U(E)``: (ndof, n_cases) float64 tensor. ``E_active`` (na,) tensor."""
-        F2 = np.asarray(F, float)
-        F2 = F2[:, None] if F2.ndim == 1 else F2
-        return _LinearSolve.apply(E_active, self, F2)
+        return _LinearSolve.apply(E_active, self, self._loads(F))
 
 
 ORDERINGS = ("nested_dissection", "solver")

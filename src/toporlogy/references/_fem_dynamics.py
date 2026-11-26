@@ -31,6 +31,10 @@ REFERENCES: tuple[Reference, ...] = (
               "Wiley, Chichester", note="shallow two-bar truss, total-Lagrangian truss, arc-length methods"),
     Reference("riks_1979", "E. Riks", 1979, "An incremental approach to the solution of snapping and buckling problems",
               "International Journal of Solids and Structures 15(7):529-551", note="arc-length path following"),
+    Reference("simo_hughes_1998", "J. C. Simo, T. J. R. Hughes", 1998, "Computational Inelasticity",
+              "Springer, New York", note="radial return and consistent algorithmic tangent of J2 plasticity with "
+                                         "isotropic hardening; not read in this session (the update and tangent are "
+                                         "derived in core.constitutive)"),
     Reference("bazant_cedolin_1991", "Z. P. Bažant, L. Cedolin", 1991,
               "Stability of Structures: Elastic, Inelastic, Fracture and Damage Theories",
               "Oxford University Press, New York", note="von Mises truss snap-through"),

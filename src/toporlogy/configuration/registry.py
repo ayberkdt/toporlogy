@@ -46,6 +46,8 @@ from typing import Any
 
 import numpy as np
 
+from toporlogy.configuration import units as _units
+
 
 __all__ = ["KINDS", "REQUIRED", "ConfigError", "Param", "Entry", "BuildContext", "Registry", "REGISTRY", "register",
            "get", "names", "normalise_name", "suggest", "join"]
@@ -149,7 +151,7 @@ class Param:
                 try:
                     return float(value)
                 except ValueError:
-                    raise bad from None
+                    return _with_unit(value, self.unit, path, bad)
             raise bad
         if t is int:
             if isinstance(value, bool):
@@ -169,10 +171,26 @@ class Param:
                 return value
             raise bad
         if t is list:
-            if isinstance(value, list | tuple):
-                return _plain(list(value))
-            return [_plain(value)]
+            items = list(value) if isinstance(value, list | tuple) else [value]
+            if self.unit and _units.active() is not None:
+                items = [_with_unit(v, self.unit, path, bad) if isinstance(v, str) and _units.is_quantity(v) else v
+                         for v in items]
+            return _plain(items)
         return value
+
+
+def _with_unit(value: str, unit: str, path: str, bad: ConfigError) -> float:
+    """A number with a unit ("210 GPa"), converted into the config's units section; without one, ``bad``."""
+    system = _units.active()
+    if system is None or not unit:
+        if _units.is_quantity(value):
+            raise ConfigError(f"{bad.errors[0][1]} (a value with a unit needs the top-level units: section and a "
+                              f"parameter with a physical unit)", path) from None
+        raise bad from None
+    try:
+        return _units.convert(value, unit, system)
+    except _units.UnitError as e:
+        raise ConfigError(str(e), path) from None
 
 
 def _plain(v: Any) -> Any:

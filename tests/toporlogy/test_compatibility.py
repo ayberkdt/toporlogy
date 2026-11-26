@@ -68,6 +68,9 @@ STATE = {  # response spec (objective) for a state response
     "stress_augmented_lagrangian": {"type": "stress_augmented_lagrangian", "objective": "volume",
                                     "sigma_lim": 1.0},
     "end_compliance": "end_compliance",
+    "end_strain_energy": "end_strain_energy",
+    "scenario_compliance": "scenario_compliance",
+    "compliance_case": "compliance_case",
 }
 EIGEN = {"frequency": {"type": "maximize", "response": {"type": "frequency"}},
          "eigenvalue": {"type": "maximize", "response": {"type": "eigenvalue"}},
@@ -98,7 +101,7 @@ def cell_probe(response: str, physics: str) -> dict[str, Any]:
 def cell_pattern(response: str, physics: str) -> str:
     if response in EIGEN:
         return r"needs physics modal"
-    if response == "end_compliance":
+    if response in ("end_compliance", "end_strain_energy"):
         return r"needs physics nonlinear_elasticity"
     if physics == "modal":
         return rf"unsupported combination \(catalog\): response {response} with physics modal: needs the static state u"
@@ -129,6 +132,10 @@ def _cfg(c: dict[str, Any]) -> Callable[[], Any]:
 
 OBLIQUE = {"type": "roller", "where": {"type": "plane", "axis": "x", "at": "max"}, "normal": [1, 1]}
 OBLIQUE3 = {"type": "roller", "where": {"type": "plane", "axis": "x", "at": "max"}, "normal": [1, 1, 0]}
+FIBRE = {"name": "f", "orthotropic": {"E1": 1.0, "E2": 0.1, "E3": 0.1, "G12": 0.05, "G13": 0.05, "G23": 0.04,
+                                      "nu12": 0.3, "nu13": 0.3, "nu23": 0.3}}
+TENSOR = mod(B2, interpolation={"type": "tensor_phases", "phases": [FIBRE]}, physics="tensor_elasticity")
+ANGLE_CHAIN = [{"type": "embed", "angle": {"rmin": 1.5}}, {"type": "density_filter", "rmin": 1.5}]
 RULE_PROBES: dict[str, tuple[Callable[[], Any], type[BaseException], str]] = {
     "gmg_2d": (_cfg(mod(B2, physics="elasticity_gmg")), ConfigError, r"3-D only"),
     "gmg_material_field": (_gmg_field, ValueError, r"per-element elasticity .* is not supported"),
@@ -161,6 +168,31 @@ RULE_PROBES: dict[str, tuple[Callable[[], Any], type[BaseException], str]] = {
     "nonlinear_incompatible_modes": (_cfg(mod(B2, physics={"type": "nonlinear_elasticity", "element": "Q4IM"},
                                               objective="end_compliance")), ConfigError, r"Q4IM"),
     "finalize_2d": (_cfg(mod(B2, post=["finalize"])), ConfigError, r"finalize needs a 3-D domain"),
+    # material design (docs/olcumler/malzeme_tasarimi.md)
+    "tensor_responses": (_cfg(mod(TENSOR, objective=STATE["displacement"])), ConfigError,
+                         r"with physics tensor_elasticity: only Compliance"),
+    "tensor_interpolation": (_cfg(mod(TENSOR, interpolation="simp")), ConfigError,
+                             r"physics tensor_elasticity with interpolation simp"),
+    "tensor_phases_physics": (_cfg(mod(TENSOR, physics="elasticity")), ConfigError,
+                              r"tensor_phases needs physics tensor_elasticity"),
+    "tensor_incompatible_modes": (_cfg(mod(TENSOR, physics={"type": "tensor_elasticity", "element": "Q4IM"})),
+                                  ConfigError, r"linear in D"),
+    "tensor_per_case_supports": (_cfg(mod(TENSOR, load_cases=two_case_supports(B2))), ConfigError,
+                                 r"tensor_elasticity needs one support set"),
+    "tensor_oblique_supports": (_cfg(mod(TENSOR, supports=B2["supports"] + [OBLIQUE])), ConfigError,
+                                r"tensor_elasticity supports zero displacements along x / y / z only"),
+    "tensor_post": (_cfg(mod(TENSOR, post=["discrete_check"])), ConfigError, r"post step\(s\) \['discrete_check'\]"),
+    "angle_3d": (_cfg(mod(TENSOR, domain=B3["domain"], load_cases=B3["load_cases"], chain=ANGLE_CHAIN)), ConfigError,
+                 r"angle block is 2-D only"),
+    "angle_phases": (_cfg(mod(TENSOR, chain=ANGLE_CHAIN, interpolation=dict(TENSOR["interpolation"],
+                                                                          phases=[FIBRE, dict(FIBRE, name="g")]))),
+                     ConfigError, r"angle block with 2 phases is not supported"),
+    "angle_interpolation": (_cfg(mod(B2, chain=ANGLE_CHAIN)), ConfigError, r"angle block needs interpolation "
+                                                                          r"tensor_phases"),
+    "angle_isotropic": (_cfg(mod(TENSOR, chain=ANGLE_CHAIN, interpolation=dict(
+        TENSOR["interpolation"], phases=[{"name": "iso", "isotropic": {"E": 1.0, "nu": 0.3}}]))), ConfigError,
+        r"does not depend on the in-plane angle"),
+    "angle_oc": (_cfg(mod(TENSOR, chain=ANGLE_CHAIN, optimizer="oc")), ConfigError, r"angle block with optimizer oc"),
 }
 ENFORCED_RULES = [r.id for r in RULES if r.status == UNSUPPORTED and r.enforced in ("component", "catalog")]
 

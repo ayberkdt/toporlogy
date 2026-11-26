@@ -28,18 +28,19 @@ from __future__ import annotations
 import argparse
 import json
 from collections.abc import Iterable, Mapping, Sequence
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any
 
 from toporlogy.configuration.registry import ConfigError
 
 __all__ = ["SCHEMA_VERSION", "STATUSES", "SUPPORTED", "EXPERIMENTAL", "UNSUPPORTED", "NOT_VERIFIED", "Element",
-           "Physics", "Solver", "Benchmark", "MaterialRecord", "Cell", "Rule", "ELEMENTS", "PHYSICS", "SOLVERS",
+           "Physics", "Solver", "Benchmark", "MaterialRecord", "MATERIAL_KINDS", "validate_material",
+           "material_section", "Cell", "Rule", "ELEMENTS", "PHYSICS", "SOLVERS",
            "BENCHMARKS", "MATERIALS", "RESPONSE_MATRIX", "RULES", "PHYSICS_INDEPENDENT", "COMPOSITE_RESPONSES",
            "status", "check_build", "as_dict", "render_markdown", "write"]
 
-SCHEMA_VERSION = "1.0.0"         # semantic version of the catalog layout (fields), not of its content
+SCHEMA_VERSION = "1.1.0"         # semantic version of the catalog layout (fields), not of its content
 
 SUPPORTED, EXPERIMENTAL, UNSUPPORTED, NOT_VERIFIED = "SUPPORTED", "EXPERIMENTAL", "UNSUPPORTED", "NOT VERIFIED"
 STATUSES = (SUPPORTED, EXPERIMENTAL, UNSUPPORTED, NOT_VERIFIED)
@@ -68,8 +69,11 @@ class Element:
 
 
 _GRID = "regular grid, undistorted unit square/cube elements only (no Jacobian varies)"
+_MESH = ("general meshes (toporlogy.fem.mesh); signed detJ checked at every quadrature point and node, inverted or "
+         "degenerate cells refused; distorted-mesh patch test and MMS rates measured")
 ELEMENTS: tuple[Element, ...] = (
-    Element("Q4", 2, "square", 4, 2, "bilinear", "2 x 2 Gauss", ("elasticity", "modal", "nonlinear_elasticity"),
+    Element("Q4", 2, "square", 4, 2, "bilinear", "2 x 2 Gauss", ("elasticity", "modal", "nonlinear_elasticity",
+                                                                  "tensor_elasticity"),
             "shear-locks in bending (parasitic shear)", _GRID, ("andreassen_2011", "cook_2002"),
             (T + "test_fem_mms.py::test_manufactured_solution_converges_at_second_order",
              T + "test_skfem_crosscheck.py::test_x1_stiffness",
@@ -82,7 +86,8 @@ ELEMENTS: tuple[Element, ...] = (
              T + "test_buckling_physics.py::test_gradient_q4im_with_modes_in_kg"),
             "fem/elements.py: ke_q4im_from_D"),
     Element("H8", 3, "cube", 8, 3, "trilinear", "2 x 2 x 2 Gauss",
-            ("elasticity", "elasticity_gmg", "modal", "nonlinear_elasticity"), "shear-locks in bending", _GRID,
+            ("elasticity", "elasticity_gmg", "modal", "nonlinear_elasticity", "tensor_elasticity"),
+            "shear-locks in bending", _GRID,
             ("liu_tovar_2014", "cook_2002"),
             (T + "test_fem_mms.py::test_manufactured_solution_converges_at_second_order",
              T + "test_regression.py::test_topo3d_box_no_projection",
@@ -102,6 +107,45 @@ ELEMENTS: tuple[Element, ...] = (
             (T + "test_post_verify.py::test_t10_patch_uniaxial_tension",
              T + "test_t10_convergence.py::test_mesh_convergence_needs_three_sizes"),
             "post/verify.py (verification of the finished surface only; needs gmsh)"),
+    # general-mesh elements (03_FEM_ELEMENTS, docs/olcumler/fem_genel.md): Python API only, no YAML physics yet
+    *(Element(f"mesh:{name}", dim, geom, nodes, dim, interp, quad, (), lock, _MESH, refs,
+              (T + "test_mesh_elements.py::test_e4_completeness",
+               T + "test_mesh_assembly.py::test_g2_affine_patch_test",
+               T + "test_mesh_verification.py::test_v2_scikit_fem_stiffness_load_and_solution",
+               T + "test_mesh_verification.py::test_v3_mms_convergence_on_distorted_mesh"),
+              "fem/mesh (ElasticProblem)")
+      for name, dim, geom, nodes, interp, quad, lock, refs in (
+          ("Q4", 2, "quadrilateral", 4, "bilinear (isoparametric)", "2 x 2 Gauss",
+           "shear-locks on elongated elements (R = 0.29 at aspect 5); volumetric locking in plane strain (L2 error "
+           "0.94 at nu = 0.4999, n = 16)", ("cook_2002", "zienkiewicz_taylor_2013")),
+          ("Q9", 2, "quadrilateral", 9, "biquadratic Lagrange (isoparametric)", "3 x 3 Gauss",
+           "no shear locking measured (R >= 0.9997, aspect up to 5); partial volumetric locking (L2 error 0.013 at "
+           "nu = 0.4999 vs 3.5e-4 at 0.3)", ("zienkiewicz_taylor_2013",)),
+          ("T3", 2, "triangle", 3, "linear", "centroid (exact for B^T D B)",
+           "locks in bending and volumetrically (L2 error 0.97 at nu = 0.4999)", ("cook_2002",)),
+          ("T6", 2, "triangle", 6, "quadratic", "3-point (degree 2)",
+           "partial volumetric locking (L2 error 0.018 at nu = 0.4999)", ("zienkiewicz_taylor_2013",
+                                                                          "dunavant_1985")),
+          ("H8", 3, "hexahedron", 8, "trilinear (isoparametric)", "2 x 2 x 2 Gauss",
+           "shear-locks on elongated elements (R = 0.24 at aspect 5); volumetric locking", ("cook_2002",)),
+          ("T4", 3, "tetrahedron", 4, "linear", "centroid (exact for B^T D B)",
+           "locks volumetrically (L2 error 0.996 at nu = 0.4999, n = 6)", ("cook_2002",)),
+          ("T10", 3, "tetrahedron", 10, "quadratic (gmsh node order)", "4-point Keast (degree 2)",
+           "curved T10 fails the patch test with the 4-point rule (1.7e-4); a degree-3 rule passes",
+           ("keast_1986", "zienkiewicz_taylor_2013")))),
+    *(Element(f"mesh:{name}", dim, geom, nodes, dim, interp + " displacement + continuous linear pressure "
+              "(Taylor-Hood u-p, sigma = 2 mu eps - p I, p = -lambda div u)", quad, (),
+              "locking-free near and at nu = 0.5 (L1c, L1e); inf-sup constant bounded under refinement (L2)",
+              _MESH + "; plane strain and 3-D only (plane stress refused), lambda = 0 refused",
+              ("zienkiewicz_taylor_2013",),
+              (T + "test_mesh_locking.py::test_l1c_taylor_hood_does_not_lock",
+               T + "test_mesh_locking.py::test_l1e_taylor_hood_converges_near_and_at_incompressibility",
+               T + "test_mesh_locking.py::test_l2_taylor_hood_inf_sup_is_bounded"),
+              "fem/mesh/mixed.py (MixedElasticity)")
+      for name, dim, geom, nodes, interp, quad in (
+          ("TH-T6T3", 2, "triangle", 6, "quadratic", "3-point (degree 2)"),
+          ("TH-Q9Q4", 2, "quadrilateral", 9, "biquadratic", "3 x 3 Gauss"),
+          ("TH-T10T4", 3, "tetrahedron", 10, "quadratic", "4-point Keast (degree 2)"))),
 )
 
 
@@ -153,9 +197,11 @@ PHYSICS: tuple[Physics, ...] = (
                                                                    "eigenvalues",
              T + "test_modal.py::test_response_gradients"),
             "E_active scales K; mass from the density (linear or two-range)"),
-    Physics("nonlinear_elasticity", "r(u; E) = f_int(u) - f = 0 (total Lagrangian, SVK or neo-Hooke)",
+    Physics("nonlinear_elasticity", "r(u; E) = f_int(u) - f = 0 (total Lagrangian, SVK or neo-Hooke; API: "
+                                    "small-strain models of core.constitutive incl. J2 plasticity, no sensitivity)",
             "consistent tangent K_T(u)", "symmetric; positive definite only on the stable branch",
-            "Newton with load steps; one adjoint solve with K_T per case", ("cpu",), (2, 3), ("Q4", "H8"),
+            "general Newton (solvers.newton) with load steps; arc length / displacement control through "
+            "continuation_problem (API); one adjoint solve with K_T per case", ("cpu",), (2, 3), ("Q4", "H8"),
             "axis-aligned fixed DOFs, one support set", "Newton residual and error contraction; "
                                                         "NonlinearConvergenceError with the history",
             "assembled K_T per Newton step", (T + "test_nonlinear.py::test_v3_consistent_tangent_finite_difference",
@@ -163,6 +209,17 @@ PHYSICS: tuple[Physics, ...] = (
                                                T + "test_nonlinear.py::test_v6_end_compliance_gradient_finite_"
                                                    "difference"),
             "E_active through an energy interpolation; general D with material svk only"),
+    Physics("tensor_elasticity", "K(C) u = f (linear, small strain)",
+            "K(C), linear in the element tensors C_e (Q4, H8: KE(C) = sum_a c_a KE(S_a))",
+            "symmetric positive definite on the free DOFs (every C_e a convex combination of SPD tensors)",
+            "direct (solver: direct)", ("cpu",), (2, 3), ("Q4", "H8"), "axis-aligned fixed DOFs, one support set",
+            "direct solve; relative residual <= 1e-6 or backward error <= 1e-14 accepted, else SolveResidualError",
+            "assembled sparse K, element matrices (n_active, nloc, nloc) refilled per evaluation",
+            (T + "test_material_design.py::test_k8b_scalar_limit_matches_multiphase_simp",
+             T + "test_material_design.py::test_k7_independent_assembly",
+             T + "test_material_design.py::test_g1_compliance_gradient_finite_difference"),
+            "per-element elasticity tensor C_e (MaterialField of interpolation tensor_phases); the scalar grid the "
+            "study passes is only checked against the field"),
 )
 
 
@@ -543,6 +600,76 @@ _BENCHMARK_ROWS: tuple[tuple[str, ...], ...] = (
         'fast',
         'code verification',
     ),
+    (
+        'constitutive_ad_oracle',
+        'internal_oracle',
+        'test_constitutive.py::test_p1_energy_stress_tangent_match_the_ad_oracle',
+        'SVK / neo-Hooke energy, PK2 stress, tangent (3-D, plane strain, plane stress)',
+        'torch autograd of the energy (core.constitutive.energy_oracle)',
+        'psi, S <= 1e-11; C <= 1e-10 relative',
+        'fast',
+        'code verification',
+    ),
+    (
+        'j2_uniaxial_cyclic',
+        'analytic',
+        'test_constitutive.py::test_j2_cyclic_uniaxial_closed_form_and_elastic_unloading',
+        'J2 uniaxial stress, cyclic, isotropic hardening',
+        'closed form (1-D isotropic hardening, leg by leg)',
+        'stress <= 1e-10 sigma_y; alpha <= 1e-10 eps_y',
+        'fast',
+        'code verification',
+    ),
+    (
+        'j2_consistent_tangent',
+        'gradient',
+        'test_constitutive.py::test_j4_consistent_tangent_matches_finite_difference',
+        'J2 algorithmic tangent (linear and Voce hardening)',
+        'central finite difference of the return map',
+        'relative <= 1e-6',
+        'fast',
+        'code verification',
+    ),
+    (
+        'j2_fe_homogeneous_bar',
+        'internal_oracle',
+        'test_nonlinear_solvers.py::test_j7_homogeneous_bar_matches_the_material_point',
+        'FE J2 bar (Q4 plane strain, H8): loading and unloading strain',
+        'mixed-control material point driver (core.constitutive.drive_material_point)',
+        'relative <= 1e-9',
+        'fast',
+        'code verification',
+    ),
+    (
+        'truss_snap_through',
+        'analytic',
+        'test_nonlinear_solvers.py::test_a1_a3_arc_length_traces_the_truss_snap_through',
+        'arc-length path of the shallow two-bar truss through both limit points',
+        'closed form P(w) (tests/toporlogy/_truss.py)',
+        '|lambda - P(w)/P_ref| <= 1e-9; det K sign 100 %',
+        'fast',
+        'code verification',
+    ),
+    (
+        'fe_arc_length_vs_load_control',
+        'internal_oracle',
+        'test_nonlinear_solvers.py::test_a5_fe_arc_length_matches_load_control',
+        'arc-length path of a stocky cantilever (SVK)',
+        'load control at the same load factors',
+        'relative <= 1e-7',
+        'fast',
+        'code verification',
+    ),
+    (
+        'end_strain_energy_taylor',
+        'gradient',
+        'test_nonlinear_solvers.py::test_t1_t2_end_strain_energy_taylor_remainder',
+        'end strain energy gradient (fixed cutoff)',
+        'Taylor remainder order',
+        'two consecutive orders in [1.8, 2.2]; x1.01 control <= 1.3',
+        'fast',
+        'code verification',
+    ),
 )
 BENCHMARKS: tuple[Benchmark, ...] = tuple(Benchmark(r[0], r[1], T + r[2], *r[3:])
                                           for r in _BENCHMARK_ROWS)
@@ -551,10 +678,12 @@ BENCHMARKS: tuple[Benchmark, ...] = tuple(Benchmark(r[0], r[1], T + r[2], *r[3:]
 # ---------------------------------------------------------------------------------------------- materials
 @dataclass(frozen=True)
 class MaterialRecord:
-    """A material data record. ``kind``: synthetic | nominal | typical | test_measured | design_allowable.
+    """A material data record (08 §3). ``kind``: synthetic | nominal | typical | test_measured | design_allowable;
+    ``family``: isotropic (values E0, nu, rho) | orthotropic (E1 … nu23, rho); ``units``: "dimensionless" (consistent
+    user units, copied as they are) or "SI" (Pa, kg/m^3; converted into the config's ``units`` section).
 
-    Only synthetic (dimensionless example) records exist in this slice: no real material value is entered without a
-    traceable source, page and licence (08 §3).
+    A record that is not synthetic needs a source, a page or table and a licence (:func:`validate_material`). No
+    real material value is entered without having read its source and licence; the records below are synthetic.
     """
 
     id: str
@@ -565,14 +694,110 @@ class MaterialRecord:
     source: str
     used_by: tuple[str, ...] = ()
     note: str = ""
+    grade: str = ""
+    condition: str = ""
+    temperature: str = ""
+    uncertainty: Mapping[str, str] = field(default_factory=dict)
+    page_or_table: str = ""
+    licence: str = ""
+    applicability: str = ""
 
+
+MATERIAL_KINDS = ("synthetic", "nominal", "typical", "test_measured", "design_allowable")
+MATERIAL_UNITS = ("dimensionless", "SI")
+_ISO_KEYS, _ORTHO_KEYS = ("E0", "nu"), ("E1", "E2", "E3", "G12", "G13", "G23", "nu12", "nu13", "nu23")
+_MODULI = {"E0", "E1", "E2", "E3", "G12", "G13", "G23"}
+_PRESSURE_DIM, _DENSITY_DIM = (-1, 1, -2, 0), (-3, 1, 0, 0)
 
 MATERIALS: tuple[MaterialRecord, ...] = (
     MaterialRecord("synthetic_unit_isotropic", "synthetic", "isotropic", {"E0": 1.0, "nu": 0.3, "rho": 1.0},
-                   "dimensionless (consistent user units)", "schema default (configuration/schema.py _MATERIAL)",
+                   "dimensionless", "schema default (configuration/schema.py _MATERIAL)",
                    ("examples/*.yaml without a material block",),
                    "not a real material; the default of every config"),
+    MaterialRecord("synthetic_auxetic_isotropic", "synthetic", "isotropic", {"E0": 1.0, "nu": -0.5, "rho": 1.0},
+                   "dimensionless", "chosen for tests (docs/olcumler/malzeme_katalog_onkayit.md C4)",
+                   (T + "test_material_catalog.py",), "not a real material: a negative Poisson ratio inside (-1, 1/2)"),
+    MaterialRecord("synthetic_orthotropic_ply", "synthetic", "orthotropic",
+                   {"E1": 40.0, "E2": 9.0, "E3": 9.0, "G12": 4.0, "G13": 4.0, "G23": 3.2, "nu12": 0.28, "nu13": 0.28,
+                    "nu23": 0.4, "rho": 1.0}, "dimensionless", "the README physics example (round numbers)",
+                   ("README.md",), "not a real material: ratios of the order of a fibre ply"),
+    MaterialRecord("synthetic_orthotropic_high_nu23", "synthetic", "orthotropic",
+                   {"E1": 10.0, "E2": 1.0, "E3": 1.0, "G12": 0.5, "G13": 0.5, "G23": 0.3, "nu12": 0.05, "nu13": 0.05,
+                    "nu23": 0.65, "rho": 1.0}, "dimensionless",
+                   "chosen for tests (docs/olcumler/malzeme_katalog_onkayit.md C4)", (T + "test_material_catalog.py",),
+                   "not a real material: positive definite with nu23 > 1/2 (anisotropic bounds differ from isotropic)"),
+    MaterialRecord("synthetic_si_isotropic", "synthetic", "isotropic", {"E0": 2.0e11, "nu": 0.3, "rho": 8000.0},
+                   "SI", "chosen for tests (docs/olcumler/malzeme_katalog_onkayit.md C6)",
+                   (T + "test_material_catalog.py",),
+                   "not a real material: round numbers of the order of a steel, in Pa and kg/m^3"),
 )
+
+
+def validate_material(m: MaterialRecord) -> None:
+    """Refuse a record that is incomplete or physically inadmissible; the message names the field."""
+    from toporlogy.core.linear_elastic import isotropic_moduli
+    from toporlogy.core.material import Orthotropic
+    if m.kind not in MATERIAL_KINDS:
+        raise ValueError(f"{m.id}: kind {m.kind!r} (one of {', '.join(MATERIAL_KINDS)})")
+    if m.units not in MATERIAL_UNITS:
+        raise ValueError(f"{m.id}: units {m.units!r} (one of {', '.join(MATERIAL_UNITS)})")
+    if not m.source:
+        raise ValueError(f"{m.id}: source is required")
+    if m.kind != "synthetic":
+        for f in ("page_or_table", "licence"):
+            if not getattr(m, f):
+                raise ValueError(f"{m.id}: a {m.kind} record needs {f} (08 §3: traceable source, page and licence)")
+    v = dict(m.values)
+    if "rho" in v and not v["rho"] > 0:
+        raise ValueError(f"{m.id}: rho > 0 is required")
+    if m.family == "isotropic":
+        if [k for k in _ISO_KEYS if k not in v] or set(v) - {*_ISO_KEYS, "rho"}:
+            raise ValueError(f"{m.id}: isotropic values are E0, nu (and rho), got {sorted(v)}")
+        try:
+            isotropic_moduli(E=float(v["E0"]), nu=float(v["nu"]))
+        except ValueError as e:
+            raise ValueError(f"{m.id}: E0 / nu not admissible: {e}") from None
+    elif m.family == "orthotropic":
+        if [k for k in _ORTHO_KEYS if k not in v] or set(v) - {*_ORTHO_KEYS, "rho"}:
+            raise ValueError(f"{m.id}: orthotropic values are {', '.join(_ORTHO_KEYS)} (and rho), got {sorted(v)}")
+        try:
+            Orthotropic(*(float(v[k]) for k in _ORTHO_KEYS))
+        except ValueError as e:
+            raise ValueError(f"{m.id}: orthotropic constants not admissible: {e}") from None
+    else:
+        raise ValueError(f"{m.id}: family {m.family!r} (isotropic or orthotropic)")
+
+
+def material_section(raw: Mapping[str, Any], system: Any) -> dict[str, Any]:
+    """The ``material`` section with ``catalog: <id>`` replaced by the record's values: E0 / nu / rho (isotropic) or
+    E0 = E1 and an ``orthotropic`` block. An SI record needs the config's ``units`` section (``system``, a
+    :class:`~toporlogy.configuration.units.UnitSystem`) and is converted into it. A key given beside ``catalog`` that
+    the record also sets is refused (one source per value)."""
+    ids = {m.id: m for m in MATERIALS}
+    rid = str(raw["catalog"])
+    if rid not in ids:
+        from toporlogy.configuration.registry import suggest
+        raise ValueError(f'no material "{rid}" in the catalog{suggest(rid, list(ids)) or ""} '
+                         f"(ids: {', '.join(ids)})")
+    m = ids[rid]
+    v = dict(m.values)
+    if m.units == "SI":
+        if system is None:
+            raise ValueError(f"{rid} is in SI units: add a top-level units section, e.g. units: {{length: mm, "
+                             f"force: N}}")
+        v = {k: (system.from_si(x, _PRESSURE_DIM) if k in _MODULI else
+                 system.from_si(x, _DENSITY_DIM) if k == "rho" else x) for k, x in v.items()}
+    out: dict[str, Any] = {k: x for k, x in raw.items() if k != "catalog"}
+    if m.family == "isotropic":
+        sets: dict[str, Any] = {k: v[k] for k in ("E0", "nu", "rho") if k in v}
+    else:
+        sets = {"E0": v["E1"], "orthotropic": {k: v[k] for k in _ORTHO_KEYS}}
+        if "rho" in v:
+            sets["rho"] = v["rho"]
+    clash = sorted(set(sets) & set(out))
+    if clash:
+        raise ValueError(f"{', '.join(clash)} given both by catalog {rid} and in the config")
+    return {**out, **sets}
 
 
 # ---------------------------------------------------------------------------------------------- compatibility
@@ -584,11 +809,15 @@ class Cell:
     enforced: str = ""                    # UNSUPPORTED: component | catalog | first_evaluation
 
 
-PHYS = ("elasticity", "elasticity_gmg", "modal", "nonlinear_elasticity")
+PHYS = ("elasticity", "elasticity_gmg", "modal", "nonlinear_elasticity", "tensor_elasticity")
 
 # responses that do not read the study's physics (no state solve, or an own auxiliary solve); evidence with elasticity
 PHYSICS_INDEPENDENT: dict[str, tuple[str, ...]] = {
     "volume": (T + "test_gradients.py::test_volume_weighted_and_unweighted",),
+    "centre_of_mass": (T + "test_mass_properties.py::test_mp7_mp8_study_responses_value_and_gradient",),
+    "inertia": (T + "test_mass_properties.py::test_mp7_mp8_study_responses_value_and_gradient",),
+    "effective_stiffness": (T + "test_homogenization.py::test_h15_h16_study_responses_value_and_gradient",),
+    "effective_poisson": (T + "test_homogenization.py::test_h15_h16_study_responses_value_and_gradient",),
     "dilated_volume": (T + "test_robust.py::test_gradcheck_robust_compliance_and_dilated_volume",),
     "local_volume": (T + "test_lengthscale.py::test_gradcheck_local_volume_and_grey",),
     "grey_level": (T + "test_lengthscale.py::test_gradcheck_local_volume_and_grey",),
@@ -621,9 +850,19 @@ RESPONSE_MATRIX: dict[str, dict[str, Cell]] = {
         nonlinear_elasticity=Cell(EXPERIMENTAL, (T + "test_nonlinear.py::test_v6_end_compliance_gradient_finite_"
                                                      "difference",),
                                   "same number as end_compliance by construction (EndCompliance subclasses "
-                                  "Compliance); only end_compliance is tested")),
+                                  "Compliance); only end_compliance is tested"),
+        tensor_elasticity=Cell(SUPPORTED, (
+            T + "test_material_design.py::test_k8b_scalar_limit_matches_multiphase_simp",
+            T + "test_material_design.py::test_g1_compliance_gradient_finite_difference"))),
     "robust_compliance": _row(
         elasticity=Cell(SUPPORTED, (T + "test_robust.py::test_gradcheck_robust_compliance_and_dilated_volume",)),
+        modal=_NO_STATE),
+    "scenario_compliance": _row(
+        elasticity=Cell(SUPPORTED, (T + "test_yaml_research_responses.py::test_value_and_gradient",
+                                    T + "test_uq.py::test_u10b_robust_gradients_match_finite_differences")),
+        modal=_NO_STATE),
+    "compliance_case": _row(
+        elasticity=Cell(SUPPORTED, (T + "test_yaml_research_responses.py::test_value_and_gradient",)),
         modal=_NO_STATE),
     "displacement": _row(
         elasticity=Cell(SUPPORTED, (T + "test_gradients.py::test_non_self_adjoint_displacement",
@@ -649,6 +888,14 @@ RESPONSE_MATRIX: dict[str, dict[str, Cell]] = {
         modal=_NO_STATE,
         nonlinear_elasticity=Cell(UNSUPPORTED, reason="linear buckling about a linear prestress; not defined on the "
                                                       "non-linear state", enforced="catalog")),
+    "end_strain_energy": _row(
+        elasticity=Cell(UNSUPPORTED, reason="needs physics nonlinear_elasticity", enforced="component"),
+        elasticity_gmg=Cell(UNSUPPORTED, reason="needs physics nonlinear_elasticity", enforced="component"),
+        modal=Cell(UNSUPPORTED, reason="needs physics nonlinear_elasticity", enforced="component"),
+        nonlinear_elasticity=Cell(SUPPORTED, (T + "test_nonlinear_solvers.py::"
+                                                  "test_t1_t2_end_strain_energy_taylor_remainder",),
+                                  "hyperelastic materials only (svk, neo_hooke); a stateful law is refused"),
+        tensor_elasticity=Cell(UNSUPPORTED, reason="needs physics nonlinear_elasticity", enforced="component")),
     "end_compliance": _row(
         elasticity=Cell(UNSUPPORTED, reason="needs physics nonlinear_elasticity", enforced="component"),
         elasticity_gmg=Cell(UNSUPPORTED, reason="needs physics nonlinear_elasticity", enforced="component"),
@@ -736,6 +983,54 @@ RULES: tuple[Rule, ...] = (
          enforced="component"),
     Rule("cuda_gmg", {"physics": "elasticity_gmg", "device": "cuda"}, NOT_VERIFIED,
          "no GPU in CI or in this record"),
+    Rule("mesh_grid_equivalence", {"element": "mesh:Q4|mesh:H8", "mesh": "from_domain"}, SUPPORTED,
+         "the general mesh of a Domain reproduces the grid path (K <= 1e-14, u <= 1e-12)",
+         (T + "test_mesh_assembly.py::test_g1_from_domain_q4_equals_grid_path",
+          T + "test_mesh_assembly.py::test_g1_from_domain_h8_equals_grid_path")),
+    Rule("mesh_material_field", {"element": "mesh:*", "material": "per_cell_D"}, SUPPORTED,
+         evidence=(T + "test_mesh_assembly.py::test_g9_two_material_bar",
+                   T + "test_mesh_assembly.py::test_g8_pattern_reuse")),
+    Rule("mesh_nearly_incompressible_displacement_only", {"element": "mesh:Q4|mesh:T3|mesh:H8|mesh:T4",
+                                                           "material": "nu_near_0.5"}, EXPERIMENTAL,
+         "runs, but locks (L2 error 0.94-0.996 at nu = 0.4999): use the Taylor-Hood elements",
+         (T + "test_mesh_locking.py::test_l1b_displacement_elements_lock",)),
+    Rule("mesh_incompressible_mixed", {"element": "mesh:TH-*", "material": "nu_0.5"}, SUPPORTED,
+         "lambda = inf exact; the zero-mean pressure gauge is added when the constant pressure is in the null space",
+         (T + "test_mesh_locking.py::test_l1e_taylor_hood_converges_near_and_at_incompressibility",)),
+    # material design (docs/olcumler/malzeme_tasarimi.md)
+    Rule("tensor_phases_elasticity", {"interpolation": "tensor_phases", "physics": "tensor_elasticity"}, SUPPORTED,
+         "phases with their own tensors, rules simplex and recursive",
+         (T + "test_material_design.py::test_k7_independent_assembly",
+          T + "test_material_design.py::test_k6_series_parallel_bar")),
+    Rule("angle_elasticity", {"link": "embed.angle", "physics": "tensor_elasticity"}, SUPPORTED,
+         "density + fibre angle, 2-D, one phase", (T + "test_material_design.py::test_a5_off_axis_tension_and_gradient",
+                                                   T + "test_material_design.py::test_a8_yaml_example_runs")),
+    Rule("tensor_responses", {"physics": "tensor_elasticity",
+                              "response": "other_than_compliance_volume_phase_volume_mass_cost"}, UNSUPPORTED,
+         "only Compliance, Volume, PhaseVolume, Mass, Cost verified with tensor_elasticity", enforced="catalog"),
+    Rule("tensor_interpolation", {"physics": "tensor_elasticity", "interpolation": "other_than_tensor_phases"},
+         UNSUPPORTED, "tensor_elasticity reads the material field of interpolation tensor_phases",
+         enforced="catalog"),
+    Rule("tensor_phases_physics", {"interpolation": "tensor_phases", "physics": "other_than_tensor_elasticity"},
+         UNSUPPORTED, "the scalar-modulus physics cannot take the element tensors", enforced="component"),
+    Rule("tensor_incompatible_modes", {"physics": "tensor_elasticity", "element": "Q4IM|H8IM"}, UNSUPPORTED,
+         "condensed incompatible modes are not linear in D", enforced="component"),
+    Rule("tensor_per_case_supports", {"physics": "tensor_elasticity", "supports": "per_case"}, UNSUPPORTED,
+         "one support set only", enforced="component"),
+    Rule("tensor_oblique_supports", {"physics": "tensor_elasticity", "supports": "oblique_or_spring"}, UNSUPPORTED,
+         "axis-aligned fixed DOFs only", enforced="component"),
+    Rule("tensor_post", {"physics": "tensor_elasticity", "post": "other_than_phase_report"}, UNSUPPORTED,
+         "the other post steps assume a scalar modulus or an isotropic material", enforced="catalog"),
+    Rule("angle_3d", {"link": "embed.angle", "dim": "3"}, UNSUPPORTED, "3-D orientation is not implemented",
+         enforced="component"),
+    Rule("angle_phases", {"link": "embed.angle", "interpolation": "tensor_phases with several phases"}, UNSUPPORTED,
+         "Study takes several design fields only through the plain embed link", enforced="component"),
+    Rule("angle_interpolation", {"link": "embed.angle", "interpolation": "other_than_tensor_phases"}, UNSUPPORTED,
+         "the angle turns the phase tensors of tensor_phases", enforced="component"),
+    Rule("angle_isotropic", {"link": "embed.angle", "material": "isotropic phase"}, UNSUPPORTED,
+         "the material does not depend on the angle (zero gradient)", enforced="component"),
+    Rule("angle_oc", {"link": "embed.angle", "optimizer": "oc"}, UNSUPPORTED,
+         "OC assumes a constraint gradient positive in every variable; the angle has none", enforced="catalog"),
 )
 
 
@@ -792,10 +1087,38 @@ def check_build(resolved: Mapping[str, Any], physics: Any, responses: Sequence[A
         if state:
             raise ConfigError(f"unsupported combination (catalog): response(s) {state} with physics modal: needs the "
                               "static state u; physics modal solves an eigenproblem only", "physics")
+    _check_material_design(resolved, physics, responses)
     if "buckling" in kinds and isinstance(physics, ConstrainedElasticity | PerCaseSupports):
         what = "oblique supports or springs" if isinstance(physics, ConstrainedElasticity) else "per-case supports"
         raise ConfigError(f"unsupported combination (catalog): response buckling with {what}: linear buckling "
                           "needs axis-aligned fixed DOFs and one support set", "supports")
+
+
+_TENSOR_RESPONSES = ("Compliance", "Volume", "PhaseVolume", "Mass", "Cost")
+
+
+def _check_material_design(resolved: Mapping[str, Any], physics: Any, responses: Sequence[Any]) -> None:
+    """Rules tensor_interpolation, tensor_responses, tensor_post and angle_oc."""
+    from toporlogy.fem.tensor_elastic import TensorElasticity
+    angle = any(isinstance(lk, Mapping) and lk.get("type") == "embed" and lk.get("angle") is not None
+                for lk in resolved.get("chain") or [])
+    if angle and (resolved.get("optimizer") or {}).get("type") == "oc":
+        raise ConfigError("unsupported combination (catalog): an angle block with optimizer oc: OC assumes a "
+                          "constraint gradient positive in every variable; use mma or gcmma", "optimizer")
+    if not isinstance(physics, TensorElasticity):
+        return
+    itype = resolved["interpolation"]["type"]
+    if itype != "tensor_phases":
+        raise ConfigError(f"unsupported combination (catalog): physics tensor_elasticity with interpolation {itype}: "
+                          "it reads the material field of interpolation tensor_phases", "interpolation")
+    bad = [getattr(r, "name", type(r).__name__) for r in responses if type(r).__name__ not in _TENSOR_RESPONSES]
+    if bad:
+        raise ConfigError(f"unsupported combination (catalog): response(s) {bad} with physics tensor_elasticity: "
+                          f"only {', '.join(_TENSOR_RESPONSES)} are verified", "physics")
+    posts = [p["type"] for p in resolved.get("post") or [] if p["type"] != "phase_report"]
+    if posts:
+        raise ConfigError(f"unsupported combination (catalog): post step(s) {posts} with physics tensor_elasticity: "
+                          "only phase_report is available", "post")
 
 
 # ---------------------------------------------------------------------------------------------- output
@@ -861,11 +1184,16 @@ def render_markdown(data: Mapping[str, Any]) -> str:
     L += ["", "Deney verisiyle doğrulama (validation) yok: her satır code/solution verification. Aynı yazarın "
               "ikinci uygulaması (`independent_same_author`) dış ekip doğrulaması sayılmaz.",
           "", "## 4. Malzeme veri kataloğu", "",
-          "Bu dilimde yalnız sentetik kayıt var; kaynağı, sayfası ve lisansı izlenemeyen gerçek malzeme değeri "
-          "girilmez.", "", "| Kimlik | Tür | Aile | Değerler | Birim | Kaynak |", "|:---|:---|:---|:---|:---|:---|"]
+          "Yalnız sentetik kayıt var; kaynağı, sayfası ve lisansı bu çalışmada okunmamış gerçek malzeme değeri "
+          "girilmez. YAML: `material: {catalog: <kimlik>}` (SI kayıt `units` bölümü ister ve ona çevrilir; "
+          "`docs/olcumler/malzeme_katalog_onkayit.md`).", "",
+          "| Kimlik | Tür | Aile | Değerler | Birim | Kaynak | Lisans | Not |",
+          "|:---|:---|:---|:---|:---|:---|:---|:---|"]
     for m in data["materials"]:
         vals = ", ".join(f"{k} = {v:g}" for k, v in m["values"].items())
-        L.append(f"| {m['id']} | {m['kind']} | {m['family']} | {vals} | {m['units']} | {m['source']} |")
+        L.append(f"| {m['id']} | {m['kind']} | {m['family']} | {vals} | {m['units']} | {m['source']}"
+                 f"{' (' + m['page_or_table'] + ')' if m['page_or_table'] else ''} | {m['licence'] or '—'} | "
+                 f"{m['note']} |")
     comp = data["compatibility"]
     phys = comp["physics"]
     L += ["", "## 5. Uyumluluk: fizik × yanıt", "", "| Yanıt | " + " | ".join(phys) + " |",

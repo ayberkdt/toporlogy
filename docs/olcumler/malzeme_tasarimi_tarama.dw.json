@@ -1,0 +1,173 @@
+{
+ "surum": 1,
+ "ad": "malzeme_tasarimi_tarama",
+ "boyut_pt": [
+  479.9,
+  297.5
+ ],
+ "metin_kutusu_pt": [
+  4.7,
+  4.6,
+  475.3,
+  293.1
+ ],
+ "hedef": "web-640",
+ "ortam": "web",
+ "boyut_mm": [
+  169.3,
+  105.0
+ ],
+ "yazi_tipleri": [
+  "Source Sans 3"
+ ],
+ "punto": {
+  "tik": [
+   9.0
+  ],
+  "eksen_adi": [
+   10.0
+  ],
+  "baslik": [],
+  "lejant": [
+   9.0
+  ],
+  "panel": [],
+  "metin": [
+   9.0
+  ]
+ },
+ "punto_tepe": {
+  "tik": 9.0,
+  "eksen_adi": 10.0,
+  "lejant": 9.0,
+  "metin": 9.0
+ },
+ "panel_harfleri": [],
+ "eksenler": [
+  {
+   "konum_pt": [
+    24.7,
+    30.0,
+    470.8,
+    262.1
+   ],
+   "baslik": "",
+   "seriler": [
+    {
+     "etiket": "1° tarama",
+     "tur": "cizgi",
+     "renk": "#919191",
+     "isaret": null,
+     "cizgi": "-",
+     "kalinlik": 1.6,
+     "isaret_boyu": null
+    },
+    {
+     "etiket": "MMA sonucu (3 başlangıç)",
+     "tur": "cizgi",
+     "renk": "#009e73",
+     "isaret": "Path(array([[ 1.55884573e-01,  7.30000000e-01],\n       [ 1.75185684e-16,  1.00000000e+00],\n       [-1.55884573e-01,  7.30000000e-01],\n       [-7.10140831e-01, -2.30000000e-01],\n       [-8.66025404e-01, -5.00000000e-01],\n       [-5.54256258e-01, -5.00000000e-01],\n       [ 5.54256258e-01, -5.00000000e-01],\n       [ 8.66025404e-01, -5.00000000e-01],\n       [ 7.10140831e-01, -2.30000000e-01],\n       [ 1.55884573e-01,  7.30000000e-01]]), array([ 1,  3,  3,  2,  3,  3,  2,  3,  3, 79], dtype=uint8))",
+     "cizgi": null,
+     "kalinlik": null,
+     "isaret_boyu": 9.57
+    }
+   ],
+   "eksen_turu": "rectilinear",
+   "sabit_oran": false,
+   "x": {
+    "ham": "Global fiber açısı θ (°)",
+    "nicelik": "Global fiber açısı θ",
+    "birim": "°",
+    "bicim": "parantez",
+    "anahtar": "globalfiberaçısıθ",
+    "harf": "cumle",
+    "olcek": "linear",
+    "tarih": false,
+    "ters": false,
+    "sinir": [
+     -90.0,
+     90.0
+    ],
+    "gorunur": true,
+    "kategorik": false,
+    "kategoriler": [],
+    "ondaliklar": [
+     0
+    ],
+    "ondalik_isareti": null,
+    "tikler": [
+     "-90",
+     "-45",
+     "0",
+     "45",
+     "90"
+    ],
+    "eksi": "unicode",
+    "e_gosterimi": false,
+    "ofset": "",
+    "etiket_pt": [
+     203.7,
+     4.6,
+     291.8,
+     14.5
+    ]
+   },
+   "y": {
+    "ham": "Uyum c (kuvvet × uzunluk)",
+    "nicelik": "Uyum c",
+    "birim": "kuvvet × uzunluk",
+    "bicim": "parantez",
+    "anahtar": "uyumc",
+    "harf": "tek",
+    "olcek": "linear",
+    "tarih": false,
+    "ters": false,
+    "sinir": [
+     77.71247528338999,
+     383.26035965738805
+    ],
+    "gorunur": true,
+    "kategorik": false,
+    "kategoriler": [],
+    "ondaliklar": [
+     0
+    ],
+    "ondalik_isareti": null,
+    "tikler": [
+     "100",
+     "150",
+     "200",
+     "250",
+     "300",
+     "350"
+    ],
+    "eksi": null,
+    "e_gosterimi": false,
+    "ofset": "",
+    "etiket_pt": [
+     24.7,
+     269.1,
+     134.6,
+     279.0
+    ]
+   },
+   "lejant": [
+    "1° tarama",
+    "MMA sonucu (3 başlangıç)"
+   ],
+   "dogrudan_etiket": [],
+   "izgara": {
+    "x": false,
+    "y": true
+   },
+   "cerceve": [
+    "bottom"
+   ],
+   "alan": false,
+   "cerceve_kalinlik": 0.6,
+   "tik_yonu": 3,
+   "haritalar": []
+  }
+ ],
+ "renk_cubuklari": []
+}

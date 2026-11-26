@@ -153,12 +153,29 @@ class Study:
     constraints : sequence of Constraint
     optimizer : Optimizer
     schedule : Schedule, optional
+    reset_on_model_change : bool
+        A physics with ``model_epoch`` (the energy interpolation of the non-linear physics changes its model when its
+        adaptive cutoff moves) resets the optimizer when the epoch changes, so asymptotes and multipliers of the old
+        model are not reused (docs/olcumler/model_donemi_onkayit.md). No effect on other physics.
+    torch_threads : int or None
+        Torch intra-op threads while :meth:`run` loops (``torch.set_num_threads``; the previous value is restored when
+        the run ends, also on an error). Default 1: the loop's tensors are element grids and vectors, whose parallel
+        regions gain little and, on a loaded machine, wait for every thread to get a time slice (measured
+        26 Nov 2026 at 30 000 elements under full load: the OC bisection's chain evaluations 55x slower with 6 threads
+        than with 1, docs/olcumler/hizlandirma.md); one thread also makes the reductions independent of the core
+        count. ``None`` leaves torch's setting alone (e.g. the torch CPU path of :mod:`toporlogy.solvers.gmg`).
     """
 
     def __init__(self, domain: Domain, physics: Any, loads: np.ndarray, chain: Chain, interp: torch.nn.Module,
                  objective: Response, constraints: Sequence[Constraint], optimizer: Optimizer,
                  schedule: Schedule | None = None, recorder: Any = None,
-                 move_beta_ref: float | None = None) -> None:
+                 move_beta_ref: float | None = None, torch_threads: int | None = 1,
+                 reset_on_model_change: bool = True) -> None:
+        if torch_threads is not None and int(torch_threads) < 1:
+            raise ValueError("torch_threads: None or an integer >= 1")
+        self.torch_threads = None if torch_threads is None else int(torch_threads)
+        self.reset_on_model_change = bool(reset_on_model_change)
+        self.n_model_resets = 0
         self.domain, self.physics, self.chain, self.interp = domain, physics, chain, interp
         # move limit shrinks as move0 · min(1, move_beta_ref / β) after every β step of the schedule (sharp
         # projections make large steps unstable; 2.0 is the common choice). None: move limit unchanged.
@@ -339,7 +356,23 @@ class Study:
 
     # ------------------------------------------------------------------ loop
     def run(self, x0: np.ndarray | None = None, max_iter: int = 100, tol: float = 0.01, feasibility_tol: float = 1e-3,
-            callback: Callable[[int, Evaluation, float], None] | None = None) -> Result:
+            callback: Callable[[int, Evaluation, float], None] | None = None, checkpoint: str | None = None,
+            checkpoint_every: int = 0, resume: str | None = None) -> Result:
+        """Optimise. ``checkpoint`` / ``checkpoint_every``: write the run state every k iterations (atomic);
+        ``resume``: continue from such a file in a study built from the same configuration
+        (:mod:`toporlogy.optimization.checkpoint`; the physics' own state, e.g. an adaptive cutoff, is not saved)."""
+        threads = torch.get_num_threads()
+        if self.torch_threads is not None:
+            torch.set_num_threads(self.torch_threads)
+        try:
+            return self._run(x0, max_iter, tol, feasibility_tol, callback, checkpoint, int(checkpoint_every), resume)
+        finally:
+            if torch.get_num_threads() != threads:
+                torch.set_num_threads(threads)
+
+    def _run(self, x0: np.ndarray | None, max_iter: int, tol: float, feasibility_tol: float,
+             callback: Callable[[int, Evaluation, float], None] | None, checkpoint: str | None = None,
+             checkpoint_every: int = 0, resume: str | None = None) -> Result:
         t0 = time.perf_counter()
         # a run starts from the initial continuation state and a fresh optimizer, whatever a previous run left
         # (β, its counter, an updated volume bound, MMA asymptotes and iterates); before default_start, which
@@ -359,11 +392,34 @@ class Study:
             hist[c.key] = []
         for k in self.schedule.state():
             hist[k] = []
+        epoch = getattr(self.physics, "model_epoch", None)
+        if epoch is not None:
+            hist["model_epoch"] = []
+        self.n_model_resets = 0
         if self.recorder is not None:
             self.recorder.start(self)
         it, change, ev = 0, 1.0, None
         termination, stepped_last = "max_iter", False
+        if resume is not None:
+            from toporlogy.optimization.checkpoint import load_checkpoint
+            state = load_checkpoint(resume, self)
+            x, it, change, stepped_last = np.asarray(state["x"], float).copy(), int(state["it"]), \
+                float(state["change"]), bool(state["stepped_last"])
+            hist = state["hist"]
+            epoch, self.n_model_resets = state["epoch"], int(state["n_model_resets"])
+
+        def save() -> None:
+            if checkpoint is not None and checkpoint_every > 0 and it % checkpoint_every == 0:
+                from toporlogy.optimization.checkpoint import save_checkpoint
+                vf = getattr(self.optimizer, "value_fn", None)
+                save_checkpoint(checkpoint, self, {"x": x, "it": it, "change": change, "stepped_last": stepped_last,
+                                                   "hist": hist, "epoch": epoch,
+                                                   "n_model_resets": self.n_model_resets, "move0": move0})
+                if vf is not None:
+                    self.optimizer.value_fn = vf
         move0 = getattr(self.optimizer, "move", None)
+        if resume is not None and "move0" in state:
+            move0 = state["move0"]
         if getattr(self.optimizer, "needs_value_fn", False):
             def value_fn(xc: np.ndarray) -> tuple[float, np.ndarray]:
                 e = self.evaluate(xc, gradients=False)
@@ -375,6 +431,13 @@ class Study:
                 for k, v in self.schedule.state().items():
                     hist[k].append(v)
                 ev = self.evaluate(x)
+                if epoch is not None:
+                    now = self.physics.model_epoch
+                    hist["model_epoch"].append(float(now))
+                    if self.reset_on_model_change and now != epoch:
+                        self.optimizer.reset()
+                        self.n_model_resets += 1
+                    epoch = now
                 hist["f0"].append(ev.f0)
                 for c in self.constraints:
                     hist[c.key].append(ev.values[c.key])
@@ -393,7 +456,9 @@ class Study:
                     beta = self.schedule.state().get("beta")
                     if self.move_beta_ref is not None and move0 is not None and beta:
                         cast(_HasMove, self.optimizer).move = float(move0) * min(1.0, self.move_beta_ref / float(beta))
+                    save()
                     continue
+                save()
                 if change <= tol and self.schedule.finished:
                     termination = "design_change"
                     break
@@ -454,4 +519,7 @@ class Study:
             s["inner_evaluations"] = int(self.optimizer.n_inner_total)
         if hasattr(self.optimizer, "subproblem_failures"):       # MMA: dual solves that did not converge this run
             s["subproblem_failures"] = int(self.optimizer.subproblem_failures)
+        s["torch_threads"] = self.torch_threads
+        if hasattr(self.physics, "model_epoch"):
+            s["reset_on_model_change"] = self.reset_on_model_change
         return s

@@ -38,6 +38,9 @@ unit, e.g. m; ``E0`` is force/length² (Pa with N and m); forces are force units
     run: {max_iter: 100, tol: 0.01, seed: 0, feasibility_tol: 0.001, move_beta_ref: null}
     output: {folder: runs, snapshot_every: 0}
     post: []                       # [[]] post-processing components
+    schema_version: "1"            # ["1"] the config schema this file is written for (another value is refused)
+    units: null                    # [null] {length: mm, force: N, mass: t, temperature: K | degC}: values may then be
+                                   # given as "210 GPa", "-1 kN", "1 mm" (configuration/units.py)
 
 ``tol`` is the max design change for convergence; ``feasibility_tol`` the relative constraint violation still
 judged PASS (constraint verdict); ``seed`` seeds NumPy and torch; ``move_beta_ref`` (null = off) shrinks the
@@ -94,7 +97,7 @@ from toporlogy.configuration.registry import Param
 
 SCHEMA_KEYS = ("name", "domain", "material", "physics", "supports", "load_cases", "combinations", "chain",
                "interpolation", "objective", "constraints", "optimizer", "schedule", "robust", "connectivity", "run",
-               "output", "post", "provenance")
+               "output", "post", "provenance", "schema_version", "units")
 
 
 _REQUIRED = ("domain", "supports")                     # load_cases too, unless physics is modal
@@ -110,7 +113,8 @@ _MATERIAL = {"E0": Param("E0", 1.0, float, unit="force/length^2"), "nu": Param("
 
 _RUN = {"max_iter": Param("max_iter", 100, int), "tol": Param("tol", 0.01, float),
         "seed": Param("seed", 0, int), "feasibility_tol": Param("feasibility_tol", 1e-3, float),
-        "move_beta_ref": Param("move_beta_ref", None, float, nullable=True)}
+        "move_beta_ref": Param("move_beta_ref", None, float, nullable=True),
+        "checkpoint_every": Param("checkpoint_every", 0, int)}
 
 
 _OUTPUT = {"folder": Param("folder", "runs", str), "snapshot_every": Param("snapshot_every", 0, int)}

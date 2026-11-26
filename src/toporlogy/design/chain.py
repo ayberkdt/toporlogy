@@ -74,23 +74,33 @@ class DensityFilter(torch.nn.Module):
     Only active elements take part (weights over elements outside the part are zero), exactly as
     the legacy voxel driver's filter: implemented as a convolution of ``x·active`` divided by the
     convolution of ``active``. Elements outside the part get 0.
+
+    ``periodic``: the weights wrap across opposite faces of the box (a periodic cell, as in
+    :mod:`toporlogy.fem.homogenization`); needs every element active. Pre-registered checks:
+    ``docs/olcumler/periyodik_filtre_onkayit.md`` (PF1-PF5).
     """
 
     kernel: torch.Tensor
     mask: torch.Tensor
     hs: torch.Tensor
 
-    def __init__(self, domain: Domain, rmin: float, backend: str = "auto") -> None:
+    def __init__(self, domain: Domain, rmin: float, backend: str = "auto", periodic: bool = False) -> None:
         super().__init__()
         if not rmin > 0:
             raise ValueError("rmin > 0 is required")
         if backend not in ("auto", "sparse", "conv"):
             raise ValueError("backend: auto | sparse | conv")
+        self.periodic = bool(periodic)
+        if self.periodic and not (np.all(domain.active) and not np.any(np.asarray(domain.void))):
+            raise ValueError("density_filter periodic: every element of the box must be active (no void or outside "
+                             "region); the box is the periodic cell")
         self.rmin = float(rmin)
         self.dim = domain.dim
         self.shape = domain.shape
         self.backend = backend
         r = math.ceil(rmin) - 1
+        if self.periodic and r >= min(domain.shape):
+            raise ValueError(f"density_filter periodic: rmin {rmin} needs more than {r} elements along every axis")
         self.pad = r
         ax = np.arange(-r, r + 1)
         grids = np.meshgrid(*([ax] * self.dim), indexing="ij")
@@ -108,6 +118,9 @@ class DensityFilter(torch.nn.Module):
 
     def _conv(self, g: torch.Tensor) -> torch.Tensor:
         conv = tF.conv3d if self.dim == 3 else tF.conv2d
+        if self.periodic:
+            gp = tF.pad(g[None, None], (self.pad,) * (2 * self.dim), mode="circular")
+            return conv(gp, self.kernel.to(g.dtype))[0, 0]
         return conv(g[None, None], self.kernel.to(g.dtype), padding=self.pad)[0, 0]
 
     def matrix(self) -> sp.csr_matrix:
@@ -120,6 +133,8 @@ class DensityFilter(torch.nn.Module):
             rows, cols, vals = [], [], []
             for off, wt in self._offsets:
                 k = ijk + np.asarray(off)
+                if self.periodic:
+                    k = k % shape
                 ok = np.asarray(np.all((k >= 0) & (k < shape), axis=1))
                 ok[ok] = act[tuple(k[ok].T)]
                 rows.append(e[ok])

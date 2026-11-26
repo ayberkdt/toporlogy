@@ -11,6 +11,7 @@ from typing import Any, cast
 
 import yaml
 
+from toporlogy.configuration import units as U
 from toporlogy.configuration.registry import BuildContext, ConfigError, Param, REGISTRY, join, normalise_name, suggest
 from toporlogy.configuration.schema import (
     SCHEMA_KEYS, _CASE, _COMBINATION, _CONNECTIVITY, _CONSTRAINT, _DEFAULTS, _MATERIAL, _NEEDS_FINALIZE, _OUTPUT,
@@ -19,6 +20,28 @@ from toporlogy.configuration.schema import (
 
 
 # ============================================================================================== reading
+class _UniqueKeyLoader(yaml.SafeLoader):
+    """SafeLoader that refuses a mapping with the same key twice (PyYAML keeps the last one silently)."""
+
+    def construct_mapping(self, node: Any, deep: bool = False) -> dict[Any, Any]:
+        seen: set[Any] = set()
+        for key_node, _ in node.value:
+            key = self.construct_object(key_node, deep=deep)
+            if key in seen:
+                raise yaml.constructor.ConstructorError(None, None, f"duplicate key {key!r}",
+                                                        key_node.start_mark)
+            seen.add(key)
+        return super().construct_mapping(node, deep=deep)
+
+
+def _no_duplicates(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
+    keys = [k for k, _ in pairs]
+    dup = sorted({k for k in keys if keys.count(k) > 1})
+    if dup:
+        raise json.JSONDecodeError(f"duplicate key {dup[0]!r}", "", 0)
+    return dict(pairs)
+
+
 def read_config(path: str | Path) -> dict[str, Any]:
     """Raw config mapping from a ``.yaml`` / ``.yml`` / ``.json`` file (YAML parser otherwise; it reads JSON too)."""
     p = Path(path)
@@ -26,7 +49,10 @@ def read_config(path: str | Path) -> dict[str, Any]:
         raise ConfigError(f"config file not found: {p}")
     text = p.read_text(encoding="utf-8")
     try:
-        data = json.loads(text) if p.suffix.lower() == ".json" else yaml.safe_load(text)
+        if p.suffix.lower() == ".json":
+            data = json.loads(text, object_pairs_hook=_no_duplicates)
+        else:
+            data = yaml.load(text, Loader=_UniqueKeyLoader)  # noqa: S506 - a SafeLoader subclass
     except (yaml.YAMLError, json.JSONDecodeError) as e:
         raise ConfigError(f"cannot parse {p.name}: {e}") from None
     if data is None:
@@ -190,10 +216,27 @@ def _resolve_connectivity(raw: dict[str, Any], errors: list[tuple[str, str]]) ->
 
 
 def resolve(raw: dict[str, Any]) -> dict[str, Any]:
-    """Validate a raw config and fill every default; raises :class:`ConfigError` listing all problems found."""
-    errors: list[tuple[str, str]] = []
+    """Validate a raw config and fill every default; raises :class:`ConfigError` listing all problems found.
+
+    ``schema_version`` (default "1") is checked first; a ``units`` section makes values with units ("210 GPa")
+    convert into it while the config is resolved (:mod:`toporlogy.configuration.units`)."""
     if not isinstance(raw, dict):
         raise ConfigError("the config must be a mapping")
+    try:
+        version = U.check_schema_version(raw.get("schema_version"))
+        system = None if raw.get("units") is None else U.UnitSystem.from_config(raw["units"])
+    except U.UnitError as e:
+        raise ConfigError(str(e), "units" if "units" in str(e) else "schema_version") from None
+    with U.use(system):
+        r = _resolve(raw)
+    r["schema_version"] = version
+    r["units"] = None if system is None else dict(zip(("length", "force", "temperature"), system.names,
+                                                      strict=True))
+    return r
+
+
+def _resolve(raw: dict[str, Any]) -> dict[str, Any]:
+    errors: list[tuple[str, str]] = []
     for k in raw:
         if k not in SCHEMA_KEYS:
             errors.append((k, f"unknown top-level key{suggest(k, SCHEMA_KEYS) or ''}"))
@@ -201,7 +244,15 @@ def resolve(raw: dict[str, Any]) -> dict[str, Any]:
     R = REGISTRY.resolve
 
     r["domain"] = R("domain", raw["domain"], "domain", errors) if "domain" in raw else None
-    r["material"] = _section(raw.get("material"), _MATERIAL, "material", errors, "material")
+    mat = raw.get("material")
+    if isinstance(mat, dict) and "catalog" in mat:
+        from toporlogy.configuration.catalog import material_section
+        try:
+            mat = material_section(mat, U.active())
+        except ValueError as e:
+            errors.append(("material.catalog", str(e)))
+            mat = {k: v for k, v in mat.items() if k != "catalog"}
+    r["material"] = _section(mat, _MATERIAL, "material", errors, "material")
     r["physics"] = R("physics", raw.get("physics", _DEFAULTS["physics"]), "physics", errors)
     modal = r["physics"] is not None and r["physics"]["type"] == "modal"
     for k in _REQUIRED + (() if modal else ("load_cases",)):

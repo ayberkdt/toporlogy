@@ -1,0 +1,29 @@
+# A cantilever in millimetres and newtons: values with units, a material record, field export and a checkpoint.
+# units: every value given as "<number> <unit>" is converted into mm, N (and tonne, the mass unit that follows);
+# a value of the wrong dimension is refused (docs/olcumler/birimler_onkayit.md).
+# material.catalog: the values of a record of the material data catalog (docs/vv_katalog.md §4; synthetic_si_isotropic
+# is a synthetic record in SI units, converted here: E0 = 200000 N/mm^2).
+# post vtu: result.vtu with density, modulus, displacement and the solid von Mises stress (VTK XML).
+# run.checkpoint_every: checkpoint.ckpt every 10 iterations; continue an interrupted run with
+#   python -m toporlogy run examples/research/units_cantilever2d.yaml --out <its folder> --resume
+name: units_cantilever2d
+schema_version: "1"
+units: {length: mm, force: N}
+domain: {type: box, shape: [48, 16], h: "2.5 mm", thickness: "5 mm"}
+material: {catalog: synthetic_si_isotropic}
+supports:
+  - {type: fixed, where: {type: plane, axis: x, at: min}}
+load_cases:
+  - name: tip
+    loads:
+      - {type: force, where: {type: point, at: [max, min]}, force: [0, "-2 kN"]}
+chain:
+  - {type: density_filter, rmin: 2.0}
+objective: compliance
+constraints:
+  - {response: volume, upper: 0.4}
+optimizer: {type: mma, move: 0.2}
+run: {max_iter: 60, tol: 0.01, checkpoint_every: 10}
+post:
+  - {type: discrete_check, volume: null, threshold: 0.5}
+  - {type: vtu}

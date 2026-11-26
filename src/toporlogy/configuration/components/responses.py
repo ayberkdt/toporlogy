@@ -223,6 +223,63 @@ def register_responses() -> None:
         return EndCompliance(_case_weights(ctx, weights))
 
     register("response", "end_compliance", end_compliance)
+
+    def end_strain_energy(ctx: BuildContext, weights: list | None = None) -> Any:
+        """Weighted stored energy sum_c w_c W(u_c) at the converged non-linear equilibrium (physics
+        nonlinear_elasticity, hyperelastic material); weights null = 1 per case (docs/olcumler/nonlineer_cozucu.md)."""
+        from toporlogy.fem.nonlinear import NonlinearElasticity
+        from toporlogy.optimization.nonlinear import EndStrainEnergy
+        if not isinstance(ctx.physics, NonlinearElasticity):
+            raise ValueError("end_strain_energy needs physics nonlinear_elasticity")
+        return EndStrainEnergy(weights)
+
+    register("response", "end_strain_energy", end_strain_energy)
+
+    def centre_of_mass(ctx: BuildContext, axis: str = "x") -> Any:
+        """Coordinate of the centre of mass of the physical density along axis x | y | z (length unit; material rho
+        as the density of solid, x̄ linear). No state solve."""
+        from toporlogy.optimization.mass_responses import CentreOfMass
+        return CentreOfMass(axis, float(ctx.material.get("rho", 1.0)))
+
+    def inertia(ctx: BuildContext, i: str = "z", j: str | None = None) -> Any:
+        """Component I_ij of the inertia tensor about the centre of mass (mass·length²; j null = i). No state
+        solve."""
+        from toporlogy.optimization.mass_responses import InertiaComponent
+        return InertiaComponent(i, j, float(ctx.material.get("rho", 1.0)))
+
+    def scenario_compliance(ctx: BuildContext, measure: str = "mean", k: float = 0.0, alpha: float = 0.95,
+                            scale: float = 1.0) -> Any:
+        """Risk measure of the compliances of all load cases, each case one scenario of an uncertain load: measure
+        mean | mean_std (mean + k std) | cvar (level alpha); one factorisation for every scenario
+        (optimization.uq, docs/olcumler/laminat_uq.md)."""
+        from toporlogy.optimization.uq import ScenarioCompliance
+        return ScenarioCompliance(measure, k, alpha, scale)
+
+    def compliance_case(ctx: BuildContext, case: int = 0) -> Any:
+        """Compliance F_c.u_c of one load case (0-based): objective or epsilon-constraint of a trade-off between load
+        cases (optimization.pareto)."""
+        from toporlogy.optimization.pareto import CaseCompliance
+        if not 0 <= int(case) < int(ctx.n_cases):
+            raise ValueError(f"case {case}: the config has {ctx.n_cases} load case(s)")
+        return CaseCompliance(int(case))
+
+    register("response", "scenario_compliance", scenario_compliance)
+    register("response", "compliance_case", compliance_case)
+    def effective_stiffness(ctx: BuildContext, i: int = 0, j: int = 0, negate: bool = False) -> Any:
+        """Component C_ij (Voigt) of the design homogenised as a periodic cell (the whole box; fem.homogenization);
+        negate: -C_ij, for a lower bound. No state solve."""
+        from toporlogy.optimization.homogenization_responses import EffectiveStiffness
+        return EffectiveStiffness(i, j, float(ctx.material["nu"]), negate)
+
+    def effective_poisson(ctx: BuildContext) -> Any:
+        """Effective Poisson ratio nu12 = C12 / C11 of a 2-D periodic cell (fem.homogenization). No state solve."""
+        from toporlogy.optimization.homogenization_responses import EffectivePoisson
+        return EffectivePoisson(float(ctx.material["nu"]))
+
+    register("response", "effective_stiffness", effective_stiffness)
+    register("response", "effective_poisson", effective_poisson)
+    register("response", "centre_of_mass", centre_of_mass)
+    register("response", "inertia", inertia)
     register("response", "stress", stress, nested={"exclude": "shape[]"}, units={"sigma_lim": "force/length^2"})
     register("response", "stress_augmented_lagrangian", stress_augmented_lagrangian,
              nested={"objective": "response", "exclude": "shape[]"}, types={"reference": None},

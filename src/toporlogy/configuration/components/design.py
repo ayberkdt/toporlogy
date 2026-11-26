@@ -84,5 +84,49 @@ def register_design() -> None:
         return step
 
     register("post", "phase_report", phase_report_step)
+
+    # ---------------------------------------------------------------- tensor phases, fibre angle (material design)
+    def tensor_phases(ctx: BuildContext, phases: list, rule: str = "simplex", penal: float = 3.0,
+                      emin_ratio: float = 1e-6) -> Any:
+        """Phases with their own elasticity tensors [{name, isotropic {E, nu} | orthotropic {E1, E2, E3, G12, G13,
+        G23, nu12, nu13, nu23} | cubic {C11, C12, C44} | transversely_isotropic | stiffness, angle, density, cost,
+        rotate}], mixed as convex combinations (rule simplex | recursive, docs/olcumler/malzeme_tasarimi.md);
+        plane from material.plane; needs physics tensor_elasticity. An angle block on the embed link turns the
+        phase (one phase)."""
+        from toporlogy.design.orientation import OrientedEmbed
+        from toporlogy.design.phases import TensorPhases
+        from toporlogy.fem.tensor_elastic import TensorElasticity
+        if not isinstance(ctx.physics, TensorElasticity):
+            raise ValueError("tensor_phases needs physics tensor_elasticity (the element tensors change with the "
+                             "design)")
+        for key in ("phases", "orthotropic"):
+            if ctx.material.get(key) is not None:
+                raise ValueError(f"tensor_phases takes its phases from interpolation.phases; remove material.{key}")
+        if not isinstance(phases, list):
+            raise ValueError("interpolation.phases must be a list of phase mappings")
+        plane = str(ctx.material.get("plane", "stress")) if ctx.domain.dim == 2 else "stress"
+        interp = TensorPhases(ctx.domain, phases, rule=rule, penal=penal, emin_ratio=emin_ratio, plane=plane)
+        oriented = [lk for lk in ctx.links if isinstance(lk, OrientedEmbed)]
+        if oriented:
+            interp.attach_angle(oriented[0])
+        ctx.physics.bind(interp)
+        return interp
+
+    def tensor_elasticity(ctx: BuildContext, element: str | None = None, solver: Any = "direct") -> Any:
+        """Static linear elasticity with a designed elasticity tensor per element (interpolation tensor_phases);
+        element Q4 (2-D) | H8 (3-D) (incompatible modes are not linear in D). Supports: zero displacements along
+        x / y / z, one support set."""
+        from toporlogy.fem.tensor_elastic import TensorElasticity
+        bcs = ctx.bc
+        if len({id(bcs.constraints(i)) for i in range(len(bcs.cases))}) > 1:
+            raise ValueError("tensor_elasticity needs one support set (no per-case supports)")
+        cs = bcs.constraints(0)
+        if cs.needs_extension:
+            raise ValueError("tensor_elasticity supports zero displacements along x / y / z only (no oblique "
+                             "rollers, pinned bores or springs)")
+        return TensorElasticity(ctx.domain, cs.fixed, element=element, solver=solver)
+
+    register("interpolation", "tensor_phases", tensor_phases, types={"phases": None})
+    register("physics", "tensor_elasticity", tensor_elasticity, nested={"solver": "solver"})
     register("link", "helmholtz_filter", "toporlogy.design.pde_filter:HelmholtzFilter", context=("domain",),
              types={"rmin": float}, units={"rmin": "elements"})

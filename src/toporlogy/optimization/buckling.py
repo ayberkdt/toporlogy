@@ -30,7 +30,30 @@ Preload (``preload_case``): that case's load stays fixed and only ``case`` is sc
 
 Diagnostics of every evaluation (attributes of the responses): the low-density strain-energy share of each mode
 (spurious-mode flag) and whether the last aggregated mode is cut from a cluster (one extra mode is computed for
-this; :class:`~toporlogy.fem.buckling.BucklingClusterWarning`). :func:`first_failure_load_factor` gives the load
+this; :class:`~toporlogy.fem.buckling.BucklingClusterWarning`).
+
+Reliability (:class:`BucklingReliability`, :func:`reliability`; ``docs/olcumler/burkulma_geometri_onkayit.md``).
+``reliable`` is False when the aggregate or λ_1 cannot be trusted on this evaluation:
+
+* ``cluster_cut`` — the last aggregated mode and the next one form a cluster, so the aggregate is not a symmetric
+  function of the cluster and its derivative is that of one arbitrary basis vector (the one-sided derivatives differ;
+  measured in ``docs/olcumler/burkulma_geometri.md``);
+* ``spurious_low_density`` — mode 1 holds at least ``SPURIOUS_SHARE`` (0.5) of its strain energy in elements with
+  x̄ < 0.5: a mode of grey or void material, not of the structure. On a design with no element at x̄ ≥ 0.5 (a uniform
+  start x = 0.35, say) the share is 1 by definition and the flag says only that there is no solid structure yet
+  (the buckling-constrained column started at x = 0.35 is flagged on its first 9 of 61 evaluations,
+  ``docs/olcumler/burkulma_geometri.md`` RL4);
+* ``not_buckling`` — μ_1 ≤ 0 (no positive load factor in the computed span).
+
+``localized`` (mode 1 holds ≥ ``LOCALIZED_SHARE`` = 0.5 of its energy in 1 % of the elements) is reported but does
+not lower ``reliable``: one mesh cannot tell a stress singularity from a genuinely local mode; refine and look at the
+trend. ``reliable = True`` means only that no flag was raised — nothing in this module verifies a load factor. The two
+thresholds are choices, not measured bounds.
+
+Mode tracking: :class:`BucklingKS` pairs the modes of successive evaluations with
+:func:`toporlogy.optimization.mode_tracking.track_modes` (K-weighted MAC on the free DOFs, clusters compared as
+subspaces) and keeps the result in ``last_tracking``; a mode switch (``order`` not the identity) means the aggregated
+set changed character between the two evaluations. :func:`first_failure_load_factor` gives the load
 factor at which a strength criterion is first reached, to compare with λ_1 (which of the two governs).
 
 Aggregate: ``J = s · KS(μ / s)`` with a fixed scale s (given, or the largest μ of the first evaluation after
@@ -39,21 +62,66 @@ Aggregate: ``J = s · KS(μ / s)`` with a fixed scale s (given, or the largest �
 """
 from __future__ import annotations
 
+from dataclasses import asdict, dataclass
 from typing import Any
 
 import warnings
 
 import numpy as np
+import scipy.sparse as sp
 import torch
 
 from toporlogy.fem.buckling import BucklingClusterWarning, LinearBuckling
 from toporlogy.fem.modal import find_clusters
 from toporlogy.fem.elastic import Elasticity
 from toporlogy.optimization.aggregates import ks
+from toporlogy.optimization.mode_tracking import Tracking, track_modes
 from toporlogy.optimization.responses import EvalContext, Response
 from toporlogy.references import cite
 
-__all__ = ["inverse_load_factors", "BucklingKS", "BucklingLoadFactor", "first_failure_load_factor"]
+__all__ = ["inverse_load_factors", "BucklingKS", "BucklingLoadFactor", "first_failure_load_factor",
+           "BucklingReliability", "reliability", "SPURIOUS_SHARE", "LOCALIZED_SHARE"]
+
+SPURIOUS_SHARE = 0.5         # mode-1 strain-energy share in x̄ < 0.5 that flags a spurious mode (a choice)
+LOCALIZED_SHARE = 0.5        # mode-1 energy share in the 1 % most loaded elements that flags localisation (a choice)
+
+
+@dataclass(frozen=True)
+class BucklingReliability:
+    """Flags of one buckling evaluation (module notes). ``reliable`` is False if any of ``cluster_cut``,
+    ``spurious_low_density`` or ``not_buckling`` is in ``flags``; ``localized`` is reported only."""
+
+    reliable: bool
+    flags: tuple[str, ...]
+    load_factor_1: float
+    low_density_share_1: float
+    stress_energy_share_1: float
+    localization_1: float
+    mu_next: float
+
+    def as_dict(self) -> dict[str, Any]:
+        return asdict(self)
+
+
+def reliability(mu: np.ndarray, diag: dict[str, Any], spurious_share: float = SPURIOUS_SHARE,
+                localized_share: float = LOCALIZED_SHARE) -> BucklingReliability:
+    """Reliability record (module notes) from μ (descending) and the diagnostics of :func:`inverse_load_factors`."""
+    mu = np.asarray(mu, float)
+    lds, ses, loc = (float(np.asarray(diag[k])[0]) for k in ("low_density_share", "stress_energy_share",
+                                                              "localization"))
+    flags = []
+    if diag["cluster_cut"]:
+        flags.append("cluster_cut")
+    if lds >= spurious_share:
+        flags.append("spurious_low_density")
+    if mu[0] <= 0:
+        flags.append("not_buckling")
+    if loc >= localized_share:
+        flags.append("localized")
+    hard = {"cluster_cut", "spurious_low_density", "not_buckling"}
+    return BucklingReliability(not hard.intersection(flags), tuple(flags),
+                               float(1.0 / mu[0]) if mu[0] > 0 else float("inf"), lds, ses, loc,
+                               float(diag["mu_next"]))
 
 
 def _analysis(physics: Any) -> LinearBuckling:
@@ -117,7 +185,9 @@ def inverse_load_factors(ctx: EvalContext, n_modes: int = 6, case: int = 0, pena
     xa = ctx.xphys.reshape(-1)[act].detach().numpy()
     ctx.extra[key + ":diag"] = {"cluster_cut": cut, "mu_next": float(mu_all[-1]),
                                 "low_density_share": lb.low_density_share(En, modes, xa, density_threshold),
-                                "localization": lb.localization(En, modes)}
+                                "stress_energy_share": lb.stress_energy_share(EGn, u.detach().numpy(), modes, xa,
+                                                                              density_threshold),
+                                "localization": lb.localization(En, modes), "modes": modes}
     C, kE = lb.mode_forms(modes)
     edof = torch.as_tensor(m.edof, dtype=torch.long)
     ue = u[edof]                                                                   # (na, nloc)
@@ -215,6 +285,11 @@ class BucklingKS(Response):
     last_localization : numpy.ndarray
         Share of each mode's strain energy in the 1 % most loaded elements (rising with mesh refinement: the mode is
         driven by a stress singularity, λ is then a mesh property).
+    last_reliability : BucklingReliability or None
+        Flags of the last evaluation (module notes); ``reliable`` is False after a cluster cut or for a spurious mode.
+    last_tracking : Tracking or None
+        Pairing of the last evaluation's modes with the previous evaluation's (K-weighted MAC); None on the first
+        evaluation, after :meth:`reset_tracking` or when the number of free DOFs changed.
     """
 
     needs = frozenset({"u"})
@@ -234,9 +309,30 @@ class BucklingKS(Response):
         self.last_low_density_share: np.ndarray = np.zeros(0)
         self.last_cluster_cut = False
         self.last_localization: np.ndarray = np.zeros(0)
+        self.last_reliability: BucklingReliability | None = None
+        self.last_tracking: Tracking | None = None
+        self._previous: tuple[np.ndarray, np.ndarray] | None = None
 
     def reset_scale(self) -> None:
         self.scale = self.fixed_scale
+
+    def reset_tracking(self) -> None:
+        self._previous = None
+        self.last_tracking = None
+
+    def _track(self, ctx: EvalContext, modes: np.ndarray, mu: np.ndarray) -> None:
+        """Pair ``modes`` with the previous evaluation's (K of this evaluation on the free DOFs; module notes)."""
+        m = _analysis(ctx.physics).model
+        A = m._A
+        assert A is not None                                              # factored by inverse_load_factors
+        K = (A + A.T - sp.diags(A.diagonal())).tocsr()
+        phi = np.asarray(modes, float)[m.free]
+        if self._previous is not None and self._previous[0].shape == phi.shape:
+            prev, prev_mu = self._previous
+            self.last_tracking = track_modes(prev, phi, M=K, lam_old=-prev_mu, cluster_tol=1e-3)
+        else:
+            self.last_tracking = None
+        self._previous = (phi, np.asarray(mu, float).copy())
 
     def __call__(self, ctx: EvalContext) -> torch.Tensor:
         mu = inverse_load_factors(ctx, self.n_modes, self.case, self.penal_g, self.E0, self.preload_case,
@@ -247,6 +343,8 @@ class BucklingKS(Response):
         self.last_cluster_cut = bool(diag["cluster_cut"])
         self.last_localization = np.asarray(diag["localization"])
         md = mu.detach().numpy()
+        self.last_reliability = reliability(md, diag)
+        self._track(ctx, diag["modes"], md)
         with np.errstate(divide="ignore"):
             self.last_load_factors = np.where(md > 0, 1.0 / np.where(md > 0, md, 1.0), np.inf)
         if self.scale is None:

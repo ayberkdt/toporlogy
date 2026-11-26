@@ -1,0 +1,2769 @@
+{
+ "examples/cantilever3d.yaml": {
+  "chain": [
+   {
+    "angle": null,
+    "density": true,
+    "type": "embed"
+   },
+   {
+    "backend": "auto",
+    "periodic": false,
+    "rmin": 1.5,
+    "type": "density_filter"
+   },
+   {
+    "beta": 1.0,
+    "eta": 0.5,
+    "type": "heaviside_projection"
+   },
+   {
+    "type": "passive"
+   }
+  ],
+  "combinations": [],
+  "connectivity": null,
+  "constraints": [
+   {
+    "name": null,
+    "response": {
+     "type": "volume",
+     "weighted": false
+    },
+    "scale": null,
+    "upper": 0.3
+   }
+  ],
+  "domain": {
+   "h": 1.0,
+   "keep": null,
+   "origin": null,
+   "shape": [
+    24,
+    8,
+    4
+   ],
+   "thickness": 1.0,
+   "type": "box",
+   "void": null
+  },
+  "interpolation": {
+   "emin_ratio": 1e-06,
+   "penal": 3.0,
+   "type": "simp"
+  },
+  "load_cases": [
+   {
+    "loads": [
+     {
+      "force": [
+       0,
+       0,
+       -1
+      ],
+      "name": null,
+      "type": "force",
+      "where": {
+       "max": [
+        "max",
+        null,
+        "min"
+       ],
+       "min": [
+        "max",
+        null,
+        "min"
+       ],
+       "type": "box"
+      }
+     }
+    ],
+    "name": "tip",
+    "supports": null,
+    "weight": 1.0
+   }
+  ],
+  "material": {
+   "E0": 1.0,
+   "nu": 0.3,
+   "orthotropic": null,
+   "phases": null,
+   "plane": "stress",
+   "rho": 1.0,
+   "strength": null
+  },
+  "name": "cantilever3d",
+  "objective": {
+   "type": "compliance",
+   "weights": null
+  },
+  "optimizer": {
+   "bisection_tol": 0.0001,
+   "dv_scale": null,
+   "l1": 0.0,
+   "l2": 1000000000.0,
+   "max_bisect": 80,
+   "move": 0.2,
+   "type": "oc"
+  },
+  "output": {
+   "folder": "runs",
+   "snapshot_every": 0
+  },
+  "physics": {
+   "element": "H8",
+   "solver": {
+    "method": "auto",
+    "type": "direct"
+   },
+   "type": "elasticity"
+  },
+  "post": [],
+  "robust": null,
+  "run": {
+   "checkpoint_every": 0,
+   "feasibility_tol": 0.001,
+   "max_iter": 150,
+   "move_beta_ref": null,
+   "seed": 0,
+   "tol": 0.01
+  },
+  "schedule": {
+   "beta0": 1.0,
+   "beta_max": 16.0,
+   "every": 20,
+   "tol": null,
+   "type": "beta_continuation"
+  },
+  "supports": [
+   {
+    "dofs": "all",
+    "name": null,
+    "type": "fixed",
+    "where": {
+     "at": "min",
+     "axis": "x",
+     "type": "plane"
+    }
+   }
+  ]
+ },
+ "examples/eigenfrequency2d.yaml": {
+  "chain": [
+   {
+    "angle": null,
+    "density": true,
+    "type": "embed"
+   },
+   {
+    "backend": "auto",
+    "periodic": false,
+    "rmin": 2.0,
+    "type": "density_filter"
+   },
+   {
+    "type": "passive"
+   }
+  ],
+  "combinations": [],
+  "connectivity": null,
+  "constraints": [
+   {
+    "name": null,
+    "response": {
+     "type": "volume",
+     "weighted": false
+    },
+    "scale": null,
+    "upper": 0.5
+   }
+  ],
+  "domain": {
+   "h": 1.0,
+   "keep": null,
+   "origin": null,
+   "shape": [
+    56,
+    8
+   ],
+   "thickness": 1.0,
+   "type": "box",
+   "void": null
+  },
+  "interpolation": {
+   "emin_ratio": 1e-09,
+   "penal": 3.0,
+   "q": 1.0,
+   "threshold": 0.1,
+   "type": "two_range_simp"
+  },
+  "load_cases": [],
+  "material": {
+   "E0": 1.0,
+   "nu": 0.3,
+   "orthotropic": null,
+   "phases": null,
+   "plane": "stress",
+   "rho": 1.0,
+   "strength": null
+  },
+  "name": "eigenfrequency2d",
+  "objective": {
+   "response": {
+    "kind": "ks",
+    "n_modes": 3,
+    "rho": 40.0,
+    "scale": null,
+    "type": "min_eigenvalue_ks"
+   },
+   "type": "maximize"
+  },
+  "optimizer": {
+   "albefa": 0.1,
+   "asydecr": 0.7,
+   "asyincr": 1.2,
+   "asyinit": 0.5,
+   "asymax": 10.0,
+   "asymin": 0.01,
+   "c": 1000.0,
+   "d": 1.0,
+   "move": 0.1,
+   "normalise": "first",
+   "raa0": 1e-05,
+   "type": "mma"
+  },
+  "output": {
+   "folder": "runs",
+   "snapshot_every": 0
+  },
+  "physics": {
+   "added_mass": 44.8,
+   "added_mass_at": {
+    "at": [
+     "mid",
+     "mid"
+    ],
+    "type": "point"
+   },
+   "cluster_tol": 0.001,
+   "element": null,
+   "mass": "linear",
+   "mass_q": 6.0,
+   "mass_threshold": 0.1,
+   "n_modes": 4,
+   "repeated": "warn",
+   "rhomin_ratio": 0.0,
+   "sigma": 0.0,
+   "tol": 0.0,
+   "type": "modal"
+  },
+  "post": [],
+  "robust": null,
+  "run": {
+   "checkpoint_every": 0,
+   "feasibility_tol": 0.001,
+   "max_iter": 60,
+   "move_beta_ref": null,
+   "seed": 0,
+   "tol": 0.001
+  },
+  "schedule": null,
+  "supports": [
+   {
+    "dofs": "all",
+    "name": null,
+    "type": "fixed",
+    "where": {
+     "at": "min",
+     "axis": "x",
+     "type": "plane"
+    }
+   },
+   {
+    "dofs": "all",
+    "name": null,
+    "type": "fixed",
+    "where": {
+     "at": "max",
+     "axis": "x",
+     "type": "plane"
+    }
+   }
+  ]
+ },
+ "examples/lbracket_bore3d.yaml": {
+  "chain": [
+   {
+    "angle": null,
+    "density": true,
+    "type": "embed"
+   },
+   {
+    "backend": "auto",
+    "periodic": false,
+    "rmin": 3.513399456324598,
+    "type": "density_filter"
+   },
+   {
+    "beta": 1.0,
+    "eta": 0.5,
+    "type": "heaviside_projection"
+   },
+   {
+    "type": "passive"
+   }
+  ],
+  "combinations": [],
+  "connectivity": {
+   "bound": null,
+   "constraint": "conduction",
+   "eta": 0.6,
+   "gate": true,
+   "interfaces": null,
+   "options": null,
+   "repair": "bridge",
+   "repair_section": 2,
+   "sink": null,
+   "symmetry": null,
+   "threshold": 0.5,
+   "ties": 1
+  },
+  "constraints": [
+   {
+    "name": null,
+    "response": {
+     "type": "dilated_volume",
+     "weighted": false
+    },
+    "scale": null,
+    "upper": 0.4
+   },
+   {
+    "name": null,
+    "response": {
+     "adaptive": 0.0,
+     "aggregate": "pmean",
+     "member": null,
+     "outside": "void",
+     "p": 16.0,
+     "radius": null,
+     "source": "dilated",
+     "t_max": 5.0,
+     "type": "local_volume"
+    },
+    "scale": null,
+    "upper": null
+   }
+  ],
+  "domain": {
+   "bounds": null,
+   "connectivity": "largest",
+   "h": 1.0,
+   "keep": null,
+   "min_frac": 0.05,
+   "padding": 0,
+   "shapes": [
+    {
+     "hi": [
+      30,
+      10,
+      6
+     ],
+     "lo": [
+      0,
+      0,
+      0
+     ],
+     "op": "add",
+     "type": "box"
+    },
+    {
+     "hi": [
+      8,
+      30,
+      6
+     ],
+     "lo": [
+      0,
+      0,
+      0
+     ],
+     "op": "add",
+     "type": "box"
+    },
+    {
+     "op": "cut",
+     "p0": [
+      24,
+      5,
+      -1
+     ],
+     "p1": [
+      24,
+      5,
+      7
+     ],
+     "radius": 2.5,
+     "type": "cylinder"
+    }
+   ],
+   "sub": 4,
+   "thickness": 1.0,
+   "type": "csg",
+   "void": null
+  },
+  "interpolation": {
+   "emin_ratio": 1e-06,
+   "penal": 3.0,
+   "type": "simp"
+  },
+  "load_cases": [
+   {
+    "loads": [
+     {
+      "bore": {
+       "band": null,
+       "extend": 0.0,
+       "facing": "inward",
+       "index": 1,
+       "max_angle": 60.0,
+       "min_diameter": null,
+       "near": null,
+       "type": "bore"
+      },
+      "force": [
+       0,
+       -1,
+       0
+      ],
+      "mode": "parallel",
+      "name": null,
+      "on": "surface",
+      "type": "bearing"
+     }
+    ],
+    "name": "pin",
+    "supports": null,
+    "weight": 1.0
+   }
+  ],
+  "material": {
+   "E0": 1.0,
+   "nu": 0.3,
+   "orthotropic": null,
+   "phases": null,
+   "plane": "stress",
+   "rho": 1.0,
+   "strength": null
+  },
+  "name": "lbracket_bore3d",
+  "objective": {
+   "aggregate": "ks",
+   "p": 16.0,
+   "realisations": [
+    "eroded",
+    "intermediate",
+    "dilated"
+   ],
+   "rho": 50.0,
+   "scale": null,
+   "type": "robust_compliance",
+   "weights": null
+  },
+  "optimizer": {
+   "albefa": 0.1,
+   "asydecr": 0.7,
+   "asyincr": 1.2,
+   "asyinit": 0.5,
+   "asymax": 10.0,
+   "asymin": 0.01,
+   "c": 1000.0,
+   "d": 1.0,
+   "move": 0.2,
+   "normalise": "first",
+   "raa0": 1e-05,
+   "type": "mma"
+  },
+  "output": {
+   "folder": "runs",
+   "snapshot_every": 0
+  },
+  "physics": {
+   "element": null,
+   "solver": {
+    "method": "auto",
+    "type": "direct"
+   },
+   "type": "elasticity"
+  },
+  "post": [
+   {
+    "connectivity": "face",
+    "erosion": true,
+    "repair": "bridge",
+    "robust_thresholds": [
+     0.3,
+     0.7
+    ],
+    "section": 2,
+    "threshold": 0.5,
+    "type": "connectivity_gate",
+    "voids": "fail"
+   },
+   {
+    "margin": 0.0,
+    "outside": "void",
+    "percentiles": [
+     1.0,
+     5.0,
+     50.0
+    ],
+    "radii": [],
+    "smooth": 0.0,
+    "threshold": 0.5,
+    "type": "measure_lengthscale",
+    "upsample": 1
+   },
+   {
+    "adaptive_radius": 0.0,
+    "envelope": "voxel",
+    "feature_angle_deg": 60.0,
+    "feature_tol": null,
+    "fill_voids": true,
+    "interp_order": 1,
+    "keep_bodies": "interfaces",
+    "lam": 0.5,
+    "level": 0.5,
+    "max_close_gain": 0.05,
+    "max_open_loss": 0.02,
+    "mu": -0.53,
+    "name": "part",
+    "pass_band": 0.1,
+    "preserve": [
+     {
+      "name": "bore",
+      "role": "cut",
+      "shape": {
+       "index": 1,
+       "type": "bore"
+      },
+      "stock": 0.5
+     }
+    ],
+    "project_to_implicit": true,
+    "r_close": null,
+    "r_fillet_min": 0.0,
+    "r_open": null,
+    "radius_factor": 0.75,
+    "radius_trials": 6,
+    "relax_iter": 5,
+    "sigma": null,
+    "smooth_iter": 20,
+    "smoothing": "taubin",
+    "target_faces": null,
+    "type": "finalize",
+    "upsample": 3,
+    "volume_match": "threshold",
+    "write": true
+   },
+   {
+    "build_direction": [
+     0.0,
+     0.0,
+     1.0
+    ],
+    "max_bodies": 1,
+    "max_overhang_fraction": null,
+    "max_voids": 0,
+    "min_concave_radius": null,
+    "min_wall": null,
+    "overhang_deg": 45.0,
+    "plate_level": null,
+    "type": "manufacturing_checks",
+    "wall_method": "ray",
+    "wall_statistic": "p1"
+   },
+   {
+    "formats": [
+     "stl",
+     "ply"
+    ],
+    "name": "part",
+    "print_stock": true,
+    "type": "export"
+   }
+  ],
+  "robust": {
+   "beta": null,
+   "eta_d": null,
+   "eta_e": null,
+   "eta_i": null,
+   "eta_max": 0.75,
+   "kernel": "discrete",
+   "min_solid": 3.0,
+   "min_void": 3.0
+  },
+  "run": {
+   "checkpoint_every": 0,
+   "feasibility_tol": 0.001,
+   "max_iter": 40,
+   "move_beta_ref": 2.0,
+   "seed": 0,
+   "tol": 0.01
+  },
+  "schedule": {
+   "beta0": 1.0,
+   "beta_max": 8.0,
+   "every": 15,
+   "target": null,
+   "tol": null,
+   "type": "robust_continuation",
+   "update_volume": true,
+   "volume_every": 20
+  },
+  "supports": [
+   {
+    "dofs": "all",
+    "name": null,
+    "type": "fixed",
+    "where": {
+     "at": "max",
+     "axis": "y",
+     "facing": "any",
+     "max_angle": 60.0,
+     "normal": null,
+     "point": null,
+     "tol": null,
+     "type": "on_plane"
+    }
+   }
+  ]
+ },
+ "examples/mbb2d.yaml": {
+  "chain": [
+   {
+    "angle": null,
+    "density": true,
+    "type": "embed"
+   },
+   {
+    "backend": "auto",
+    "periodic": false,
+    "rmin": 2.0,
+    "type": "density_filter"
+   },
+   {
+    "type": "passive"
+   }
+  ],
+  "combinations": [],
+  "connectivity": null,
+  "constraints": [
+   {
+    "name": null,
+    "response": {
+     "type": "volume",
+     "weighted": false
+    },
+    "scale": null,
+    "upper": 0.5
+   }
+  ],
+  "domain": {
+   "h": 1.0,
+   "keep": null,
+   "origin": null,
+   "shape": [
+    60,
+    20
+   ],
+   "thickness": 1.0,
+   "type": "box",
+   "void": null
+  },
+  "interpolation": {
+   "emin_ratio": 1e-09,
+   "penal": 3.0,
+   "type": "simp"
+  },
+  "load_cases": [
+   {
+    "loads": [
+     {
+      "force": [
+       0,
+       -1
+      ],
+      "name": null,
+      "type": "force",
+      "where": {
+       "at": [
+        "min",
+        "max"
+       ],
+       "type": "point"
+      }
+     }
+    ],
+    "name": "centre",
+    "supports": null,
+    "weight": 1.0
+   }
+  ],
+  "material": {
+   "E0": 1.0,
+   "nu": 0.3,
+   "orthotropic": null,
+   "phases": null,
+   "plane": "stress",
+   "rho": 1.0,
+   "strength": null
+  },
+  "name": "mbb2d",
+  "objective": {
+   "type": "compliance",
+   "weights": null
+  },
+  "optimizer": {
+   "bisection_tol": 0.001,
+   "dv_scale": null,
+   "l1": 0.0,
+   "l2": 1000000000.0,
+   "max_bisect": 80,
+   "move": 0.2,
+   "type": "oc"
+  },
+  "output": {
+   "folder": "runs",
+   "snapshot_every": 0
+  },
+  "physics": {
+   "element": null,
+   "solver": {
+    "method": "auto",
+    "type": "direct"
+   },
+   "type": "elasticity"
+  },
+  "post": [],
+  "robust": null,
+  "run": {
+   "checkpoint_every": 0,
+   "feasibility_tol": 0.001,
+   "max_iter": 300,
+   "move_beta_ref": null,
+   "seed": 0,
+   "tol": 0.01
+  },
+  "schedule": null,
+  "supports": [
+   {
+    "dofs": "x",
+    "name": null,
+    "type": "fixed",
+    "where": {
+     "at": "min",
+     "axis": "x",
+     "type": "plane"
+    }
+   },
+   {
+    "dofs": "y",
+    "name": null,
+    "type": "fixed",
+    "where": {
+     "at": [
+      "max",
+      "min"
+     ],
+     "type": "point"
+    }
+   }
+  ]
+ },
+ "examples/multiload3d.yaml": {
+  "chain": [
+   {
+    "angle": null,
+    "density": true,
+    "type": "embed"
+   },
+   {
+    "backend": "auto",
+    "periodic": false,
+    "rmin": 1.5,
+    "type": "density_filter"
+   },
+   {
+    "type": "passive"
+   }
+  ],
+  "combinations": [],
+  "connectivity": null,
+  "constraints": [
+   {
+    "name": null,
+    "response": {
+     "type": "volume",
+     "weighted": false
+    },
+    "scale": null,
+    "upper": 0.25
+   }
+  ],
+  "domain": {
+   "h": 1.0,
+   "keep": null,
+   "origin": null,
+   "shape": [
+    20,
+    8,
+    6
+   ],
+   "thickness": 1.0,
+   "type": "box",
+   "void": null
+  },
+  "interpolation": {
+   "emin_ratio": 1e-06,
+   "penal": 3.0,
+   "type": "simp"
+  },
+  "load_cases": [
+   {
+    "loads": [
+     {
+      "force": [
+       0,
+       0,
+       -1
+      ],
+      "name": null,
+      "type": "force",
+      "where": {
+       "at": [
+        "max",
+        4,
+        0
+       ],
+       "type": "point"
+      }
+     }
+    ],
+    "name": "vertical",
+    "supports": null,
+    "weight": 1.0
+   },
+   {
+    "loads": [
+     {
+      "force": [
+       0,
+       0.5,
+       0
+      ],
+      "name": null,
+      "type": "force",
+      "where": {
+       "at": [
+        "max",
+        4,
+        0
+       ],
+       "type": "point"
+      }
+     }
+    ],
+    "name": "lateral",
+    "supports": null,
+    "weight": 1.0
+   }
+  ],
+  "material": {
+   "E0": 1.0,
+   "nu": 0.3,
+   "orthotropic": null,
+   "phases": null,
+   "plane": "stress",
+   "rho": 1.0,
+   "strength": null
+  },
+  "name": "multiload3d",
+  "objective": {
+   "type": "compliance",
+   "weights": null
+  },
+  "optimizer": {
+   "albefa": 0.1,
+   "asydecr": 0.7,
+   "asyincr": 1.2,
+   "asyinit": 0.5,
+   "asymax": 10.0,
+   "asymin": 0.01,
+   "c": 1000.0,
+   "d": 1.0,
+   "move": 0.2,
+   "normalise": "first",
+   "raa0": 1e-05,
+   "type": "mma"
+  },
+  "output": {
+   "folder": "runs",
+   "snapshot_every": 0
+  },
+  "physics": {
+   "element": null,
+   "solver": {
+    "method": "auto",
+    "type": "direct"
+   },
+   "type": "elasticity"
+  },
+  "post": [],
+  "robust": null,
+  "run": {
+   "checkpoint_every": 0,
+   "feasibility_tol": 0.001,
+   "max_iter": 80,
+   "move_beta_ref": null,
+   "seed": 0,
+   "tol": 0.01
+  },
+  "schedule": null,
+  "supports": [
+   {
+    "dofs": "all",
+    "name": null,
+    "type": "fixed",
+    "where": {
+     "at": "min",
+     "axis": "x",
+     "type": "plane"
+    }
+   }
+  ]
+ },
+ "examples/research/buckling_column2d.yaml": {
+  "chain": [
+   {
+    "angle": null,
+    "density": true,
+    "type": "embed"
+   },
+   {
+    "backend": "auto",
+    "periodic": false,
+    "rmin": 2.0,
+    "type": "density_filter"
+   },
+   {
+    "type": "passive"
+   }
+  ],
+  "combinations": [],
+  "connectivity": null,
+  "constraints": [
+   {
+    "name": null,
+    "response": {
+     "type": "volume",
+     "weighted": false
+    },
+    "scale": null,
+    "upper": 0.35
+   },
+   {
+    "name": null,
+    "response": {
+     "case": 0,
+     "exclude": null,
+     "load_factor": 0.02,
+     "n_modes": 6,
+     "penal_g": 3.0,
+     "preload_case": null,
+     "rho": 30.0,
+     "scale": null,
+     "type": "buckling"
+    },
+    "scale": null,
+    "upper": null
+   }
+  ],
+  "domain": {
+   "h": 1.0,
+   "keep": null,
+   "origin": null,
+   "shape": [
+    20,
+    60
+   ],
+   "thickness": 1.0,
+   "type": "box",
+   "void": null
+  },
+  "interpolation": {
+   "emin_ratio": 1e-06,
+   "penal": 3.0,
+   "type": "simp"
+  },
+  "load_cases": [
+   {
+    "loads": [
+     {
+      "force": [
+       0,
+       -1
+      ],
+      "name": null,
+      "type": "force",
+      "where": {
+       "hi": [
+        12,
+        60
+       ],
+       "lo": [
+        8,
+        60
+       ],
+       "surface": false,
+       "tol": null,
+       "type": "in_box"
+      }
+     }
+    ],
+    "name": "compression",
+    "supports": null,
+    "weight": 1.0
+   }
+  ],
+  "material": {
+   "E0": 1.0,
+   "nu": 0.3,
+   "orthotropic": null,
+   "phases": null,
+   "plane": "stress",
+   "rho": 1.0,
+   "strength": null
+  },
+  "name": "buckling_column2d",
+  "objective": {
+   "type": "compliance",
+   "weights": null
+  },
+  "optimizer": {
+   "albefa": 0.1,
+   "asydecr": 0.7,
+   "asyincr": 1.2,
+   "asyinit": 0.5,
+   "asymax": 10.0,
+   "asymin": 0.01,
+   "c": 1000.0,
+   "d": 1.0,
+   "move": 0.1,
+   "normalise": "first",
+   "raa0": 1e-05,
+   "type": "mma"
+  },
+  "output": {
+   "folder": "runs",
+   "snapshot_every": 0
+  },
+  "physics": {
+   "element": null,
+   "solver": {
+    "method": "auto",
+    "type": "direct"
+   },
+   "type": "elasticity"
+  },
+  "post": [],
+  "robust": null,
+  "run": {
+   "checkpoint_every": 0,
+   "feasibility_tol": 0.001,
+   "max_iter": 80,
+   "move_beta_ref": null,
+   "seed": 0,
+   "tol": 0.001
+  },
+  "schedule": null,
+  "supports": [
+   {
+    "dofs": "all",
+    "name": null,
+    "type": "fixed",
+    "where": {
+     "at": "min",
+     "axis": "y",
+     "type": "plane"
+    }
+   }
+  ]
+ },
+ "examples/research/fiber_angle_cantilever2d.yaml": {
+  "chain": [
+   {
+    "angle": {
+     "bounds": [
+      -90,
+      90
+     ],
+     "location": "element",
+     "rmin": 2.0,
+     "start": 0
+    },
+    "density": true,
+    "type": "embed"
+   },
+   {
+    "backend": "auto",
+    "periodic": false,
+    "rmin": 2.0,
+    "type": "density_filter"
+   },
+   {
+    "type": "passive"
+   }
+  ],
+  "combinations": [],
+  "connectivity": null,
+  "constraints": [
+   {
+    "name": null,
+    "response": {
+     "type": "volume",
+     "weighted": false
+    },
+    "scale": null,
+    "upper": 0.4
+   }
+  ],
+  "domain": {
+   "h": 1.0,
+   "keep": null,
+   "origin": null,
+   "shape": [
+    40,
+    20
+   ],
+   "thickness": 1.0,
+   "type": "box",
+   "void": null
+  },
+  "interpolation": {
+   "emin_ratio": 1e-06,
+   "penal": 3.0,
+   "phases": [
+    {
+     "name": "fibre",
+     "orthotropic": {
+      "E1": 1.0,
+      "E2": 0.1,
+      "E3": 0.1,
+      "G12": 0.05,
+      "G13": 0.05,
+      "G23": 0.04,
+      "nu12": 0.3,
+      "nu13": 0.3,
+      "nu23": 0.3
+     }
+    }
+   ],
+   "rule": "simplex",
+   "type": "tensor_phases"
+  },
+  "load_cases": [
+   {
+    "loads": [
+     {
+      "force": [
+       0,
+       -1
+      ],
+      "name": null,
+      "type": "force",
+      "where": {
+       "at": [
+        "max",
+        "mid"
+       ],
+       "type": "point"
+      }
+     }
+    ],
+    "name": "tip",
+    "supports": null,
+    "weight": 1.0
+   }
+  ],
+  "material": {
+   "E0": 1.0,
+   "nu": 0.3,
+   "orthotropic": null,
+   "phases": null,
+   "plane": "stress",
+   "rho": 1.0,
+   "strength": null
+  },
+  "name": "fiber_angle_cantilever2d",
+  "objective": {
+   "type": "compliance",
+   "weights": null
+  },
+  "optimizer": {
+   "albefa": 0.1,
+   "asydecr": 0.7,
+   "asyincr": 1.2,
+   "asyinit": 0.5,
+   "asymax": 10.0,
+   "asymin": 0.01,
+   "c": 1000.0,
+   "d": 1.0,
+   "move": 0.1,
+   "normalise": "first",
+   "raa0": 1e-05,
+   "type": "mma"
+  },
+  "output": {
+   "folder": "runs",
+   "snapshot_every": 0
+  },
+  "physics": {
+   "element": null,
+   "solver": {
+    "method": "auto",
+    "type": "direct"
+   },
+   "type": "tensor_elasticity"
+  },
+  "post": [],
+  "robust": null,
+  "run": {
+   "checkpoint_every": 0,
+   "feasibility_tol": 0.001,
+   "max_iter": 60,
+   "move_beta_ref": null,
+   "seed": 0,
+   "tol": 0.001
+  },
+  "schedule": null,
+  "supports": [
+   {
+    "dofs": "all",
+    "name": null,
+    "type": "fixed",
+    "where": {
+     "at": "min",
+     "axis": "x",
+     "type": "plane"
+    }
+   }
+  ]
+ },
+ "examples/research/inverter2d.yaml": {
+  "chain": [
+   {
+    "angle": null,
+    "density": true,
+    "type": "embed"
+   },
+   {
+    "backend": "auto",
+    "periodic": false,
+    "rmin": 1.5,
+    "type": "density_filter"
+   },
+   {
+    "type": "passive"
+   }
+  ],
+  "combinations": [],
+  "connectivity": null,
+  "constraints": [
+   {
+    "name": null,
+    "response": {
+     "type": "volume",
+     "weighted": false
+    },
+    "scale": null,
+    "upper": 0.3
+   }
+  ],
+  "domain": {
+   "h": 1.0,
+   "keep": null,
+   "origin": null,
+   "shape": [
+    60,
+    30
+   ],
+   "thickness": 1.0,
+   "type": "box",
+   "void": null
+  },
+  "interpolation": {
+   "emin_ratio": 1e-06,
+   "penal": 3.0,
+   "type": "simp"
+  },
+  "load_cases": [
+   {
+    "loads": [
+     {
+      "force": [
+       1,
+       0
+      ],
+      "name": null,
+      "type": "force",
+      "where": {
+       "hi": [
+        0,
+        2
+       ],
+       "lo": [
+        0,
+        0
+       ],
+       "surface": false,
+       "tol": null,
+       "type": "in_box"
+      }
+     }
+    ],
+    "name": "input",
+    "supports": null,
+    "weight": 1.0
+   }
+  ],
+  "material": {
+   "E0": 1.0,
+   "nu": 0.3,
+   "orthotropic": null,
+   "phases": null,
+   "plane": "stress",
+   "rho": 1.0,
+   "strength": null
+  },
+  "name": "inverter2d",
+  "objective": {
+   "case": 0,
+   "direction": "x",
+   "name": "displacement",
+   "type": "displacement",
+   "where": {
+    "hi": [
+     60,
+     2
+    ],
+    "lo": [
+     60,
+     0
+    ],
+    "surface": false,
+    "tol": null,
+    "type": "in_box"
+   }
+  },
+  "optimizer": {
+   "albefa": 0.1,
+   "asydecr": 0.7,
+   "asyincr": 1.2,
+   "asyinit": 0.5,
+   "asymax": 10.0,
+   "asymin": 0.01,
+   "c": 1000.0,
+   "d": 1.0,
+   "move": 0.1,
+   "normalise": "first",
+   "raa0": 1e-05,
+   "type": "mma"
+  },
+  "output": {
+   "folder": "runs",
+   "snapshot_every": 0
+  },
+  "physics": {
+   "element": null,
+   "solver": {
+    "method": "auto",
+    "type": "direct"
+   },
+   "type": "elasticity"
+  },
+  "post": [],
+  "robust": null,
+  "run": {
+   "checkpoint_every": 0,
+   "feasibility_tol": 0.001,
+   "max_iter": 100,
+   "move_beta_ref": null,
+   "seed": 0,
+   "tol": 0.002
+  },
+  "schedule": null,
+  "supports": [
+   {
+    "dofs": "all",
+    "name": null,
+    "type": "fixed",
+    "where": {
+     "hi": [
+      0,
+      30
+     ],
+     "lo": [
+      0,
+      26
+     ],
+     "surface": false,
+     "tol": null,
+     "type": "in_box"
+    }
+   },
+   {
+    "at": "min",
+    "axis": "y",
+    "name": null,
+    "normal": null,
+    "point": null,
+    "tol": null,
+    "type": "symmetry"
+   },
+   {
+    "direction": [
+     1,
+     0
+    ],
+    "k": 0.0,
+    "name": null,
+    "total": 0.1,
+    "type": "elastic",
+    "where": {
+     "hi": [
+      0,
+      2
+     ],
+     "lo": [
+      0,
+      0
+     ],
+     "surface": false,
+     "tol": null,
+     "type": "in_box"
+    }
+   },
+   {
+    "direction": [
+     1,
+     0
+    ],
+    "k": 0.0,
+    "name": null,
+    "total": 0.1,
+    "type": "elastic",
+    "where": {
+     "hi": [
+      60,
+      2
+     ],
+     "lo": [
+      60,
+      0
+     ],
+     "surface": false,
+     "tol": null,
+     "type": "in_box"
+    }
+   }
+  ]
+ },
+ "examples/research/mbb_simpl2d.yaml": {
+  "chain": [
+   {
+    "angle": null,
+    "density": true,
+    "type": "embed"
+   },
+   {
+    "rmin": 2.0,
+    "type": "helmholtz_filter"
+   },
+   {
+    "type": "passive"
+   }
+  ],
+  "combinations": [],
+  "connectivity": null,
+  "constraints": [
+   {
+    "name": null,
+    "response": {
+     "type": "volume",
+     "weighted": false
+    },
+    "scale": null,
+    "upper": 0.5
+   }
+  ],
+  "domain": {
+   "h": 1.0,
+   "keep": null,
+   "origin": null,
+   "shape": [
+    60,
+    20
+   ],
+   "thickness": 1.0,
+   "type": "box",
+   "void": null
+  },
+  "interpolation": {
+   "emin_ratio": 1e-09,
+   "penal": 3.0,
+   "type": "simp"
+  },
+  "load_cases": [
+   {
+    "loads": [
+     {
+      "force": [
+       0,
+       -1
+      ],
+      "name": null,
+      "type": "force",
+      "where": {
+       "at": [
+        "min",
+        "max"
+       ],
+       "type": "point"
+      }
+     }
+    ],
+    "name": "centre",
+    "supports": null,
+    "weight": 1.0
+   }
+  ],
+  "material": {
+   "E0": 1.0,
+   "nu": 0.3,
+   "orthotropic": null,
+   "phases": null,
+   "plane": "stress",
+   "rho": 1.0,
+   "strength": null
+  },
+  "name": "mbb_simpl2d",
+  "objective": {
+   "type": "compliance",
+   "weights": null
+  },
+  "optimizer": {
+   "alpha_max": 1000000000000.0,
+   "alpha_min": 1e-12,
+   "c1": 0.0001,
+   "line_search": "armijo",
+   "max_backtrack": 10,
+   "psi_max": 30.0,
+   "shift_tol": 1e-10,
+   "type": "simpl"
+  },
+  "output": {
+   "folder": "runs",
+   "snapshot_every": 0
+  },
+  "physics": {
+   "element": null,
+   "solver": {
+    "method": "auto",
+    "type": "direct"
+   },
+   "type": "elasticity"
+  },
+  "post": [
+   {
+    "max_ratio": null,
+    "threshold": 0.5,
+    "type": "discrete_check",
+    "volume": "constraint"
+   }
+  ],
+  "robust": null,
+  "run": {
+   "checkpoint_every": 0,
+   "feasibility_tol": 0.001,
+   "max_iter": 150,
+   "move_beta_ref": null,
+   "seed": 0,
+   "tol": 0.005
+  },
+  "schedule": null,
+  "supports": [
+   {
+    "dofs": "x",
+    "name": null,
+    "type": "fixed",
+    "where": {
+     "at": "min",
+     "axis": "x",
+     "type": "plane"
+    }
+   },
+   {
+    "dofs": "y",
+    "name": null,
+    "type": "fixed",
+    "where": {
+     "at": [
+      "max",
+      "min"
+     ],
+     "type": "point"
+    }
+   }
+  ]
+ },
+ "examples/research/stress_al_lbracket2d.yaml": {
+  "chain": [
+   {
+    "angle": null,
+    "density": true,
+    "type": "embed"
+   },
+   {
+    "backend": "auto",
+    "periodic": false,
+    "rmin": 2.0,
+    "type": "density_filter"
+   },
+   {
+    "beta": 1.0,
+    "eta": 0.5,
+    "type": "heaviside_projection"
+   },
+   {
+    "type": "passive"
+   }
+  ],
+  "combinations": [],
+  "connectivity": {
+   "bound": null,
+   "constraint": "conduction",
+   "eta": 0.7,
+   "gate": true,
+   "interfaces": null,
+   "options": null,
+   "repair": "none",
+   "repair_section": 2,
+   "sink": null,
+   "symmetry": null,
+   "threshold": 0.5,
+   "ties": 1
+  },
+  "constraints": [
+   {
+    "name": null,
+    "response": {
+     "adaptive": null,
+     "aggregate": "max",
+     "cases": null,
+     "criterion": null,
+     "exclude": [
+      {
+       "hi": [
+        40,
+        16
+       ],
+       "lo": [
+        34,
+        12
+       ],
+       "op": "add",
+       "type": "box"
+      }
+     ],
+     "parameter": 8.0,
+     "q": 0.5,
+     "sigma_lim": 2.5,
+     "type": "stress"
+    },
+    "scale": null,
+    "upper": 100.0
+   }
+  ],
+  "domain": {
+   "bounds": null,
+   "connectivity": "largest",
+   "h": 1.0,
+   "keep": [
+    {
+     "hi": [
+      40,
+      16
+     ],
+     "lo": [
+      36,
+      12
+     ],
+     "op": "add",
+     "type": "box"
+    }
+   ],
+   "min_frac": 0.05,
+   "padding": 0,
+   "shapes": [
+    {
+     "hi": [
+      40,
+      16
+     ],
+     "lo": [
+      0,
+      0
+     ],
+     "op": "add",
+     "type": "box"
+    },
+    {
+     "hi": [
+      16,
+      40
+     ],
+     "lo": [
+      0,
+      0
+     ],
+     "op": "add",
+     "type": "box"
+    }
+   ],
+   "sub": 4,
+   "thickness": 1.0,
+   "type": "csg",
+   "void": null
+  },
+  "interpolation": {
+   "emin_ratio": 1e-06,
+   "penal": 3.0,
+   "type": "simp"
+  },
+  "load_cases": [
+   {
+    "loads": [
+     {
+      "force": [
+       0,
+       -1
+      ],
+      "name": null,
+      "type": "force",
+      "where": {
+       "hi": [
+        40,
+        16
+       ],
+       "lo": [
+        37,
+        16
+       ],
+       "surface": false,
+       "tol": null,
+       "type": "in_box"
+      }
+     }
+    ],
+    "name": "tip",
+    "supports": null,
+    "weight": 1.0
+   }
+  ],
+  "material": {
+   "E0": 1.0,
+   "nu": 0.3,
+   "orthotropic": null,
+   "phases": null,
+   "plane": "stress",
+   "rho": 1.0,
+   "strength": null
+  },
+  "name": "stress_al_lbracket2d",
+  "objective": {
+   "alpha": 1.01,
+   "cases": null,
+   "criterion": null,
+   "exclude": [
+    {
+     "hi": [
+      40,
+      16
+     ],
+     "lo": [
+      34,
+      12
+     ],
+     "op": "add",
+     "type": "box"
+    }
+   ],
+   "form": "polynomial",
+   "mu0": 10.0,
+   "mu_max": 10000.0,
+   "objective": {
+    "type": "volume",
+    "weighted": false
+   },
+   "penal": 3.0,
+   "q": 0.5,
+   "reference": "first",
+   "sigma_lim": 2.5,
+   "type": "stress_augmented_lagrangian"
+  },
+  "optimizer": {
+   "albefa": 0.1,
+   "asydecr": 0.7,
+   "asyincr": 1.2,
+   "asyinit": 0.5,
+   "asymax": 10.0,
+   "asymin": 0.01,
+   "c": 1000.0,
+   "d": 1.0,
+   "move": 0.05,
+   "normalise": "first",
+   "raa0": 1e-05,
+   "type": "mma"
+  },
+  "output": {
+   "folder": "runs",
+   "snapshot_every": 0
+  },
+  "physics": {
+   "element": null,
+   "solver": {
+    "method": "auto",
+    "type": "direct"
+   },
+   "type": "elasticity"
+  },
+  "post": [
+   {
+    "connectivity": "face",
+    "erosion": true,
+    "repair": "none",
+    "robust_thresholds": [
+     0.3,
+     0.7
+    ],
+    "section": 2,
+    "threshold": 0.5,
+    "type": "connectivity_gate",
+    "voids": "fail"
+   }
+  ],
+  "robust": null,
+  "run": {
+   "checkpoint_every": 0,
+   "feasibility_tol": 0.001,
+   "max_iter": 600,
+   "move_beta_ref": null,
+   "seed": 0,
+   "tol": 0.002
+  },
+  "schedule": {
+   "beta0": 1.0,
+   "beta_every": 30,
+   "beta_max": 8.0,
+   "every": 1,
+   "min_updates": 1,
+   "reset_optimizer": false,
+   "tol": 0.02,
+   "type": "multiplier_update"
+  },
+  "supports": [
+   {
+    "dofs": "all",
+    "name": null,
+    "type": "fixed",
+    "where": {
+     "at": "max",
+     "axis": "y",
+     "facing": "any",
+     "max_angle": 60.0,
+     "normal": null,
+     "point": null,
+     "tol": null,
+     "type": "on_plane"
+    }
+   }
+  ]
+ },
+ "examples/research/stress_lbracket2d.yaml": {
+  "chain": [
+   {
+    "angle": null,
+    "density": true,
+    "type": "embed"
+   },
+   {
+    "backend": "auto",
+    "periodic": false,
+    "rmin": 2.0,
+    "type": "density_filter"
+   },
+   {
+    "beta": 1.0,
+    "eta": 0.5,
+    "type": "heaviside_projection"
+   },
+   {
+    "type": "passive"
+   }
+  ],
+  "combinations": [],
+  "connectivity": {
+   "bound": null,
+   "constraint": "conduction",
+   "eta": 0.7,
+   "gate": true,
+   "interfaces": null,
+   "options": null,
+   "repair": "none",
+   "repair_section": 2,
+   "sink": null,
+   "symmetry": null,
+   "threshold": 0.5,
+   "ties": 1
+  },
+  "constraints": [
+   {
+    "name": null,
+    "response": {
+     "adaptive": 0.5,
+     "aggregate": "pnorm",
+     "cases": null,
+     "criterion": null,
+     "exclude": [
+      {
+       "hi": [
+        40,
+        16
+       ],
+       "lo": [
+        34,
+        12
+       ],
+       "op": "add",
+       "type": "box"
+      }
+     ],
+     "parameter": 8.0,
+     "q": 0.5,
+     "sigma_lim": 2.5,
+     "type": "stress"
+    },
+    "scale": null,
+    "upper": null
+   }
+  ],
+  "domain": {
+   "bounds": null,
+   "connectivity": "largest",
+   "h": 1.0,
+   "keep": [
+    {
+     "hi": [
+      40,
+      16
+     ],
+     "lo": [
+      36,
+      12
+     ],
+     "op": "add",
+     "type": "box"
+    }
+   ],
+   "min_frac": 0.05,
+   "padding": 0,
+   "shapes": [
+    {
+     "hi": [
+      40,
+      16
+     ],
+     "lo": [
+      0,
+      0
+     ],
+     "op": "add",
+     "type": "box"
+    },
+    {
+     "hi": [
+      16,
+      40
+     ],
+     "lo": [
+      0,
+      0
+     ],
+     "op": "add",
+     "type": "box"
+    }
+   ],
+   "sub": 4,
+   "thickness": 1.0,
+   "type": "csg",
+   "void": null
+  },
+  "interpolation": {
+   "emin_ratio": 1e-06,
+   "penal": 3.0,
+   "type": "simp"
+  },
+  "load_cases": [
+   {
+    "loads": [
+     {
+      "force": [
+       0,
+       -1
+      ],
+      "name": null,
+      "type": "force",
+      "where": {
+       "hi": [
+        40,
+        16
+       ],
+       "lo": [
+        37,
+        16
+       ],
+       "surface": false,
+       "tol": null,
+       "type": "in_box"
+      }
+     }
+    ],
+    "name": "tip",
+    "supports": null,
+    "weight": 1.0
+   }
+  ],
+  "material": {
+   "E0": 1.0,
+   "nu": 0.3,
+   "orthotropic": null,
+   "phases": null,
+   "plane": "stress",
+   "rho": 1.0,
+   "strength": null
+  },
+  "name": "stress_lbracket2d",
+  "objective": {
+   "type": "volume",
+   "weighted": false
+  },
+  "optimizer": {
+   "albefa": 0.1,
+   "asydecr": 0.7,
+   "asyincr": 1.2,
+   "asyinit": 0.5,
+   "asymax": 10.0,
+   "asymin": 0.01,
+   "c": 1000.0,
+   "conservative_tol": 1e-09,
+   "d": 1.0,
+   "max_inner": 15,
+   "move": 0.1,
+   "normalise": "first",
+   "rho_init": 0.1,
+   "rho_min": 1e-06,
+   "type": "gcmma"
+  },
+  "output": {
+   "folder": "runs",
+   "snapshot_every": 0
+  },
+  "physics": {
+   "element": null,
+   "solver": {
+    "method": "auto",
+    "type": "direct"
+   },
+   "type": "elasticity"
+  },
+  "post": [
+   {
+    "connectivity": "face",
+    "erosion": true,
+    "repair": "none",
+    "robust_thresholds": [
+     0.3,
+     0.7
+    ],
+    "section": 2,
+    "threshold": 0.5,
+    "type": "connectivity_gate",
+    "voids": "fail"
+   },
+   {
+    "max_ratio": null,
+    "threshold": 0.5,
+    "type": "discrete_check",
+    "volume": null
+   }
+  ],
+  "robust": null,
+  "run": {
+   "checkpoint_every": 0,
+   "feasibility_tol": 0.001,
+   "max_iter": 120,
+   "move_beta_ref": null,
+   "seed": 0,
+   "tol": 0.002
+  },
+  "schedule": {
+   "beta0": 1.0,
+   "beta_max": 8.0,
+   "every": 30,
+   "tol": null,
+   "type": "beta_continuation"
+  },
+  "supports": [
+   {
+    "dofs": "all",
+    "name": null,
+    "type": "fixed",
+    "where": {
+     "at": "max",
+     "axis": "y",
+     "facing": "any",
+     "max_angle": 60.0,
+     "normal": null,
+     "point": null,
+     "tol": null,
+     "type": "on_plane"
+    }
+   }
+  ]
+ },
+ "examples/research/units_cantilever2d.yaml": {
+  "chain": [
+   {
+    "angle": null,
+    "density": true,
+    "type": "embed"
+   },
+   {
+    "backend": "auto",
+    "periodic": false,
+    "rmin": 2.0,
+    "type": "density_filter"
+   },
+   {
+    "type": "passive"
+   }
+  ],
+  "combinations": [],
+  "connectivity": null,
+  "constraints": [
+   {
+    "name": null,
+    "response": {
+     "type": "volume",
+     "weighted": false
+    },
+    "scale": null,
+    "upper": 0.4
+   }
+  ],
+  "domain": {
+   "h": 2.5,
+   "keep": null,
+   "origin": null,
+   "shape": [
+    48,
+    16
+   ],
+   "thickness": 5.0,
+   "type": "box",
+   "void": null
+  },
+  "interpolation": {
+   "emin_ratio": 1e-06,
+   "penal": 3.0,
+   "type": "simp"
+  },
+  "load_cases": [
+   {
+    "loads": [
+     {
+      "force": [
+       0,
+       -2000.0
+      ],
+      "name": null,
+      "type": "force",
+      "where": {
+       "at": [
+        "max",
+        "min"
+       ],
+       "type": "point"
+      }
+     }
+    ],
+    "name": "tip",
+    "supports": null,
+    "weight": 1.0
+   }
+  ],
+  "material": {
+   "E0": 200000.0,
+   "nu": 0.3,
+   "orthotropic": null,
+   "phases": null,
+   "plane": "stress",
+   "rho": 8e-09,
+   "strength": null
+  },
+  "name": "units_cantilever2d",
+  "objective": {
+   "type": "compliance",
+   "weights": null
+  },
+  "optimizer": {
+   "albefa": 0.1,
+   "asydecr": 0.7,
+   "asyincr": 1.2,
+   "asyinit": 0.5,
+   "asymax": 10.0,
+   "asymin": 0.01,
+   "c": 1000.0,
+   "d": 1.0,
+   "move": 0.2,
+   "normalise": "first",
+   "raa0": 1e-05,
+   "type": "mma"
+  },
+  "output": {
+   "folder": "runs",
+   "snapshot_every": 0
+  },
+  "physics": {
+   "element": null,
+   "solver": {
+    "method": "auto",
+    "type": "direct"
+   },
+   "type": "elasticity"
+  },
+  "post": [
+   {
+    "max_ratio": null,
+    "threshold": 0.5,
+    "type": "discrete_check",
+    "volume": null
+   },
+   {
+    "name": "result",
+    "type": "vtu"
+   }
+  ],
+  "robust": null,
+  "run": {
+   "checkpoint_every": 10,
+   "feasibility_tol": 0.001,
+   "max_iter": 60,
+   "move_beta_ref": null,
+   "seed": 0,
+   "tol": 0.01
+  },
+  "schedule": null,
+  "supports": [
+   {
+    "dofs": "all",
+    "name": null,
+    "type": "fixed",
+    "where": {
+     "at": "min",
+     "axis": "x",
+     "type": "plane"
+    }
+   }
+  ]
+ },
+ "examples/split_connectivity2d.yaml": {
+  "chain": [
+   {
+    "angle": null,
+    "density": true,
+    "type": "embed"
+   },
+   {
+    "backend": "auto",
+    "periodic": false,
+    "rmin": 2.0,
+    "type": "density_filter"
+   },
+   {
+    "beta": 1.0,
+    "eta": 0.5,
+    "type": "heaviside_projection"
+   },
+   {
+    "type": "passive"
+   }
+  ],
+  "combinations": [],
+  "connectivity": {
+   "bound": 20.0,
+   "constraint": "conduction",
+   "eta": 0.7,
+   "gate": true,
+   "interfaces": null,
+   "options": null,
+   "repair": "none",
+   "repair_section": 2,
+   "sink": "support_a",
+   "symmetry": null,
+   "threshold": 0.5,
+   "ties": 1
+  },
+  "constraints": [
+   {
+    "name": null,
+    "response": {
+     "type": "volume",
+     "weighted": false
+    },
+    "scale": null,
+    "upper": 0.15
+   }
+  ],
+  "domain": {
+   "h": 1.0,
+   "keep": [
+    {
+     "hi": [
+      10,
+      1
+     ],
+     "lo": [
+      4,
+      0
+     ],
+     "op": "add",
+     "type": "box"
+    },
+    {
+     "hi": [
+      56,
+      1
+     ],
+     "lo": [
+      50,
+      0
+     ],
+     "op": "add",
+     "type": "box"
+    },
+    {
+     "hi": [
+      9,
+      14
+     ],
+     "lo": [
+      5,
+      10
+     ],
+     "op": "add",
+     "type": "box"
+    },
+    {
+     "hi": [
+      55,
+      14
+     ],
+     "lo": [
+      51,
+      10
+     ],
+     "op": "add",
+     "type": "box"
+    }
+   ],
+   "origin": null,
+   "shape": [
+    60,
+    24
+   ],
+   "thickness": 1.0,
+   "type": "box",
+   "void": null
+  },
+  "interpolation": {
+   "emin_ratio": 1e-06,
+   "penal": 3.0,
+   "type": "simp"
+  },
+  "load_cases": [
+   {
+    "loads": [
+     {
+      "force": [
+       -0.02,
+       -1
+      ],
+      "name": "load_a",
+      "type": "force",
+      "where": {
+       "hi": [
+        9,
+        14
+       ],
+       "lo": [
+        5,
+        10
+       ],
+       "surface": false,
+       "tol": null,
+       "type": "in_box"
+      }
+     },
+     {
+      "force": [
+       0.02,
+       -1
+      ],
+      "name": "load_b",
+      "type": "force",
+      "where": {
+       "hi": [
+        55,
+        14
+       ],
+       "lo": [
+        51,
+        10
+       ],
+       "surface": false,
+       "tol": null,
+       "type": "in_box"
+      }
+     }
+    ],
+    "name": "down",
+    "supports": null,
+    "weight": 1.0
+   }
+  ],
+  "material": {
+   "E0": 1.0,
+   "nu": 0.3,
+   "orthotropic": null,
+   "phases": null,
+   "plane": "stress",
+   "rho": 1.0,
+   "strength": null
+  },
+  "name": "split_connectivity2d",
+  "objective": {
+   "type": "compliance",
+   "weights": null
+  },
+  "optimizer": {
+   "albefa": 0.1,
+   "asydecr": 0.7,
+   "asyincr": 1.2,
+   "asyinit": 0.5,
+   "asymax": 10.0,
+   "asymin": 0.01,
+   "c": 1000.0,
+   "d": 1.0,
+   "move": 0.2,
+   "normalise": "first",
+   "raa0": 1e-05,
+   "type": "mma"
+  },
+  "output": {
+   "folder": "runs",
+   "snapshot_every": 0
+  },
+  "physics": {
+   "element": null,
+   "solver": {
+    "method": "auto",
+    "type": "direct"
+   },
+   "type": "elasticity"
+  },
+  "post": [
+   {
+    "connectivity": "face",
+    "erosion": true,
+    "repair": "none",
+    "robust_thresholds": [
+     0.3,
+     0.7
+    ],
+    "section": 2,
+    "threshold": 0.5,
+    "type": "connectivity_gate",
+    "voids": "fail"
+   }
+  ],
+  "robust": null,
+  "run": {
+   "checkpoint_every": 0,
+   "feasibility_tol": 0.001,
+   "max_iter": 120,
+   "move_beta_ref": null,
+   "seed": 0,
+   "tol": 0.01
+  },
+  "schedule": {
+   "beta0": 1.0,
+   "beta_max": 16.0,
+   "every": 25,
+   "tol": null,
+   "type": "beta_continuation"
+  },
+  "supports": [
+   {
+    "dofs": "all",
+    "name": "support_a",
+    "type": "fixed",
+    "where": {
+     "hi": [
+      10,
+      0
+     ],
+     "lo": [
+      4,
+      0
+     ],
+     "surface": false,
+     "tol": null,
+     "type": "in_box"
+    }
+   },
+   {
+    "dofs": "all",
+    "name": "support_b",
+    "type": "fixed",
+    "where": {
+     "hi": [
+      56,
+      0
+     ],
+     "lo": [
+      50,
+      0
+     ],
+     "surface": false,
+     "tol": null,
+     "type": "in_box"
+    }
+   }
+  ]
+ },
+ "examples/symmetric_am3d.yaml": {
+  "chain": [
+   {
+    "planes": {
+     "x": "mid",
+     "y": "mid"
+    },
+    "type": "symmetry"
+   },
+   {
+    "angle": null,
+    "density": true,
+    "type": "embed"
+   },
+   {
+    "backend": "auto",
+    "periodic": false,
+    "rmin": 1.5,
+    "type": "density_filter"
+   },
+   {
+    "type": "group_average"
+   },
+   {
+    "P": 40.0,
+    "autograd": false,
+    "base_coordinate": null,
+    "base_layer": 0,
+    "build": "+z",
+    "eps": 0.0001,
+    "masked": true,
+    "type": "am_filter",
+    "xi0": 0.5
+   },
+   {
+    "beta": 1.0,
+    "eta": 0.5,
+    "type": "heaviside_projection"
+   },
+   {
+    "type": "passive"
+   }
+  ],
+  "combinations": [],
+  "connectivity": null,
+  "constraints": [
+   {
+    "name": null,
+    "response": {
+     "type": "volume",
+     "weighted": false
+    },
+    "scale": null,
+    "upper": 0.2
+   }
+  ],
+  "domain": {
+   "h": 1.0,
+   "keep": null,
+   "origin": null,
+   "shape": [
+    24,
+    8,
+    12
+   ],
+   "thickness": 1.0,
+   "type": "box",
+   "void": null
+  },
+  "interpolation": {
+   "emin_ratio": 1e-06,
+   "penal": 3.0,
+   "type": "simp"
+  },
+  "load_cases": [
+   {
+    "loads": [
+     {
+      "at": [
+       "mid",
+       "mid",
+       "max"
+      ],
+      "force": [
+       0,
+       0,
+       -1
+      ],
+      "name": null,
+      "radius": 1.5,
+      "type": "point"
+     }
+    ],
+    "name": "top",
+    "supports": null,
+    "weight": 1.0
+   }
+  ],
+  "material": {
+   "E0": 1.0,
+   "nu": 0.3,
+   "orthotropic": null,
+   "phases": null,
+   "plane": "stress",
+   "rho": 1.0,
+   "strength": null
+  },
+  "name": "symmetric_am3d",
+  "objective": {
+   "type": "compliance",
+   "weights": null
+  },
+  "optimizer": {
+   "bisection_tol": 0.0001,
+   "dv_scale": null,
+   "l1": 0.0,
+   "l2": 1000000000.0,
+   "max_bisect": 80,
+   "move": 0.2,
+   "type": "oc"
+  },
+  "output": {
+   "folder": "runs",
+   "snapshot_every": 0
+  },
+  "physics": {
+   "element": null,
+   "solver": {
+    "method": "auto",
+    "type": "direct"
+   },
+   "type": "elasticity"
+  },
+  "post": [],
+  "robust": null,
+  "run": {
+   "checkpoint_every": 0,
+   "feasibility_tol": 0.001,
+   "max_iter": 60,
+   "move_beta_ref": null,
+   "seed": 0,
+   "tol": 0.01
+  },
+  "schedule": {
+   "beta0": 1.0,
+   "beta_max": 8.0,
+   "every": 20,
+   "tol": null,
+   "type": "beta_continuation"
+  },
+  "supports": [
+   {
+    "dofs": "all",
+    "name": "left_foot",
+    "type": "fixed",
+    "where": {
+     "hi": [
+      2,
+      "max",
+      "min"
+     ],
+     "lo": [
+      "min",
+      "min",
+      "min"
+     ],
+     "surface": false,
+     "tol": null,
+     "type": "in_box"
+    }
+   },
+   {
+    "dofs": "all",
+    "name": "right_foot",
+    "type": "fixed",
+    "where": {
+     "hi": [
+      "max",
+      "max",
+      "min"
+     ],
+     "lo": [
+      22,
+      "min",
+      "min"
+     ],
+     "surface": false,
+     "tol": null,
+     "type": "in_box"
+    }
+   }
+  ]
+ }
+}

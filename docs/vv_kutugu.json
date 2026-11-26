@@ -23,7 +23,7 @@
    "model_backend": "NonlinearElasticity neo-Hooke (CPU)",
    "reason": "ön kayıtlı yerel ikinci mertebe ölçütü neo-Hooke'ta tutmadı (1,79; 0,77-0,94); ölçüt bu problem için sağlam değil",
    "risk": "low",
-   "resolution": "ölçütün ayrı, yeni ön kayıtla değiştirilmesi (tanjant FD testi V3 geçiyor)",
+   "resolution": "nedeni ölçüldü (nonlineer_cozucu.md D): son kalıntı her adımda yuvarlama tabanında, ölçüt bu problemde kullanılamaz; mertebe kanıtı hata daralması testi",
    "record": "docs/olcumler/geometrik_dogrusal_olmama.md",
    "slow": false
   },
@@ -178,96 +178,6 @@
    "slow": false
   },
   {
-   "nodeid": "tests/toporlogy/test_fault_injection.py::test_fails_closed_with_a_clear_message[inf_load_solve]",
-   "kind": "pre-registered fault injection failed",
-   "model_backend": "Elasticity.solve_numpy",
-   "reason": "yükte Inf: çözümden sonra SolveResidualError, girdi denetimi yok",
-   "risk": "low",
-   "resolution": "solve girişinde sonluluk denetimi (ValueError)",
-   "record": "docs/vv_fault_injection.md",
-   "slow": false
-  },
-  {
-   "nodeid": "tests/toporlogy/test_fault_injection.py::test_fails_closed_with_a_clear_message[nan_force_config]",
-   "kind": "pre-registered fault injection failed",
-   "model_backend": "config yükleri",
-   "reason": "force [nan, -1] sessizce kabul ediliyor",
-   "risk": "high",
-   "resolution": "yük bileşenlerinde sonluluk denetimi",
-   "record": "docs/vv_fault_injection.md",
-   "slow": false
-  },
-  {
-   "nodeid": "tests/toporlogy/test_fault_injection.py::test_fails_closed_with_a_clear_message[inf_E0_config]",
-   "kind": "pre-registered fault injection failed",
-   "model_backend": "config malzeme (core/material.py)",
-   "reason": "E0 = inf: mesaj ν'ye yönlendiriyor, E0'ı adlandırmıyor",
-   "risk": "low",
-   "resolution": "E0 sonluluk denetimi (tensor-core oturumunun dosyası)",
-   "record": "docs/vv_fault_injection.md",
-   "slow": false
-  },
-  {
-   "nodeid": "tests/toporlogy/test_fault_injection.py::test_fails_closed_with_a_clear_message[negative_E0_config]",
-   "kind": "pre-registered fault injection failed",
-   "model_backend": "config malzeme (core/material.py)",
-   "reason": "E0 = -1: mesaj E1 diyor",
-   "risk": "low",
-   "resolution": "izotrop yolda E0 adıyla mesaj",
-   "record": "docs/vv_fault_injection.md",
-   "slow": false
-  },
-  {
-   "nodeid": "tests/toporlogy/test_fault_injection.py::test_fails_closed_with_a_clear_message[zero_E0_config]",
-   "kind": "pre-registered fault injection failed",
-   "model_backend": "config malzeme (core/material.py)",
-   "reason": "E0 = 0: mesaj E1 diyor",
-   "risk": "low",
-   "resolution": "izotrop yolda E0 adıyla mesaj",
-   "record": "docs/vv_fault_injection.md",
-   "slow": false
-  },
-  {
-   "nodeid": "tests/toporlogy/test_fault_injection.py::test_fails_closed_with_a_clear_message[negative_thickness_domain]",
-   "kind": "pre-registered fault injection failed",
-   "model_backend": "Domain / Elasticity",
-   "reason": "thickness = -1 sessizce kabul (negatif rijitlik)",
-   "risk": "high",
-   "resolution": "Domain'de thickness > 0 denetimi",
-   "record": "docs/vv_fault_injection.md",
-   "slow": false
-  },
-  {
-   "nodeid": "tests/toporlogy/test_fault_injection.py::test_fails_closed_with_a_clear_message[load_wrong_rows_solve]",
-   "kind": "pre-registered fault injection failed",
-   "model_backend": "Elasticity.solve_numpy",
-   "reason": "yanlış satır sayılı F: IndexError",
-   "risk": "medium",
-   "resolution": "F şekil denetimi",
-   "record": "docs/vv_fault_injection.md",
-   "slow": false
-  },
-  {
-   "nodeid": "tests/toporlogy/test_fault_injection.py::test_fails_closed_with_a_clear_message[volume_upper_above_one]",
-   "kind": "pre-registered fault injection failed",
-   "model_backend": "config kısıtlar",
-   "reason": "hacim oranı üst sınırı 50 sessizce kabul",
-   "risk": "medium",
-   "resolution": "oran yanıtlarında 0 < upper <= 1 denetimi",
-   "record": "docs/vv_fault_injection.md",
-   "slow": false
-  },
-  {
-   "nodeid": "tests/toporlogy/test_fault_injection.py::test_fails_closed_with_a_clear_message[yaml_duplicate_key]",
-   "kind": "pre-registered fault injection failed",
-   "model_backend": "config okuma (PyYAML)",
-   "reason": "yinelenen anahtar sessizce sonuncuyla kullanılıyor",
-   "risk": "high",
-   "resolution": "yinelenen anahtarı reddeden YAML yükleyici; test YAML'ı ayrıca düzeltilmeli (kısıt eksik)",
-   "record": "docs/vv_fault_injection.md",
-   "slow": false
-  },
-  {
    "nodeid": "tests/toporlogy/test_anisotropy.py::test_p3_rotation_invariance",
    "kind": "pre-registered check failed",
    "model_backend": "core.anisotropy, core.linear_elastic (NumPy float64)",
@@ -296,6 +206,326 @@
    "resolution": "ada temizliği (bridge/drop floating) ya da robust iletim kısıtıyla yeniden koşu; yeni ön kayıt",
    "record": "docs/olcumler/gerilme.md",
    "slow": true
+  },
+  {
+   "nodeid": "tests/toporlogy/test_units.py::test_u8_compliance_in_mm_and_n_scales_exactly",
+   "kind": "pre-registered check failed",
+   "model_backend": "mbb2d, Elasticity Q4 direct (CPU)",
+   "reason": "mm/N uyum oranı beklenen 1000²/210000'den 3,75e-12 göreli sapıyor, eşik 1e-12; girdiler bit düzeyinde doğru ölçekli (post hoc)",
+   "risk": "low",
+   "resolution": "koşul sayısına ölçekli eşikle yeni ön kayıt",
+   "record": "docs/olcumler/birimler_onkayit.md",
+   "slow": false
+  },
+  {
+   "nodeid": "tests/toporlogy/test_homogenization.py::test_h7_taylor_remainder_order",
+   "kind": "pre-registered check failed",
+   "model_backend": "fem.homogenization, periodic Q4 (CPU)",
+   "reason": "Taylor kalanı mertebesi ilk adım çiftinde 2,25 > 2,2 (sonra 2,10, 2,05); gradyan merkezi farkla ≤ 1e-6",
+   "risk": "low",
+   "resolution": "yok (ölçütün adım seçimi); post hoc asimptotik aralıkta 2,05–2,01",
+   "record": "docs/olcumler/homojenlestirme_onkayit.md",
+   "slow": false
+  },
+  {
+   "nodeid": "tests/toporlogy/test_implicit.py::test_i3_taylor_remainder_order",
+   "kind": "pre-registered check failed",
+   "model_backend": "optimization.implicit, dense autograd Jacobian (CPU)",
+   "reason": "Taylor kalanı mertebesi 2,91–3,14: bu yönde vᵀHv = 0,006, üçüncü türev −16,4; kübik terim baskın. Gradyan merkezi farkla geçiyor",
+   "risk": "low",
+   "resolution": "yok (ölçütün yön/adım seçimi); post hoc küçük adımlarda 1,92–1,98",
+   "record": "docs/olcumler/ortuk_turev_onkayit.md",
+   "slow": false
+  },
+  {
+   "nodeid": "tests/toporlogy/test_uq.py::test_u10c_robust_design_beats_the_nominal_one_on_held_out_scenarios",
+   "kind": "pre-registered check failed",
+   "model_backend": "Study + Elasticity Q4 + ScenarioCompliance (CPU)",
+   "reason": "gürbüz tasarım ayrılmış senaryolarda nominalden biraz kötü (ortalama+3std 102,23 / 101,80); yerel minimum, bu problemde kazanç alanı yok",
+   "risk": "low",
+   "resolution": "gürbüz tasarım için ayrışan bir problem ve başlangıç stratejisiyle yeni ön kayıt",
+   "record": "docs/olcumler/laminat_uq.md",
+   "slow": true
+  },
+  {
+   "nodeid": "tests/toporlogy/test_pareto.py::test_p4c_epsilon_constraint_reaches_the_weighted_point",
+   "kind": "pre-registered check failed",
+   "model_backend": "Study + MMA, iki yük durumu, ε-kısıt (CPU)",
+   "reason": "varsayılan başlangıçtan ε-kısıt başka yerel minimuma yakınsıyor (c1 123,77 / 111,50)",
+   "risk": "low",
+   "resolution": "ε-kısıt için sürekleme / komşu noktadan sıcak başlangıç, yeni ön kayıtla",
+   "record": "docs/olcumler/laminat_uq.md",
+   "slow": false
+  },
+  {
+   "nodeid": "tests/toporlogy/test_rom.py::test_r5b_compliance_gap_equals_the_energy_error",
+   "kind": "pre-registered check failed",
+   "model_backend": "PODModel, Elasticity Q4 (CPU, doğrudan)",
+   "reason": "s − s_r iki yakın sayının farkı; e²'ye göre 1e-6 yuvarlamanın altında (en çok 2,3e-5; s'ye göre 1,3e-12)",
+   "risk": "low",
+   "resolution": "toleransı uyum büyüklüğüne göre tanımlayan yeni ön kayıt",
+   "record": "docs/olcumler/laminat_uq.md",
+   "slow": false
+  },
+  {
+   "nodeid": "tests/toporlogy/test_rom.py::test_r6_a_basis_for_one_load_fails_on_another",
+   "kind": "pre-registered check failed",
+   "model_backend": "PODModel, eğitim dışı yük (CPU)",
+   "reason": "ön kayıtlı hata düzeyi (>= 0,5) tutmadı; ölçülen 0,293, sınır yine de uyarıyor",
+   "risk": "low",
+   "resolution": "başarısızlık düzeyi için gerekçeli yeni ön kayıt",
+   "record": "docs/olcumler/laminat_uq.md",
+   "slow": false
+  },
+  {
+   "nodeid": "tests/toporlogy/test_newmark.py::test_nd1_second_order_against_the_modal_solution",
+   "kind": "pre-registered check failed",
+   "model_backend": "fem.dynamics_newmark, Q4 (CPU)",
+   "reason": "mertebe 4 (3,97–4,00) çünkü ölçüm t = 2T'de, sin(ωt) = 0: Δt² faz hatası yer değiştirmeye δ²/2 olarak giriyor",
+   "risk": "low",
+   "resolution": "yok (ölçüm noktası seçimi); post hoc t = 2,25T'de 1,98–2,00",
+   "record": "docs/olcumler/newmark_onkayit.md",
+   "slow": false
+  },
+  {
+   "nodeid": "tests/toporlogy/test_mesh_assembly.py::test_g4_curved_facet_traction[Q9]",
+   "kind": "pre-registered check failed",
+   "model_backend": "general mesh Q9 facet loads (CPU)",
+   "reason": "G4 eğri L3 yüzü, varsayılan yüz kuralı: Σf − t·yay uzunluğu = 1,5e-5 > 1e-12 (yay uzunluğu integrandı √polinom, varsayılan derece-6 kural tam değil)",
+   "risk": "low",
+   "resolution": "ön kayıt beklentisi hatalıydı; derece-40 kuralla post hoc varyant geçiyor (test_g4_curved_facet_traction_posthoc_high_order_rule)",
+   "record": "docs/olcumler/fem_genel.md",
+   "slow": false
+  },
+  {
+   "nodeid": "tests/toporlogy/test_mesh_assembly.py::test_g4_curved_facet_traction[T6]",
+   "kind": "pre-registered check failed",
+   "model_backend": "general mesh T6 facet loads (CPU)",
+   "reason": "G4 eğri L3 yüzü, varsayılan yüz kuralı: 1,5e-5 > 1e-12",
+   "risk": "low",
+   "resolution": "post hoc derece-40 varyantı geçiyor",
+   "record": "docs/olcumler/fem_genel.md",
+   "slow": false
+  },
+  {
+   "nodeid": "tests/toporlogy/test_mesh_assembly.py::test_g5_3d_face_held_in_x_only_preregistered",
+   "kind": "pre-registered check failed",
+   "model_backend": "general mesh H8 support-rank check (CPU)",
+   "reason": "G5 ön kaydı bir yüzü yalnız x'te tutunca 5 serbest rijit mod bekledi; ölçülen 3 (x = 0 düzleminde u_x = 0, y ve z eksenleri etrafındaki dönmeyi de tutar)",
+   "risk": "low",
+   "resolution": "beklenti yanlıştı, tanı doğru; post hoc test 3'ü doğruluyor",
+   "record": "docs/olcumler/fem_genel.md",
+   "slow": false
+  },
+  {
+   "nodeid": "tests/toporlogy/test_mesh_verification.py::test_v3_mms_convergence_on_distorted_mesh[T4]",
+   "kind": "pre-registered check failed",
+   "model_backend": "general mesh T4, SuperLU (CPU)",
+   "reason": "V3 T4 (n = 4, 8, 16) L2 mertebesi 1,796 < 1,8; asimptotik öncesi",
+   "risk": "low",
+   "resolution": "bir düzey daha (16 → 24) 1,92 / 0,97 veriyor (post hoc, yavaş paket)",
+   "record": "docs/olcumler/fem_genel.md",
+   "slow": true
+  },
+  {
+   "nodeid": "tests/toporlogy/test_mesh_verification.py::test_v3_mms_convergence_on_distorted_mesh[T10]",
+   "kind": "pre-registered check failed",
+   "model_backend": "general mesh T10, SuperLU (CPU)",
+   "reason": "V3 T10 (n = 2, 4, 8) enerji mertebesi 1,788 < 1,8; asimptotik öncesi",
+   "risk": "low",
+   "resolution": "bir düzey daha (8 → 12) 3,00 / 1,89 veriyor (post hoc, yavaş paket)",
+   "record": "docs/olcumler/fem_genel.md",
+   "slow": true
+  },
+  {
+   "nodeid": "tests/toporlogy/test_mesh_locking.py::test_l1b_displacement_elements_lock[T4-6]",
+   "kind": "pre-registered check failed",
+   "model_backend": "general mesh T4 3-D (CPU)",
+   "reason": "L1b T4 n = 6: oran 3,7 < 5; e(0,4999) = 0,996 (tam kilitlenme) ama kaba ağda e(0,3) = 0,27 oranı 3,8 ile sınırlıyor",
+   "risk": "low",
+   "resolution": "ölçüt bu ağ için kötü kurulmuş; n = 12'de oran 12,5 (post hoc)",
+   "record": "docs/olcumler/fem_genel.md",
+   "slow": false
+  },
+  {
+   "nodeid": "tests/toporlogy/test_mesh_locking.py::test_l4_condition_number_grows_100_fold",
+   "kind": "pre-registered check failed",
+   "model_backend": "general mesh Q4 plane strain, SuperLU (CPU)",
+   "reason": "L4: κ₁(0,4999)/κ₁(0,3) = 68 < 100 (n = 16'da κ'nın h⁻² bileşeni ν = 0,3'te baskın)",
+   "risk": "low",
+   "resolution": "ayrım iddiası (ölçekleme ve iyileştirme çözümü değiştirmiyor, hata oranı ≥ 5) ayrı testte geçiyor",
+   "record": "docs/olcumler/fem_genel.md",
+   "slow": false
+  },
+  {
+   "nodeid": "tests/toporlogy/test_nonlinear_solvers.py::test_a2_pre_registered_global_extrema",
+   "kind": "pre-registered check failed",
+   "model_backend": "solvers.continuation.arc_length, iki çubuklu kafes (CPU)",
+   "reason": "ön kayıt tanım hatası: yol 2,5h'ye kadar w = 2h'yi geçip çekme dalına giriyor, yolun max λ'sı 4,87 (analitik eğri; A1 geçiyor); ölçüt ilk limit noktasını yolun maksimumu sanmış",
+   "risk": "low",
+   "resolution": "post hoc test_a2_posthoc_local_limit_points (w ∈ [0, 2h], aynı eşikler) geçiyor",
+   "record": "docs/olcumler/nonlineer_cozucu.md",
+   "slow": false
+  },
+  {
+   "nodeid": "tests/toporlogy/test_nonlinear_solvers.py::test_j7_alpha_uniform_over_gauss_points_as_registered[2]",
+   "kind": "pre-registered check failed",
+   "model_backend": "NonlinearElasticity + J2Plasticity Q4 düzlem gerinim (CPU)",
+   "reason": "adım başına bağıl α yayılımı ilk plastik adımda 1,1e-12 > 1e-12 (küçük α'nın yuvarlaması)",
+   "risk": "low",
+   "resolution": "post hoc: yolun en büyük α'sına göre 3,2e-13 (geçiyor)",
+   "record": "docs/olcumler/nonlineer_cozucu.md",
+   "slow": false
+  },
+  {
+   "nodeid": "tests/toporlogy/test_nonlinear_solvers.py::test_j7_alpha_uniform_over_gauss_points_as_registered[3]",
+   "kind": "pre-registered check failed",
+   "model_backend": "NonlinearElasticity + J2Plasticity H8 (CPU)",
+   "reason": "tam akma gerilmesine düşen adımda (λ = 0,5) f_trial = ±1e-19: bazı noktalar α = 3,6e-19, bazıları elastik; adım başına bağıl yayılım 1,0",
+   "risk": "low",
+   "resolution": "post hoc: yolun en büyük α'sına göre 1,5e-14 (geçiyor)",
+   "record": "docs/olcumler/nonlineer_cozucu.md",
+   "slow": false
+  },
+  {
+   "nodeid": "tests/toporlogy/test_nonlinear_solvers.py::test_j8b_iterations_algorithmic_vs_continuum",
+   "kind": "pre-registered check failed",
+   "model_backend": "NonlinearElasticity + J2Plasticity Q4 düzlem gerinim konsol (CPU)",
+   "reason": "toplam Newton iterasyonu 27 (algoritmik) / 34 (süreklilik), oran 1,26 < 1,5; toplamı elastik adımlar belirliyor",
+   "risk": "low",
+   "resolution": "post hoc adım başına ölçüm: plastik adımlarda 3/5 ↔ 6/9 iterasyon, algoritmikte ikinci mertebe kalıntı düşüşü",
+   "record": "docs/olcumler/nonlineer_cozucu.md",
+   "slow": false
+  },
+  {
+   "nodeid": "tests/toporlogy/test_nonlinear_solvers.py::test_d1_v4_last_residual_is_at_the_rounding_floor",
+   "kind": "pre-registered check failed",
+   "model_backend": "NonlinearElasticity SVK / neo-Hooke ince konsol (CPU)",
+   "reason": "hipotezin ikinci maddesi tutmadı: son kalıntı her adımda tabanda (≤ 3,1e2 φ) ama bir öncekisi bazı adımlarda 1e4 φ'nin altında (6,9e2–4,6e3 φ)",
+   "risk": "low",
+   "resolution": "V4'ün üç noktalı ölçütü tabanla sınırlı; yerine hata daralması testi (V4 post hoc)",
+   "record": "docs/olcumler/nonlineer_cozucu.md",
+   "slow": false
+  },
+  {
+   "nodeid": "tests/toporlogy/test_nonlinear_solvers.py::test_a6b_arch_load_control_negative_control",
+   "kind": "pre-registered check failed",
+   "model_backend": "NonlinearElasticity SVK basamaklı sığ kemer + load_control (CPU)",
+   "reason": "yük kontrolü limit noktasının %99,98'inde step_limit ile duruyor, ama 3 kabul edilmiş noktada det K < 0: simetrik limit noktasından önce λ = 0,9972 λ_max'ta antisimetrik çatallanma",
+   "risk": "medium",
+   "resolution": "dal değiştirme ya da çatallanma tespiti (en küçük özdeğer izleme); şimdilik belgede: birincil simetrik yol izleniyor",
+   "record": "docs/olcumler/nonlineer_cozucu.md",
+   "slow": true
+  },
+  {
+   "nodeid": "tests/toporlogy/test_material_design.py::test_a2_full_tensor_pi_periodicity",
+   "kind": "pre-registered check failed",
+   "model_backend": "core.material.rotate_stiffness (6 x 6, triklinik, CPU)",
+   "reason": "A2 6 × 6 kısmı FAIL (ölçülen 0,206): z etrafında π dönüşü diag(−1, −1, 1), −I değil; triklinik 3-B tensör π-periyodik değil. Ön kaydın öngörüsü yanlıştı; 2-B (3 × 3) matris her malzemede π-periyodik (geçiyor)",
+   "risk": "low",
+   "resolution": "beklenen davranış; ön kaydın iddiası düzeltildi (post hoc test z iki katlı eksen koşulunu sınar)",
+   "record": "docs/olcumler/malzeme_tasarimi.md",
+   "slow": false
+  },
+  {
+   "nodeid": "tests/toporlogy/test_material_design.py::test_a6_global_angle_matches_the_sweep",
+   "kind": "pre-registered check failed",
+   "model_backend": "TensorElasticity + MMA, global açı, 40 × 20 konsol (CPU)",
+   "reason": "A6 FAIL: açı her başlangıçta ≤ 1° (geçiyor), uyum ölçütü tutmuyor: MMA tek değişkende 0° çevresinde ±1,6° sabit adımla salınıyor, c_opt / c_tarama = 1,00084 (0°), 1,00029 (±45°)",
+   "risk": "low",
+   "resolution": "MMA'nın tek değişkenli salınımı (optimizers/ perf oturumunun); asimptot uyarlaması ya da hareket sınırı azaltımıyla yeni ön kayıt",
+   "record": "docs/olcumler/malzeme_tasarimi.md",
+   "slow": true
+  },
+  {
+   "nodeid": "tests/toporlogy/test_material_design.py::test_g2_taylor_remainder[a-recursive]",
+   "kind": "pre-registered check failed",
+   "model_backend": "TensorPhases recursive + TensorElasticity, 12 × 6 (CPU)",
+   "reason": "G2 FAIL: ön kayıtlı h ∈ [1,25e-2; 1e-1] aralığında Taylor eğimi 1,31 (< 1,9); adımlar asimptotik bölgenin dışında, h ≤ 1e-3'te eğim 2,00 ve FD 1e-6 içinde",
+   "risk": "low",
+   "resolution": "post hoc küçük adım testi geçiyor; yeni ön kayıtta h aralığı küçültülür",
+   "record": "docs/olcumler/malzeme_tasarimi.md",
+   "slow": false
+  },
+  {
+   "nodeid": "tests/toporlogy/test_material_design.py::test_g2_taylor_remainder[c-density+angle]",
+   "kind": "pre-registered check failed",
+   "model_backend": "OrientedEmbed + TensorPhases + TensorElasticity, 12 × 6 (CPU)",
+   "reason": "G2 FAIL: ön kayıtlı h aralığında Taylor eğimi 1,55 (< 1,9); h ≤ 1e-3'te eğim 1,99, FD 1e-6 içinde",
+   "risk": "low",
+   "resolution": "post hoc küçük adım testi geçiyor; yeni ön kayıtta h aralığı küçültülür",
+   "record": "docs/olcumler/malzeme_tasarimi.md",
+   "slow": false
+  },
+  {
+   "nodeid": "tests/toporlogy/test_buckling_geometry.py::test_rl2b_whole_cluster_aggregate_is_differentiable",
+   "kind": "pre-registered check failed",
+   "model_backend": "BucklingKS over a double eigenvalue, 3-D square column (CPU)",
+   "reason": "tüm küme KS'inde tek taraflı türev asimetrisi 1,08e-5 (eşik 1e-5), AD–FD 1,16e-6 (eşik 1e-6); h = 1e-4'te FD gürültü sınırında",
+   "risk": "low",
+   "resolution": "yok (ölçütün adımı); post hoc h = 1e-3'te AD–FD 7,9e-8, kesik kümede asimetri her adımda 1,99",
+   "record": "docs/olcumler/burkulma_geometri.md",
+   "slow": false
+  },
+  {
+   "nodeid": "tests/toporlogy/test_buckling_geometry.py::test_a6_exclusion_result_depends_on_the_zone_size",
+   "kind": "pre-registered check failed",
+   "model_backend": "LinearBuckling, Ferrari-Sigmund-Guest wall 80², exclude mask (CPU)",
+   "reason": "dışlama yarıçapı 0,025 → 0,1: λ1 farkı 9,7e-5 (tahmin ≥ 0,10); mod açıklığın içbükey köşelerine taşınıyor",
+   "risk": "low",
+   "resolution": "yok (tahmin yanlıştı); dışlama yine çözüm değil: A5 NOT CONVERGED",
+   "record": "docs/olcumler/burkulma_geometri.md",
+   "slow": true
+  },
+  {
+   "nodeid": "tests/toporlogy/test_buckling_geometry.py::test_sp2_low_stress_exponent_produces_a_spurious_mode",
+   "kind": "pre-registered check failed",
+   "model_backend": "LinearBuckling, 16 × 48 compliance design, E_G = x^1 (CPU)",
+   "reason": "pozitif kontrol çıkmadı: pg = 1 λ1'i 0,768 katına indirdi ama 1. modun düşük yoğunluk payı 0,026",
+   "risk": "medium",
+   "resolution": "sahte modu gerçekten üreten bir tasarımla (gri bölgesi gerilme taşıyan) yeniden",
+   "record": "docs/olcumler/burkulma_geometri.md",
+   "slow": true
+  },
+  {
+   "nodeid": "tests/toporlogy/test_buckling_geometry.py::test_gc4_neck_thickness",
+   "kind": "pre-registered check failed",
+   "model_backend": "post.finalize + sdf_local_thickness, stepped bar 32 × 12 × 12 (CPU)",
+   "reason": "boyun orta hattında yerel kalınlık eşik adımında 4,08–4,57, son alanda 4,08–4,34 (sınır 4 ± 0,5)",
+   "risk": "low",
+   "resolution": "kalınlık ölçüsünün basamak yakınındaki davranışı incelenip ön kayıtlı yeni ölçütle",
+   "record": "docs/olcumler/burkulma_geometri.md",
+   "slow": true
+  },
+  {
+   "nodeid": "tests/toporlogy/test_buckling_geometry.py::test_gc8_staircase_compliance_against_the_nominal_series_bar",
+   "kind": "pre-registered check failed",
+   "model_backend": "post.reanalysis staircase voxels, ElasticityGMG (CPU)",
+   "reason": "h = 1/4 merdiven uyumu 0,6756, nominal seri çubuk 0,625 (+%8,1; sınır %5); ölçülen kesitlerle seri değer 0,6307",
+   "risk": "low",
+   "resolution": "gövdeye uyumlu T10 (gmsh) ya da basamak etkisini içeren referans",
+   "record": "docs/olcumler/burkulma_geometri.md",
+   "slow": true
+  },
+  {
+   "nodeid": "tests/toporlogy/test_model_epoch.py::test_me1_one_reset_per_epoch_change",
+   "kind": "pre-registered check failed",
+   "model_backend": "Study + nonlinear_elasticity (CPU)",
+   "reason": "reset çağrısı 6, epoch değişimi 5: fazlası koşu başındaki restart(); kancanın sayacı eşit (post hoc)",
+   "risk": "low",
+   "resolution": "yok (ölçütün tanımı)",
+   "record": "docs/olcumler/model_donemi_onkayit.md",
+   "slow": false
+  },
+  {
+   "nodeid": "tests/toporlogy/test_model_epoch.py::test_me3_fixed_cutoff_gives_the_same_run_with_and_without_reset",
+   "kind": "pre-registered check failed",
+   "model_backend": "Study + nonlinear_elasticity (CPU)",
+   "reason": "sabit kesme 0,1 ve yük 0,05 ile Newton bir tasarımda durdu; karşılaştırma yapılamadı (post hoc 0,01 yükte aynı)",
+   "risk": "low",
+   "resolution": "yok (problem kurulumu)",
+   "record": "docs/olcumler/model_donemi_onkayit.md",
+   "slow": false
   }
  ],
  "skips": [
@@ -395,6 +625,27 @@
    "site": "pytest.importorskip(\"gmsh\")",
    "backend": "gmsh",
    "covers": "T10 ağ yakınsaması",
+   "status_when_skipped": "NOT VERIFIED"
+  },
+  {
+   "file": "tests/toporlogy/test_vtu.py",
+   "site": "vtk = pytest.importorskip(\"vtk\")",
+   "backend": "vtk (post extra)",
+   "covers": "VTU dosyasının bağımsız okuyucuyla okunması ve hücre boyutları (W2, W3)",
+   "status_when_skipped": "NOT VERIFIED"
+  },
+  {
+   "file": "tests/toporlogy/test_mesh_verification.py",
+   "site": "skfem = pytest.importorskip(\"skfem\")",
+   "backend": "scikit-fem (dev extra)",
+   "covers": "V2 genel ağ çapraz denetimi (T3, T6, T4, T10, Q4, Q9, H8)",
+   "status_when_skipped": "NOT VERIFIED"
+  },
+  {
+   "file": "tests/toporlogy/test_buckling_geometry.py",
+   "site": "pytest.importorskip(\"skfem\")",
+   "backend": "scikit-fem (dev extra)",
+   "covers": "voksel yeniden analizinin bağımsız montajı (GC7, prizmatik çubuk)",
    "status_when_skipped": "NOT VERIFIED"
   }
  ]

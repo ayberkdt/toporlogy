@@ -16,6 +16,7 @@ import pytest
 import torch
 
 import toporlogy as T
+from _buckling_cases import wall
 from toporlogy.core.material import Orthotropic, Strength, unit_elasticity
 from toporlogy.fem.buckling import BucklingClusterWarning, LinearBuckling
 from toporlogy.optimization.buckling import BucklingKS, first_failure_load_factor
@@ -176,45 +177,11 @@ def test_orthotropic_column_buckles_with_its_axial_modulus():
 
 
 # ================================================================================ singular stresses
-def _wall(n: int, exclude_r: float | None = None):
-    """The solid wall of Ferrari, Sigmund & Guest (2021) §5.2 on an n × n mesh (n = 40 k; supported node columns of
-    the 320 mesh in units of n/40), opening void, x-load 1e-2 on the left edge. Returns λ1, its localisation and
-    the energy share of mode 1 within 0.02 of a clamped-patch end."""
-    h = 1.0 / n
-    d = T.Domain((n, n), h)
-    t = n // 40
-    ix, iy = np.indices((n, n))
-    row, col = n - 1 - iy, ix
-    void = (row >= 2 * n // 5 - 1) & (col >= 2 * n // 5 - 1) & (col <= n - n // 5 - 1)
-    x = np.where(void, 0.0, 1.0).ravel()
-    X = d.node_coords()
-    xi = np.rint(X[:, 0] / h).astype(int)
-    cols = np.r_[0:t + 1, 2 * n // 5 - t - 1:2 * n // 5, 4 * n // 5:4 * n // 5 + t + 1, n - t:n + 1]
-    fixed = d.dofs(np.flatnonzero(np.isclose(X[:, 1], 0) & np.isin(xi, cols)))
-    left = np.flatnonzero(np.isclose(X[:, 0], 0))
-    F = d.load_vector()
-    w = np.ones(len(left))
-    w[[0, -1]] = 0.5
-    F[2 * left, 0] = 1e-2 * w / w.sum()
-    m = T.Elasticity(d, fixed, 0.3)
-    E = 1e-6 + x ** 3 * (1 - 1e-6)
-    U = m.solve_numpy(E, F)[:, 0]
-    c = d.element_centers()
-    ends = np.array([t, 2 * n // 5 - t - 1, 2 * n // 5 - 1, 4 * n // 5, 4 * n // 5 + t, n - t]) * h
-    dist = np.min(np.hypot(c[:, 0][:, None] - ends[None, :], c[:, 1][:, None]), axis=1)
-    EG = x ** 3 if exclude_r is None else x ** 3 * (dist >= exclude_r)
-    lb = LinearBuckling(m)
-    mu, modes = lb.modes(E, EG, U, 2)
-    _, kE = lb.mode_forms(modes)
-    en = E * kE[:, 0]
-    return 1 / mu[0], lb.localization(E, modes)[0], float(en[dist < 0.02].sum() / en.sum())
-
-
 def test_singular_stress_mode_does_not_converge_and_is_flagged():
     """The solid wall's first mode sits at the end of a clamped patch (singular stress): under refinement λ1 keeps
     falling (no mesh limit) and the mode's energy concentrates (localisation rising). A global mode (Euler column)
     keeps its energy spread. Measured 2026-11-25: λ1 2.852, 2.106, 1.602; localisation 0.881, 0.921, 0.954."""
-    lam, loc, near = zip(*(_wall(n) for n in (40, 80, 160)))
+    lam, loc, near = zip(*(wall(n) for n in (40, 80, 160)))
     print(f"\n  wall lambda1 {np.round(lam, 4)}, localisation {np.round(loc, 3)}, energy near a clamp end "
           f"{np.round(near, 3)}")
     assert lam[0] / lam[1] > 1.2 and lam[1] / lam[2] > 1.2
@@ -230,8 +197,8 @@ def test_singular_stress_mode_does_not_converge_and_is_flagged():
 def test_excluding_stress_stiffness_moves_the_singular_mode():
     """With no stress stiffness within 0.05 of the clamped-patch ends the clamp-end mode disappears (its energy
     there drops) and λ1 rises; the mode then localises at the opening corner (moved, not removed: module notes)."""
-    lam0, _, near0 = _wall(80)
-    lam1, loc1, near1 = _wall(80, exclude_r=0.05)
+    lam0, _, near0 = wall(80)
+    lam1, loc1, near1 = wall(80, exclude_r=0.05)
     print(f"\n  wall 80²: lambda1 {lam0:.4f} -> {lam1:.4f} with exclusion; energy near clamp ends {near0:.3f} -> "
           f"{near1:.3f}; localisation {loc1:.3f}")
     assert lam1 > 1.5 * lam0 and near1 < 0.01 and near0 > 0.5

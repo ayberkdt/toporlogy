@@ -179,6 +179,17 @@ class ConstrainedElasticity(Elasticity):
             self._order = o[o >= 0]
         return self._order
 
+    def elimination_blocks(self) -> np.ndarray:
+        """The parent's part sizes counted over the kept unknowns only (:meth:`elimination_order` drops the locally
+        constrained ones and keeps the order within each part), for the supernodal Cholesky."""
+        from toporlogy.solvers.ordering import nested_dissection_blocks
+        d = self.domain
+        base, sizes = nested_dissection_blocks(tuple(n + 1 for n in d.shape), d.dim, self.free)
+        pos = np.full(len(self.free), -1, np.int64)
+        pos[self.keep] = np.arange(len(self.keep))
+        part = np.repeat(np.arange(len(sizes)), sizes)
+        return np.bincount(part[pos[base] >= 0], minlength=len(sizes)).astype(np.int64)
+
     def _kinematic_rows(self) -> dict[int, np.ndarray]:
         """Fixed DOFs, plus the constrained directions of every local frame (u ⊥ them) and the rows of every spring
         (a spring stores energy unless K_s u = 0)."""

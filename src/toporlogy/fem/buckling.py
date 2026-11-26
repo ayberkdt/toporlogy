@@ -44,12 +44,17 @@ then localises there with λ → 0 as the mesh is refined: such a λ is a proper
 (measured on the wall of Ferrari, Sigmund & Guest 2021: λ1 2.85, 2.11, 1.60, 1.20 at 40², 80², 160², 320²;
 ``docs/olcumler/malzeme_modelleri.md``). :meth:`LinearBuckling.localization` measures it (energy share of the most
 loaded elements; rising under refinement = singular), and the responses accept ``exclude``, elements whose stress
-stiffness is dropped (E_G = 0) around such points. Excluding moves the localisation to the edge of the excluded
-zone rather than removing it (measured on the same wall), so λ then depends on the zone size: report it.
+stiffness is dropped (E_G = 0) around such points. Excluding is not a remedy: on the same wall it removes the
+clamp-end mode, and mode 1 moves to the next singular point, the re-entrant corners of the opening (95 % of its
+energy within 0.05 of them at 80²); λ1 there keeps falling under refinement (4.77, 3.56, 2.64 at 40², 80², 160²,
+localisation 0.92 → 0.99) and does not depend on the zone radius (1e-4 between r = 0.025 and 0.1 at 80²)
+(``docs/olcumler/burkulma_geometri.md`` §A; the pre-registered expectation of a zone-size dependence failed).
 
 Diagnostics. :meth:`LinearBuckling.low_density_share` is the share of each mode's strain energy φᵀKφ held by
 elements below a density threshold; a share near 1 flags a spurious mode localised in grey or void material (the
-same measure as :meth:`toporlogy.fem.modal.Modal.low_density_share`). :class:`BucklingClusterWarning` is raised by
+same measure as :meth:`toporlogy.fem.modal.Modal.low_density_share`). :meth:`LinearBuckling.stress_energy_share` is
+the share of the driving (compressive) part of φᵀ K_G φ in those elements: the stress stiffness that makes the mode
+buckle, where the K-energy share tells where the mode deforms. :class:`BucklingClusterWarning` is raised by
 the responses when the last aggregated mode and the next one form a (near-)repeated cluster, because aggregating a
 cut cluster is not differentiable.
 
@@ -61,7 +66,9 @@ non-linearity — compare λ with the first-failure load factor of a strength cr
 
 Verification (``tests/toporlogy/test_buckling.py``): the Gauss-point strain matrices reproduce the element
 stiffness; K_G vanishes for rigid-body displacement fields and scales linearly with the load; Euler columns in 2-D and
-3-D against π² E I / (K L)².
+3-D against π² E I / (K L)². Mesh series with a convergence verdict (``tests/toporlogy/test_buckling_geometry.py``):
+the Euler column (Q4, order 2.00, Richardson value 1.3e-4 below the shear-corrected Euler load), a column embedded in
+a void design domain (CONVERGED, within 1.3e-4 of the column alone) and the singular wall (NOT CONVERGED).
 
 Literature. The formulation is the classical one (Cook et al. 2002, ch. 18). The practice of a separate stress
 interpolation and of aggregating μ = 1/λ follows what is reported for Ferrari & Sigmund (2019) and Ferrari, Sigmund &
@@ -303,6 +310,19 @@ class LinearBuckling:
         low = np.asarray(xphys_active, float) < threshold
         tot = w.sum(axis=0)
         return np.where(tot > 0, w[low].sum(axis=0) / np.where(tot > 0, tot, 1.0), 0.0)
+
+    def stress_energy_share(self, EG_active: np.ndarray, u: np.ndarray, modes: np.ndarray,
+                            xphys_active: np.ndarray, threshold: float = 0.5) -> np.ndarray:
+        """(k,) share of the driving part of each mode's stress-stiffness energy in active elements with
+        x̄ < ``threshold``: with g_e = φᵀ K_G,e φ (negative where compression drives the mode), the share is
+        Σ_low max(−g_e, 0) / Σ_all max(−g_e, 0); 0 for a mode without a driving part (module notes)."""
+        C, _ = self.mode_forms(modes)
+        ue = np.asarray(u, float)[self.model.edof]                                   # (na, nloc)
+        g = np.asarray(EG_active, float)[:, None] * np.einsum("ekl,el->ek", C, ue)  # (na, k)
+        drive = np.maximum(-g, 0.0)
+        low = np.asarray(xphys_active, float) < threshold
+        tot = drive.sum(axis=0)
+        return np.where(tot > 0, drive[low].sum(axis=0) / np.where(tot > 0, tot, 1.0), 0.0)
 
     def localization(self, E_active: np.ndarray, modes: np.ndarray, fraction: float = 0.01) -> np.ndarray:
         """(k,) share of each mode's strain energy φᵀKφ held by the ``fraction`` of active elements that carry the

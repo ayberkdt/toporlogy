@@ -322,6 +322,74 @@ def register_post_steps() -> None:
             return out
         return step
 
+    def vtu_step(ctx: BuildContext, name: str = "result") -> Any:
+        """Fields of the design on the active grid as VTK XML UnstructuredGrid ``<name>.vtu`` (core.vtu): cell data
+        xphys, interpolated modulus E and the solid von Mises centroid stress per load case (elasticity with an
+        ``E0``; skipped otherwise), point data the displacement per load case (z = 0 added in 2-D). The repaired
+        design of a connectivity gate has no state solve: its file holds xphys and E only."""
+        import torch
+
+        from toporlogy.core.vtu import write_vtu
+        state = _post_state(ctx)
+
+        def step(res: Any, study: Any, folder: Any) -> dict[str, Any]:
+            d = study.domain
+            x, label = _design(state, res)
+            cell: dict[str, Any] = {"xphys": np.asarray(x, float)}
+            point: dict[str, Any] = {}
+            notes: list[str] = []
+            try:
+                cell["E"] = study.interp(torch.as_tensor(np.asarray(x, float))).detach().numpy()
+            except (ValueError, TypeError, RuntimeError) as e:
+                notes.append(f"E not written: {type(e).__name__}: {e}")
+            U = res.U if label == "optimized" else None
+            if U is not None:
+                U = np.asarray(U, float).reshape(d.ndof, -1)
+                for c in range(U.shape[1]):
+                    u = np.zeros((d.nn, 3))
+                    u[:, :d.dim] = U[:, c].reshape(-1, d.dim)
+                    point[f"displacement_{c}"] = u
+                E0 = getattr(study.interp, "E0", None)
+                try:
+                    if E0 is None:
+                        raise ValueError("the interpolation has no E0")
+                    from toporlogy.optimization.stress_recovery import StressRecovery
+                    cen = StressRecovery(study.physics, U, float(E0)).centroids()
+                    vm = cen.von_mises()
+                    for c in range(vm.shape[1]):
+                        cell[f"von_mises_solid_{c}"] = vm[:, c]
+                except (ValueError, TypeError, AttributeError) as e:
+                    notes.append(f"von Mises not written: {type(e).__name__}: {e}")
+            path = write_vtu(f"{folder}/{name}.vtu", d, point, cell, meta={"design": label})
+            return {"file": f"{name}.vtu", "design": label, "cell_arrays": sorted(cell), "point_arrays": sorted(point),
+                    "notes": notes, "summary": f"{name}.vtu: {len(cell)} cell and {len(point)} point arrays"
+                    + (f" ({'; '.join(notes)})" if notes else ""), "path": path}
+        return step
+
+    def homogenize_step(ctx: BuildContext, bc: str = "periodic") -> Any:
+        """Effective (homogenised) stiffness of the returned design as a periodic cell (fem.homogenization): the
+        whole box domain is the cell, E from the study's interpolation of x̄, ν and plane stress from the material.
+        bc periodic | kubc. Refused for a domain that is not the full box."""
+        import torch
+
+        from toporlogy.fem.homogenization import homogenize_elasticity
+        state = _post_state(ctx)
+        nu = float(ctx.material["nu"])
+
+        def step(res: Any, study: Any, folder: Any) -> dict[str, Any]:
+            d = study.domain
+            x, label = _design(state, res)
+            E = study.interp(torch.as_tensor(np.asarray(x, float))).detach().numpy().ravel()[d.active_elements]
+            h = homogenize_elasticity(d, E, nu, bc=bc)
+            C = h.C
+            out: dict[str, Any] = {"design": label, "bc": bc, "C": C.tolist()}
+            if d.dim == 2:
+                out["nu12"] = float(C[0, 1] / C[0, 0])
+                out["nu21"] = float(C[0, 1] / C[1, 1])
+            out["summary"] = f"C11 {C[0, 0]:.6g}" + (f", nu12 {out['nu12']:.4f}" if d.dim == 2 else "")
+            return out
+        return step
+
     def discrete_check(ctx: BuildContext, volume: Any = "constraint", threshold: float = 0.5,
                        max_ratio: float | None = None) -> Any:
         """Objective and constraints of the thresholded (0/1) design, re-evaluated on the same mesh
@@ -392,3 +460,5 @@ def register_post_steps() -> None:
                                                                                 "size": length})
     register("post", "export", "toporlogy.configuration.post_steps:export_step")
     register("post", "discrete_check", discrete_check, types={"volume": None})
+    register("post", "vtu", vtu_step)
+    register("post", "homogenize", homogenize_step)

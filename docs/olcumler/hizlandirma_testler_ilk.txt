@@ -1,0 +1,28 @@
+................
+  H3b (16, 8, 8): compliance 1.9e-11, U 1.9e-11
+.
+  H3b (120, 40): compliance 9.8e-13, U 1.8e-12
+.
+  H3c (8, 5, 5) H8IM: compliance 1.1e-11, U 1.1e-11
+.
+  H3c (30, 14) Q4: compliance 1.5e-11, U 1.6e-11
+.x
+  H3d: gradient 1.8e-13
+.
+  H3e: in-process ea4b539701e0, processes ea4b539701e0 ea4b539701e0
+..
+  H3g (16, 8, 8): Cholesky 1134000, SuperLU L+U 1739700
+.
+  H3g (120, 40): Cholesky 1055812, SuperLU L+U 1208352
+.
+  H3h mbb2d: largest relative objective difference over 10 iterations 7.6e-12
+.
+  H3h cantilever3d: largest relative objective difference over 10 iterations 5.2e-12
+..
+----------------------------- verification status -----------------------------
+pardiso  NOT VERIFIED  no test of this backend was selected
+gmsh     NOT VERIFIED  no test of this backend was selected
+cuda     NOT VERIFIED  no test of this backend was selected
+=========================== short test summary info ===========================
+XFAIL tests/toporlogy/test_speedups.py::test_h3c_oblique_support - H3c oblique support: ConstrainedElasticity (boundary/constrained.py, not this session's file) changes the elimination order and gives no elimination_blocks(); the cholesky solver refuses it (measured 26 Nov 2026: NotImplementedError)
+28 passed, 1 xfailed in 163.53s (0:02:43)

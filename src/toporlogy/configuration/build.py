@@ -290,6 +290,10 @@ def build(resolved: dict[str, Any]) -> Setup:
         F = bcs.F("all")
         cases = []
         for i, name in enumerate(bcs.names):
+            if not np.isfinite(F[:, i]).all():
+                where = join("load_cases", i) if i < len(r["load_cases"]) else \
+                    join("combinations", i - len(r["load_cases"]))
+                raise ConfigError("load case has a load that is not finite (NaN or Inf)", where)
             if not np.any(F[:, i]):
                 path = join("load_cases", i) if i < len(r["load_cases"]) else \
                     join("combinations", i - len(r["load_cases"]))
@@ -335,6 +339,10 @@ def build(resolved: dict[str, Any]) -> Setup:
             if upper is None:
                 raise ConfigError(f"response {c['response']['type']} has no default bound; set upper",
                                   join(cp, "upper"))
+        from toporlogy.optimization.responses import Volume
+        if isinstance(resp, Volume) and not 0.0 < float(upper) <= 1.0:
+            raise ConfigError(f"volume is a fraction of the part: upper must be in (0, 1], got {upper}",
+                              join(cp, "upper"))
         scale = c.get("scale") if c.get("scale") is not None else getattr(resp, "config_scale", None)
         cnames.append(resp.name)
         constraints.append(Constraint(resp, float(upper), scale))
