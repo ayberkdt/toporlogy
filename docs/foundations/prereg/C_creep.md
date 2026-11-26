@@ -73,4 +73,49 @@ Run: `python -m pytest tests/toporlogy/test_creep.py -q -p no:randomly -p no:cac
 `--basetemp` under `.claude/tmp-toporlogy/C_creep`). Resource cap: the single-point tests are milliseconds; C6a
 ≤ 2000 accepted steps × 3 material-point solves.
 
-First result: appended below after the run.
+## First result (2026-11-27, first run of `tests/toporlogy/test_creep.py` after the commit of this file)
+
+Measured with the preregistered thresholds unchanged. 47 passed, 2 strict xfail.
+
+| ID | Result | Measured |
+|---|---|---|
+| CR1 | PASS | factor vs formula and derivative vs FD within thresholds; overflow raises, log finite; invalid input raises |
+| C2a | PASS | rel errors 1.3e-14 (axial, lateral), 1.4e-14 (p), 1.4e-14 (dissipation) |
+| C2b | PASS | 1.3e-14, 1.4e-14 |
+| C2c | PASS | creep strain 0.0 and p 0.0 exactly |
+| C2d | PASS | 8.3e-16 (p), 7.2e-16 (xy component) |
+| C2e | PASS | 1.4e-14 (T_ref), 2.1e-15 (360 K) |
+| C2f | PASS | bitwise no evolution; tangent equals the elastic one |
+| C2g | PASS | all invalid inputs raise ValueError |
+| C3a | PASS | 2.9e-6 (n = 1, dt = 0.025 s) |
+| C3b | PASS | 5.8e-5 (n = 3) |
+| C3c | PASS | n = 1 orders 0.9956, 0.9978, 0.9989, 0.9994; n = 3 orders 0.970, 0.985, 0.992, 0.996 |
+| C3d | PASS | theta = 0.609 (set-up assertion held); best FD error 2.6e-11 |
+| C3e | PASS | frozen-direction tangent FD error 0.150 (detected) |
+| C3f | PASS | n in {0.7, 1, 3, 8}, 30 random states each |
+| C3g | **FAIL (xfail) for the sub-claim "q_tr = 10 sigma_ref, n = 20 relaxes below 1e-3 q_tr"**; rest PASS | measured q_new/q_tr = 0.1505. The root agrees with an independent brentq root to 1e-10 (post hoc check), so the claim was wrong (the rate balances the elastic unloading), not the code. Kept as strict xfail, ledger entry added |
+| C3h | PASS | |
+| C4a | PASS | worst relative error 4.9e-15 |
+| C4b | PASS | 2.1e-15, 3.3e-15, 3.9e-14, 3.2e-15 for k = 1, 2, 4, 8; k = 1 vs 8: 1.1e-15 |
+| C4c | PASS | end-point rule error 3.99 (discriminates) |
+| C5a | PASS | 1.1e-14; single step 0 -> 1e-6 s: 2.1e-16 |
+| C5b | PASS | production vs closed form 1.4e-15 (time), 5.9e-16 (strain); solve_ivp vs closed form 4.2e-14, 1.4e-14; variants differ by 54 % (p = 2.846e-3 vs 4.393e-3) |
+| C5c | PASS | errors 2.1e-2, 1.1e-2, 5.7e-3, 2.9e-3; orders 0.931, 0.963, 0.981 |
+| C5d | PASS | best FD error 8.8e-12 (time), 6.8e-12 (strain) |
+| C5e | PASS | m = 1 vs Norton difference 0.0 (regression, not independent); clock semantics exact |
+| C6a | steps and events PASS (325 accepted, 0 rejected, 29 outputs exactly on the grid); **global accuracy FAIL (xfail)** | max eps_cr relative error 2.10e-3 at t = 100 s (preregistered 1e-3), max abs(q - q_ref)/q0 = 1.16e-3 (preregistered 1e-3). Step doubling controls the local error; post hoc: 6.7e-4 at rtol 1e-5, 2.1e-4 at 1e-6 (~0.2 sqrt(rtol)). Threshold not loosened; ledger entry added |
+| C6b | PASS | 35 accepted steps (1 rejected), p error 6.1e-12, stress after release 1.1e-7 Pa, release time in the grid |
+| C7a | PASS | bitwise |
+| C7b | PASS | rejections occurred in both runs; replay bitwise (Norton relaxation; mixed control with a temperature ramp) |
+| C7c | PASS | bitwise (Norton relaxation restart at 10 s; NB stress step restart at 100 s incl. t_load) |
+| C8 | PASS | `NOT_IMPLEMENTED` lists creep-plasticity, tertiary, rupture; no coupled class |
+
+Set-up changes after the first run (inputs, not thresholds): C7b uses `rtol = 1e-4` instead of `1e-6` (the first run took
+130 s with 1e-6 in the mixed-control temperature case; the property tested, rejection + replay, does not depend on rtol);
+the Arrhenius step average is memoised per step in `NortonCreep` and the Gauss–Legendre nodes are computed once (speed,
+no change of values). C3g and C6a were split into the preregistered claim (xfail) and a post hoc characterisation
+(labelled post hoc in the test docstring).
+
+Raw evidence: pytest output of the run (`python -m pytest tests/toporlogy/test_creep.py -q -p no:randomly`); measured
+values reproduced by a one-off script from the same test helpers. Limitations: synthetic constants only; the step-doubling
+error is local; no FE coupling; Norton–Bailey is isothermal.
