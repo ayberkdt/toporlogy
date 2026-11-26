@@ -19,6 +19,11 @@ Criteria (σt, σc: allowable tension / compression magnitudes; I1 = tr σ, J2 =
                      I = (b + sqrt(b² + 4 a)) / 2,  a = σᵀ F σ, b = f · σ;  F_i = 1/X_t − 1/X_c, F_ii = 1/(X_t X_c),
                      F_44,55,66 = 1/S23², 1/S13², 1/S12², F_ij = f12 sqrt(F_ii F_jj)
 
+Tsai-Wu admissibility: the normal-stress block of F has eigenvalues 1 + 2 f12 and 1 − f12 (times √F_ii √F_jj), so it
+is positive semidefinite in 3-D only for −1/2 ≤ f12 < 1 (f12 = −1/2: an open, pressure-insensitive surface along one
+compressive direction, like von Mises); in plane stress |f12| < 1 suffices. A stress for which σᵀFσ < 0 raises
+instead of returning a negative index (``docs/olcumler/tsai_wu_kabul_onkayit.md``).
+
 The two quadratic criteria are solved for the strength ratio R (failure at R·σ: a R² + b R − 1 = 0, Tsai-Wu; the
 Raghava form divides by c), whose reciprocal in the rationalised form above is smooth and has no cancellation.
 Drucker-Prager and Raghava reduce to von Mises for σc = σt; the paraboloid is the form associated with Raghava,
@@ -140,6 +145,11 @@ class Criterion:
             F = torch.as_tensor(self.F, dtype=s.dtype)
             f = torch.as_tensor(self.f, dtype=s.dtype)
             a = torch.einsum("nv,vw,nw->n", sm, F, sm)
+            diag = torch.einsum("nv,v->n", sm * sm, torch.diagonal(F))
+            if bool((a < -1e-12 * diag).any()):
+                raise ValueError(f"tsai_wu: the quadratic form is negative for a stress here (f12 = "
+                                 f"{getattr(self.strength, 'f12', float('nan')):g}; with normal stresses in all three axes it is positive "
+                                 f"semidefinite only for -1/2 <= f12 < 1): the index would be negative")
             b = sm @ f
             return 0.5 * (b + torch.sqrt(b * b + 4.0 * a + e ** 2))
         sn = s / self.scale                                            # dimensionless: eps is relative

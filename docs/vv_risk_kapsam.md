@@ -5,7 +5,7 @@ Kaynak: `tests/toporlogy/_vv_layers.py` (dosya → katman sınıflaması elle, d
 | Katman | core | geometry | boundary | design | fem | solvers | optimization | optimizers | configuration | execution | post | references |
 |:---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
 | U unit / property | 10/118 | 3/30 | — | 6/69 | 6/61 | 3/43 | 12/120 | 2/30 | 2/19 | 2/14 | 4/44 | — |
-| MP material point | 10/104 | — | — | 6/67 | 8/84 | — | 8/73 | 3/32 | 6/63 | 1/13 | 4/55 | — |
+| MP material point | 11/107 | — | — | 6/67 | 8/84 | — | 9/76 | 3/32 | 6/63 | 1/13 | 4/55 | — |
 | EL element patch / quadrature | 5/48 | — | — | 1/10 | 8/77 | 1/14 | 4/52 | 1/14 | 1/17 | — | 2/20 | — |
 | AS assembly / BC / reactions | 2/32 | 1/23 | 5/62 | — | 5/48 | 5/53 | 1/23 | — | — | — | — | — |
 | AN analytical / MMS | 9/84 | — | — | 3/35 | 15/145 | — | 11/117 | 3/41 | 3/41 | 1/13 | 2/20 | — |
@@ -121,5 +121,6 @@ Katman sınıflaması (dosya → katmanlar):
 - `test_tensor.py`: U
 - `test_thermoelastic.py`: AN, AS, OG
 - `test_timoshenko_cantilever.py`: AN
+- `test_tsai_wu_admissibility.py`: MP
 - `test_units.py`: U, IC
 - `test_vtu.py`: U, IC

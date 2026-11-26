@@ -19,3 +19,9 @@ yüzey olduğu yazılır.
 | TW2 | f12 = −0,8: yukarıdaki 3-B gerilme | `ValueError`, mesajda "f12" |
 | TW3 | f12 = −0,8, 10⁴ rastgele düzlem gerilme durumu (σ3 = σ23 = σ13 = 0) | hata yok, I ≥ 0 |
 | TW4 | Mevcut `test_strength.py` ve gerilme testleri | değişmeden geçer |
+
+## Sonuç (2026-11-26)
+
+`python -m pytest tests/toporlogy/test_tsai_wu_admissibility.py tests/toporlogy/test_strength.py tests/toporlogy/test_stress.py tests/toporlogy/test_independent_stress.py tests/toporlogy/test_stress_zero_density.py -q -p no:randomly`
+→ 59 passed. TW1–TW4 PASS. f12 < −1/2 ile 3-B gerilmede indeks artık negatif dönmüyor, hata veriyor; düzlem
+gerilmede değişiklik yok.
