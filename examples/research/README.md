@@ -13,6 +13,7 @@ the module tests). Sizes are small so that each runs in well under a minute on a
 | `buckling_column2d.yaml` | compliance with a lower bound on the linear buckling load factor |
 | `inverter2d.yaml` | compliant force inverter: output displacement as objective, springs at input and output |
 | `mbb_simpl2d.yaml` | the half MBB beam with SiMPL, a Helmholtz filter and the 0/1 check |
+| `units_cantilever2d.yaml` | a cantilever in mm and N: values with units (`"2.5 mm"`, `"-2 kN"`), a material record (`material: {catalog: ...}`), VTU field export and a checkpoint every 10 iterations (`--resume`); 60 iterations do not converge, it shows the configuration, not an optimum |
 | `fiber_angle_cantilever2d.yaml` | cantilever of one orthotropic fibre material: density and the fibre angle of every element designed together (doubled-angle filter, `tensor_elasticity`; `docs/olcumler/malzeme_tasarimi.md`) |
 
 Run one: `python -m toporlogy run examples/research/stress_lbracket2d.yaml --out runs/stress`.

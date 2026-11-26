@@ -2142,6 +2142,151 @@
    }
   ]
  },
+ "examples/research/units_cantilever2d.yaml": {
+  "chain": [
+   {
+    "angle": null,
+    "density": true,
+    "type": "embed"
+   },
+   {
+    "backend": "auto",
+    "rmin": 2.0,
+    "type": "density_filter"
+   },
+   {
+    "type": "passive"
+   }
+  ],
+  "combinations": [],
+  "connectivity": null,
+  "constraints": [
+   {
+    "name": null,
+    "response": {
+     "type": "volume",
+     "weighted": false
+    },
+    "scale": null,
+    "upper": 0.4
+   }
+  ],
+  "domain": {
+   "h": 2.5,
+   "keep": null,
+   "origin": null,
+   "shape": [
+    48,
+    16
+   ],
+   "thickness": 5.0,
+   "type": "box",
+   "void": null
+  },
+  "interpolation": {
+   "emin_ratio": 1e-06,
+   "penal": 3.0,
+   "type": "simp"
+  },
+  "load_cases": [
+   {
+    "loads": [
+     {
+      "force": [
+       0,
+       -2000.0
+      ],
+      "name": null,
+      "type": "force",
+      "where": {
+       "at": [
+        "max",
+        "min"
+       ],
+       "type": "point"
+      }
+     }
+    ],
+    "name": "tip",
+    "supports": null,
+    "weight": 1.0
+   }
+  ],
+  "material": {
+   "E0": 200000.0,
+   "nu": 0.3,
+   "orthotropic": null,
+   "phases": null,
+   "plane": "stress",
+   "rho": 8e-09,
+   "strength": null
+  },
+  "name": "units_cantilever2d",
+  "objective": {
+   "type": "compliance",
+   "weights": null
+  },
+  "optimizer": {
+   "albefa": 0.1,
+   "asydecr": 0.7,
+   "asyincr": 1.2,
+   "asyinit": 0.5,
+   "asymax": 10.0,
+   "asymin": 0.01,
+   "c": 1000.0,
+   "d": 1.0,
+   "move": 0.2,
+   "normalise": "first",
+   "raa0": 1e-05,
+   "type": "mma"
+  },
+  "output": {
+   "folder": "runs",
+   "snapshot_every": 0
+  },
+  "physics": {
+   "element": null,
+   "solver": {
+    "method": "auto",
+    "type": "direct"
+   },
+   "type": "elasticity"
+  },
+  "post": [
+   {
+    "max_ratio": null,
+    "threshold": 0.5,
+    "type": "discrete_check",
+    "volume": null
+   },
+   {
+    "name": "result",
+    "type": "vtu"
+   }
+  ],
+  "robust": null,
+  "run": {
+   "checkpoint_every": 10,
+   "feasibility_tol": 0.001,
+   "max_iter": 60,
+   "move_beta_ref": null,
+   "seed": 0,
+   "tol": 0.01
+  },
+  "schedule": null,
+  "supports": [
+   {
+    "dofs": "all",
+    "name": null,
+    "type": "fixed",
+    "where": {
+     "at": "min",
+     "axis": "x",
+     "type": "plane"
+    }
+   }
+  ]
+ },
  "examples/split_connectivity2d.yaml": {
   "chain": [
    {

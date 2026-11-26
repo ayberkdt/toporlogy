@@ -36,8 +36,10 @@ def test_u1_examples_resolve_as_before() -> None:
     old = json.loads((HERE / "baseline" / "resolved_configs.json").read_text(encoding="utf-8"))
     assert sorted(old) == [p.as_posix() for p in _examples()], "examples added or removed: --write"
     for name, want in old.items():
-        got = resolve(read_config(REPO / name))
-        assert got.pop("schema_version") == "1" and got.pop("units") is None
+        raw = read_config(REPO / name)
+        got = resolve(raw)
+        units = got.pop("units")
+        assert got.pop("schema_version") == "1" and (units is None) == ("units" not in raw)
         assert json.loads(json.dumps(got, sort_keys=True, default=repr)) == want, name
 
 

@@ -18,7 +18,7 @@ EXAMPLES = sorted((Path(__file__).resolve().parents[2] / "examples" / "research"
 
 def test_examples_are_found() -> None:
     assert [p.stem for p in EXAMPLES] == ["buckling_column2d", "fiber_angle_cantilever2d", "inverter2d", "mbb_simpl2d",
-                                          "stress_al_lbracket2d", "stress_lbracket2d"]
+                                          "stress_al_lbracket2d", "stress_lbracket2d", "units_cantilever2d"]
 
 
 @pytest.mark.parametrize("path", EXAMPLES, ids=lambda p: p.stem)

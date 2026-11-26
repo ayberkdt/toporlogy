@@ -152,14 +152,15 @@ run: {max_iter: 300, tol: 0.01}
 - connectivity;
 - the full post-processing chain.
 
-Six more are in `examples/research/`:
+Seven more are in `examples/research/`:
 
 - stress constraints, aggregated and by an augmented Lagrangian (with a solid load pad and the one-body
   protection);
 - buckling;
 - a compliant inverter;
 - SiMPL with a PDE filter;
-- a fibre-angle design block on an orthotropic cantilever.
+- a fibre-angle design block on an orthotropic cantilever;
+- a cantilever in mm and N with values with units, a material record, VTU export and a checkpoint.
 
 113 components in 13 kinds can be used from YAML. `python -m toporlogy list` documents them, and
 [`docs/registry.md`](docs/registry.md) shows how to add one in a single line.
