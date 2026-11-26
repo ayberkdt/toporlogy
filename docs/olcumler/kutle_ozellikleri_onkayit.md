@@ -16,3 +16,10 @@ boyunca simetrik). Yeni modül `core/mass_properties.py` (NumPy ve Torch; Torch'
 | MP4 | Delikli parça: dolu prizma − delik prizması (süperpozisyon) | ≤ 1e-12 göreli |
 | MP5 | Kısmi hacim (frac) kütleyi ölçekler; void eleman katkı vermez | aynen |
 | MP6 | Türev: kütle, merkez ve I_zz'nin x̄'ye göre yönlü türevi merkezi farkla | ≤ 1e-8 göreli |
+
+## Sonuç (2026-11-26, ilk koşu)
+
+`python -m pytest tests/toporlogy/test_mass_properties.py -q -p no:randomly` → 6 passed. MP1–MP6 PASS: dolu prizma ve
+levha kapalı formu, paralel eksen teoremi, öteleme değişmezliği, delik süperpozisyonu, kısmi hacim ve void, kütle /
+merkez / I_zz türevleri (merkezi fark ≤ 1e-8). Yapılmayan: Study yanıtı olarak bağlama (kütle kısıtı zaten var;
+merkez ve atalet kısıtları için `optimization/responses.py` gerekir, bu sırada hızlandırma oturumunda).

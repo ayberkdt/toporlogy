@@ -2490,6 +2490,13 @@
   "transversely_isotropic_compliance": "transversely_isotropic_compliance(E_p,E_t,nu_p,nu_pt,G_t,axis)",
   "wave_speeds": "wave_speeds(C6,n,rho)"
  },
+ "toporlogy.core.mass_properties": {
+  "MassProperties": {
+   "attrs": [],
+   "class": "MassProperties"
+  },
+  "mass_properties": "mass_properties(domain,xphys,rho0,density,about)"
+ },
  "toporlogy.core.material": {
   "Orthotropic": {
    "attrs": [
