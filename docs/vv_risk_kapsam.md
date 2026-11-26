@@ -9,11 +9,11 @@ Kaynak: `tests/toporlogy/_vv_layers.py` (dosya → katman sınıflaması elle, d
 | EL element patch / quadrature | 5/48 | — | — | 1/10 | 8/77 | 1/14 | 4/52 | 1/14 | 1/17 | — | 2/20 | — |
 | AS assembly / BC / reactions | 1/23 | 1/23 | 5/62 | — | 4/39 | 5/53 | 1/23 | — | — | — | — | — |
 | AN analytical / MMS | 5/52 | — | — | 3/35 | 12/119 | — | 10/111 | 3/41 | 3/41 | 1/13 | 2/20 | — |
-| IS independent solver / implementation | 4/14 | — | — | — | 7/53 | 1/12 | 2/15 | — | 1/14 | — | — | — |
-| OG optimization / KKT / gradient | 6/71 | — | — | 5/56 | 10/112 | 4/48 | 18/156 | 13/137 | 6/70 | 2/30 | 2/30 | — |
+| IS independent solver / implementation | 4/14 | — | 1/14 | 1/14 | 8/67 | 2/26 | 3/29 | 1/14 | 2/28 | — | — | — |
+| OG optimization / KKT / gradient | 6/71 | — | 1/14 | 6/70 | 11/126 | 5/62 | 19/170 | 14/151 | 7/84 | 2/30 | 2/30 | — |
 | E2E end-to-end geometry | 2/38 | 5/39 | — | 2/13 | 2/38 | — | 7/61 | 1/21 | 4/38 | 1/10 | 10/67 | — |
 | IC integration / compatibility | 3/14 | 2/34 | — | 3/31 | 4/25 | — | 5/50 | 2/23 | 11/105 | 7/77 | 1/8 | 1/11 |
-| PF performance | — | — | 1/11 | — | 2/23 | 2/23 | — | — | — | — | — | — |
+| PF performance | — | — | 2/25 | 1/14 | 3/37 | 3/37 | 1/14 | 1/14 | 1/14 | — | — | — |
 
 Boş hücreler (açık risk adayı; her biri bir risk değildir, örn. `references` için çoğu katman anlamsız):
 
@@ -22,11 +22,11 @@ Boş hücreler (açık risk adayı; her biri bir risk değildir, örn. `referenc
 - **EL** (element patch / quadrature): geometry, boundary, execution, references
 - **AS** (assembly / BC / reactions): design, optimizers, configuration, execution, post, references
 - **AN** (analytical / MMS): geometry, boundary, solvers, references
-- **IS** (independent solver / implementation): geometry, boundary, design, optimizers, execution, post, references
-- **OG** (optimization / KKT / gradient): geometry, boundary, references
+- **IS** (independent solver / implementation): geometry, execution, post, references
+- **OG** (optimization / KKT / gradient): geometry, references
 - **E2E** (end-to-end geometry): boundary, solvers, references
 - **IC** (integration / compatibility): boundary, solvers
-- **PF** (performance): core, geometry, design, optimization, optimizers, configuration, execution, post, references
+- **PF** (performance): core, geometry, execution, post, references
 
 Katman sınıflaması (dosya → katmanlar):
 
@@ -99,6 +99,7 @@ Katman sınıflaması (dosya → katmanlar):
 - `test_sdf_contract.py`: E2E
 - `test_simpl.py`: OG
 - `test_skfem_crosscheck.py`: IS, EL
+- `test_speedups.py`: IS, OG, PF
 - `test_strength.py`: MP
 - `test_stress.py`: AN, OG
 - `test_stress_lbracket.py`: OG, E2E

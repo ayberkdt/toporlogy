@@ -5974,13 +5974,14 @@
   "state": "state()"
  },
  "toporlogy.solvers.supernodal": {
-  "NotPositiveDefiniteError": {
+  "AMALGAMATE": "<int>",
+  "CholeskyPivotError": {
    "attrs": [
     "add_note",
     "args",
     "with_traceback"
    ],
-   "class": "NotPositiveDefiniteError"
+   "class": "CholeskyPivotError"
   },
   "SupernodalCholesky": {
    "attrs": [

@@ -24,7 +24,7 @@ import torch
 import toporlogy as T
 from toporlogy import boundary
 from toporlogy.solvers.direct import DirectSolver, _PermutedPattern
-from toporlogy.solvers.supernodal import NotPositiveDefiniteError, SupernodalCholesky
+from toporlogy.solvers.supernodal import CholeskyPivotError, SupernodalCholesky
 
 REPO = Path(__file__).resolve().parents[2]
 
@@ -252,7 +252,7 @@ def test_h3f_not_spd_and_singular_are_refused():
     assert np.linalg.norm(A @ x - 1) <= 1e-12 * np.linalg.norm(A) * np.linalg.norm(x)
     B = A.copy()
     B[4, 4] = -1.0
-    with pytest.raises(NotPositiveDefiniteError):
+    with pytest.raises(CholeskyPivotError):
         ch.factor(sp.triu(sp.csr_matrix(B)).tocsr())
     S = np.zeros((n, n))
     S[:-1, :-1] = A[:-1, :-1]
@@ -260,7 +260,7 @@ def test_h3f_not_spd_and_singular_are_refused():
     S[-1, 0] = S[0, -1] = 0.0
     Su = sp.triu(sp.csr_matrix(A)).tocsr()                 # pattern of A, values of the singular S
     Su.data[:] = S[Su.nonzero()]
-    with pytest.raises(NotPositiveDefiniteError):
+    with pytest.raises(CholeskyPivotError):
         ch.factor(Su)
     with pytest.raises(ValueError, match="blocks"):
         DirectSolver("cholesky").factor(sp.triu(sp.csr_matrix(A)).tocsr())

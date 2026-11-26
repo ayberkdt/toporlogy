@@ -61,7 +61,8 @@ def main() -> int:
                 vals[which] = v.tobytes()
         Passive.forward, Volume.__call__ = impl["new"]
         mo, mn = statistics.median(times["old"]), statistics.median(times["new"])
-        rows.append({"example": ex, "old_us": [1e6 * t for t in times["old"]], "new_us": [1e6 * t for t in times["new"]],
+        rows.append({"example": ex, "old_us": [1e6 * t for t in times["old"]],
+                     "new_us": [1e6 * t for t in times["new"]],
                      "median_old_us": 1e6 * mo, "median_new_us": 1e6 * mn, "reduction": 1 - mn / mo,
                      "same_value_bits": vals["old"] == vals["new"]})
         print(f"{ex:16s} old {1e6 * mo:7.0f} us  new {1e6 * mn:7.0f} us  reduction {100 * (1 - mn / mo):5.1f} %  "

@@ -20,7 +20,7 @@ Numeric factorisation of block b (front ``[B, struct(b)]``):
     F11 = K[B, B] + Σ_c U_c[B, B],   F21 = K[S, B] + Σ_c U_c[S, B],   F22 = Σ_c U_c[S, S]      (S = struct(b))
     L11 = chol(F11),   L21 = F21 L11⁻ᵀ,   U_b = F22 − L21 L21ᵀ  (passed to the parent).
 
-A non-positive pivot (the matrix is not SPD at these values, or singular) raises :class:`NotPositiveDefiniteError`;
+A non-positive pivot (the matrix is not SPD at these values, or singular) raises :class:`CholeskyPivotError`;
 there is no pivoting and no fallback.
 
 The result differs from SuperLU's LU (same order, diagonal pivots) by rounding only; it is not bit for bit the same.
@@ -33,7 +33,7 @@ from typing import Any
 import numpy as np
 import scipy.sparse as sp
 
-__all__ = ["SupernodalCholesky", "NotPositiveDefiniteError", "AMALGAMATE"]
+__all__ = ["SupernodalCholesky", "CholeskyPivotError", "AMALGAMATE"]
 
 AMALGAMATE = 0
 """Default of ``amalgamate``: a block is merged with its parent when the parent is the next block in the order and the
@@ -43,7 +43,7 @@ faster at 60 600 DOF but store more than SuperLU's L + U at 120 x 40 (the pre-re
 in 3-D; so off by default."""
 
 
-class NotPositiveDefiniteError(RuntimeError):
+class CholeskyPivotError(RuntimeError):
     """A pivot block of the supernodal Cholesky is not positive definite."""
 
 
@@ -195,7 +195,7 @@ class SupernodalCholesky:
             # lower one
             L11, info = torch.linalg.cholesky_ex(T11)
             if int(info) != 0:
-                raise NotPositiveDefiniteError(
+                raise CholeskyPivotError(
                     f"supernodal Cholesky: block {b} (order positions {blk.start}..{blk.stop - 1}) is not positive "
                     f"definite (pivot {int(info)}): the matrix is singular or not SPD at these values")
             if nsr:
