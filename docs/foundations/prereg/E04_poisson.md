@@ -49,7 +49,7 @@ historical json is not modified.
 Run command: `python -m pytest tests/toporlogy/test_poisson_convention.py -q -p no:randomly`.
 First result: appended below after the run.
 
-## First result (2026-11-27 01:45 +0300, SHA 25d8df6 + E04 change)
+## First result (run 2026-11-27 between 01:14 and 01:27 +0300, SHA 25d8df6 + E04 change; the time was not read from the clock at the run — an earlier hand-written "01:45" was wrong and is corrected here)
 
 `python -m pytest tests/toporlogy/test_poisson_convention.py -q -p no:randomly`: PO1, PO2, PO2n, PO3, PO5 (2-D and
 3-D), PO6 passed on the first run. PO4 failed on the first run for a test set-up reason: the YAML layer reports

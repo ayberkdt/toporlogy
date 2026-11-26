@@ -20,7 +20,7 @@ Design and rules: `docs/foundations/MATERIAL_CONTRACT.md`.
 
 Run: `python -m pytest tests/toporlogy/test_material_contract.py -q -p no:randomly`. First result appended below.
 
-## First result (2026-11-27 01:35 +0300, SHA 25d8df6 + test file)
+## First result (run 2026-11-27 between 01:14 and 01:27 +0300, SHA 25d8df6 + test file; the time was not read from the clock at the run — an earlier hand-written "01:35" was wrong and is corrected here)
 
 CT1–CT8: 8 passed on the first run (`python -m pytest tests/toporlogy/test_material_contract.py -q -p no:randomly`).
 Two test set-up corrections were made before that first run (a non-existent `Domain.box` call replaced by
