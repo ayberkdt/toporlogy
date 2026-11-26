@@ -84,3 +84,9 @@ de silindi). Komut: `python -m pytest tests/toporlogy/test_fault_injection.py -q
 Kalan iki strict xfail (`inf_load_solve`, `load_wrong_rows_solve`) `fem/elastic.py`'nin girdi denetimini ister; bu
 dosya o sırada hızlandırma oturumunda olduğundan sonraya bırakıldı. `yaml_duplicate_key` durumunun YAML'ındaki
 eksik kısıt artık önemsiz: hata okuma aşamasında, kısıt denetiminden önce geliyor.
+
+## 3. Kalan iki durum (2026-11-26, birleştirmeden sonra)
+
+`fem/elastic.py` `Elasticity._loads`: `solve_numpy` ve `solve` girişinde yük satır sayısı (ndof) ve sonluluk
+denetimi. `inf_load_solve` ("load F must be finite") ve `load_wrong_rows_solve` ("expected N rows (DOFs)") ön kayıtlı
+beklentiyi tutuyor; strict xfail'den ve kütükten çıktılar. 33 durumun 33'ü PASS.

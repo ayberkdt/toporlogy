@@ -178,26 +178,6 @@
    "slow": false
   },
   {
-   "nodeid": "tests/toporlogy/test_fault_injection.py::test_fails_closed_with_a_clear_message[inf_load_solve]",
-   "kind": "pre-registered fault injection failed",
-   "model_backend": "Elasticity.solve_numpy",
-   "reason": "yükte Inf: çözümden sonra SolveResidualError, girdi denetimi yok",
-   "risk": "low",
-   "resolution": "solve girişinde sonluluk denetimi (ValueError)",
-   "record": "docs/vv_fault_injection.md",
-   "slow": false
-  },
-  {
-   "nodeid": "tests/toporlogy/test_fault_injection.py::test_fails_closed_with_a_clear_message[load_wrong_rows_solve]",
-   "kind": "pre-registered fault injection failed",
-   "model_backend": "Elasticity.solve_numpy",
-   "reason": "yanlış satır sayılı F: IndexError",
-   "risk": "medium",
-   "resolution": "F şekil denetimi",
-   "record": "docs/vv_fault_injection.md",
-   "slow": false
-  },
-  {
    "nodeid": "tests/toporlogy/test_anisotropy.py::test_p3_rotation_invariance",
    "kind": "pre-registered check failed",
    "model_backend": "core.anisotropy, core.linear_elastic (NumPy float64)",

@@ -245,10 +245,21 @@ class Elasticity:
         X[self.free] = x
         return X
 
-    def solve_numpy(self, E_active: np.ndarray, F: np.ndarray) -> np.ndarray:
-        """U (ndof, n_cases) for moduli ``E_active`` and loads ``F`` (ndof,) or (ndof, n_cases); no autograd."""
+    def _loads(self, F: np.ndarray) -> np.ndarray:
+        """Loads as (ndof, n_cases), refused with a clear message when the rows do not match or a value is not
+        finite (docs/vv_fault_injection.md: inf_load_solve, load_wrong_rows_solve)."""
         F2 = np.asarray(F, float)
         F2 = F2[:, None] if F2.ndim == 1 else F2
+        n = self.domain.ndof
+        if F2.ndim != 2 or F2.shape[0] != n:
+            raise ValueError(f"load F has shape {np.shape(F)}; expected {n} rows (DOFs), one column per load case")
+        if not np.isfinite(F2).all():
+            raise ValueError("load F must be finite (NaN or Inf found)")
+        return F2
+
+    def solve_numpy(self, E_active: np.ndarray, F: np.ndarray) -> np.ndarray:
+        """U (ndof, n_cases) for moduli ``E_active`` and loads ``F`` (ndof,) or (ndof, n_cases); no autograd."""
+        F2 = self._loads(F)
         self.factor(E_active)
         self.n_solves += 1
         return self._solve_free(F2)
@@ -274,9 +285,7 @@ class Elasticity:
     # ------------------------------------------------------------------ autograd
     def solve(self, E_active: torch.Tensor, F: np.ndarray) -> torch.Tensor:
         """Differentiable ``U(E)``: (ndof, n_cases) float64 tensor. ``E_active`` (na,) tensor."""
-        F2 = np.asarray(F, float)
-        F2 = F2[:, None] if F2.ndim == 1 else F2
-        return _LinearSolve.apply(E_active, self, F2)
+        return _LinearSolve.apply(E_active, self, self._loads(F))
 
 
 ORDERINGS = ("nested_dissection", "solver")

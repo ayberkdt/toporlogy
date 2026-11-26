@@ -201,13 +201,7 @@ CASES: list[tuple[str, Callable[[Path], Any], tuple[type[BaseException], ...], s
 
 # First run 2026-11-26 00:30 +0300: these cases did not meet their pre-registered expectation (observed behaviour in
 # the reason; docs/vv_fault_injection.md §1). Strict: a fix turns the xfail into a failure, and the entry goes.
-FAILED_FIRST_RUN = {
-    "inf_load_solve": "fails closed after the solve with SolveResidualError (a RuntimeError) 'load case 0: the solution "
-                      "is not finite (NaN or Inf)': clear message, but not the pre-registered ValueError at input "
-                      "validation",
-    "load_wrong_rows_solve": "IndexError 'index 88 is out of bounds for axis 0 with size 88' from Elasticity "
-                             "._solve_free: no shape check of F",
-}
+FAILED_FIRST_RUN: dict[str, str] = {}
 
 
 def _param(i: str, a: Any, t: Any, p: str) -> Any:
