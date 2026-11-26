@@ -17,7 +17,8 @@ from toporlogy.execution.runs import flags_of, status_of, verdict_of, write_reso
 
 def run_setup(setup: Setup, folder: str | Path, progress: Callable[[int, dict[str, Any]], None] | None = None,
               source: str | None = None, overrides: Sequence[str] = (),
-              post_progress: Callable[[str, dict[str, Any] | None, float], None] | None = None) -> dict[str, Any]:
+              post_progress: Callable[[str, dict[str, Any] | None, float], None] | None = None,
+              resume: bool = False) -> dict[str, Any]:
     """Run a built study into ``folder``; returns the summary (also written to ``summary.json``).
 
     Folder content: ``config.resolved.yaml``, ``setup.json``, ``history.jsonl``, ``result.npz``, ``result.json``
@@ -48,8 +49,15 @@ def run_setup(setup: Setup, folder: str | Path, progress: Callable[[int, dict[st
                **st.schedule.state(), "seconds": time.perf_counter() - t0}
         progress(it, row)
 
+    every = int(run.get("checkpoint_every") or 0)
+    if every < 0:
+        raise ValueError("run.checkpoint_every must be >= 0")
+    ck = folder / "checkpoint.ckpt"
+    if resume and not ck.is_file():
+        raise FileNotFoundError(f"{folder} has no checkpoint.ckpt to resume from (run.checkpoint_every > 0 writes it)")
     res = st.run(max_iter=int(run["max_iter"]), tol=float(run["tol"]), callback=cb,
-                 feasibility_tol=float(run["feasibility_tol"]))
+                 feasibility_tol=float(run["feasibility_tol"]), checkpoint=str(ck) if every > 0 else None,
+                 checkpoint_every=every, resume=str(ck) if resume else None)
     ftol = float(run["feasibility_tol"])
     phases = None
     if int(getattr(st.interp, "n_fields", 1)) > 1:      # several phases: grey share and volumes from the fractions

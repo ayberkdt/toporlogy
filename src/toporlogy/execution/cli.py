@@ -252,6 +252,10 @@ def cmd_run(a: argparse.Namespace) -> int:
     except ConfigError as e:
         return report_config_error(e, src, "validate")
     folder = Path(a.out) if a.out else _default_folder(setup.config)
+    resume = bool(getattr(a, "resume", False))
+    if resume and not (folder / "checkpoint.ckpt").is_file():
+        err(kv("ERROR", f"--resume: {folder} has no checkpoint.ckpt (set run.checkpoint_every > 0 to write one)"))
+        return EXIT_CONFIG
     if _finished(folder):
         err(kv("ERROR", f"{folder} already holds a finished run; it is not overwritten"))
         err(kv("NEXT", f"{PROG} run {src} --out <new folder>"))
@@ -261,7 +265,8 @@ def cmd_run(a: argparse.Namespace) -> int:
     for w in setup.warnings:
         out(kv("warning", w))
     prog = None if a.quiet else Progress(setup.study.objective.name, setup.constraint_names)
-    sm = run_setup(setup, folder, progress=prog, source=str(src), overrides=a.set, post_progress=_post_line)
+    sm = run_setup(setup, folder, progress=prog, source=str(src), overrides=a.set, post_progress=_post_line,
+                   resume=resume)
     out(kv("RESULT", _result_line(sm)))
     out(kv("NEXT", _next_after_run(sm, folder, src)))
     return EXIT_OK if sm["status"] == STATUS_OK else EXIT_FAIL
@@ -592,7 +597,8 @@ def parser() -> argparse.ArgumentParser:
                    help="run every combination of the listed values (repeatable: cartesian product)")
     r.add_argument("-q", "--quiet", action="store_true", help="no per-iteration lines")
     r.add_argument("--resume", action="store_true",
-                   help="continue the sweep in --out (same request): finished runs are not re-run")
+                   help="continue in --out: a sweep (same request; finished runs are not re-run) or one run "
+                        "from its checkpoint.ckpt (run.checkpoint_every > 0)")
     v = sub.add_parser("validate", help="check a config and print the problem summary (no solve)")
     v.add_argument("config", help="YAML or JSON config file")
     v.add_argument("--set", action="append", default=[], metavar="KEY.PATH=VALUE", help="override (repeatable)")

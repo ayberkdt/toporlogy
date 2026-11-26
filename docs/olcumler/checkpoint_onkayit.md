@@ -47,3 +47,10 @@ bağlantısı (`run.checkpoint_every`) yapılmadı.
 |:---|:---|:---|
 | CK6 | CLI: checkpoint_every 1 ile kesilen (5. iterasyonda) koşu `--resume` ile bitirilir; `result.npz` x'i kesintisiz CLI koşusununkiyle | bit düzeyinde aynı |
 | CK7 | `--resume` checkpoint olmayan klasörde | çıkış 2, açık mesaj |
+
+### CK6–CK7 sonucu
+
+PASS: 12 iterasyonluk koşu 6. değerlendirmede kesildi (`checkpoint_every: 1`), `--resume` ile bitirildi; `result.npz`
+x'i kesintisiz CLI koşusuyla bit düzeyinde aynı. Checkpoint'i olmayan klasörde `--resume` çıkış 2. Sürdürülen koşunun
+`history.jsonl` dosyası sürdürme noktasından başlar; `result.json` ve `summary.json` bütün geçmişi taşır.
+Çözümlenmiş yapılandırma görüntüsü (U1) yeni `run.checkpoint_every` anahtarı için `--write` ile yenilendi.

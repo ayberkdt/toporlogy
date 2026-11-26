@@ -74,3 +74,33 @@ def test_ck4_atomic_write_leaves_no_temporary_file(tmp_path: Path) -> None:
     _study("mma").run(max_iter=4, checkpoint=str(ck), checkpoint_every=2)
     assert ck.is_file()
     assert not any(p.name.endswith(".tmp") for p in tmp_path.iterdir())
+
+
+def test_ck6_ck7_cli_checkpoint_and_resume(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    import yaml
+
+    from toporlogy.execution.cli import main
+    from toporlogy.optimization.study import Study
+    c = copy.deepcopy(CFG)
+    c["optimizer"] = "mma"
+    c["run"] = {"max_iter": 12, "tol": 1e-12, "checkpoint_every": 1}
+    p = tmp_path / "c.yaml"
+    p.write_text(yaml.safe_dump(c), encoding="utf-8")
+    full, part = tmp_path / "full", tmp_path / "part"
+    main(["run", str(p), "--out", str(full), "-q"])
+    real = Study.evaluate
+    count = {"n": 0}
+
+    def interrupted(self, x, gradients=True):
+        count["n"] += 1
+        if count["n"] == 6:
+            raise KeyboardInterrupt
+        return real(self, x, gradients)
+    monkeypatch.setattr(Study, "evaluate", interrupted)
+    with pytest.raises(KeyboardInterrupt):
+        main(["run", str(p), "--out", str(part), "-q"])
+    monkeypatch.setattr(Study, "evaluate", real)
+    assert (part / "checkpoint.ckpt").is_file() and not (part / "summary.json").is_file()
+    main(["run", str(p), "--out", str(part), "-q", "--resume"])
+    assert np.array_equal(np.load(full / "result.npz")["x"], np.load(part / "result.npz")["x"])     # CK6
+    assert main(["run", str(p), "--out", str(tmp_path / "none"), "-q", "--resume"]) == 2               # CK7

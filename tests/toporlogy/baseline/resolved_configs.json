@@ -120,6 +120,7 @@
   "post": [],
   "robust": null,
   "run": {
+   "checkpoint_every": 0,
    "feasibility_tol": 0.001,
    "max_iter": 150,
    "move_beta_ref": null,
@@ -257,6 +258,7 @@
   "post": [],
   "robust": null,
   "run": {
+   "checkpoint_every": 0,
    "feasibility_tol": 0.001,
    "max_iter": 60,
    "move_beta_ref": null,
@@ -599,6 +601,7 @@
    "min_void": 3.0
   },
   "run": {
+   "checkpoint_every": 0,
    "feasibility_tol": 0.001,
    "max_iter": 40,
    "move_beta_ref": 2.0,
@@ -741,6 +744,7 @@
   "post": [],
   "robust": null,
   "run": {
+   "checkpoint_every": 0,
    "feasibility_tol": 0.001,
    "max_iter": 300,
    "move_beta_ref": null,
@@ -913,6 +917,7 @@
   "post": [],
   "robust": null,
   "run": {
+   "checkpoint_every": 0,
    "feasibility_tol": 0.001,
    "max_iter": 80,
    "move_beta_ref": null,
@@ -1068,6 +1073,7 @@
   "post": [],
   "robust": null,
   "run": {
+   "checkpoint_every": 0,
    "feasibility_tol": 0.001,
    "max_iter": 80,
    "move_beta_ref": null,
@@ -1226,6 +1232,7 @@
   "post": [],
   "robust": null,
   "run": {
+   "checkpoint_every": 0,
    "feasibility_tol": 0.001,
    "max_iter": 60,
    "move_beta_ref": null,
@@ -1380,6 +1387,7 @@
   "post": [],
   "robust": null,
   "run": {
+   "checkpoint_every": 0,
    "feasibility_tol": 0.001,
    "max_iter": 100,
    "move_beta_ref": null,
@@ -1578,6 +1586,7 @@
   ],
   "robust": null,
   "run": {
+   "checkpoint_every": 0,
    "feasibility_tol": 0.001,
    "max_iter": 150,
    "move_beta_ref": null,
@@ -1847,6 +1856,7 @@
   ],
   "robust": null,
   "run": {
+   "checkpoint_every": 0,
    "feasibility_tol": 0.001,
    "max_iter": 600,
    "move_beta_ref": null,
@@ -2100,6 +2110,7 @@
   ],
   "robust": null,
   "run": {
+   "checkpoint_every": 0,
    "feasibility_tol": 0.001,
    "max_iter": 120,
    "move_beta_ref": null,
@@ -2352,6 +2363,7 @@
   ],
   "robust": null,
   "run": {
+   "checkpoint_every": 0,
    "feasibility_tol": 0.001,
    "max_iter": 120,
    "move_beta_ref": null,
@@ -2539,6 +2551,7 @@
   "post": [],
   "robust": null,
   "run": {
+   "checkpoint_every": 0,
    "feasibility_tol": 0.001,
    "max_iter": 60,
    "move_beta_ref": null,

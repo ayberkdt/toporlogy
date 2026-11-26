@@ -113,7 +113,8 @@ _MATERIAL = {"E0": Param("E0", 1.0, float, unit="force/length^2"), "nu": Param("
 
 _RUN = {"max_iter": Param("max_iter", 100, int), "tol": Param("tol", 0.01, float),
         "seed": Param("seed", 0, int), "feasibility_tol": Param("feasibility_tol", 1e-3, float),
-        "move_beta_ref": Param("move_beta_ref", None, float, nullable=True)}
+        "move_beta_ref": Param("move_beta_ref", None, float, nullable=True),
+        "checkpoint_every": Param("checkpoint_every", 0, int)}
 
 
 _OUTPUT = {"folder": Param("folder", "runs", str), "snapshot_every": Param("snapshot_every", 0, int)}

@@ -4194,7 +4194,7 @@
   "annotations": "<_Feature>",
   "constraint_entry": "constraint_entry(name,value,upper,tol,source)",
   "flags_of": "flags_of(summary)",
-  "run_setup": "run_setup(setup,folder,progress,source,overrides,post_progress)",
+  "run_setup": "run_setup(setup,folder,progress,source,overrides,post_progress,resume)",
   "status_of": "status_of(summary)",
   "verdict_of": "verdict_of(summary)",
   "write_resolved": "write_resolved(resolved,folder,source,overrides)"
