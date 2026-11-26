@@ -29,7 +29,7 @@ import torch
 from toporlogy.core.domain import Domain
 from toporlogy.fem.mechanisms import SolveResidualError, check_moduli, check_supports, fixed_dof_rows
 from toporlogy.solvers.direct import DirectSolver
-from toporlogy.solvers.ordering import nested_dissection_dofs
+from toporlogy.solvers.ordering import nested_dissection_blocks
 
 __all__ = ["Elasticity", "element_matrix", "ORDERINGS", "GROUPED_MAX", "RESIDUAL_TOL", "BACKWARD_TOL", "ResidualReport",
            "checked_residual", "matrix_norm1"]
@@ -126,6 +126,7 @@ class Elasticity:
         self._P = sp.csr_matrix((np.zeros(len(ukey)), (ukey // nf, ukey % nf)), shape=(nf, nf))
         self.solver = solver if solver is not None else DirectSolver()
         self._order: np.ndarray | None = None                      # nested dissection of the reduced system, lazy
+        self._blocks: np.ndarray | None = None                     # its parts (unknowns per part), with _order
         self._token = 0                                            # increments with every factorisation
         self._factored_E: np.ndarray | None = None
         self.n_solves = 0
@@ -196,8 +197,19 @@ class Elasticity:
         """Nested dissection order of the reduced system (index into :attr:`free`), computed once."""
         if self._order is None:
             d = self.domain
-            self._order = nested_dissection_dofs(tuple(n + 1 for n in d.shape), d.dim, self.free)
+            self._order, self._blocks = nested_dissection_blocks(tuple(n + 1 for n in d.shape), d.dim, self.free)
         return self._order
+
+    def elimination_blocks(self) -> np.ndarray:
+        """Unknowns per part (leaf box, separator plane) of :meth:`elimination_order`, consecutive in that order: the
+        dense blocks of the supernodal Cholesky (``DirectSolver("cholesky")``). A subclass that changes the order
+        must give its own blocks."""
+        if type(self).elimination_order is not Elasticity.elimination_order:
+            raise NotImplementedError(f"{type(self).__name__} changes the elimination order but gives no "
+                                      "elimination_blocks(): the 'cholesky' direct solver needs both")
+        self.elimination_order()
+        assert self._blocks is not None
+        return self._blocks
 
     def _kinematic_rows(self) -> dict[int, np.ndarray]:
         """Support rows per node acting on its displacement (fixed DOFs: unit rows); see :mod:`.mechanisms`."""
@@ -218,7 +230,8 @@ class Elasticity:
         self._A = self.matrix(E_active)
         self._A_norm1 = matrix_norm1(self._A)
         if isinstance(self.solver, DirectSolver) and self.ordering == "nested_dissection":
-            self.solver.factor(self._A, order=self.elimination_order())
+            blocks = self.elimination_blocks() if self.solver.method == "cholesky" else None
+            self.solver.factor(self._A, order=self.elimination_order(), blocks=blocks)
         else:
             self.solver.factor(self._A)
         self._factored_E = E_active.copy()

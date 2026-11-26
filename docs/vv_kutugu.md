@@ -2,7 +2,7 @@
 
 `tests/toporlogy/test_catalog_ledger.py` bu kütüğü toplanan testlerle karşılaştırır: her xfail strict (XPASS koşuyu kırar), kütük toplanan strict xfail listesiyle ve test kaynaklarındaki atlama noktalarıyla birebir aynı. Beklenen başarısızlık PASS sayılmaz; atlanan bir arka ucun testi NOT VERIFIED'dır. Yeniden üretim: `python tests/toporlogy/test_catalog_ledger.py --write`.
 
-Toplam 47 strict xfail (12 tanesi yavaş pakette), 16 atlama noktası.
+Toplam 48 strict xfail (12 tanesi yavaş pakette), 16 atlama noktası.
 
 Risk düzeyleri: **low** ölçüt ya da kontrolün kendisi; kod sonucu başka testle doğrulanmış; **medium** açıklanmamış sayısal fark ya da referans yeniden üretilemiyor; **high** kullanıcıya görünen sessiz kabul (yanlış sonuç üretebilir).
 
@@ -57,6 +57,7 @@ Risk düzeyleri: **low** ölçüt ya da kontrolün kendisi; kod sonucu başka te
 | `test_material_design.py::test_a6_global_angle_matches_the_sweep` | pre-registered check failed | TensorElasticity + MMA, global açı, 40 × 20 konsol (CPU) | A6 FAIL: açı her başlangıçta ≤ 1° (geçiyor), uyum ölçütü tutmuyor: MMA tek değişkende 0° çevresinde ±1,6° sabit adımla salınıyor, c_opt / c_tarama = 1,00084 (0°), 1,00029 (±45°) | low | MMA'nın tek değişkenli salınımı (optimizers/ perf oturumunun); asimptot uyarlaması ya da hareket sınırı azaltımıyla yeni ön kayıt | docs/olcumler/malzeme_tasarimi.md | evet |
 | `test_material_design.py::test_g2_taylor_remainder[a-recursive]` | pre-registered check failed | TensorPhases recursive + TensorElasticity, 12 × 6 (CPU) | G2 FAIL: ön kayıtlı h ∈ [1,25e-2; 1e-1] aralığında Taylor eğimi 1,31 (< 1,9); adımlar asimptotik bölgenin dışında, h ≤ 1e-3'te eğim 2,00 ve FD 1e-6 içinde | low | post hoc küçük adım testi geçiyor; yeni ön kayıtta h aralığı küçültülür | docs/olcumler/malzeme_tasarimi.md | — |
 | `test_material_design.py::test_g2_taylor_remainder[c-density+angle]` | pre-registered check failed | OrientedEmbed + TensorPhases + TensorElasticity, 12 × 6 (CPU) | G2 FAIL: ön kayıtlı h aralığında Taylor eğimi 1,55 (< 1,9); h ≤ 1e-3'te eğim 1,99, FD 1e-6 içinde | low | post hoc küçük adım testi geçiyor; yeni ön kayıtta h aralığı küçültülür | docs/olcumler/malzeme_tasarimi.md | — |
+| `test_speedups.py::test_h3c_oblique_support` | pre-registered check failed | ConstrainedElasticity + DirectSolver('cholesky') (CPU) | eğik mesnetli fizik kendi eleme sırasını veriyor ama blok bölümünü vermiyor; Cholesky açık hata veriyor (NotImplementedError), sonuç üretmiyor | low | boundary/constrained.py'ye elimination_blocks() (üst sınıfın blokları keep ile süzülmüş); sonra H3c yeniden koşu | docs/olcumler/hizlandirma.md | — |
 
 ## 2. Atlama noktaları
 

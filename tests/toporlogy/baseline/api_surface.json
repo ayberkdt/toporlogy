@@ -176,6 +176,7 @@
     "element_energy",
     "element_forces",
     "element_stiffness",
+    "elimination_blocks",
     "elimination_order",
     "factor",
     "matrix",
@@ -687,6 +688,7 @@
     "element_energy",
     "element_forces",
     "element_stiffness",
+    "elimination_blocks",
     "elimination_order",
     "factor",
     "matrix",
@@ -1004,6 +1006,7 @@
     "element_energy",
     "element_forces",
     "element_stiffness",
+    "elimination_blocks",
     "elimination_order",
     "factor",
     "matrix",
@@ -1053,6 +1056,7 @@
     "element_energy",
     "element_forces",
     "element_stiffness",
+    "elimination_blocks",
     "elimination_order",
     "factor",
     "matrix",
@@ -1127,6 +1131,7 @@
     "element_energy",
     "element_forces",
     "element_stiffness",
+    "elimination_blocks",
     "elimination_order",
     "factor",
     "matrix",
@@ -1176,6 +1181,7 @@
     "element_energy",
     "element_forces",
     "element_stiffness",
+    "elimination_blocks",
     "elimination_order",
     "factor",
     "matrix",
@@ -1292,6 +1298,7 @@
     "element_energy",
     "element_forces",
     "element_stiffness",
+    "elimination_blocks",
     "elimination_order",
     "factor",
     "matrix",
@@ -4218,6 +4225,7 @@
     "element_energy",
     "element_forces",
     "element_stiffness",
+    "elimination_blocks",
     "elimination_order",
     "factor",
     "matrix",
@@ -4292,6 +4300,7 @@
     "element_energy",
     "element_forces",
     "element_stiffness",
+    "elimination_blocks",
     "elimination_order",
     "factor",
     "matrix",
@@ -4917,6 +4926,7 @@
     "element_energy",
     "element_forces",
     "element_stiffness",
+    "elimination_blocks",
     "elimination_order",
     "factor",
     "matrix",
@@ -7092,7 +7102,8 @@
     "solve"
    ],
    "class": "DirectSolver"
-  }
+  },
+  "METHODS": "<tuple>"
  },
  "toporlogy.solvers.gmg": {
   "GMGConvergenceError": {
@@ -7227,6 +7238,7 @@
  },
  "toporlogy.solvers.ordering": {
   "LEAF_NODES": "<int>",
+  "nested_dissection_blocks": "nested_dissection_blocks(node_shape,dofs_per_node,free,leaf)",
   "nested_dissection_dofs": "nested_dissection_dofs(node_shape,dofs_per_node,free,leaf)",
   "nested_dissection_nodes": "nested_dissection_nodes(node_shape,leaf)"
  },
@@ -7234,5 +7246,24 @@
   "available": "available()",
   "load": "load()",
   "state": "state()"
+ },
+ "toporlogy.solvers.supernodal": {
+  "AMALGAMATE": "<int>",
+  "CholeskyPivotError": {
+   "attrs": [
+    "add_note",
+    "args",
+    "with_traceback"
+   ],
+   "class": "CholeskyPivotError"
+  },
+  "SupernodalCholesky": {
+   "attrs": [
+    "factor",
+    "matches",
+    "solve"
+   ],
+   "class": "SupernodalCholesky"
+  }
  }
 }

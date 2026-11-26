@@ -476,6 +476,16 @@
    "resolution": "post hoc küçük adım testi geçiyor; yeni ön kayıtta h aralığı küçültülür",
    "record": "docs/olcumler/malzeme_tasarimi.md",
    "slow": false
+  },
+  {
+   "nodeid": "tests/toporlogy/test_speedups.py::test_h3c_oblique_support",
+   "kind": "pre-registered check failed",
+   "model_backend": "ConstrainedElasticity + DirectSolver('cholesky') (CPU)",
+   "reason": "eğik mesnetli fizik kendi eleme sırasını veriyor ama blok bölümünü vermiyor; Cholesky açık hata veriyor (NotImplementedError), sonuç üretmiyor",
+   "risk": "low",
+   "resolution": "boundary/constrained.py'ye elimination_blocks() (üst sınıfın blokları keep ile süzülmüş); sonra H3c yeniden koşu",
+   "record": "docs/olcumler/hizlandirma.md",
+   "slow": false
   }
  ],
  "skips": [

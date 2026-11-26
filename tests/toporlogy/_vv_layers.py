@@ -34,6 +34,7 @@ AREAS = ("core", "geometry", "boundary", "design", "fem", "solvers", "optimizati
          "execution", "post", "references")
 
 FILE_LAYERS: dict[str, tuple[str, ...]] = {
+    "test_speedups.py": ("IS", "OG", "PF"),
     "test_aggregates.py": ("U", "OG"), "test_api_surface.py": ("IC",), "test_architecture.py": ("IC",),
     "test_baseline.py": ("IC",), "test_baseline_policy.py": ("IC",), "test_bc.py": ("AS",),
     "test_benchmark.py": ("OG",), "test_buckling.py": ("EL", "AN", "OG"), "test_buckling_physics.py": ("AN", "OG"),
