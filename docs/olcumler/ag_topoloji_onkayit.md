@@ -33,3 +33,20 @@
 
 Sonraki adım (mimari karar): genel ağın `Study` / YAML'a girmesi — ızgaraya bağlı olmayan bir tasarım zinciri (bu
 modüldeki filtre gibi) ve ağ etiketleriyle mesnet / yük.
+
+## Ek ön kayıt: genel ağ `Study` içinde (MD1–MD5)
+
+Ön kayıt 2026-11-26 16:08 +0300, kod yazılmadan önce. Karar (`tasarim_genel_ag_study.md` önerisinin varsayılanları, kullanıcının
+"ne yapılması gerekiyorsa onu yap" yönergesiyle): ayrı `MeshStudy` yok; `Study` değişmeden kalır ve ağ, hücreleri
+1-B bir "ızgara" olarak sunan `MeshDomain` ile girer (`shape = (n_cells,)`, hepsi aktif, `frac = 1`). Yeni modül
+`optimization/mesh_study.py`: `MeshDomain`, `MeshFilterLink` (ağ filtresi, seyrek autograd halkası),
+`MeshElasticity` (fizik; geri adım öz-eşlenik adjoint), `MeshVolume` (`Volume` alt sınıfı, hücre hacmiyle ağırlıklı).
+YAML bu adımda yok.
+
+| # | Kontrol | Eşik |
+|:---|:---|:---|
+| MD1 | `Mesh.from_domain` ağında ağ `Study`'si = ızgara `Study`'si (aynı x, rmin, SIMP, mesnet, yük): değer ve gradyan | ≤ 1e-12 göreli |
+| MD2 | aynı iki çalışma, 10 MMA iterasyonu: amaç geçmişleri | her iterasyonda ≤ 1e-8 göreli |
+| MD3 | bozulmuş Q4 ve T3 ağlarında `Study` gradyanı (amaç uyum) merkezi farkla | ≤ 1e-6 göreli |
+| MD4 | bozulmuş Q4 konsol, `MeshVolume` ≤ 0,4, 30 MMA iterasyonu | son uyum < ilk uyum; hacim ≤ 0,4 (1 + 1e-3) |
+| MD5 | var olan kod | `pytest -m baseline` bit düzeyinde |
