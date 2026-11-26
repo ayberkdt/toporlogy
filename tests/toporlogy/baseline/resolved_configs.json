@@ -126,6 +126,7 @@
    "max_iter": 150,
    "move_beta_ref": null,
    "seed": 0,
+   "start": null,
    "tol": 0.01
   },
   "schedule": {
@@ -265,6 +266,7 @@
    "max_iter": 60,
    "move_beta_ref": null,
    "seed": 0,
+   "start": null,
    "tol": 0.001
   },
   "schedule": null,
@@ -609,6 +611,7 @@
    "max_iter": 40,
    "move_beta_ref": 2.0,
    "seed": 0,
+   "start": null,
    "tol": 0.01
   },
   "schedule": {
@@ -753,6 +756,7 @@
    "max_iter": 300,
    "move_beta_ref": null,
    "seed": 0,
+   "start": null,
    "tol": 0.01
   },
   "schedule": null,
@@ -927,6 +931,7 @@
    "max_iter": 80,
    "move_beta_ref": null,
    "seed": 0,
+   "start": null,
    "tol": 0.01
   },
   "schedule": null,
@@ -1084,6 +1089,7 @@
    "max_iter": 80,
    "move_beta_ref": null,
    "seed": 0,
+   "start": null,
    "tol": 0.001
   },
   "schedule": null,
@@ -1244,6 +1250,188 @@
    "max_iter": 60,
    "move_beta_ref": null,
    "seed": 0,
+   "start": null,
+   "tol": 0.001
+  },
+  "schedule": null,
+  "supports": [
+   {
+    "dofs": "all",
+    "name": null,
+    "type": "fixed",
+    "where": {
+     "at": "min",
+     "axis": "x",
+     "type": "plane"
+    }
+   }
+  ]
+ },
+ "examples/research/fiber_matrix_angle_cantilever2d.yaml": {
+  "chain": [
+   {
+    "angle": {
+     "bounds": [
+      -90,
+      90
+     ],
+     "location": "element",
+     "rmin": 2.0,
+     "start": 0
+    },
+    "density": true,
+    "type": "embed"
+   },
+   {
+    "backend": "auto",
+    "periodic": false,
+    "rmin": 2.0,
+    "type": "density_filter"
+   },
+   {
+    "type": "passive"
+   }
+  ],
+  "combinations": [],
+  "connectivity": null,
+  "constraints": [
+   {
+    "name": null,
+    "response": {
+     "phases": "matrix",
+     "type": "phase_volume",
+     "weighted": false
+    },
+    "scale": null,
+    "upper": 0.25
+   },
+   {
+    "name": null,
+    "response": {
+     "phases": "fibre",
+     "type": "phase_volume",
+     "weighted": false
+    },
+    "scale": null,
+    "upper": 0.2
+   }
+  ],
+  "domain": {
+   "h": 1.0,
+   "keep": null,
+   "origin": null,
+   "shape": [
+    40,
+    20
+   ],
+   "thickness": 1.0,
+   "type": "box",
+   "void": null
+  },
+  "interpolation": {
+   "emin_ratio": 1e-06,
+   "penal": 3.0,
+   "phases": [
+    {
+     "cost": 1.0,
+     "isotropic": {
+      "E": 0.3,
+      "nu": 0.3
+     },
+     "name": "matrix"
+    },
+    {
+     "cost": 4.0,
+     "name": "fibre",
+     "orthotropic": {
+      "E1": 1.0,
+      "E2": 0.1,
+      "E3": 0.1,
+      "G12": 0.05,
+      "G13": 0.05,
+      "G23": 0.04,
+      "nu12": 0.3,
+      "nu13": 0.3,
+      "nu23": 0.3
+     }
+    }
+   ],
+   "rule": "simplex",
+   "type": "tensor_phases"
+  },
+  "load_cases": [
+   {
+    "loads": [
+     {
+      "force": [
+       0,
+       -1
+      ],
+      "name": null,
+      "type": "force",
+      "where": {
+       "at": [
+        "max",
+        "mid"
+       ],
+       "type": "point"
+      }
+     }
+    ],
+    "name": "tip",
+    "supports": null,
+    "weight": 1.0
+   }
+  ],
+  "material": {
+   "E0": 1.0,
+   "nu": 0.3,
+   "orthotropic": null,
+   "phases": null,
+   "plane": "stress",
+   "rho": 1.0,
+   "strength": null
+  },
+  "name": "fiber_matrix_angle_cantilever2d",
+  "objective": {
+   "type": "compliance",
+   "weights": null
+  },
+  "optimizer": {
+   "albefa": 0.1,
+   "asydecr": 0.7,
+   "asyincr": 1.2,
+   "asyinit": 0.5,
+   "asymax": 10.0,
+   "asymin": 0.01,
+   "c": 1000.0,
+   "d": 1.0,
+   "move": 0.1,
+   "normalise": "first",
+   "raa0": 1e-05,
+   "type": "mma"
+  },
+  "output": {
+   "folder": "runs",
+   "snapshot_every": 0
+  },
+  "physics": {
+   "element": null,
+   "solver": {
+    "method": "auto",
+    "type": "direct"
+   },
+   "type": "tensor_elasticity"
+  },
+  "post": [],
+  "robust": null,
+  "run": {
+   "checkpoint_every": 0,
+   "feasibility_tol": 0.001,
+   "max_iter": 60,
+   "move_beta_ref": null,
+   "seed": 0,
+   "start": null,
    "tol": 0.001
   },
   "schedule": null,
@@ -1400,6 +1588,7 @@
    "max_iter": 100,
    "move_beta_ref": null,
    "seed": 0,
+   "start": null,
    "tol": 0.002
   },
   "schedule": null,
@@ -1599,6 +1788,7 @@
    "max_iter": 150,
    "move_beta_ref": null,
    "seed": 0,
+   "start": null,
    "tol": 0.005
   },
   "schedule": null,
@@ -1624,6 +1814,239 @@
      ],
      "type": "point"
     }
+   }
+  ]
+ },
+ "examples/research/mesh_cantilever2d.yaml": {
+  "chain": [
+   {
+    "type": "embed"
+   },
+   {
+    "rmin": 0.125,
+    "type": "density_filter"
+   },
+   {
+    "type": "passive"
+   }
+  ],
+  "combinations": [],
+  "constraints": [
+   {
+    "name": null,
+    "response": {
+     "type": "volume"
+    },
+    "scale": null,
+    "upper": 0.4
+   }
+  ],
+  "domain": {
+   "element": "Q4",
+   "generator": "rectangle",
+   "n": [
+    48,
+    16
+   ],
+   "perturb": 0.01,
+   "seed": 0,
+   "size": [
+    3.0,
+    1.0
+   ],
+   "type": "mesh"
+  },
+  "interpolation": {
+   "emin_ratio": 1e-09,
+   "penal": 3.0,
+   "type": "simp"
+  },
+  "load_cases": [
+   {
+    "loads": [
+     {
+      "force": [
+       0.0,
+       -1.0
+      ],
+      "point": [
+       3.0,
+       0.0
+      ]
+     }
+    ],
+    "name": "tip",
+    "supports": null,
+    "weight": 1.0
+   }
+  ],
+  "material": {
+   "E0": 1.0,
+   "nu": 0.3,
+   "plane": "stress"
+  },
+  "name": "mesh_cantilever2d",
+  "objective": {
+   "type": "compliance",
+   "weights": null
+  },
+  "optimizer": {
+   "albefa": 0.1,
+   "asydecr": 0.7,
+   "asyincr": 1.2,
+   "asyinit": 0.5,
+   "asymax": 10.0,
+   "asymin": 0.01,
+   "c": 1000.0,
+   "d": 1.0,
+   "move": 0.2,
+   "normalise": "first",
+   "raa0": 1e-05,
+   "type": "mma"
+  },
+  "output": {
+   "folder": "runs",
+   "snapshot_every": 0
+  },
+  "physics": {
+   "type": "elasticity"
+  },
+  "post": [],
+  "run": {
+   "checkpoint_every": 0,
+   "feasibility_tol": 0.001,
+   "max_iter": 200,
+   "move_beta_ref": null,
+   "seed": 0,
+   "start": null,
+   "tol": 0.01
+  },
+  "schedule": null,
+  "supports": [
+   {
+    "fix": [
+     "x",
+     "y"
+    ],
+    "set": "left"
+   }
+  ]
+ },
+ "examples/research/shell_cylinder.yaml": {
+  "chain": [
+   {
+    "type": "embed"
+   },
+   {
+    "rmin": 0.15,
+    "type": "density_filter"
+   },
+   {
+    "type": "passive"
+   }
+  ],
+  "combinations": [],
+  "constraints": [
+   {
+    "name": null,
+    "response": {
+     "type": "volume"
+    },
+    "scale": null,
+    "upper": 0.4
+   }
+  ],
+  "domain": {
+   "angle": 90.0,
+   "length": 1.0,
+   "n": [
+    16,
+    12
+   ],
+   "radius": 1.0,
+   "surface": "cylinder",
+   "thickness": 0.05,
+   "type": "shell"
+  },
+  "interpolation": {
+   "emin_ratio": 1e-09,
+   "penal": 3.0,
+   "type": "simp"
+  },
+  "load_cases": [
+   {
+    "loads": [
+     {
+      "force": [
+       -0.7071067811865476,
+       -0.7071067811865476,
+       0.0
+      ],
+      "point": [
+       0.7071067811865476,
+       0.7071067811865476,
+       1.0
+      ]
+     }
+    ],
+    "name": "radial",
+    "supports": null,
+    "weight": 1.0
+   }
+  ],
+  "material": {
+   "E0": 1.0,
+   "nu": 0.3
+  },
+  "name": "shell_cylinder",
+  "objective": {
+   "type": "compliance",
+   "weights": null
+  },
+  "optimizer": {
+   "albefa": 0.1,
+   "asydecr": 0.7,
+   "asyincr": 1.2,
+   "asyinit": 0.5,
+   "asymax": 10.0,
+   "asymin": 0.01,
+   "c": 1000.0,
+   "d": 1.0,
+   "move": 0.2,
+   "normalise": "first",
+   "raa0": 1e-05,
+   "type": "mma"
+  },
+  "output": {
+   "folder": "runs",
+   "snapshot_every": 0
+  },
+  "physics": {
+   "drill": 0.1,
+   "type": "shell"
+  },
+  "post": [],
+  "run": {
+   "checkpoint_every": 0,
+   "feasibility_tol": 0.001,
+   "max_iter": 30,
+   "move_beta_ref": null,
+   "seed": 0,
+   "start": null,
+   "tol": 0.01
+  },
+  "schedule": null,
+  "supports": [
+   {
+    "fix": [
+     "u",
+     "v",
+     "w",
+     "rx",
+     "ry",
+     "rz"
+    ],
+    "set": "bottom"
    }
   ]
  },
@@ -1870,6 +2293,7 @@
    "max_iter": 600,
    "move_beta_ref": null,
    "seed": 0,
+   "start": null,
    "tol": 0.002
   },
   "schedule": {
@@ -2125,6 +2549,7 @@
    "max_iter": 120,
    "move_beta_ref": null,
    "seed": 0,
+   "start": null,
    "tol": 0.002
   },
   "schedule": {
@@ -2282,6 +2707,7 @@
    "max_iter": 60,
    "move_beta_ref": null,
    "seed": 0,
+   "start": null,
    "tol": 0.01
   },
   "schedule": null,
@@ -2525,6 +2951,7 @@
    "max_iter": 120,
    "move_beta_ref": null,
    "seed": 0,
+   "start": null,
    "tol": 0.01
   },
   "schedule": {
@@ -2714,6 +3141,7 @@
    "max_iter": 60,
    "move_beta_ref": null,
    "seed": 0,
+   "start": null,
    "tol": 0.01
   },
   "schedule": {

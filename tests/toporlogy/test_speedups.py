@@ -103,8 +103,13 @@ def test_h1_bad_thread_count_is_refused():
 
 # ------------------------------------------------------------------------------------------------------ H2
 def _examples():
-    return sorted(glob.glob(str(REPO / "examples" / "*.yaml"))) + sorted(glob.glob(str(REPO / "examples" /
-                                                                                       "research" / "*.yaml")))
+    """Grid examples: a ``domain: {type: mesh}`` config is solved by MeshElasticity (fem.mesh Factorization), which
+    hands nothing to this SuperLU path (ag_topoloji_onkayit.md, AY)."""
+    from toporlogy.configuration.mesh_build import is_mesh_config
+    from toporlogy.configuration.resolve import read_config
+    paths = sorted(glob.glob(str(REPO / "examples" / "*.yaml"))) + sorted(glob.glob(str(REPO / "examples" /
+                                                                                        "research" / "*.yaml")))
+    return [p for p in paths if not is_mesh_config(read_config(p))]
 
 
 @pytest.mark.parametrize("path", _examples(), ids=lambda p: Path(p).stem)

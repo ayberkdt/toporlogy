@@ -36,6 +36,14 @@ blocks. Element angles are filtered over the part and then reset to ``keep_angle
 density grid (which the rest of the chain filters / projects as usual) and computes the angle field, which the
 tensor interpolation takes (:meth:`take`) once per chain evaluation.
 
+Several phases
+--------------
+With ``n_fields = m`` > 1 (:class:`~toporlogy.design.phases.TensorPhases` with m phases) the density block holds the
+m box fields t_1 … t_m field-major, exactly as :class:`~toporlogy.design.chain.Embed` with ``n_fields = m``, and the
+output is ``(m, *domain.shape)``. One angle field turns every phase with ``rotate = True`` (a per-phase angle is not
+implemented). ``density=False`` needs one phase (with several, which phase fills the part is undefined). Record:
+docs/olcumler/faz_aci_onkayit.md.
+
 3-D orientation is not implemented (refused).
 """
 from __future__ import annotations
@@ -48,7 +56,7 @@ from typing import Any
 import numpy as np
 import torch
 
-from toporlogy.core.domain import Domain
+from toporlogy.core.domain import Domain, require_grid
 from toporlogy.core.material_field import rotate_in_plane
 from toporlogy.design.chain import DensityFilter, Embed
 
@@ -105,6 +113,7 @@ class PeriodicAngleFilter(torch.nn.Module):
 
     def __init__(self, domain: Domain, rmin: float, period: float = math.pi, backend: str = "auto") -> None:
         super().__init__()
+        require_grid(domain, "PeriodicAngleFilter")
         if not period > 0:
             raise ValueError("period > 0 is required")
         self.period, self.k = float(period), 2.0 * math.pi / float(period)
@@ -231,22 +240,26 @@ class DesignLayout:
 
 
 class OrientedEmbed(Embed):
-    """First chain link of a density + angle design: vector [density block (n_design) | angle block (n_design or
-    1)] → density grid (keep 1, void 0, outside 0, as :class:`Embed`); the angle field θ̃ (domain.shape, radians) is
-    computed in the same call and kept for :meth:`take`. ``density=False``: the density is not designed (every
-    active element 1) and the vector is the angle block alone. 2-D only."""
+    """First chain link of a density + angle design: vector [density block (n_fields · n_design, field-major) |
+    angle block (n_design or 1)] → density grid (keep 1, void 0, outside 0, as :class:`Embed`; ``(n_fields,
+    *domain.shape)`` for several fields); the angle field θ̃ (domain.shape, radians) is computed in the same call
+    and kept for :meth:`take`. ``density=False`` (one field only): the density is not designed (every active
+    element 1) and the vector is the angle block alone. 2-D only."""
 
     design_mask: torch.Tensor
 
-    def __init__(self, domain: Domain, angle: AngleBlock, density: bool = True) -> None:
-        super().__init__(domain)
+    def __init__(self, domain: Domain, angle: AngleBlock, density: bool = True, n_fields: int = 1) -> None:
+        super().__init__(domain, n_fields=n_fields)
         if domain.dim != 2:
             raise ValueError("the angle design block is 2-D only (3-D orientation is not implemented)")
+        if not density and self.n_fields > 1:
+            raise ValueError(f"density false with {self.n_fields} phases: which phase fills the part is undefined "
+                             "(design the density, or use one phase)")
         self.angle_block, self.density = angle, bool(density)
         n_ang = domain.n_design if angle.location == "element" else 1
         if angle.location == "element" and n_ang == 0:
             raise ValueError("an element angle block needs design elements")
-        blocks = [("density", domain.n_design if self.density else 0, "element", "1"),
+        blocks = [("density", self.n_fields * domain.n_design if self.density else 0, "element", "1"),
                   ("angle", n_ang, angle.location, "rad")]
         self.layout = DesignLayout(blocks)
         self.n_in = self.layout.size
@@ -290,7 +303,9 @@ class OrientedEmbed(Embed):
         self._angle, self._fresh = th, True
         self.n_published += 1
         if self.density:
-            return self._one(parts["density"])
+            if self.n_fields == 1:
+                return self._one(parts["density"])
+            return torch.stack([self._one(xk) for xk in parts["density"].reshape(self.n_fields, -1)])
         return torch.where(torch.as_tensor(self._domain.active), torch.ones(self.shape, dtype=x.dtype),
                            torch.zeros(self.shape, dtype=x.dtype)) + 0.0 * x.sum()
 
@@ -305,7 +320,7 @@ class OrientedEmbed(Embed):
         return self._angle
 
     def reduce(self, x_design: np.ndarray) -> np.ndarray:
-        """Start vector from a density start (n_design,): the angle block at ``start``."""
+        """Start vector from a density start (n_fields · n_design, field-major): the angle block at ``start``."""
         n_ang = self.layout["angle"].size
         parts = {"angle": np.full(n_ang, self.angle_block.s_of(self.angle_block.start))}
         parts["density"] = np.asarray(x_design, float).reshape(-1) if self.density else np.zeros(0)

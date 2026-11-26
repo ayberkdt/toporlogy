@@ -25,7 +25,7 @@ Materials (unit modulus, multiplied by E_e; :mod:`toporlogy.core.constitutive`):
 * any model object of the protocol (``material=``): small-strain ones (:class:`LinearElastic`,
   :class:`J2Plasticity`) use the linear kinematics; a model with internal variables (J2) keeps a committed state
   per Gauss point and load case, commits it only after a converged load increment and rolls back on failure.
-  Path-dependent models: no design sensitivity (``solve`` refuses), no energy interpolation, no warm start.
+  Path-dependent models: design sensitivity by the path adjoint (below), no energy interpolation, no warm start.
 
 Both hyperelastic laws reduce to the linear elasticity of ``Elasticity`` for small displacements (same D).
 
@@ -79,9 +79,29 @@ tangent at the converged state and solves ONE adjoint system per load case, K_T 
 hyperelastic material, dead load), and returns ∂J/∂E_e = −λ_eᵀ ∂f_int,e/∂E_e. No self-adjoint shortcut: for the end
 compliance Fᵀu the adjoint λ is not u.
 
+Path-dependent models (a model with ``state_fields`` and ``evaluate_vjp``, e.g. J2): ``solve`` loads each case
+proportionally from the initial state and records the converged increments k = 1 … N (:class:`LoadPath`: λ_k, u_k
+and the committed state s_{k−1} before the increment) in :attr:`NonlinearElasticity.last_paths`. Increment k is
+R_k = f_int(u_k, s_{k−1}; E) − λ_k F = 0 with the state update s_k = S(u_k, s_{k−1}) (unit modulus: S does not
+depend on E). For J = j(u_N) + Σ_k D_k(u_k, s_{k−1}; E) the backward pass runs k = N … 1
+(``docs/olcumler/plastik_duyarlilik_onkayit.md``):
+
+    ū_k = ∂J/∂u_k + (∂S_k/∂u_k)ᵀ ν_k ,   K_T,k λ_k = ū_k ,
+    ν_{k−1} = ∂J/∂s_{k−1} + (∂S_k/∂s_{k−1})ᵀ ν_k − (∂R_k/∂s_{k−1})ᵀ λ_k ,   ν_N = 0 ,
+    dJ/dE_e = ∂J/∂E_e − Σ_k λ_{k,e}ᵀ ∂f_int,e/∂E_e(u_k, s_{k−1}) ,
+
+with K_T,k the algorithmic tangent at (u_k, s_{k−1}) (symmetric for associative J2) — whatever tangent the forward
+Newton used — and the local derivatives from the model's vector-Jacobian product (``evaluate_vjp``). An increment
+whose right-hand side ū_k is exactly zero (no plastic point carries an adjoint) needs no solve: on a purely elastic
+path the pass is the single adjoint solve of the hyperelastic case. Cost: at most one adjoint solve per increment and
+case; memory: u_k and s_{k−1} of every increment. The derivative is the classical one for the plastic set (which
+points yield in which increment) and the increment sequence of the solve; across a change of either the response is
+not differentiable. The plastic dissipation Σ_k D_k is :class:`toporlogy.optimization.nonlinear.PlasticDissipation`
+(:meth:`NonlinearElasticity.path_dissipation`, :meth:`NonlinearElasticity.path_adjoint_gradient`).
+
 Not provided: follower loads, prescribed non-zero displacements, contact, incompatible-mode elements (Q4IM, H8IM),
-anisotropic neo-Hooke, finite-strain plasticity, design sensitivities of path-dependent models, iterative /
-multigrid solvers.
+anisotropic neo-Hooke, finite-strain plasticity, design sensitivities of non-proportional paths
+(:meth:`~NonlinearElasticity.solve_history`: loading and unloading), iterative / multigrid solvers.
 """
 from __future__ import annotations
 
@@ -96,7 +116,7 @@ import torch
 
 from toporlogy.core import tensor as T
 from toporlogy.core.constitutive import Kinematics, NeoHooke, MaterialRequest, SaintVenantKirchhoff, StateStore
-from toporlogy.core.domain import Domain
+from toporlogy.core.domain import Domain, require_grid
 from toporlogy.core.material import unique_matrices
 from toporlogy.fem.elastic import checked_residual, matrix_norm1
 from toporlogy.fem.elements import H8_CORNER, Q4_CORNER, D_iso, D_plane_strain, D_plane_stress, indexed_matmul
@@ -106,8 +126,8 @@ from toporlogy.solvers.continuation import IndefiniteDirectSolver, load_control
 from toporlogy.solvers.direct import DirectSolver
 from toporlogy.solvers.newton import LinearSolveFailure, Linearization, NewtonSettings, StepRecord, newton
 
-__all__ = ["NonlinearElasticity", "NonlinearConvergenceError", "EnergyInterpolation", "CaseReport", "MATERIALS",
-           "ETA_TOL", "CUTOFF_POLICIES"]
+__all__ = ["NonlinearElasticity", "NonlinearConvergenceError", "EnergyInterpolation", "CaseReport", "LoadPath",
+           "MATERIALS", "ETA_TOL", "CUTOFF_POLICIES"]
 
 MATERIALS = ("svk", "neo_hooke")
 CUTOFF_POLICIES = ("adaptive", "monotone")
@@ -151,13 +171,19 @@ class EnergyInterpolation:
         if self.policy not in CUTOFF_POLICIES:
             raise ValueError(f"energy interpolation policy: {' | '.join(CUTOFF_POLICIES)}, got {self.policy!r}")
 
-    def gamma(self, E: np.ndarray, cutoff: float) -> tuple[np.ndarray, np.ndarray]:
-        """(γ, dγ/dE) per element for moduli E (> 0) and the given cutoff."""
-        p = self.density_exponent
-        rho = (np.asarray(E, float) / self.E0) ** (1.0 / p)
+    def gamma(self, E: np.ndarray, cutoff: float,
+              density: tuple[np.ndarray, np.ndarray] | None = None) -> tuple[np.ndarray, np.ndarray]:
+        """(γ, dγ/dE) per element for moduli E (> 0) and the given cutoff. ``density`` = (ρ, dρ/dE): the real
+        density of the design (``NonlinearElasticity.density_map``); default ρ̃ = (E/E0)^(1/p)."""
+        if density is None:
+            p = self.density_exponent
+            rho = (np.asarray(E, float) / self.E0) ** (1.0 / p)
+            drho = rho / (p * np.asarray(E, float))
+        else:
+            rho, drho = (np.asarray(a, float) for a in density)
         z = self.beta * (rho - cutoff)
         g = 0.5 * (1.0 + np.tanh(0.5 * z))                    # = exp(βρ)/(exp(βc)+exp(βρ)), overflow-free
-        dg = self.beta * g * (1.0 - g) * rho / (p * np.asarray(E, float))
+        dg = self.beta * g * (1.0 - g) * drho
         return g, dg
 
 
@@ -175,6 +201,18 @@ class CaseReport:
     @property
     def iterations(self) -> int:
         return sum(len(s.residuals) - 1 for s in self.steps)
+
+
+@dataclass
+class LoadPath:
+    """Converged increments of one load case of a path-dependent model (module notes): the moduli ``E`` of the
+    solve, load factors λ_k, full displacements u_k (ndof,) and the committed state before each increment s_{k−1}
+    (read-only arrays of :class:`~toporlogy.core.constitutive.StateStore`)."""
+
+    E: np.ndarray
+    lams: list[float] = field(default_factory=list)
+    u: list[np.ndarray] = field(default_factory=list)
+    state_before: list[dict[str, np.ndarray]] = field(default_factory=list)
 
 
 # ----------------------------------------------------------------------------------------------- element geometry
@@ -331,6 +369,7 @@ class NonlinearElasticity:
                  rtol: float = 1e-9, min_step: float = 1e-4, warm_start: bool = False, solver: Any = None,
                  line_search: str = "none", merit: str = "residual", log_energy: bool = False,
                  tangent_kind: str = "algorithmic") -> None:
+        require_grid(domain, "NonlinearElasticity")
         dim = domain.dim
         named = isinstance(material, str)
         if named and material not in MATERIALS:
@@ -381,6 +420,9 @@ class NonlinearElasticity:
         if self.stateful and warm_start:
             raise ValueError("warm_start is refused for path-dependent models (the state depends on the path)")
         self.interpolation = energy_interpolation
+        # E (active elements) -> (rho, drho/dE) of the real density; set by Study from its SIMP / RAMP
+        # interpolation (docs/olcumler/gercek_yogunluk_onkayit.md). None: rho = (E/E0)^(1/p).
+        self.density_map: Any = None
         self.load_steps, self.max_iter, self.rtol, self.min_step = int(load_steps), int(max_iter), float(rtol), \
             float(min_step)
         self.newton_settings = NewtonSettings(max_iter=self.max_iter, rtol=self.rtol, eta_tol=ETA_TOL,
@@ -428,6 +470,7 @@ class NonlinearElasticity:
         self.n_adjoint_solves = 0
         self.last_reports: list[CaseReport] = []
         self.last_states: list[dict[str, np.ndarray]] = []
+        self.last_paths: list[LoadPath] = []
         self._warm: np.ndarray | None = None
         self.model_epoch = 0
         self.model_log: list[tuple[int, list[float | None], list[float | None]]] = []
@@ -522,7 +565,11 @@ class NonlinearElasticity:
     def _gamma(self, E: np.ndarray, cutoff: float | None) -> tuple[np.ndarray, np.ndarray]:
         if self.interpolation is None:
             return np.ones(len(E)), np.zeros(len(E))
-        return self.interpolation.gamma(E, self.interpolation.cutoff if cutoff is None else cutoff)
+        return self.interpolation.gamma(E, self.interpolation.cutoff if cutoff is None else cutoff,
+                                        self._density(E))
+
+    def _density(self, E: np.ndarray) -> tuple[np.ndarray, np.ndarray] | None:
+        return None if self.density_map is None else self.density_map(np.asarray(E, float))
 
     def element_state(self, u: np.ndarray, E: np.ndarray, cutoff: float | None = None, need_K: bool = True,
                       need_dE: bool = False, state: dict[str, np.ndarray] | None = None,
@@ -566,6 +613,7 @@ class NonlinearElasticity:
         if extra is not None:
             out["trial"] = extra.get("trial")
             out["dissipation"] = E * extra["dissipation"]
+            out["dissipation_unit"] = extra["dissipation"]
         return out
 
     def strain_energy(self, u: np.ndarray, E: np.ndarray, cutoff: float | None = None) -> float:
@@ -661,13 +709,14 @@ class NonlinearElasticity:
         return it.cutoff
 
     def _solve_case(self, E: np.ndarray, f: np.ndarray, u_start: np.ndarray | None,
-                    factors: Sequence[float] | None = None,
-                    store: StateStore | None = None) -> tuple[np.ndarray, CaseReport, list[np.ndarray]]:
+                    factors: Sequence[float] | None = None, store: StateStore | None = None,
+                    path: LoadPath | None = None) -> tuple[np.ndarray, CaseReport, list[np.ndarray]]:
+        """``path``: records the converged increments of a path-dependent model (module notes)."""
         rep = CaseReport()
         nd = self.domain.ndof
-        path = [1.0] if factors is None else [float(v) for v in factors]
+        factors_path = [1.0] if factors is None else [float(v) for v in factors]
         if not np.any(f[self.free]):
-            return np.zeros(nd), rep, [np.zeros(nd) for _ in path]
+            return np.zeros(nd), rep, [np.zeros(nd) for _ in factors_path]
         cutoff = self._start_cutoff()
         rep.cutoff = cutoff
         if u_start is not None:                                        # warm start: one increment at full load
@@ -679,14 +728,26 @@ class NonlinearElasticity:
         while True:
             u, lam, failed, snaps = np.zeros(nd), 0.0, False, []
             res = None
+            if path is not None:                                       # a restart forgets the failed attempt
+                path.lams.clear()
+                path.u.clear()
+                path.state_before.clear()
 
             def attempt(t: float, x: np.ndarray, c: float | None = cutoff
                         ) -> tuple[bool, np.ndarray, StepRecord, float, float]:
                 return self._newton(E, t * f, x, c, t, store)
-            for end in path:
+
+            def commit(t: float, x: np.ndarray) -> None:
+                assert store is not None
+                if path is not None:
+                    path.lams.append(t)
+                    path.u.append(np.array(x, copy=True))
+                    path.state_before.append(store.committed)
+                store.commit()
+            for end in factors_path:
                 res = load_control(attempt, u, lam, end,
                                    1.0 / self.load_steps, self.min_step,
-                                   commit=None if store is None else (lambda _l, _x: store.commit()))
+                                   commit=None if store is None else commit)
                 rep.steps.extend(res.records)
                 rep.cuts += res.cuts
                 u, lam = res.x, res.lam
@@ -707,7 +768,7 @@ class NonlinearElasticity:
             last = rep.steps[-1]
             hist = ", ".join(f"{r:.2e}" for r in last.residuals)
             raise NonlinearConvergenceError(
-                f"Newton-Raphson failed: equilibrium reached up to load factor {lam:.6g} of {path[-1]:g}; the "
+                f"Newton-Raphson failed: equilibrium reached up to load factor {lam:.6g} of {factors_path[-1]:g}; the "
                 f"increment to {last.load_factor:.6g} failed after halving to {res.dlam:.3g} < min_step "
                 f"{self.min_step:g} ({last.reason}; relative residuals {hist})"
                 + ("" if cutoff is None else f"; energy-interpolation cutoff {cutoff:g}"), last.code, lam)
@@ -718,11 +779,12 @@ class NonlinearElasticity:
         it = self.interpolation
         if it is None or cutoff is None or it.cutoff_step <= 0:
             return None
-        g0 = it.gamma(E, cutoff)[0]
+        dens = self._density(E)
+        g0 = it.gamma(E, cutoff, dens)[0]
         c = cutoff
         while c + it.cutoff_step <= it.cutoff_max + 1e-12:
             c = min(c + it.cutoff_step, it.cutoff_max)
-            if np.abs(it.gamma(E, c)[0] - g0).max() > 1e-3:
+            if np.abs(it.gamma(E, c, dens)[0] - g0).max() > 1e-3:
                 return c
         return None
 
@@ -755,19 +817,25 @@ class NonlinearElasticity:
     def solve_numpy(self, E_active: np.ndarray, F: np.ndarray) -> np.ndarray:
         """U (ndof, n_cases) at moduli ``E_active`` (na,) and dead loads ``F`` (ndof,) or (ndof, n_cases); no autograd.
         Raises :class:`NonlinearConvergenceError` when a case does not reach the full load. Path-dependent models:
-        proportional loading from the initial state per case; the final states are in :attr:`last_states`."""
+        proportional loading from the initial state per case; the final states are in :attr:`last_states`, the
+        converged increments (:class:`LoadPath`) in :attr:`last_paths`."""
         E, F2 = self._check_loads(E_active, F)
         U = np.zeros(F2.shape)
-        reports, states = [], []
+        reports, states, paths = [], [], []
         warm = self._warm if (self.warm_start and self._warm is not None and self._warm.shape == F2.shape) else None
         for c in range(F2.shape[1]):
             store = StateStore(self.model, self.n_elements * self.ngp) if self.stateful else None
-            U[:, c], rep, _ = self._solve_case(E, F2[:, c], None if warm is None else warm[:, c], store=store)
+            path = LoadPath(E.copy()) if self.stateful else None
+            U[:, c], rep, _ = self._solve_case(E, F2[:, c], None if warm is None else warm[:, c], store=store,
+                                               path=path)
             reports.append(rep)
             if store is not None:
                 states.append(store.checkpoint())
+            if path is not None:
+                paths.append(path)
         self.last_reports = reports
         self.last_states = states
+        self.last_paths = paths
         self.n_solves += 1
         self._note_model()
         if self.warm_start:
@@ -823,12 +891,13 @@ class NonlinearElasticity:
         return [r.cutoff for r in self.last_reports]
 
     def adjoint_gradient(self, E_active: np.ndarray, U: np.ndarray, G: np.ndarray,
-                         cutoffs: Sequence[float | None] | None = None) -> np.ndarray:
+                         cutoffs: Sequence[float | None] | None = None,
+                         paths: Sequence[LoadPath] | None = None) -> np.ndarray:
         """∂J/∂E (na,) for J with ∂J/∂U = ``G`` (ndof, n_cases) at the converged ``U`` (one adjoint solve per case
-        with a nonzero ``G`` on the free DOFs)."""
+        with a nonzero ``G`` on the free DOFs). Path-dependent models: the path adjoint over the recorded ``paths``
+        (default :attr:`last_paths`; :meth:`path_adjoint_gradient`)."""
         if self.stateful:
-            raise NotImplementedError("design sensitivities of path-dependent models are not implemented (the last "
-                                      "tangent alone does not give the history gradient)")
+            return self.path_adjoint_gradient(E_active, self.last_paths if paths is None else paths, G=G)
         E = np.asarray(E_active, float)
         fr = self.free
         dE = np.zeros(self.n_elements)
@@ -848,12 +917,125 @@ class NonlinearElasticity:
             self.n_adjoint_solves += 1
         return dE
 
+    # ------------------------------------------------------------------ path adjoint (path-dependent models)
+    def _check_vjp(self) -> None:
+        if not callable(getattr(self.model, "evaluate_vjp", None)):
+            raise NotImplementedError(f"design sensitivity of the path-dependent model {self.material!r}: the model "
+                                      "has no evaluate_vjp (the state-update derivatives the path adjoint needs)")
+
+    def _state_vjp(self, u: np.ndarray, E: np.ndarray, state: dict[str, np.ndarray], lam: np.ndarray | None,
+                   state_bar: dict[str, np.ndarray] | None, diss_weight: float
+                   ) -> tuple[np.ndarray, dict[str, np.ndarray]]:
+        """Vector-Jacobian product of one increment's local maps at (u, s_{k−1} = ``state``). Cotangents: the stress
+        cotangent of λᵀ f_int (``lam`` full (ndof,), or None), the trial-state cotangent ``state_bar`` (rows g·n + e,
+        or None) and the weight of the dissipation Σ_e E_e Σ_g w σ_y Δα. Returns the displacement cotangent
+        assembled (ndof,) and the committed-state cotangent (rows g·n + e)."""
+        dim, n = self.dim, self.n_elements
+        Ue = u[self.edof]
+        nl = Ue.shape[1]
+        nn = nl // dim
+        Ut = np.swapaxes(Ue.reshape(n, nn, dim), 1, 2)
+        Lt = None if lam is None else np.swapaxes(lam[self.edof].reshape(n, nn, dim), 1, 2)
+        pairs = T.voigt_pairs(dim)
+        params = None if self.d_index is None else {"index": self.d_index}
+        ub = np.zeros((n, dim, nn))
+        sbar: list[dict[str, np.ndarray]] = []
+        ew = E * self._w
+        for g, dN in enumerate(self._dN):
+            Hg = Ut @ dN.T
+            committed = {k: v[g * n:(g + 1) * n] for k, v in state.items()}
+            S_bar = None
+            if Lt is not None:
+                HL = Lt @ dN.T                                         # λᵀ f = Σ w E (B λ)·S, engineering strain
+                S_bar = np.stack([HL[:, j, k] if j == k else HL[:, j, k] + HL[:, k, j] for j, k in pairs], axis=1)
+                S_bar *= ew[:, None]
+            st_bar = None if state_bar is None else {k: v[g * n:(g + 1) * n] for k, v in state_bar.items()}
+            d_bar = None if diss_weight == 0.0 else diss_weight * ew
+            Hb, cb = self.model.evaluate_vjp(Kinematics(Hg, self.measure, self._plane_kin), params, committed,
+                                             S_bar, st_bar, d_bar)
+            ub += Hb @ dN                                              # H = Uᵀ ∂Nᵀ  →  Ū = H̄ ∂N
+            sbar.append(cb)
+        vec = self._assemble_vec(np.swapaxes(ub, 1, 2).reshape(n, nl))
+        return vec, {k: np.concatenate([c[k] for c in sbar], axis=0) for k in sbar[0]}
+
+    def _check_path(self, path: LoadPath, E: np.ndarray) -> None:
+        if path.E.shape != E.shape or not np.array_equal(path.E, E):
+            raise ValueError("path adjoint: the load path was recorded for other moduli than the given E (solve "
+                             "again at this design)")
+
+    def path_dissipation(self, E_active: np.ndarray, paths: Sequence[LoadPath] | None = None,
+                         weights: Sequence[float] | None = None) -> float:
+        """Σ_c w_c Σ_k Σ_e E_e Σ_g w σ_y Δα of the recorded ``paths`` (default :attr:`last_paths`; weights 1)."""
+        E = np.asarray(E_active, float)
+        paths = self.last_paths if paths is None else paths
+        w = np.ones(len(paths)) if weights is None else np.asarray(weights, float)
+        total = 0.0
+        for c, path in enumerate(paths):
+            self._check_path(path, E)
+            for u, s in zip(path.u, path.state_before, strict=True):
+                total += float(w[c]) * float(np.sum(self.element_state(u, E, need_K=False, state=s)["dissipation"]))
+        return total
+
+    def path_adjoint_gradient(self, E_active: np.ndarray, paths: Sequence[LoadPath], G: np.ndarray | None = None,
+                              dissipation_weights: Sequence[float] | None = None) -> np.ndarray:
+        """dJ/dE (na,) of J = Σ_c [g_c(u_N,c) + d_c Σ_k D_k,c] by the path adjoint (module notes): ∂g_c/∂u_N = ``G``
+        (ndof, n_cases) or None, d_c = ``dissipation_weights`` or None. One adjoint solve per increment whose
+        right-hand side is nonzero."""
+        if not self.stateful:
+            raise ValueError("path_adjoint_gradient: the model has no internal state (use adjoint_gradient)")
+        self._check_vjp()
+        E = np.asarray(E_active, float)
+        fr = self.free
+        dE = np.zeros(self.n_elements)
+        for c, path in enumerate(paths):
+            g = None if G is None else np.asarray(G[:, c], float)
+            wd = 0.0 if dissipation_weights is None else float(dissipation_weights[c])
+            has_g = g is not None and bool(np.any(g[fr]))
+            if (not has_g and wd == 0.0) or not path.u:
+                continue
+            self._check_path(path, E)
+            nu: dict[str, np.ndarray] | None = None
+            last = len(path.u) - 1
+            for k in range(last, -1, -1):
+                u, s_prev = path.u[k], path.state_before[k]
+                rhs = np.zeros(self.domain.ndof)
+                if k == last and g is not None:
+                    rhs += g
+                nu_prev: dict[str, np.ndarray] | None = None
+                if nu is not None or wd != 0.0:
+                    r1, nu_prev = self._state_vjp(u, E, s_prev, None, nu, wd)
+                    rhs += r1
+                rf = rhs[fr]
+                solve = bool(np.any(rf))
+                if not (solve or wd != 0.0):
+                    nu = nu_prev
+                    continue
+                st = self.element_state(u, E, need_K=solve, need_dE=solve, state=s_prev)
+                if wd != 0.0:
+                    dE += wd * st["dissipation_unit"]
+                if solve:
+                    A = self._assemble_mat(st["K"])
+                    self.solver.factor(A)
+                    x = np.asarray(self.solver.solve(rf)).reshape(rf.shape)
+                    checked_residual(A, x, rf, matrix_norm1(A))
+                    self.n_adjoint_solves += 1
+                    lam = np.zeros(self.domain.ndof)
+                    lam[fr] = x
+                    dE -= np.einsum("ep,ep->e", lam[self.edof], st["dfdE"])
+                    _r2, s2 = self._state_vjp(u, E, s_prev, lam, None, 0.0)
+                    if nu_prev is None:
+                        nu_prev = {f: -v for f, v in s2.items()}
+                    else:
+                        nu_prev = {f: nu_prev[f] - s2[f] for f in s2}
+                nu = nu_prev
+        return dE
+
     # ------------------------------------------------------------------ autograd
     def solve(self, E_active: torch.Tensor, F: np.ndarray) -> torch.Tensor:
-        """Differentiable ``U(E)``: (ndof, n_cases) float64 tensor; ``E_active`` (na,) tensor."""
+        """Differentiable ``U(E)``: (ndof, n_cases) float64 tensor; ``E_active`` (na,) tensor. Path-dependent models:
+        proportional loading, gradient by the path adjoint (module notes)."""
         if self.stateful:
-            raise NotImplementedError("NonlinearElasticity.solve: no design sensitivity for a path-dependent model; "
-                                      "use solve_numpy / solve_history")
+            self._check_vjp()
         F2 = np.asarray(F, float)
         F2 = F2[:, None] if F2.ndim == 1 else F2
         return _NonlinearSolve.apply(E_active, self, F2)
@@ -865,11 +1047,12 @@ class _NonlinearSolve(torch.autograd.Function):
         E_np = E_active.detach().cpu().double().numpy().copy()
         U = model.solve_numpy(E_np, F)
         ctx.model, ctx.U, ctx.E, ctx.cutoffs = model, U, E_np, model.cutoffs()
+        ctx.paths = list(model.last_paths)
         ctx.device, ctx.dtype = E_active.device, E_active.dtype
         return torch.from_numpy(U).to(device=E_active.device, dtype=torch.float64)
 
     @staticmethod
     def backward(ctx: Any, gU: torch.Tensor) -> tuple[Any, None, None]:
         G = gU.detach().cpu().double().numpy()
-        dE = ctx.model.adjoint_gradient(ctx.E, ctx.U, G, ctx.cutoffs)
+        dE = ctx.model.adjoint_gradient(ctx.E, ctx.U, G, ctx.cutoffs, ctx.paths)
         return torch.from_numpy(dE).to(device=ctx.device, dtype=ctx.dtype), None, None

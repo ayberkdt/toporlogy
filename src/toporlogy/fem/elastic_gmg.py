@@ -31,7 +31,7 @@ from typing import Any, cast
 import numpy as np
 import torch
 
-from toporlogy.core.domain import Domain
+from toporlogy.core.domain import Domain, require_grid
 from toporlogy.fem.elastic import ResidualReport
 from toporlogy.fem.elements import D_iso, element_matrix, element_matrix_from_D
 from toporlogy.fem.mechanisms import check_moduli, check_supports, fixed_dof_rows
@@ -76,6 +76,7 @@ class ElasticityGMG:
                  tol: float = 1e-8, maxit: int = 300, direct_below: int = 4000,
                  fallback_max_elements: int = 120_000, warm_start: bool = True, device: Any = None,
                  allow_inexact: bool = False, elasticity: np.ndarray | None = None, **gmg: Any) -> None:
+        require_grid(domain, "ElasticityGMG", "MeshElasticity")
         if domain.dim != 3:
             raise ValueError("ElasticityGMG is 3-D only (use Elasticity in 2-D)")
         self.domain = domain

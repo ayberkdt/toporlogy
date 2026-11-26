@@ -18,6 +18,8 @@ from typing import Any
 
 import numpy as np
 
+from toporlogy.core.domain import require_grid
+
 __all__ = ["MassProperties", "mass_properties"]
 
 
@@ -40,6 +42,7 @@ def mass_properties(domain: Any, xphys: Any, rho0: float = 1.0, density: Callabl
                     about: Any = "centre") -> MassProperties:
     """Mass properties of ``xphys`` (``domain.shape``); ``density`` maps x̄ to the relative mass density (default
     x̄, linear). ``about``: "centre" (the centre of mass) or a point (2 or 3 coordinates)."""
+    require_grid(domain, "mass_properties (CentreOfMass, InertiaComponent)")
     xp = _backend(xphys)
     dim = domain.dim
     if tuple(xphys.shape) != tuple(domain.shape):

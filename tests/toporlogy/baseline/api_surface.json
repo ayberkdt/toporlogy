@@ -579,11 +579,13 @@
   },
   "Study": {
    "attrs": [
+    "START_TYPES",
     "constraint_values",
     "context",
     "default_start",
     "evaluate",
     "evaluate_density",
+    "perturbed_start",
     "physical",
     "run",
     "settings"
@@ -2180,6 +2182,12 @@
   "join": "join(path,key)",
   "material_model": "material_model(ctx)"
  },
+ "toporlogy.configuration.mesh_build": {
+  "MESH_KEYS": "<tuple>",
+  "build_mesh": "build_mesh(r)",
+  "is_mesh_config": "is_mesh_config(raw)",
+  "resolve_mesh": "resolve_mesh(raw)"
+ },
  "toporlogy.configuration.post_steps": {
   "BuildContext": {
    "attrs": [
@@ -2316,6 +2324,7 @@
    ],
    "class": "ConfigError"
   },
+  "NO_LOAD_PHYSICS": "<tuple>",
   "Param": {
    "attrs": [
     "coerce",
@@ -2343,6 +2352,7 @@
   "sweep_combinations": "sweep_combinations(sweep)"
  },
  "toporlogy.configuration.schema": {
+  "NO_LOAD_PHYSICS": "<tuple>",
   "Param": {
    "attrs": [
     "coerce",
@@ -2445,13 +2455,15 @@
     "conservative",
     "dkappa",
     "evaluate",
+    "evaluate_vjp",
     "hardening_energy",
     "initial_state",
     "kappa",
     "kinematics",
     "name",
     "state_fields",
-    "update"
+    "update",
+    "update_vjp"
    ],
    "class": "J2Plasticity"
   },
@@ -2567,7 +2579,9 @@
     "uniform_start"
    ],
    "class": "Domain"
-  }
+  },
+  "is_grid": "is_grid(domain)",
+  "require_grid": "require_grid(domain,component,alternative)"
  },
  "toporlogy.core.laminate": {
   "Laminate": {
@@ -2877,11 +2891,14 @@
   "VOIGT_CONVENTION": "<str>",
   "VTK_HEXAHEDRON": "<int>",
   "VTK_QUAD": "<int>",
+  "VTK_TETRA": "<int>",
+  "VTK_TRIANGLE": "<int>",
   "VtuData": {
    "attrs": [],
    "class": "VtuData"
   },
   "read_vtu": "read_vtu(path)",
+  "write_cells_vtu": "write_cells_vtu(path,points,cells,cell_type,point_data,cell_data,meta)",
   "write_vtu": "write_vtu(path,domain,point_data,cell_data,meta)"
  },
  "toporlogy.design": {},
@@ -3360,6 +3377,7 @@
   "hashin_shtrikman_bounds": "hashin_shtrikman_bounds(x,bulk,shear,dim)",
   "hashin_shtrikman_moduli": "hashin_shtrikman_moduli(x,E,nu,dim)",
   "hs_admissible_exponents": "hs_admissible_exponents(nu,dim,plane)",
+  "inverse_modulus": "inverse_modulus(interp,E,frac)",
   "simp_admissible_penal": "simp_admissible_penal(nu,dim)"
  },
  "toporlogy.design.manufacturing": {
@@ -4287,10 +4305,22 @@
    ],
    "class": "Newmark"
   },
+  "NewmarkPhysics": {
+   "attrs": [
+    "densities",
+    "history",
+    "load_factor",
+    "name",
+    "solve",
+    "times"
+   ],
+   "class": "NewmarkPhysics"
+  },
   "NewmarkResult": {
    "attrs": [],
    "class": "NewmarkResult"
   },
+  "PROFILES": "<tuple>",
   "mass_matrix_element": "mass_matrix_element(dim,h,thickness)"
  },
  "toporlogy.fem.elastic": {
@@ -4885,6 +4915,10 @@
    ],
    "class": "EnergyInterpolation"
   },
+  "LoadPath": {
+   "attrs": [],
+   "class": "LoadPath"
+  },
   "MATERIALS": "<tuple>",
   "NonlinearConvergenceError": {
    "attrs": [
@@ -4907,6 +4941,8 @@
     "internal_force",
     "min_det_f",
     "n_elements",
+    "path_adjoint_gradient",
+    "path_dissipation",
     "reset_model",
     "solve",
     "solve_history",
@@ -4916,6 +4952,52 @@
    ],
    "class": "NonlinearElasticity"
   }
+ },
+ "toporlogy.fem.plate": {
+  "MindlinPlate": {
+   "attrs": [
+    "pressure_load",
+    "solve"
+   ],
+   "class": "MindlinPlate"
+  },
+  "PlatePhysics": {
+   "attrs": [
+    "name",
+    "solve"
+   ],
+   "class": "PlatePhysics"
+  },
+  "SHEAR_FACTOR": "<float>",
+  "hard_simply_supported": "hard_simply_supported(domain)",
+  "navier_deflection": "navier_deflection(a,b,t,E,nu,q,x,y,terms,kirchhoff)",
+  "plate_element_matrix": "plate_element_matrix(h,t,nu,shear)"
+ },
+ "toporlogy.fem.shell": {
+  "DRILL": "<float>",
+  "FlatShell": {
+   "attrs": [
+    "line_load",
+    "pressure_load",
+    "solve",
+    "stiffness"
+   ],
+   "class": "FlatShell"
+  },
+  "ShellMesh": {
+   "attrs": [
+    "ne",
+    "nn"
+   ],
+   "class": "ShellMesh"
+  },
+  "bending_matrix": "bending_matrix(a,b,t,nu)",
+  "cylinder_surface": "cylinder_surface(radius,length,n_theta,n_z,angle)",
+  "drilling_matrix": "drilling_matrix(a,b,t,nu,drill)",
+  "facet_frame": "facet_frame(X)",
+  "facet_matrix": "facet_matrix(X,t,nu,drill)",
+  "flat_rectangle": "flat_rectangle(lx,ly,nx,ny)",
+  "membrane_matrix": "membrane_matrix(a,b,t,nu)"
  },
  "toporlogy.fem.tensor_elastic": {
   "TENSOR_ELEMENTS": "<dict>",
@@ -4955,6 +5037,14 @@
    ],
    "class": "ThermoElastic"
   },
+  "ThermoElasticPhysics": {
+   "attrs": [
+    "name",
+    "solve",
+    "total_load"
+   ],
+   "class": "ThermoElasticPhysics"
+  },
   "alpha_voigt": "alpha_voigt(alpha,dim)",
   "thermal_beta": "thermal_beta(alpha,dim,nu,D,plane,C3)",
   "thermal_load_matrix": "thermal_load_matrix(dim,beta,h,thickness)"
@@ -4967,7 +5057,18 @@
    ],
    "class": "TransientHeat"
   },
-  "capacity_matrix": "capacity_matrix(dim)"
+  "TransientHeatPhysics": {
+   "attrs": [
+    "capacities",
+    "conductivities",
+    "history",
+    "name",
+    "solve"
+   ],
+   "class": "TransientHeatPhysics"
+  },
+  "capacity_matrix": "capacity_matrix(dim)",
+  "nodal_source": "nodal_source(domain,density)"
  },
  "toporlogy.geometry": {
   "Ball": {
@@ -5705,6 +5806,104 @@
    "class": "InertiaComponent"
   }
  },
+ "toporlogy.optimization.mesh_study": {
+  "MeshDomain": {
+   "attrs": [
+    "uniform_start"
+   ],
+   "class": "MeshDomain"
+  },
+  "MeshElasticity": {
+   "attrs": [
+    "name",
+    "solve",
+    "solve_numpy"
+   ],
+   "class": "MeshElasticity"
+  },
+  "MeshFilterLink": {
+   "attrs": [
+    "T_destination",
+    "add_module",
+    "apply",
+    "bfloat16",
+    "buffers",
+    "call_super_init",
+    "children",
+    "compile",
+    "cpu",
+    "cuda",
+    "double",
+    "dump_patches",
+    "eval",
+    "extra_repr",
+    "float",
+    "forward",
+    "get_buffer",
+    "get_extra_state",
+    "get_parameter",
+    "get_submodule",
+    "half",
+    "ipu",
+    "load_state_dict",
+    "modules",
+    "mtia",
+    "named_buffers",
+    "named_children",
+    "named_modules",
+    "named_parameters",
+    "parameters",
+    "register_backward_hook",
+    "register_buffer",
+    "register_forward_hook",
+    "register_forward_pre_hook",
+    "register_full_backward_hook",
+    "register_full_backward_pre_hook",
+    "register_load_state_dict_post_hook",
+    "register_load_state_dict_pre_hook",
+    "register_module",
+    "register_parameter",
+    "register_state_dict_post_hook",
+    "register_state_dict_pre_hook",
+    "requires_grad_",
+    "set_extra_state",
+    "set_submodule",
+    "share_memory",
+    "state_dict",
+    "to",
+    "to_empty",
+    "train",
+    "type",
+    "xpu",
+    "zero_grad"
+   ],
+   "class": "MeshFilterLink"
+  },
+  "MeshVolume": {
+   "attrs": [
+    "name",
+    "needs"
+   ],
+   "class": "MeshVolume"
+  }
+ },
+ "toporlogy.optimization.mesh_topology": {
+  "MeshCompliance": {
+   "attrs": [],
+   "class": "MeshCompliance"
+  },
+  "MeshDensityFilter": {
+   "attrs": [
+    "backward"
+   ],
+   "class": "MeshDensityFilter"
+  },
+  "MeshResult": {
+   "attrs": [],
+   "class": "MeshResult"
+  },
+  "optimize_mesh": "optimize_mesh(mesh,D,F,fixed,volume,rmin,penal,emin_ratio,max_iter,tol,thickness,move,x0)"
+ },
  "toporlogy.optimization.mode_tracking": {
   "Tracking": {
    "attrs": [],
@@ -5730,6 +5929,13 @@
     "needs"
    ],
    "class": "EndStrainEnergy"
+  },
+  "PlasticDissipation": {
+   "attrs": [
+    "name",
+    "needs"
+   ],
+   "class": "PlasticDissipation"
   }
  },
  "toporlogy.optimization.pareto": {
@@ -5973,6 +6179,22 @@
   "pod_basis": "pod_basis(snapshots,rank)",
   "projection_error": "projection_error(snapshots,V)"
  },
+ "toporlogy.optimization.shell_study": {
+  "ShellDomain": {
+   "attrs": [
+    "uniform_start"
+   ],
+   "class": "ShellDomain"
+  },
+  "ShellPhysics": {
+   "attrs": [
+    "element",
+    "name",
+    "solve"
+   ],
+   "class": "ShellPhysics"
+  }
+ },
  "toporlogy.optimization.strength": {
   "CRITERIA": "<tuple>",
   "Criterion": {
@@ -6115,17 +6337,36 @@
   },
   "Study": {
    "attrs": [
+    "START_TYPES",
     "constraint_values",
     "context",
     "default_start",
     "evaluate",
     "evaluate_density",
+    "perturbed_start",
     "physical",
     "run",
     "settings"
    ],
    "class": "Study"
   }
+ },
+ "toporlogy.optimization.transient": {
+  "DynamicCompliance": {
+   "attrs": [
+    "name",
+    "needs"
+   ],
+   "class": "DynamicCompliance"
+  },
+  "TransientThermalCompliance": {
+   "attrs": [
+    "name",
+    "needs"
+   ],
+   "class": "TransientThermalCompliance"
+  },
+  "time_weights": "time_weights(n_steps,dt)"
  },
  "toporlogy.optimization.uq": {
   "Estimate": {
@@ -7127,6 +7368,10 @@
    ],
    "class": "ArcLengthSettings"
   },
+  "BranchSwitch": {
+   "attrs": [],
+   "class": "BranchSwitch"
+  },
   "ContinuationError": {
    "attrs": [
     "add_note",
@@ -7144,7 +7389,10 @@
    "class": "ContinuationPath"
   },
   "ContinuationPoint": {
-   "attrs": [],
+   "attrs": [
+    "eigenvalues",
+    "index"
+   ],
    "class": "ContinuationPoint"
   },
   "ContinuationProblem": {
@@ -7153,6 +7401,24 @@
     "solve"
    ],
    "class": "ContinuationProblem"
+  },
+  "CriticalPoint": {
+   "attrs": [
+    "multiplicity"
+   ],
+   "class": "CriticalPoint"
+  },
+  "CriticalSettings": {
+   "attrs": [
+    "bifurcation_tol",
+    "eig_tol",
+    "eta_tol",
+    "max_evaluations",
+    "max_iter",
+    "rtol",
+    "t_tol"
+   ],
+   "class": "CriticalSettings"
   },
   "IndefiniteDirectSolver": {
    "attrs": [
@@ -7167,9 +7433,31 @@
    "attrs": [],
    "class": "LoadControlResult"
   },
-  "arc_length": "arc_length(problem,x0,lam0,settings,stop)",
-  "displacement_control": "displacement_control(problem,x0,lam0,dof,targets,max_iter,rtol,eta_tol,max_bisections)",
-  "load_control": "load_control(attempt,x0,start,end,max_step,min_step,commit,keep_points)"
+  "Spectrum": {
+   "attrs": [
+    "offset",
+    "position"
+   ],
+   "class": "Spectrum"
+  },
+  "TangentSpectrum": {
+   "attrs": [
+    "dense_limit",
+    "k",
+    "keep",
+    "method",
+    "storage"
+   ],
+   "class": "TangentSpectrum"
+  },
+  "arc_length": "arc_length(problem,x0,lam0,settings,stop,spectrum,start_tangent,stop_at_critical)",
+  "displacement_control": "displacement_control(problem,x0,lam0,dof,targets,max_iter,rtol,eta_tol,max_bisections,spectrum)",
+  "find_critical": "find_critical(path)",
+  "full_tangent": "full_tangent(matrix,storage)",
+  "load_control": "load_control(attempt,x0,start,end,max_step,min_step,commit,keep_points)",
+  "locate_critical": "locate_critical(problem,path,i,spectrum,settings)",
+  "sparse_inertia": "sparse_inertia(A)",
+  "switch_branch": "switch_branch(problem,critical,xi,settings,stop,spectrum,critical_settings,stop_at_critical)"
  },
  "toporlogy.solvers.direct": {
   "DirectSolver": {

@@ -15,7 +15,7 @@ from toporlogy.configuration import units as U
 from toporlogy.configuration.registry import BuildContext, ConfigError, Param, REGISTRY, join, normalise_name, suggest
 from toporlogy.configuration.schema import (
     SCHEMA_KEYS, _CASE, _COMBINATION, _CONNECTIVITY, _CONSTRAINT, _DEFAULTS, _MATERIAL, _NEEDS_FINALIZE, _OUTPUT,
-    _REQUIRED, _ROBUST, _RUN, _TYING,
+    NO_LOAD_PHYSICS, _REQUIRED, _ROBUST, _RUN, _TYING,
 )
 
 
@@ -227,8 +227,9 @@ def resolve(raw: dict[str, Any]) -> dict[str, Any]:
         system = None if raw.get("units") is None else U.UnitSystem.from_config(raw["units"])
     except U.UnitError as e:
         raise ConfigError(str(e), "units" if "units" in str(e) else "schema_version") from None
+    from toporlogy.configuration.mesh_build import is_mesh_config, resolve_mesh
     with U.use(system):
-        r = _resolve(raw)
+        r = resolve_mesh(raw) if is_mesh_config(raw) else _resolve(raw)   # domain type mesh: own path
     r["schema_version"] = version
     r["units"] = None if system is None else dict(zip(("length", "force", "temperature"), system.names,
                                                       strict=True))
@@ -254,15 +255,15 @@ def _resolve(raw: dict[str, Any]) -> dict[str, Any]:
             mat = {k: v for k, v in mat.items() if k != "catalog"}
     r["material"] = _section(mat, _MATERIAL, "material", errors, "material")
     r["physics"] = R("physics", raw.get("physics", _DEFAULTS["physics"]), "physics", errors)
-    modal = r["physics"] is not None and r["physics"]["type"] == "modal"
-    for k in _REQUIRED + (() if modal else ("load_cases",)):
+    no_load = r["physics"] is not None and r["physics"]["type"] in NO_LOAD_PHYSICS
+    for k in _REQUIRED + (() if no_load else ("load_cases",)):
         if k not in raw:
             errors.append((k, "required key is missing"))
     r["supports"] = [R("support", s, join("supports", i), errors)
                      for i, s in enumerate(_list(raw.get("supports"), "supports", errors, 1 if "supports" in raw
                                                  else 0))]
     cases = []
-    lc_min = 0 if modal else (1 if "load_cases" in raw else 0)
+    lc_min = 0 if no_load else (1 if "load_cases" in raw else 0)
     for i, c in enumerate(_list(raw.get("load_cases"), "load_cases", errors, lc_min)):
         cp = join("load_cases", i)
         if not isinstance(c, dict):

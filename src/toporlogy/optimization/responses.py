@@ -13,7 +13,7 @@ from typing import Any
 import numpy as np
 import torch
 
-from toporlogy.core.domain import Domain
+from toporlogy.core.domain import Domain, require_grid
 
 __all__ = ["EvalContext", "Response", "Compliance", "Volume", "PhaseVolume", "Mass", "Cost"]
 
@@ -71,7 +71,12 @@ class Compliance(Response):
     def per_case(self, ctx: EvalContext) -> torch.Tensor:
         if ctx.U is None or ctx.F is None:
             raise ValueError("Compliance needs U and F")
-        F = torch.as_tensor(ctx.F, dtype=ctx.U.dtype, device=ctx.U.device)
+        total = getattr(ctx.physics, "total_load", None)
+        if total is not None:                  # design-dependent load (thermoelastic): c = F_tot(E)ᵀ U
+            act = torch.as_tensor(ctx.domain.active_elements, dtype=torch.long, device=ctx.E.device)
+            F = total(ctx.E.reshape(-1)[act], ctx.F)
+        else:
+            F = torch.as_tensor(ctx.F, dtype=ctx.U.dtype, device=ctx.U.device)
         return (F * ctx.U).sum(dim=0)
 
     def __call__(self, ctx: EvalContext) -> torch.Tensor:
@@ -99,6 +104,7 @@ class Volume(Response):
 
     def __call__(self, ctx: EvalContext) -> torch.Tensor:
         d = ctx.domain
+        require_grid(d, "Volume", "MeshVolume")
         if ctx.xphys.dim() != d.dim:
             raise ValueError("Volume needs one design field; with several phases use PhaseVolume (solid or per "
                              "phase), Mass or Cost")
@@ -162,6 +168,7 @@ class Mass(Response):
     name = "mass"
 
     def __call__(self, ctx: EvalContext) -> torch.Tensor:
+        require_grid(ctx.domain, "Mass")
         interp, eta = _fractions(ctx)
         rho = torch.as_tensor([p.density for p in interp.phases], dtype=eta.dtype, device=eta.device)
         dens = torch.tensordot(rho, eta[1:], dims=1)
@@ -174,6 +181,7 @@ class Cost(Response):
     name = "cost"
 
     def __call__(self, ctx: EvalContext) -> torch.Tensor:
+        require_grid(ctx.domain, "Cost")
         interp, eta = _fractions(ctx)
         c = torch.as_tensor([p.cost for p in interp.phases], dtype=eta.dtype, device=eta.device)
         return (_element_volume(ctx, eta.dtype) * torch.tensordot(c, eta[1:], dims=1)).sum()

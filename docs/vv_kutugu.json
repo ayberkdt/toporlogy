@@ -458,6 +458,16 @@
    "slow": false
   },
   {
+   "nodeid": "tests/toporlogy/test_phase_angle.py::test_ma2_gradients_finite_difference[simplex-global-density]",
+   "kind": "pre-registered check failed",
+   "model_backend": "TensorPhases simplex (matris + fiber) + global açı + TensorElasticity, 12 × 6 (CPU)",
+   "reason": "MA2 FAIL: ön kayıtlı h = 1e-6 merkezi FD, uyum gradyanından 2,43e-6 göreli farklı (> 1e-6); yuvarlama: FD hatası h = 1e-4'te 7,2e-8, h küçüldükçe büyüyor; Richardson FD (h = 1e-3, 5e-4) 6,1e-9 içinde",
+   "risk": "low",
+   "resolution": "post hoc Richardson testi (test_ma2_posthoc_richardson) 12 durumda geçiyor; yeni ön kayıtta FD adımı h = 1e-4 ya da Richardson",
+   "record": "docs/olcumler/faz_aci_onkayit.md",
+   "slow": false
+  },
+  {
    "nodeid": "tests/toporlogy/test_buckling_geometry.py::test_rl2b_whole_cluster_aggregate_is_differentiable",
    "kind": "pre-registered check failed",
    "model_backend": "BucklingKS over a double eigenvalue, 3-D square column (CPU)",
@@ -525,6 +535,136 @@
    "risk": "low",
    "resolution": "yok (problem kurulumu)",
    "record": "docs/olcumler/model_donemi_onkayit.md",
+   "slow": false
+  },
+  {
+   "nodeid": "tests/toporlogy/test_bifurcation.py::test_a1_asymmetric_bifurcation_located_and_classified",
+   "kind": "pre-registered check failed",
+   "model_backend": "solvers.continuation arc_length, closed-form spring model A (CPU)",
+   "reason": "model A, ds = 0,01 ön kayıtlı: birincil yolda |dx/dλ| = 1/k_a = 0,01, ilk yay boyu adımı Δλ = 1 ve kabul edilen nokta tam λ_c = 1'e düşüyor; K = diag(0, 100) tekil, sonraki tahmin çözümü K⁻¹q başarısız (11 ret, step_limit / singular_tangent). Yerleştirme değil, arc_length'in tam tekil kabul noktasından tahmin üretememesi; post hoc ds = 0,0137 ile geçiyor",
+   "risk": "low",
+   "resolution": "arc_length bir kabul noktasında tekil teğetten tahmin üretebildiğinde (ör. önceki artış yönü)",
+   "record": "docs/olcumler/catallanma_onkayit.md",
+   "slow": false
+  },
+  {
+   "nodeid": "tests/toporlogy/test_bifurcation.py::test_a2_asymmetric_branch_switch[plus]",
+   "kind": "pre-registered check failed",
+   "model_backend": "solvers.continuation arc_length, closed-form spring model A (CPU)",
+   "reason": "model A, ds = 0,01 ön kayıtlı: birincil yolda |dx/dλ| = 1/k_a = 0,01, ilk yay boyu adımı Δλ = 1 ve kabul edilen nokta tam λ_c = 1'e düşüyor; K = diag(0, 100) tekil, sonraki tahmin çözümü K⁻¹q başarısız (11 ret, step_limit / singular_tangent). Yerleştirme değil, arc_length'in tam tekil kabul noktasından tahmin üretememesi; post hoc ds = 0,0137 ile geçiyor",
+   "risk": "low",
+   "resolution": "arc_length bir kabul noktasında tekil teğetten tahmin üretebildiğinde (ör. önceki artış yönü)",
+   "record": "docs/olcumler/catallanma_onkayit.md",
+   "slow": false
+  },
+  {
+   "nodeid": "tests/toporlogy/test_bifurcation.py::test_a2_asymmetric_branch_switch[minus]",
+   "kind": "pre-registered check failed",
+   "model_backend": "solvers.continuation arc_length, closed-form spring model A (CPU)",
+   "reason": "model A, ds = 0,01 ön kayıtlı: birincil yolda |dx/dλ| = 1/k_a = 0,01, ilk yay boyu adımı Δλ = 1 ve kabul edilen nokta tam λ_c = 1'e düşüyor; K = diag(0, 100) tekil, sonraki tahmin çözümü K⁻¹q başarısız (11 ret, step_limit / singular_tangent). Yerleştirme değil, arc_length'in tam tekil kabul noktasından tahmin üretememesi; post hoc ds = 0,0137 ile geçiyor",
+   "risk": "low",
+   "resolution": "arc_length bir kabul noktasında tekil teğetten tahmin üretebildiğinde (ör. önceki artış yönü)",
+   "record": "docs/olcumler/catallanma_onkayit.md",
+   "slow": false
+  },
+  {
+   "nodeid": "tests/toporlogy/test_bifurcation.py::test_fc4_dense_and_sparse_spectra_agree",
+   "kind": "pre-registered check failed",
+   "model_backend": "solvers.continuation locate_critical, fem.nonlinear SVK Q4 column (CPU, numpy eigh / SuperLU)",
+   "reason": "indeks dizileri aynı (dense eigh ↔ sparse LDLᵀ ataleti), ama yerleşen yük bağıl farkı 1,4e-9 > 1e-9: iki konum da ilk koşudan sonra eklenen özdeğer doğruluk tabanında (16 ε ‖K‖₁) 2 değerlendirmede duruyor; bu tabanda yük ~1e-9 çözünürlükte. Post hoc indeks maddesi geçiyor; doğrusal burkulmayla fark 5,3e-4 (FC1)",
+   "risk": "low",
+   "resolution": "yok (konum toleransının çözünürlüğü; eşik değişmez)",
+   "record": "docs/olcumler/catallanma_onkayit.md",
+   "slow": true
+  },
+  {
+   "nodeid": "tests/toporlogy/test_transient_study.py::test_hs6_rejects[roller]",
+   "kind": "pre-registered check failed",
+   "model_backend": "configuration build + transient_heat (CPU)",
+   "reason": "kurulum açık hatayla reddediliyor, ama fizikten önce yapı denetimi (rijit cisim modu) reddediyor; beklenen ileti 'every component' gelmiyor: sonda mekanik olarak eksik mesnetli kurulmuştu (post hoc roller_posthoc fizik denetimine ulaşıyor ve geçiyor)",
+   "risk": "low",
+   "resolution": "yok (sonda kurulumu); post hoc sonda roller_posthoc",
+   "record": "docs/olcumler/gecici_study_onkayit.md",
+   "slow": false
+  },
+  {
+   "nodeid": "tests/toporlogy/test_plastic_sensitivity.py::test_ps6_last_tangent_gradient_differs_from_finite_differences",
+   "kind": "pre-registered check failed",
+   "model_backend": "NonlinearElasticity + J2Plasticity Q4 düzlem gerinim konsol, iki yük durumu (CPU)",
+   "reason": "negatif kontrol: tarihçeyi yok sayan son tanjant gradyanı 8 bileşende FD'den yalnız 3,15e-3 ayrılıyor, eşik ≥ 1e-2 (yol adjoint'i 1,9e-8)",
+   "risk": "low",
+   "resolution": "kontrolün kendisi (ayırt edicilik); yol adjoint'i PS2a/PS4'te FD ile doğrulandı; post hoc tam gradyan vektöründe son tanjant hatası 1,3e-2–2,3e-2",
+   "record": "docs/olcumler/plastik_duyarlilik_onkayit.md",
+   "slow": false
+  },
+  {
+   "nodeid": "tests/toporlogy/test_shell.py::test_kb3_bending_patch_on_unequal_rectangles[0.001]",
+   "kind": "pre-registered check failed",
+   "model_backend": "fem.shell FlatShell, 3 × 2 eşit olmayan dikdörtgen, dönmüş düzlem (CPU, numpy)",
+   "reason": "sabit eğrilik yaması enerjisi bağıl hata 1,12e-12 > 1e-12 (t = 0,04); yorum: ince parçada kesme rijitliği eğilmeden ~(a/t)² büyük, uᵀKu karesel formunun yuvarlama tabanı (xy düzleminde 5,1e-13; post hoc t = 0,1'de 7,5e-14)",
+   "risk": "low",
+   "resolution": "yok (karesel formun yuvarlama tabanı; eşik değişmez); post hoc KB3b t = 0,1'de geçiyor, zar yaması 1,6e-15; varsayılan α DB4 ile 1e-1 olunca aynı kontrol 4,4e-13 ile geçiyor (test α üzerinden parametreli, bu kayıt α = 1e-3 kolu)",
+   "record": "docs/olcumler/kabuk_onkayit.md",
+   "slow": false
+  },
+  {
+   "nodeid": "tests/toporlogy/test_shell_drilling.py::test_dr1_static_compliance_spread_on_16x12[0.01-radial]",
+   "kind": "pre-registered check failed",
+   "model_backend": "fem.shell FlatShell, ankastre R = 1, 90°, L = 1 silindir dilimi, 16 × 12 parça (CPU, numpy)",
+   "reason": "t/R = 0,01, serbest halka ortasında radyal yük: |c(1e-4) − c(1e-2)| / c(1e-3) = 2,50e-2 > 1e-2; α küçüldükçe yapı yumuşuyor",
+   "risk": "medium",
+   "resolution": "yok bu turda: varsayılan α = 1e-3 ön kayıtlı kural gereği değişmez; hangi α'nın doğru olduğunu söyleyecek drilling'den bağımsız bir referans çözüm gerekir (ayrı ön kayıt)",
+   "record": "docs/olcumler/kabuk_onkayit.md",
+   "slow": false
+  },
+  {
+   "nodeid": "tests/toporlogy/test_shell_drilling.py::test_dr1_static_compliance_spread_on_16x12[0.05-corner]",
+   "kind": "pre-registered check failed",
+   "model_backend": "fem.shell FlatShell, ankastre R = 1, 90°, L = 1 silindir dilimi, 16 × 12 parça (CPU, numpy)",
+   "reason": "t/R = 0,05, köşe z yükü: |c(1e-4) − c(1e-2)| / c(1e-3) = 5,57e-2 > 1e-2 (8 × 6 ve 32 × 24 ağda da ~5 %: ağ incelmesiyle küçülmüyor)",
+   "risk": "medium",
+   "resolution": "yok bu turda: varsayılan α = 1e-3 ön kayıtlı kural gereği değişmez; hangi α'nın doğru olduğunu söyleyecek drilling'den bağımsız bir referans çözüm gerekir (ayrı ön kayıt)",
+   "record": "docs/olcumler/kabuk_onkayit.md",
+   "slow": false
+  },
+  {
+   "nodeid": "tests/toporlogy/test_shell_drilling.py::test_dr1_static_compliance_spread_on_16x12[0.05-radial]",
+   "kind": "pre-registered check failed",
+   "model_backend": "fem.shell FlatShell, ankastre R = 1, 90°, L = 1 silindir dilimi, 16 × 12 parça (CPU, numpy)",
+   "reason": "t/R = 0,05, radyal yük: |c(1e-4) − c(1e-2)| / c(1e-3) = 2,13e-1 > 1e-2 (32 × 24 ağda 2,07e-1)",
+   "risk": "medium",
+   "resolution": "yok bu turda: varsayılan α = 1e-3 ön kayıtlı kural gereği değişmez; hangi α'nın doğru olduğunu söyleyecek drilling'den bağımsız bir referans çözüm gerekir (ayrı ön kayıt)",
+   "record": "docs/olcumler/kabuk_onkayit.md",
+   "slow": false
+  },
+  {
+   "nodeid": "tests/toporlogy/test_shell_drilling.py::test_dr2_optimisation_spread[0.05]",
+   "kind": "pre-registered check failed",
+   "model_backend": "fem.shell FlatShell + optimization.shell_study, KS3 kurulumu 16 × 12, MMA (CPU, numpy)",
+   "reason": "KS3 kurulumu (t = 0,05), 30 MMA iterasyonu: son uyum farkı |c(1e-4) − c(1e-2)| / c(1e-3) = 5,80e-2 > 2e-2; tasarım L1 farkı 1,35e-2 ≤ 0,05 tuttu",
+   "risk": "medium",
+   "resolution": "yok bu turda: varsayılan α = 1e-3 ön kayıtlı kural gereği değişmez; hangi α'nın doğru olduğunu söyleyecek drilling'den bağımsız bir referans çözüm gerekir (ayrı ön kayıt)",
+   "record": "docs/olcumler/kabuk_onkayit.md",
+   "slow": false
+  },
+  {
+   "nodeid": "tests/toporlogy/test_mesh_yaml.py::test_ay2_unperturbed_mesh_equals_grid_yaml",
+   "kind": "pre-registered check failed",
+   "model_backend": "configuration.mesh_build (MeshElasticity, fem.mesh Factorization) ve ızgara YAML (Elasticity, splu), 24 × 8 Q4 konsol, MMA (CPU, numpy)",
+   "reason": "AY2: merkezler 0, değer 9,6e-13 / 2,0e-13 ve rastgele x'te gradyan 5,8e-13 eşik içinde; varsayılan başlangıçta gradyan 2,2e-12 > 1e-12, 10 MMA iterasyonu geçmişi 1,46e-8 > 1e-8. cond(K) = 3,0e4, eps · cond = 6,7e-12: iki farklı doğrudan çözücünün yuvarlama düzeyi (sonradan: değer ve gradyan farkı eps · cond(K) altında)",
+   "risk": "low",
+   "resolution": "yok bu turda: eşik değişmez; iki yol aynı çözücüyle çözülürse (ayrı ön kayıt) ya da yuvarlama sınırına dayalı yeni bir ölçüt ön kayda alınırsa yeniden değerlendirilir",
+   "record": "docs/olcumler/ag_topoloji_onkayit.md",
+   "slow": false
+  },
+  {
+   "nodeid": "tests/toporlogy/test_shell_yaml_ext.py::test_sx1_two_cases_are_the_weighted_sum_of_one_case_studies[rectangle]",
+   "kind": "pre-registered check failed",
+   "model_backend": "configuration.mesh_build kabuk kolu (ShellPhysics, FlatShell, SuperLU splu), düz dikdörtgen 2 × 1, 8 × 6, t = 0,05, iki yük durumu (CPU, numpy)",
+   "reason": "SX1: değer farkı 0, gradyan farkı 5,59e-12 > 1e-12. Bu x'te cond(K_ff) = 4,0e6, eps · cond = 9,0e-10: iki durumlu çalışmanın ağırlıklı eşlenik çözümü K λ = w F ile tek durumlu çalışmaların w (K⁻¹ F)'si farklı yuvarlanıyor (ölçüldü: a durumunda eleman duyarlılığı farkı 1,2e-11); sonradan: gradyan farkı eps · cond(K_ff) altında",
+   "risk": "low",
+   "resolution": "yok bu turda: eşik değişmez; yuvarlama sınırına dayalı bir ölçüt ön kayda alınırsa yeniden değerlendirilir",
+   "record": "docs/olcumler/kabuk_onkayit.md",
    "slow": false
   }
  ],
@@ -646,6 +786,20 @@
    "site": "pytest.importorskip(\"skfem\")",
    "backend": "scikit-fem (dev extra)",
    "covers": "voksel yeniden analizinin bağımsız montajı (GC7, prizmatik çubuk)",
+   "status_when_skipped": "NOT VERIFIED"
+  },
+  {
+   "file": "tests/toporlogy/test_mesh_yaml_ext.py",
+   "site": "vtk = pytest.importorskip(\"vtk\")",
+   "backend": "vtk (post extra)",
+   "covers": "ağ VTU dosyasının bağımsız okuyucuyla okunması, hücre tipleri ve hücre boyutları (AX5)",
+   "status_when_skipped": "NOT VERIFIED"
+  },
+  {
+   "file": "tests/toporlogy/test_shell_yaml_ext.py",
+   "site": "vtk = pytest.importorskip(\"vtk\")",
+   "backend": "vtk (post extra)",
+   "covers": "kabuk VTU dosyasının bağımsız okuyucuyla okunması ve parça alanları (SX4)",
    "status_when_skipped": "NOT VERIFIED"
   }
  ]

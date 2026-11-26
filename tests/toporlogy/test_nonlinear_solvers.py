@@ -15,7 +15,6 @@ from pathlib import Path
 
 import numpy as np
 import pytest
-import torch
 
 from toporlogy.core.constitutive import J2Plasticity, Kinematics, LinearElastic, MaterialRequest, StateStore, \
     drive_material_point
@@ -80,16 +79,15 @@ def test_p5_j2_elastic_limit_equals_linear(dim):
 
 
 def test_stateful_model_refuses_autograd_interpolation_and_warm_start():
-    """Post hoc (fail-closed contract): no design sensitivity, energy interpolation or warm start for J2."""
+    """Post hoc (fail-closed contract): no energy interpolation or warm start for J2. The design-sensitivity refusal
+    of this test was replaced by the path adjoint (``plastik_duyarlilik_onkayit.md``, planned change): a
+    path-dependent model without ``evaluate_vjp`` is still refused (test_plastic_sensitivity.py PS9)."""
     d, fixed, F = _clamped((4, 2))
     j2 = J2Plasticity(NU, SY, HARD)
     with pytest.raises(ValueError, match="finite-strain"):
         NonlinearElasticity(d, fixed, material=j2, plane="strain", energy_interpolation=EnergyInterpolation())
     with pytest.raises(ValueError, match="warm_start"):
         NonlinearElasticity(d, fixed, material=j2, plane="strain", warm_start=True)
-    nl = NonlinearElasticity(d, fixed, material=j2, plane="strain")
-    with pytest.raises(NotImplementedError, match="path-dependent"):
-        nl.solve(torch.ones(nl.n_elements, dtype=torch.float64), F)
 
 
 # ============================================================================================== J7: homogeneous bar

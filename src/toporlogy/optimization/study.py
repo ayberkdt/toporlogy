@@ -182,8 +182,9 @@ class Study:
         self.move_beta_ref = None if move_beta_ref is None else float(move_beta_ref)
         F = np.asarray(loads, float)
         self.F = F[:, None] if F.ndim == 1 else F
-        if self.F.shape[0] != domain.ndof:
-            raise ValueError(f"loads have {self.F.shape[0]} rows, the domain {domain.ndof} DOFs")
+        n_state = int(getattr(physics, "state_dofs", domain.ndof))     # plate: 3 per node
+        if self.F.shape[0] != n_state:
+            raise ValueError(f"loads have {self.F.shape[0]} rows, the physics {n_state} state DOFs")
         self.objective, self.constraints = objective, list(constraints)
         self.optimizer, self.schedule, self.recorder = optimizer, schedule or Schedule(), recorder
         if optimizer.max_constraints is not None and len(self.constraints) > optimizer.max_constraints:
@@ -196,6 +197,7 @@ class Study:
         if len(set(keys)) != len(keys):
             raise ValueError(f"constraint names must be unique: {keys}; set Constraint(name=...)")
         self._active = torch.as_tensor(domain.active_elements, dtype=torch.long)
+        self._install_density_map()
         self.n_evaluations = 0
         self.config: dict[str, Any] | None = None          # resolved declarative config, when built from one
         # A first link that maps a reduced variable vector z → design vector (symmetry, extrusion, pattern) declares
@@ -207,8 +209,10 @@ class Study:
         if self.n_fields > 1 or int(getattr(first, "n_fields", 1)) > 1:
             self._check_phases(first)
 
-    # Multi-phase designs (toporlogy.design.phases): what has been verified with several design fields.
-    _PHASE_LINKS = ("Embed", "DensityFilter", "HeavisideProjection", "Passive")
+    # Multi-phase designs (toporlogy.design.phases): what has been verified with several design fields. The first
+    # link is an Embed, or an OrientedEmbed (density fields + fibre angle, docs/olcumler/faz_aci_onkayit.md).
+    _PHASE_FIRST = ("Embed", "OrientedEmbed")
+    _PHASE_LINKS = ("DensityFilter", "HeavisideProjection", "Passive")
     _PHASE_RESPONSES = ("Compliance", "PhaseVolume", "Mass", "Cost")
 
     def _check_phases(self, first: Any) -> None:
@@ -217,10 +221,10 @@ class Study:
             raise ValueError(f"the chain's embed link has {nf} design field(s), the interpolation "
                              f"{type(self.interp).__name__} {self.n_fields}; build Embed(domain, n_fields=m) for m "
                              "phases")
-        bad = [type(lk).__name__ for lk in self.chain.links if type(lk).__name__ not in self._PHASE_LINKS]
-        if bad or type(first).__name__ != "Embed":
-            raise ValueError(f"with several phases the chain may hold only {', '.join(self._PHASE_LINKS)} (embed "
-                             f"first); got {[type(lk).__name__ for lk in self.chain.links]}")
+        names = [type(lk).__name__ for lk in self.chain.links]
+        if type(first).__name__ not in self._PHASE_FIRST or any(n not in self._PHASE_LINKS for n in names[1:]):
+            raise ValueError(f"with several phases the chain may hold only {' or '.join(self._PHASE_FIRST)} first, "
+                             f"then {', '.join(self._PHASE_LINKS)}; got {names}")
         if getattr(self.optimizer, "needs_constraint_fn", False):
             raise ValueError(f"{self.optimizer.name} does not handle several phases: its update assumes one "
                              "constraint whose gradient is positive in every variable, while the mass and cost of a "
@@ -233,6 +237,28 @@ class Study:
                              f"or constraint; got {bad}")
 
     # ------------------------------------------------------------------ evaluation
+    def _install_density_map(self) -> None:
+        """Give a non-linear physics with energy interpolation the real density x̄ = E⁻¹(E) of this study's SIMP /
+        RAMP interpolation (current exponent; docs/olcumler/gercek_yogunluk_onkayit.md). Other interpolations keep
+        the physics' own rule."""
+        from toporlogy.design.interp import RAMP, SIMP, inverse_modulus
+        ph = self.physics
+        if getattr(ph, "interpolation", None) is None or not hasattr(ph, "density_map"):
+            return
+        old = ph.density_map
+        if old is not None and not getattr(old, "from_study", False):
+            return                                         # set by the user: kept
+        if not isinstance(self.interp, (SIMP, RAMP)):
+            ph.density_map = None
+            return
+        interp = self.interp
+        frac = np.asarray(self.domain.frac, float).reshape(-1)[self._active.numpy()]
+
+        def density(E: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+            return inverse_modulus(interp, E, frac)
+        density.from_study = True                          # type: ignore[attr-defined]
+        ph.density_map = density
+
     def _needs(self, responses: Sequence[Response]) -> set[str]:
         out: set[str] = set()
         for r in responses:
@@ -319,24 +345,61 @@ class Study:
             return self.chain(torch.as_tensor(np.asarray(x, float), dtype=torch.float64)).numpy().copy()
 
     def default_start(self) -> np.ndarray:
-        """Uniform start from the first Volume constraint's bound (topo3d rule), else 0.5."""
-        if self.n_fields > 1:
-            return self._phase_start()
-        x = None
+        """Uniform start from the first Volume constraint's bound (topo3d rule), else 0.5; several phases:
+        :meth:`_phase_start`. Then reduced by the first link (symmetry, extrusion, an angle block), if it can."""
+        x = self._phase_start() if self.n_fields > 1 else self._uniform_design()
+        if self._reduce is not None:
+            x = np.asarray(self._reduce(x), float)
+        return x
+
+    def _uniform_design(self) -> np.ndarray:
         for c in self.constraints:
             if isinstance(c.response, Volume):
-                x = self.domain.uniform_start(c.upper, weighted=bool(getattr(c.response, "weighted", False)))
-                break
-        if x is None:
-            x = np.full(self.domain.n_design, 0.5)
+                return self.domain.uniform_start(c.upper, weighted=bool(getattr(c.response, "weighted", False)))
+        return np.full(self.domain.n_design, 0.5)
+
+    START_TYPES = ("cosine", "random")
+
+    def perturbed_start(self, spec: dict[str, Any], seed: int = 0) -> np.ndarray:
+        """Start vector: the uniform start of :meth:`default_start` plus a perturbation, clipped to [0, 1], then
+        reduced like the default (YAML ``run.start``; docs/olcumler/baslangic_tasarimi_onkayit.md).
+        ``{type: cosine, amplitude: a, periods: k}``: a · Π_d cos(2π k i_d / n_d) over the element grid indices;
+        ``{type: random, amplitude: a}``: U(−a, a) drawn with ``seed``. 0 < a ≤ 0.5, integer k ≥ 1."""
+        spec = dict(spec)
+        kind = spec.pop("type", None)
+        if kind not in self.START_TYPES:
+            raise ValueError(f"run.start type: {' | '.join(self.START_TYPES)}, got {kind!r}")
+        if "amplitude" not in spec:
+            raise ValueError("run.start needs amplitude (0 < amplitude <= 0.5)")
+        a = float(spec.pop("amplitude"))
+        k = spec.pop("periods", 1) if kind == "cosine" else 1
+        if spec:
+            raise ValueError(f"run.start {kind}: unknown key(s) {sorted(spec)}")
+        if not 0.0 < a <= 0.5:
+            raise ValueError(f"run.start amplitude must be in (0, 0.5], got {a}")
+        if isinstance(k, bool) or int(k) != k or int(k) < 1:
+            raise ValueError(f"run.start periods must be an integer >= 1, got {k!r}")
+        first = self.chain.links[0] if len(self.chain.links) else None
+        if self.n_fields > 1 or getattr(first, "angle_block", None) is not None:
+            raise ValueError("run.start: several phases or an angle block are not supported (uniform start only)")
+        self.schedule.reset()                                  # the volume bound the uniform start reads
+        x = self._uniform_design()
+        d = self.domain
+        if kind == "cosine":
+            ijk = np.stack(np.unravel_index(np.asarray(d.design_elements), d.shape), axis=1)
+            p = a * np.prod(np.cos(2.0 * np.pi * int(k) * ijk / np.asarray(d.shape)), axis=1)
+        else:
+            p = np.random.default_rng(int(seed)).uniform(-a, a, d.n_design)
+        x = np.clip(x + p, 0.0, 1.0)
         if self._reduce is not None:
             x = np.asarray(self._reduce(x), float)
         return x
 
     def _phase_start(self) -> np.ndarray:
-        """Uniform start whose phase volume fractions are the bounds of the single-phase PhaseVolume constraints
-        (other fields 0.5); with only a solid-volume bound V every field starts at τ = 1 − (1 − V)^(1/m), which
-        gives solid fraction V (a field at 0 would stay there: d t^p / dt = 0 at t = 0)."""
+        """Uniform density fields (m · n_design, field-major) whose phase volume fractions are the bounds of the
+        single-phase PhaseVolume constraints (other fields 0.5); with only a solid-volume bound V every field
+        starts at τ = 1 − (1 − V)^(1/m), which gives solid fraction V (a field at 0 would stay there: d t^p / dt = 0
+        at t = 0). The first link's ``reduce`` (an angle block) is applied by :meth:`default_start`."""
         from toporlogy.design.phases import phase_start
         names = [p.name for p in getattr(self.interp, "phases", ())]
         fr: list[float | None] = [None] * self.n_fields
@@ -351,7 +414,7 @@ class Study:
                 fr[names.index(ph[0])] = c.upper
         if solid is not None and all(f is None for f in fr):
             tau = 1.0 - (1.0 - min(max(float(solid), 0.0), 1.0)) ** (1.0 / self.n_fields)
-            return np.full(self.n_var, tau)
+            return np.full(self.n_fields * self.domain.n_design, tau)
         return phase_start(self.n_fields, self.domain.n_design, fr)
 
     # ------------------------------------------------------------------ loop

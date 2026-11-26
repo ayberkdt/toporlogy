@@ -56,7 +56,7 @@ from scipy.sparse import csgraph
 
 from toporlogy.design.chain import DensityFilter, HeavisideProjection, Passive
 from toporlogy.core.bodies import label_bodies, neighbourhood
-from toporlogy.core.domain import Domain
+from toporlogy.core.domain import Domain, require_grid
 from toporlogy.fem.elastic import Elasticity
 from toporlogy.fem.heat import ConductivityInterp, HeatConduction, element_nodes
 from toporlogy.optimization.responses import EvalContext, Response
@@ -100,7 +100,8 @@ def elements_touching_nodes(domain: Domain, nodes: Sequence[int] | np.ndarray, a
     return m & domain.active if active_only else m
 
 
-def _interfaces(domain: Domain, interfaces: Mapping[str, Any]) -> dict[str, np.ndarray]:
+def _interfaces(domain: Domain, interfaces: Mapping[str, Any], component: str) -> dict[str, np.ndarray]:
+    require_grid(domain, component)
     if not interfaces:
         raise ValueError("at least one interface region is required")
     out = {}
@@ -330,7 +331,7 @@ def analyse_connectivity(domain: Domain, xphys: np.ndarray, interfaces: Mapping[
     if voids not in ("fail", "warn"):
         raise ValueError('voids: "fail" | "warn"')
     x = np.asarray(xphys, float).reshape(domain.shape)
-    masks = _interfaces(domain, interfaces)
+    masks = _interfaces(domain, interfaces, "analyse_connectivity")
     solid = (x >= threshold) & domain.active
     lab, sizes = label_bodies(solid, connectivity)
     n = len(sizes)
@@ -501,7 +502,7 @@ class ConductionConnectivity(_RatioResponse):
                  kmin_ratio: float = 1e-3, penal: float = 3.0, aggregate: str = "pnorm", p: float = 8.0,
                  eta: float | None = None, reference: Any = "solid", solver: Any = None) -> None:
         super().__init__(domain, aggregate, p, reference, eta)
-        masks = _interfaces(domain, interfaces)
+        masks = _interfaces(domain, interfaces, "ConductionConnectivity")
         names = list(masks)
         if len(names) < 2:
             raise ValueError("need at least two interfaces (a sink and a source)")
@@ -577,7 +578,7 @@ class CouplingCompliance(_RatioResponse):
                  aggregate: str = "pnorm", p: float = 8.0, eta: float | None = None, reference: Any = "solid",
                  solver: Any = None) -> None:
         super().__init__(domain, aggregate, p, reference, eta)
-        masks = _interfaces(domain, interfaces)
+        masks = _interfaces(domain, interfaces, "CouplingCompliance")
         names = list(masks)
         if len(names) < 2:
             raise ValueError("need at least two interfaces (one held, one loaded)")
@@ -702,7 +703,7 @@ def tie_regions(domain: Domain, groups: Mapping[str, Any], section: int = 1, avo
     Returns the bool element mask of the ties (group cells not included); freeze it with :func:`with_keep`.
     Raises RuntimeError if a group cannot be reached.
     """
-    masks = _interfaces(domain, groups)
+    masks = _interfaces(domain, groups, "tie_regions")
     allowed = domain.active & ~domain.void
     if avoid is not None:
         allowed &= ~np.asarray(avoid, bool)
@@ -775,7 +776,7 @@ def bridge(domain: Domain, xphys: np.ndarray, interfaces: Mapping[str, Any], thr
     ``binary=True`` returns ``xphys`` as the 0/1 repaired design (then any threshold gives the same body).
     """
     x = np.clip(np.asarray(xphys, float).reshape(domain.shape), 0.0, 1.0)
-    masks = _interfaces(domain, interfaces)
+    masks = _interfaces(domain, interfaces, "bridge")
     allowed = domain.active & ~domain.void
     unreachable = [n for n, m in masks.items() if not (m & allowed).any()]
     if unreachable:
@@ -969,6 +970,7 @@ def one_body(domain: Domain, interfaces: Mapping[str, Any], *, ties: int | None 
         structural case, bound default 2.5 × first value) or None.
     """
     from toporlogy.optimization.study import Constraint
+    require_grid(domain, "one_body")
     masks: dict[str, np.ndarray] = {}
     for name, v in interfaces.items():
         a = np.asarray(v)
@@ -976,7 +978,7 @@ def one_body(domain: Domain, interfaces: Mapping[str, Any], *, ties: int | None 
             masks[str(name)] = a & domain.active
         else:
             masks[str(name)] = elements_touching_nodes(domain, a.astype(np.int64))
-    masks = _interfaces(domain, masks)
+    masks = _interfaces(domain, masks, "one_body")
     tie_mask = None
     dom = domain
     if ties:

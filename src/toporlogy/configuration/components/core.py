@@ -106,7 +106,8 @@ def register_core() -> None:
         """Design vector → element grid (keep 1, void 0, outside 0); one design field per entry of
         material.phases or interpolation.phases (tensor_phases; field-major), else one. angle {location: element |
         global, bounds: [lo, hi], start, keep_angle (degrees), rmin}: a fibre-angle design block after the density
-        block (2-D, one phase, interpolation tensor_phases); density false: the density is not designed."""
+        block (2-D, interpolation tensor_phases; with several phases one angle turns every phase with rotate true);
+        density false: the density is not designed (one phase only)."""
         ip = ctx.config.get("interpolation") or {}
         ph = ip.get("phases") if ip.get("type") == "tensor_phases" else ctx.material.get("phases")
         n = len(ph) if ph else 1
@@ -118,12 +119,12 @@ def register_core() -> None:
         if ip.get("type") != "tensor_phases":
             raise ValueError("an angle block needs interpolation tensor_phases (the fibre angle turns the phase "
                              "tensors)")
-        if n != 1:
-            raise ValueError(f"an angle block with {n} phases is not supported: Study accepts several design fields "
-                             "only through the plain embed link (one phase with an angle, or several phases without)")
+        if n != 1 and not density:
+            raise ValueError(f"an angle block with density false and {n} phases is not supported: which phase fills "
+                             "the part is undefined (design the density, or use one phase)")
         if ctx.domain.dim != 2:
             raise ValueError("an angle block is 2-D only (3-D orientation is not implemented)")
-        return OrientedEmbed(ctx.domain, AngleBlock.from_degrees(angle), density=density)
+        return OrientedEmbed(ctx.domain, AngleBlock.from_degrees(angle), density=density, n_fields=n)
 
     register("link", "embed", embed, types={"angle": None}, units={"angle": "degrees (bounds, start, keep_angle); "
                                                                             "rmin in elements"})

@@ -42,6 +42,7 @@ from typing import Any
 
 import numpy as np
 
+from toporlogy.core.domain import require_grid
 from toporlogy.fem.elements import H8_CORNER, Q4_CORNER, _B_unit_h8, _B_unit_q4, mode_recovery_from_D
 from toporlogy.optimization.stress import von_mises_matrix
 
@@ -165,7 +166,11 @@ class StressRecovery:
 
     def __init__(self, physics: Any, U: Any, E: Any = 1.0, elements: Any = None,
                  plane_stress: bool | None = None) -> None:
-        d = physics.domain
+        d = getattr(physics, "domain", None)
+        if d is None:
+            raise ValueError(f"StressRecovery needs the physics of a structured element grid (Elasticity on a Domain), "
+                             f"not a {type(physics).__name__}; it has no mesh or shell counterpart yet")
+        require_grid(d, "StressRecovery")
         self.domain, self.dim = d, int(d.dim)
         if physics.element not in ("Q4", "Q4IM", "H8", "H8IM"):
             raise ValueError(f"stress recovery covers Q4, Q4IM, H8 and H8IM, not {physics.element!r}")

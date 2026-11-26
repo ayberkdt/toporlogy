@@ -55,8 +55,20 @@ def two_case_supports(base: dict[str, Any]) -> list[dict[str, Any]]:
     return [copy.deepcopy(case), dict(copy.deepcopy(case), supports=own)]
 
 
+TRANSIENT = ("transient_heat", "dynamics_newmark")
+HEAT_BASE = {k: v for k, v in B2.items() if k != "load_cases"}        # heat: no load cases, supports are sinks
+
+
 def physics_for(p: str) -> tuple[dict[str, Any], dict[str, Any]]:
     """(base config, physics spec) able to build physics ``p`` with a volume constraint."""
+    if p == "transient_heat":
+        return HEAT_BASE, {"type": p, "dt": 0.5, "n_steps": 3, "source_density": 1.0}
+    if p == "dynamics_newmark":
+        return B2, {"type": p, "dt": 1.0, "n_steps": 3}
+    if p == "thermoelastic":
+        return B2, {"type": p, "alpha": 1e-2}
+    if p == "plate":
+        return HEAT_BASE, {"type": p, "thickness": 0.1, "pressure": 1.0}         # own load, no load cases
     return (B3 if p == "elasticity_gmg" else B2), {"type": p}
 
 
@@ -71,6 +83,8 @@ STATE = {  # response spec (objective) for a state response
     "end_strain_energy": "end_strain_energy",
     "scenario_compliance": "scenario_compliance",
     "compliance_case": "compliance_case",
+    "transient_thermal_compliance": "transient_thermal_compliance",
+    "dynamic_compliance": "dynamic_compliance",
 }
 EIGEN = {"frequency": {"type": "maximize", "response": {"type": "frequency"}},
          "eigenvalue": {"type": "maximize", "response": {"type": "eigenvalue"}},
@@ -81,9 +95,9 @@ EIGEN = {"frequency": {"type": "maximize", "response": {"type": "frequency"}},
 def cell_probe(response: str, physics: str) -> dict[str, Any]:
     base, ph = physics_for(physics)
     if response == "buckling":
-        obj = "end_compliance" if physics == "nonlinear_elasticity" else "volume" if physics == "modal" else \
-            "compliance"
-        cons = [BUCK] if physics == "modal" else [VOL, BUCK]
+        no_state = physics == "modal" or physics in TRANSIENT
+        obj = "end_compliance" if physics == "nonlinear_elasticity" else "volume" if no_state else "compliance"
+        cons = [BUCK] if no_state else [VOL, BUCK]
         return mod(base, physics=ph, objective=obj, constraints=cons)
     if response == "min_frequency":
         return mod(base, physics=ph, constraints=[VOL, {"response": {"type": "min_frequency", "f_min": 1.0}}])
@@ -103,6 +117,13 @@ def cell_pattern(response: str, physics: str) -> str:
         return r"needs physics modal"
     if response in ("end_compliance", "end_strain_energy"):
         return r"needs physics nonlinear_elasticity"
+    if response == "transient_thermal_compliance":
+        return r"needs physics transient_heat"
+    if response == "dynamic_compliance":
+        return r"needs physics dynamics_newmark"
+    if physics in TRANSIENT:
+        return rf"unsupported combination \(catalog\): response {response} with physics {physics}: needs the static " \
+               r"state u"
     if physics == "modal":
         return rf"unsupported combination \(catalog\): response {response} with physics modal: needs the static state u"
     return rf"unsupported combination \(catalog\): response buckling with physics {physics}"
@@ -184,9 +205,10 @@ RULE_PROBES: dict[str, tuple[Callable[[], Any], type[BaseException], str]] = {
     "tensor_post": (_cfg(mod(TENSOR, post=["discrete_check"])), ConfigError, r"post step\(s\) \['discrete_check'\]"),
     "angle_3d": (_cfg(mod(TENSOR, domain=B3["domain"], load_cases=B3["load_cases"], chain=ANGLE_CHAIN)), ConfigError,
                  r"angle block is 2-D only"),
-    "angle_phases": (_cfg(mod(TENSOR, chain=ANGLE_CHAIN, interpolation=dict(TENSOR["interpolation"],
-                                                                          phases=[FIBRE, dict(FIBRE, name="g")]))),
-                     ConfigError, r"angle block with 2 phases is not supported"),
+    "angle_phases_no_density": (_cfg(mod(TENSOR, chain=[{"type": "embed", "density": False, "angle": {"rmin": 1.5}}],
+                                         interpolation=dict(TENSOR["interpolation"],
+                                                            phases=[FIBRE, dict(FIBRE, name="g")]))),
+                                ConfigError, r"density false and 2 phases is not supported"),
     "angle_interpolation": (_cfg(mod(B2, chain=ANGLE_CHAIN)), ConfigError, r"angle block needs interpolation "
                                                                           r"tensor_phases"),
     "angle_isotropic": (_cfg(mod(TENSOR, chain=ANGLE_CHAIN, interpolation=dict(
@@ -213,6 +235,10 @@ def test_every_enforced_rule_has_a_probe() -> None:
     pytest.param(mod(B2, physics="modal", objective=EIGEN["frequency"]), id="modal-frequency"),
     pytest.param(mod(B2, physics="nonlinear_elasticity", objective="end_compliance"), id="nonlinear-end_compliance"),
     pytest.param(mod(B3, physics="elasticity_gmg"), id="gmg-compliance"),
+    pytest.param(mod(HEAT_BASE, physics=physics_for("transient_heat")[1], objective="transient_thermal_compliance"),
+                 id="transient_heat-transient_thermal_compliance"),
+    pytest.param(mod(B2, physics=physics_for("dynamics_newmark")[1], objective="dynamic_compliance"),
+                 id="dynamics_newmark-dynamic_compliance"),
 ])
 def test_supported_combinations_still_build(cfg: dict[str, Any]) -> None:
     build_setup(cfg)

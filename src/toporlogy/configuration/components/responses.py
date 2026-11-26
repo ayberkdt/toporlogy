@@ -235,6 +235,27 @@ def register_responses() -> None:
 
     register("response", "end_strain_energy", end_strain_energy)
 
+    def transient_thermal_compliance(ctx: BuildContext) -> Any:
+        """Time-averaged thermal compliance (1/t_N) sum_n w_n q.T_n (trapezoid) of physics transient_heat
+        (optimization.transient, docs/olcumler/gecici_study_onkayit.md)."""
+        from toporlogy.fem.transient_heat import TransientHeatPhysics
+        from toporlogy.optimization.transient import TransientThermalCompliance
+        if not isinstance(ctx.physics, TransientHeatPhysics):
+            raise ValueError("transient_thermal_compliance needs physics transient_heat")
+        return TransientThermalCompliance()
+
+    def dynamic_compliance(ctx: BuildContext) -> Any:
+        """Time-averaged dynamic compliance (1/t_N) sum_n w_n f(t_n).u_n (trapezoid) of physics dynamics_newmark
+        (optimization.transient, docs/olcumler/gecici_study_onkayit.md)."""
+        from toporlogy.fem.dynamics_newmark import NewmarkPhysics
+        from toporlogy.optimization.transient import DynamicCompliance
+        if not isinstance(ctx.physics, NewmarkPhysics):
+            raise ValueError("dynamic_compliance needs physics dynamics_newmark")
+        return DynamicCompliance()
+
+    register("response", "transient_thermal_compliance", transient_thermal_compliance)
+    register("response", "dynamic_compliance", dynamic_compliance)
+
     def centre_of_mass(ctx: BuildContext, axis: str = "x") -> Any:
         """Coordinate of the centre of mass of the physical density along axis x | y | z (length unit; material rho
         as the density of solid, x̄ linear). No state solve."""

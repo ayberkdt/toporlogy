@@ -20,7 +20,8 @@ unit, e.g. m; ``E0`` is force/length² (Pa with N and m); forces are force units
                                                                     # objective end_compliance)
     supports:                                                       # *required*, >= 1 (bc supports)
       - {type: fixed, where: {type: plane, axis: x, at: min}, dofs: x}
-    load_cases:                                                     # *required* (optional for physics modal)
+    load_cases:                                                     # *required* (optional for physics modal,
+                                                                    # transient_heat)
       - name: tip                  # [case<i>]
         weight: 1.0                # [1.0] used by compliance
         supports: null             # [null] own supports of this case (null = the supports above)
@@ -36,6 +37,7 @@ unit, e.g. m; ``E0`` is force/length² (Pa with N and m); forces are force units
     robust: null                   # [null] {min_solid, min_void, eta_e, eta_d, eta_i, beta, kernel, eta_max}
     connectivity: null             # [null] {interfaces, ties, constraint, eta, bound, sink, gate, repair, ...}
     run: {max_iter: 100, tol: 0.01, seed: 0, feasibility_tol: 0.001, move_beta_ref: null}
+                                   # start: null | {type: cosine, amplitude, periods} | {type: random, amplitude}
     output: {folder: runs, snapshot_every: 0}
     post: []                       # [[]] post-processing components
     schema_version: "1"            # ["1"] the config schema this file is written for (another value is refused)
@@ -85,6 +87,9 @@ otherwise a void interface cell cuts the tie), ``constraint`` (conduction | coup
 [[x, 500], [y, mid]]: the frozen ties are placed together with their mirror images; null = the planes of a
 ``symmetry`` link in the chain, else none).
 
+A general mesh (``domain: {type: mesh, generator: rectangle | box, ...}``) has its own, smaller schema and build
+path: :mod:`toporlogy.configuration.mesh_build`.
+
 Public functions: :func:`read_config`, :func:`resolve`, :func:`build`, :func:`study_from_dict`, :func:`load_config`,
 :func:`apply_overrides`, :func:`parse_sweep`, :func:`sweep_combinations`, :func:`run_setup`, :func:`read_run`.
 """
@@ -100,7 +105,9 @@ SCHEMA_KEYS = ("name", "domain", "material", "physics", "supports", "load_cases"
                "output", "post", "provenance", "schema_version", "units")
 
 
-_REQUIRED = ("domain", "supports")                     # load_cases too, unless physics is modal
+_REQUIRED = ("domain", "supports")                     # load_cases too, unless the physics takes no static load
+# physics without static loads: load_cases optional (modal: eigenproblem; transient_heat: heat input in physics)
+NO_LOAD_PHYSICS = ("modal", "transient_heat", "plate")
 
 
 _MATERIAL = {"E0": Param("E0", 1.0, float, unit="force/length^2"), "nu": Param("nu", 0.3, float),
@@ -114,7 +121,8 @@ _MATERIAL = {"E0": Param("E0", 1.0, float, unit="force/length^2"), "nu": Param("
 _RUN = {"max_iter": Param("max_iter", 100, int), "tol": Param("tol", 0.01, float),
         "seed": Param("seed", 0, int), "feasibility_tol": Param("feasibility_tol", 1e-3, float),
         "move_beta_ref": Param("move_beta_ref", None, float, nullable=True),
-        "checkpoint_every": Param("checkpoint_every", 0, int)}
+        "checkpoint_every": Param("checkpoint_every", 0, int),
+        "start": Param("start", None, None, nullable=True)}
 
 
 _OUTPUT = {"folder": Param("folder", "runs", str), "snapshot_every": Param("snapshot_every", 0, int)}

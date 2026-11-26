@@ -65,6 +65,7 @@ import torch.nn.functional as tF
 from scipy import ndimage
 
 from toporlogy.references import cite
+from toporlogy.core.domain import require_grid
 from toporlogy.optimization.responses import EvalContext, Response
 
 __all__ = ["LengthScaleReport", "measure_lengthscale", "voxel_local_thickness", "opening_residue", "closing_residue",
@@ -489,6 +490,7 @@ class LocalVolume(Response):
             self.name = name
 
     def field(self, ctx: EvalContext) -> torch.Tensor:
+        require_grid(ctx.domain, "LocalVolume")
         x = ctx.xphys if self.source is None else self.source(ctx)
         return local_volume_field(x, self.radius, self.outside, ctx.domain.active)
 

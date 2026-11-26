@@ -20,7 +20,7 @@ import torch
 import torch.nn.functional as tF
 
 from toporlogy.references import cite
-from toporlogy.core.domain import Domain
+from toporlogy.core.domain import Domain, require_grid
 
 __all__ = ["Chain", "Embed", "DensityFilter", "HeavisideProjection", "Passive", "standard_chain"]
 
@@ -86,6 +86,7 @@ class DensityFilter(torch.nn.Module):
 
     def __init__(self, domain: Domain, rmin: float, backend: str = "auto", periodic: bool = False) -> None:
         super().__init__()
+        require_grid(domain, "DensityFilter", "MeshFilterLink")
         if not rmin > 0:
             raise ValueError("rmin > 0 is required")
         if backend not in ("auto", "sparse", "conv"):
@@ -234,6 +235,7 @@ class Chain(torch.nn.Module):
 def standard_chain(domain: Domain, rmin: float, projection: bool = True, beta: float = 1.0,
                    eta: float = 0.5) -> Chain:
     """Embed → DensityFilter(rmin) → [HeavisideProjection(β, η)] → Passive."""
+    require_grid(domain, "standard_chain", "a Chain of Embed, MeshFilterLink, Passive")
     links: list[torch.nn.Module] = [Embed(domain), DensityFilter(domain, rmin)]
     if projection:
         links.append(HeavisideProjection(beta, eta))

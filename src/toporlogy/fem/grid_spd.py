@@ -17,7 +17,7 @@ import scipy.sparse as sp
 import scipy.sparse.linalg as spla
 import torch
 
-from toporlogy.core.domain import Domain
+from toporlogy.core.domain import Domain, require_grid
 
 __all__ = ["GridSPD", "apply_elements"]
 
@@ -60,6 +60,7 @@ class GridSPD:
 
     def __init__(self, domain: Domain, KE: np.ndarray, edof: np.ndarray, n: int, fixed: Sequence[int] | np.ndarray,
                  values: Any = 0.0) -> None:
+        require_grid(domain, "GridSPD")
         self.domain, self.KE, self.edof, self.n = domain, np.asarray(KE, float), np.asarray(edof, np.int64), int(n)
         if self.KE.ndim not in (2, 3):
             raise ValueError(f"KE must be (nloc, nloc) or (n_mats, nloc, nloc), got {self.KE.shape}")

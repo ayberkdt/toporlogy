@@ -40,7 +40,7 @@ from typing import Any
 import numpy as np
 import torch
 
-from toporlogy.core.domain import Domain
+from toporlogy.core.domain import Domain, require_grid
 from toporlogy.core.material_field import (FIELD_REQUESTS, PLANES, MaterialField, PhaseMaterial,
                                            as_phase_materials, rotate_in_plane)
 from toporlogy.references import cite
@@ -113,6 +113,7 @@ class MultiPhaseSIMP(torch.nn.Module):
 
     def __init__(self, domain: Domain, phases: Sequence[Any], penal: float = 3.0, emin_ratio: float = 1e-6) -> None:
         super().__init__()
+        require_grid(domain, "MultiPhaseSIMP")
         self.phases = as_phases(phases)
         Es = [p.E for p in self.phases]
         if any(b < a for a, b in zip(Es, Es[1:], strict=False)):
@@ -177,6 +178,7 @@ def phase_report(interp: MultiPhaseSIMP, xphys: np.ndarray, domain: Domain, lo: 
     Grey share: active elements whose dominant fraction max_i η_i (void included) is below ``hi``; for one phase
     with ``lo = 1 − hi`` this is ``grey_fraction`` (lo < x̄ < hi).
     """
+    require_grid(domain, "phase_report")
     with torch.no_grad():
         eta = interp.fractions(torch.as_tensor(np.asarray(xphys, float))).numpy()
     act = domain.active
@@ -250,6 +252,7 @@ class TensorPhases(torch.nn.Module):
     def __init__(self, domain: Domain, phases: Sequence[Any], rule: str = "simplex", penal: float = 3.0,
                  emin_ratio: float = 1e-6, plane: str = "stress", request: Sequence[str] = ("stiffness",)) -> None:
         super().__init__()
+        require_grid(domain, "TensorPhases")
         if rule not in MIXING_RULES:
             raise ValueError(f"rule: one of {MIXING_RULES}, got {rule!r}")
         if plane not in PLANES:

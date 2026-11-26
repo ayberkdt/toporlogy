@@ -41,7 +41,7 @@ from scipy.sparse.csgraph import connected_components
 
 from toporlogy.references import cite
 from toporlogy.design.chain import Chain, DensityFilter, Embed, HeavisideProjection, Passive
-from toporlogy.core.domain import Domain
+from toporlogy.core.domain import Domain, require_grid
 
 __all__ = ["parse_direction", "AMFilter", "overhang_map", "overhang_violations",
            "Tying", "SymmetryTying", "mirror_partner", "ExtrusionTying", "PatternTying", "GroupAverage",
@@ -189,6 +189,7 @@ class AMFilter(torch.nn.Module):
                  P: float = 40.0, eps: float = 1e-4, xi0: float = 0.5, masked: bool = True,
                  autograd: bool = False) -> None:
         super().__init__()
+        require_grid(domain, "AMFilter")
         self.shape = tuple(domain.shape)
         self.dim = domain.dim
         self.axis, self.sign = parse_direction(_default_build(build, domain.dim), domain.dim)
@@ -298,6 +299,8 @@ def overhang_map(xphys: np.ndarray, build: Any = None, domain: Domain | None = N
     With ``domain``: outside/void cells are never solid, keep cells always solid; keep cells are reported only if
     ``include_keep`` (the design cannot change them).
     """
+    if domain is not None:
+        require_grid(domain, "overhang_map")
     x = np.asarray(xphys, float)
     dim = x.ndim
     axis, sign = parse_direction(_default_build(build, dim), dim)
@@ -315,6 +318,8 @@ def overhang_map(xphys: np.ndarray, build: Any = None, domain: Domain | None = N
 def overhang_violations(xphys: np.ndarray, build: Any = None, domain: Domain | None = None,
                         threshold: float = 0.5, base_layer: int = 0, include_keep: bool = False) -> int:
     """Number of unsupported solid elements (:func:`overhang_map`)."""
+    if domain is not None:
+        require_grid(domain, "overhang_violations")
     return int(overhang_map(xphys, build, domain, threshold, base_layer, include_keep).sum())
 
 
@@ -461,6 +466,7 @@ class SymmetryTying(Tying):
         items = list(planes.items()) if isinstance(planes, Mapping) else list(planes)
         if not items:
             raise ValueError("at least one plane is required")
+        require_grid(domain, "SymmetryTying", "a Tying with explicit element maps")
         self.planes = [(_axis_index(a, domain.dim), float(c)) for a, c in items]
         maps = [mirror_partner(domain, k, c) for k, c in self.planes]
         super().__init__(domain, maps, kind="symmetry")
@@ -486,6 +492,7 @@ class ExtrusionTying(Tying):
     """
 
     def __init__(self, domain: Domain, axis: Any) -> None:
+        require_grid(domain, "ExtrusionTying", "a Tying with explicit element maps")
         k = _axis_index(axis, domain.dim)
         self.axis = k
         shape = domain.shape
@@ -526,6 +533,7 @@ class PatternTying(Tying):
 
     @classmethod
     def translational(cls, domain: Domain, offset: Sequence[float]) -> PatternTying:
+        require_grid(domain, "PatternTying.translational", "a Tying with explicit element maps")
         t = np.asarray(offset, float).reshape(domain.dim)
         if not np.any(t):
             raise ValueError("offset must be non-zero")
@@ -540,6 +548,7 @@ class PatternTying(Tying):
         (2-D; ``axis`` ignored)."""
         if int(n) < 2:
             raise ValueError("n ≥ 2 is required")
+        require_grid(domain, "PatternTying.cyclic", "a Tying with explicit element maps")
         X = domain.element_centers()
         c = np.asarray(center, float).reshape(domain.dim)
         if domain.dim == 2:
@@ -625,6 +634,7 @@ class Casting(torch.nn.Module):
 
     def __init__(self, domain: Domain, direction: Any = "+z", parting: float | None = None, p: float = 40.0) -> None:
         super().__init__()
+        require_grid(domain, "Casting")
         self.shape = tuple(domain.shape)
         self.axis, self.sign = parse_direction(direction, domain.dim)
         self.p = float(p)
@@ -683,6 +693,7 @@ def mirror_closure(domain: Domain, mask: np.ndarray, planes: Sequence[tuple[Any,
     """``mask`` united with all its mirror images about ``planes`` (the closure of the symmetry group: with two
     planes the four images), using the partner relation of :func:`mirror_partner` (the one :class:`SymmetryTying`
     ties). Images that leave the box are dropped."""
+    require_grid(domain, "mirror_closure")
     m = np.asarray(mask, bool).reshape(-1).copy()
     partners = [mirror_partner(domain, a, c) for a, c in planes]
     while True:
@@ -699,6 +710,8 @@ def undercut_map(xphys: np.ndarray, direction: Any = "+z", domain: Domain | None
     """Boolean grid of undercut cells: empty cells (≤ ``threshold``, or void / outside the part) that lie after the
     first part cell of their line (seen from the parting surface) and have a solid cell farther from the parting
     surface on the same line. With ``domain``: keep cells are solid, void / outside cells empty."""
+    if domain is not None:
+        require_grid(domain, "undercut_map")
     x = np.asarray(xphys, float)
     axis, sign = parse_direction(direction, x.ndim)
     keep, off = _masks(domain, x.shape)
@@ -732,6 +745,8 @@ def undercut_map(xphys: np.ndarray, direction: Any = "+z", domain: Domain | None
 def undercuts(xphys: np.ndarray, direction: Any = "+z", domain: Domain | None = None,
               parting: float | None = None, threshold: float = 0.5) -> int:
     """Number of undercut cells (:func:`undercut_map`)."""
+    if domain is not None:
+        require_grid(domain, "undercuts")
     return int(undercut_map(xphys, direction, domain, parting, threshold).sum())
 
 
@@ -798,6 +813,7 @@ def manufacturing_chain(domain: Domain, rmin: float, *, tying: Tying | Sequence[
     links are combined into one (:func:`combine_tying`). Using AM and casting together is allowed but the two
     operators do not commute; the AM filter is applied first.
     """
+    require_grid(domain, "manufacturing_chain", "a Chain of Embed, MeshFilterLink, Passive")
     links: list[torch.nn.Module] = []
     t = None
     if tying is not None:

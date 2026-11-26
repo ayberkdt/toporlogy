@@ -194,6 +194,9 @@ def _tie_planes(spec: Any, chain: list[Any], d: Any) -> list[tuple[int, float]]:
 
 def build(resolved: dict[str, Any]) -> Setup:
     """Construct every component of a resolved config (see :func:`resolve`) into a :class:`Setup`."""
+    if (resolved.get("domain") or {}).get("type") in ("mesh", "shell"):
+        from toporlogy.configuration.mesh_build import build_mesh
+        return build_mesh(resolved)                    # domain type mesh or shell: own path (mesh_build.py)
     from toporlogy.boundary import AllNodes, Combination, LoadCase
     from toporlogy.design.chain import Chain, DensityFilter, HeavisideProjection
     from toporlogy.design.manufacturing import GroupAverage, Tying, validate_chain
@@ -201,7 +204,8 @@ def build(resolved: dict[str, Any]) -> Setup:
     from toporlogy.optimization.study import Constraint, Study
 
     r = resolved
-    modal = r["physics"]["type"] == "modal"
+    from toporlogy.configuration.schema import NO_LOAD_PHYSICS
+    no_load = r["physics"]["type"] in NO_LOAD_PHYSICS
     combos_r = r.get("combinations") or []
     weights = [float(c["weight"]) for c in r["load_cases"]] + [float(c["weight"]) for c in combos_r]
     ctx = BuildContext(config=r, material=dict(r["material"]), run=dict(r["run"]),
@@ -235,7 +239,7 @@ def build(resolved: dict[str, Any]) -> Setup:
         sup = None if c.get("supports") is None else _supports(ctx, c["supports"], join(cp, "supports"),
                                                                f"{c['name']}.S" if many else "S")
         lcs.append(LoadCase(c["name"], _loads(ctx, c["loads"], join(cp, "loads"), "L"), sup))
-    if not lcs:                                         # modal analysis without static loads
+    if not lcs:                                         # modal / transient heat analysis without static loads
         dummy = SpreadForce(AllNodes(), np.zeros(d.dim), "no static load")
         dummy._no_interface = True
         lcs = [LoadCase("modal", [dummy])]
@@ -283,7 +287,7 @@ def build(resolved: dict[str, Any]) -> Setup:
             bcs = _boundary_conditions(d, default_sup, lcs, combos)
     ctx.bc = bcs
     rep = _check_bc(bcs, r["load_cases"])
-    if modal:
+    if no_load:
         F = d.load_vector(1)
         cases: list[dict[str, Any]] = []
     else:
@@ -302,7 +306,7 @@ def build(resolved: dict[str, Any]) -> Setup:
                           "n_nodes": int(np.any(F[:, i].reshape(-1, d.dim) != 0, axis=1).sum()),
                           "combination": i >= len(r["load_cases"])})
     ctx.n_cases = F.shape[1]
-    if modal:
+    if no_load:
         ctx.case_weights = [1.0]
     ctx.fixed = np.unique(np.concatenate([bcs.constraints(i).fixed for i in range(len(bcs.cases))]))
     warnings = []
@@ -313,6 +317,9 @@ def build(resolved: dict[str, Any]) -> Setup:
     # ---------------------------------------------------------------- physics, chain, responses
     ctx.solver = None
     ctx.physics = B("physics", r["physics"], ctx, "physics")
+    own = getattr(ctx.physics, "state_loads", None)
+    if own is not None:                                 # the physics brings its load (plate: 3 DOFs per node)
+        F = np.asarray(own, float)
     for i, lk in enumerate(r["chain"]):
         ctx.links.append(B("link", lk, ctx, join("chain", i)))
     ctx.chain = Chain(ctx.links)

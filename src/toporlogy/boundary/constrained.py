@@ -226,6 +226,8 @@ class PerCaseSupports:
     """Physics for load cases with different supports: column groups solved by their own physics.
 
     ``groups``: list of (physics, column indices). ``solve`` returns (ndof, n_cases) in the original column order.
+    The physics may also be the ``MeshElasticity`` / ``ShellPhysics`` of the mesh and shell YAML paths
+    (``configuration/mesh_build.py``); attributes the first physics lacks are not copied.
     """
 
     def __init__(self, groups: Sequence[tuple[Any, Sequence[int] | np.ndarray]]) -> None:
@@ -235,7 +237,9 @@ class PerCaseSupports:
             raise ValueError("column groups must partition 0 ... n_cases-1")
         self._inv = torch.as_tensor(np.argsort(cols), dtype=torch.long)
         first = self.groups[0][0]
-        self.domain, self.elements, self.geom, self.KE = first.domain, first.elements, first.geom, first.KE
+        for k in ("domain", "elements", "geom", "KE"):      # grid FE physics; the mesh and shell physics have not all
+            if hasattr(first, k):
+                setattr(self, k, getattr(first, k))
         self.ke_index = getattr(first, "ke_index", None)
         if hasattr(first, "element_forces"):
             self.element_forces = first.element_forces

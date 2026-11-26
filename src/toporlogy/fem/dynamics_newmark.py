@@ -8,20 +8,24 @@ K_eff = K + c0 M + c1 C; average acceleration is unconditionally stable, second 
 undamped, unloaded system. Every step is a :class:`~toporlogy.fem.grid_spd.GridSPD` solve, so responses
 differentiate in E, ρ, the loads and the initial state (the discrete adjoint by torch's chain rule); K_eff is
 factorised once while its coefficients do not change. Pre-registered checks: ``docs/olcumler/newmark_onkayit.md``.
+:class:`NewmarkPhysics` is the Study physics (YAML ``physics: {type: dynamics_newmark, ...}``, response
+``dynamic_compliance``; DS1-DS7 in ``docs/olcumler/gecici_study_onkayit.md``).
 """
 from __future__ import annotations
 
+import math
 from collections.abc import Callable, Sequence
+from typing import Any, cast
 
 import numpy as np
 import torch
 
-from toporlogy.core.domain import Domain
+from toporlogy.core.domain import Domain, require_grid
 from toporlogy.fem.elements import D_iso, D_plane_stress, element_matrix_from_D
 from toporlogy.fem.grid_spd import GridSPD, apply_elements
 from toporlogy.fem.transient_heat import capacity_matrix
 
-__all__ = ["Newmark", "NewmarkResult", "mass_matrix_element"]
+__all__ = ["Newmark", "NewmarkPhysics", "NewmarkResult", "PROFILES", "mass_matrix_element"]
 
 
 def mass_matrix_element(dim: int, h: float, thickness: float = 1.0) -> np.ndarray:
@@ -43,6 +47,7 @@ class Newmark:
     def __init__(self, domain: Domain, fixed: Sequence[int] | np.ndarray, nu: float = 0.3,
                  D: np.ndarray | None = None, element: str | None = None, rayleigh: tuple[float, float] = (0.0, 0.0)
                  ) -> None:
+        require_grid(domain, "Newmark")
         dim = domain.dim
         if D is None:
             D = D_plane_stress(nu) if dim == 2 else D_iso(nu)
@@ -105,3 +110,77 @@ class Newmark:
             V.append(v)
             A.append(a)
         return NewmarkResult(torch.stack(U), torch.stack(V), torch.stack(A), dt * np.arange(int(n_steps) + 1))
+
+
+PROFILES = ("step", "half_sine", "sine")
+
+
+class NewmarkPhysics:
+    """Study physics: M(x̄) ü + C u̇ + K(E) u = s(t) F from rest (u₀ = v₀ = 0), ``n_steps`` Newmark steps of ``dt``.
+
+    Mass ρ_e = ``rho0`` (ρ_min + (1 − ρ_min) x̄_e) · frac_e (ρ_min = ``rhomin_ratio`` > 0 keeps M non-singular on void
+    regions); F the study's single load case. Profiles s(t): ``step`` (1 for t ≥ 0), ``half_sine`` (sin(π t / τ)
+    for t ≤ τ = ``pulse_duration``, then 0), ``sine`` (sin(2π t / ``period``)). No static state: :meth:`solve`
+    raises; responses call :meth:`history` (``needs = {"history"}``).
+    """
+
+    name = "dynamics_newmark"
+
+    def __init__(self, nm: Newmark, dt: float, n_steps: int, profile: str = "step",
+                 pulse_duration: float | None = None, period: float | None = None, rho0: float = 1.0,
+                 rhomin_ratio: float = 1e-6) -> None:
+        if profile not in PROFILES:
+            raise ValueError(f"profile: {' | '.join(PROFILES)}, got {profile!r}")
+        if profile == "half_sine" and not (pulse_duration is not None and float(pulse_duration) > 0):
+            raise ValueError(f"profile half_sine needs pulse_duration > 0, got {pulse_duration}")
+        if profile == "sine" and not (period is not None and float(period) > 0):
+            raise ValueError(f"profile sine needs period > 0, got {period}")
+        if not dt > 0:
+            raise ValueError(f"dt > 0 is required, got {dt}")
+        if int(n_steps) < 1 or int(n_steps) != n_steps:
+            raise ValueError(f"n_steps must be an integer >= 1, got {n_steps}")
+        if not float(rho0) > 0:
+            raise ValueError(f"rho0 > 0 is required, got {rho0}")
+        if not 0.0 < float(rhomin_ratio) <= 1.0:
+            raise ValueError(f"rhomin_ratio must lie in (0, 1], got {rhomin_ratio}")
+        self.nm, self.domain = nm, nm.domain
+        self.dt, self.n_steps, self.profile = float(dt), int(n_steps), profile
+        self.pulse_duration = None if pulse_duration is None else float(pulse_duration)
+        self.period = None if period is None else float(period)
+        self.rho0, self.rhomin_ratio = float(rho0), float(rhomin_ratio)
+        self.elements = self.domain.active_elements
+        self.frac = np.asarray(self.domain.frac, float).reshape(-1)[self.elements]
+        self.n_runs = 0
+
+    def solve(self, E_active: torch.Tensor, F: Any) -> torch.Tensor:
+        raise ValueError("physics dynamics_newmark has no static state u (it integrates a displacement history); "
+                         "use the response dynamic_compliance")
+
+    def load_factor(self, t: float) -> float:
+        """s(t)."""
+        if self.profile == "step":
+            return 1.0
+        if self.profile == "half_sine":
+            tau = cast(float, self.pulse_duration)
+            return math.sin(math.pi * t / tau) if t <= tau else 0.0
+        return math.sin(2.0 * math.pi * t / cast(float, self.period))
+
+    def times(self) -> np.ndarray:
+        return self.dt * np.arange(self.n_steps + 1)
+
+    def densities(self, xphys: torch.Tensor) -> torch.Tensor:
+        """ρ_e of the active elements from the physical density (domain.shape)."""
+        x = xphys.reshape(-1)[torch.as_tensor(self.elements, dtype=torch.long)]
+        r = self.rhomin_ratio
+        return self.rho0 * (r + (1.0 - r) * x) * torch.as_tensor(self.frac, dtype=x.dtype)
+
+    def history(self, E_active: torch.Tensor, xphys: torch.Tensor, F: Any) -> NewmarkResult:
+        """u, v, a (n_steps + 1, ndof) under s(t) F, differentiable in E and x̄."""
+        n = self.domain.ndof
+        Ft = torch.as_tensor(np.asarray(F, float).reshape(-1), dtype=E_active.dtype)
+        if Ft.shape != (n,):
+            raise ValueError(f"F must have {n} entries (DOFs), got {tuple(Ft.shape)}")
+        zero = torch.zeros(n, dtype=E_active.dtype)
+        self.n_runs += 1
+        return self.nm.run(E_active, self.densities(xphys), zero, zero, self.dt, self.n_steps,
+                           lambda t: self.load_factor(t) * Ft)

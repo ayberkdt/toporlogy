@@ -89,7 +89,10 @@ interpolation  - physical density -> element modulus (6)
 solver  - linear solver (1)
   direct  method=auto
 
-physics  - physics model (state solve) (5)
+physics  - physics model (state solve) (9)
+  dynamics_newmark      dt=null [time]  n_steps=null  profile=step  pulse_duration=null [time]
+                        period=null [time]  rayleigh_alpha=0.0  rayleigh_beta=0.0
+                        rhomin_ratio=1e-06  element=null
   elasticity            element=null  solver=direct
   elasticity_gmg        element=null  tol=1e-08  maxit=300  direct_below=4000 [active elements]
                         fallback_max_elements=120000 [active elements]  warm_start=true
@@ -103,46 +106,54 @@ physics  - physics model (state solve) (5)
                         load_steps=10  max_iter=30  rtol=1e-09  min_step=0.0001 [load factor]
                         warm_start=false  solver=direct  cutoff_policy=adaptive  line_search=none
                         merit=residual
+  plate                 thickness=null  edge=simply_supported  pressure=0.0  force=0.0  at=null
+                        shear=reduced
   tensor_elasticity     element=null  solver=direct
+  thermoelastic         alpha=null  delta_T=0.0  element=null
+  transient_heat        dt=null [time]  n_steps=null  theta=1.0  conductivity=1.0  capacity=1.0
+                        capacity_min_ratio=0.001  initial_temperature=0.0  sink_temperature=0.0
+                        source_density=0.0  power=0.0  source=null  element=null
 
-response  - objective or constraint response (29)
-  buckling                     load_factor=null  n_modes=6  rho=50.0  case=0  penal_g=3.0
-                               scale=null  preload_case=null  exclude=null
-  centre_of_mass               axis=x
-  compliance                   weights=null
-  compliance_case              case=0
-  conduction_connectivity      sink=null  kmin_ratio=0.001  penal=3.0  aggregate=pnorm  p=8.0
-                               eta=0.7  reference=solid
-  cost                         (no parameters)
-  coupling_compliance          held=null  aggregate=pnorm  p=8.0  eta=0.7  reference=first
-  dilated_volume               weighted=false
-  displacement                 where=?  direction=?  case=0  name=displacement
-  effective_poisson            (no parameters)
-  effective_stiffness          i=0  j=0  negate=false
-  eigenvalue                   k=1
-  end_compliance               weights=null
-  end_strain_energy            weights=null
-  frequency                    k=1  E_unit=1.0  rho_unit=1.0  length_unit=1.0
-  grey_level                   source=xphys
-  inertia                      i=z  j=null
-  local_volume                 t_max=null [length]  radius=null [elements]  member=null  p=16.0
-                               aggregate=pmean  adaptive=0.0  outside=void  source=xphys
-  mass                         (no parameters)
-  maximize                     response=?
-  min_eigenvalue_ks            n_modes=3  rho=50.0  scale=null  kind=ks
-  min_frequency                f_min=? [Hz]  n_modes=1  rho=50.0  E_unit=1.0  rho_unit=1.0
-                               length_unit=1.0
-  phase_volume                 phases=null  weighted=false
-  robust_compliance            realisations=["eroded", "intermediate", "dilated"]  aggregate=ks
-                               rho=50.0  p=16.0  scale=null  weights=null
-  scenario_compliance          measure=mean  k=0.0  alpha=0.95  scale=1.0
-  stress                       sigma_lim=null [force/length^2]  aggregate=pnorm  parameter=8.0
-                               q=0.5  adaptive=0.5  exclude=null  cases=null  criterion=null
-  stress_augmented_lagrangian  objective=?  sigma_lim=null [force/length^2]  form=polynomial
-                               mu0=10.0  alpha=1.1  mu_max=10000.0  penal=3.0  q=0.5  exclude=null
-                               cases=null  reference=first  criterion=null
-  volume                       weighted=false
-  weighted_sum                 responses=?  weights=null  references=null
+response  - objective or constraint response (31)
+  buckling                      load_factor=null  n_modes=6  rho=50.0  case=0  penal_g=3.0
+                                scale=null  preload_case=null  exclude=null
+  centre_of_mass                axis=x
+  compliance                    weights=null
+  compliance_case               case=0
+  conduction_connectivity       sink=null  kmin_ratio=0.001  penal=3.0  aggregate=pnorm  p=8.0
+                                eta=0.7  reference=solid
+  cost                          (no parameters)
+  coupling_compliance           held=null  aggregate=pnorm  p=8.0  eta=0.7  reference=first
+  dilated_volume                weighted=false
+  displacement                  where=?  direction=?  case=0  name=displacement
+  dynamic_compliance            (no parameters)
+  effective_poisson             (no parameters)
+  effective_stiffness           i=0  j=0  negate=false
+  eigenvalue                    k=1
+  end_compliance                weights=null
+  end_strain_energy             weights=null
+  frequency                     k=1  E_unit=1.0  rho_unit=1.0  length_unit=1.0
+  grey_level                    source=xphys
+  inertia                       i=z  j=null
+  local_volume                  t_max=null [length]  radius=null [elements]  member=null  p=16.0
+                                aggregate=pmean  adaptive=0.0  outside=void  source=xphys
+  mass                          (no parameters)
+  maximize                      response=?
+  min_eigenvalue_ks             n_modes=3  rho=50.0  scale=null  kind=ks
+  min_frequency                 f_min=? [Hz]  n_modes=1  rho=50.0  E_unit=1.0  rho_unit=1.0
+                                length_unit=1.0
+  phase_volume                  phases=null  weighted=false
+  robust_compliance             realisations=["eroded", "intermediate", "dilated"]  aggregate=ks
+                                rho=50.0  p=16.0  scale=null  weights=null
+  scenario_compliance           measure=mean  k=0.0  alpha=0.95  scale=1.0
+  stress                        sigma_lim=null [force/length^2]  aggregate=pnorm  parameter=8.0
+                                q=0.5  adaptive=0.5  exclude=null  cases=null  criterion=null
+  stress_augmented_lagrangian   objective=?  sigma_lim=null [force/length^2]  form=polynomial
+                                mu0=10.0  alpha=1.1  mu_max=10000.0  penal=3.0  q=0.5
+                                exclude=null  cases=null  reference=first  criterion=null
+  transient_thermal_compliance  (no parameters)
+  volume                        weighted=false
+  weighted_sum                  responses=?  weights=null  references=null
 
 optimizer  - optimizer (4)
   gcmma  move=1.0  max_inner=15  rho_init=0.1  rho_min=1e-06  conservative_tol=1e-09  asyinit=0.5

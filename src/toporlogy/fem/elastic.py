@@ -26,7 +26,7 @@ import numpy as np
 import scipy.sparse as sp
 import torch
 
-from toporlogy.core.domain import Domain
+from toporlogy.core.domain import Domain, require_grid
 from toporlogy.fem.mechanisms import SolveResidualError, check_moduli, check_supports, fixed_dof_rows
 from toporlogy.solvers.direct import DirectSolver
 from toporlogy.solvers.ordering import nested_dissection_blocks
@@ -79,6 +79,7 @@ class Elasticity:
     def __init__(self, domain: Domain, fixed: Sequence[int] | np.ndarray, nu: float = 0.3, element: str | None = None,
                  solver: Any = None, elasticity: np.ndarray | None = None,
                  ordering: str = "nested_dissection") -> None:
+        require_grid(domain, "Elasticity", "MeshElasticity")
         self.ordering = ordering
         self.domain = domain
         self.element = element or ("H8" if domain.dim == 3 else "Q4")
