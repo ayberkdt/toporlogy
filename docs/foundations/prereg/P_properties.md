@@ -46,3 +46,25 @@ Run: `python -m pytest tests/toporlogy/test_properties.py -q -p no:randomly -p n
 under `.claude/tmp-toporlogy/P_properties`). Resource cap: seconds, small arrays.
 
 First result (append after run): see below.
+
+## First result (2026-11-27, first run of tests/toporlogy/test_properties.py: 24 passed in 5.0 s)
+
+All of PP1-PP17 PASS at the preregistered thresholds on the first run; no threshold was changed, no check xfailed
+(no ledger additions). Measured with a script outside the repo on the same inputs as the tests:
+
+- PP1: K rel 1.4e-16, G 0.0, dK/dT rel 0.0 against closed form; FD agreement within 1e-7.
+- PP2: E(280), E(350) rel 1.5e-16, 1.9e-16; seven invalid temperatures and an out-of-range batch raise.
+- PP3, PP4: all six pairs meet 1e-10 (mpmath, 50 digits) and 1e-13 (round trip).
+- PP5-PP7: exact knots and trapezoid integrals; PCHIP monotone, integral vs quad within 1e-10, derivative vs FD within 1e-6.
+- PP8: max abs error / max eps_th = 1.1e-16.
+- PP9 (negative control): wrong/right - 1 = -0.03125 (> 1e-3 in magnitude, detected); b = 0 gives no difference.
+- PP10, PP11: enthalpy vs closed form / quad within 1e-10; tensor and rotated tensor within 1e-13.
+- PP12: max abs stress 1.2e-10 Pa (limit 1e-5); E varied 2.95e9 to 2.6e9 Pa along the ramp.
+- PP13: sigma_xx rel 1.8e-16; max lateral stress 1.2e-10 Pa; lateral strain rel 1.6e-16.
+- PP14: sigma = -3 K eps_th, rel 2.2e-16.
+- PP15, PP16, PP17: tangent vs dense (1e-12) and FD (1e-6); contract; every listed invalid input raises ValueError.
+
+Limitations: synthetic numbers only; the 1e-16 agreements for linear E(T) are expected (closed forms are exact for
+linear data). The admissibility scan at construction is a 257-point sample; PP17 shows a narrow dip between samples
+passes the constructor and is caught at evaluation. Only tests/toporlogy/test_properties.py was run. Units are
+documented strings; the dimensional unit checker was not extended.
