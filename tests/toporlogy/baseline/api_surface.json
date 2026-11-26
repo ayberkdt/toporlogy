@@ -3878,6 +3878,22 @@
   },
   "gauss_operators": "gauss_operators(dim)"
  },
+ "toporlogy.fem.dynamics_newmark": {
+  "Newmark": {
+   "attrs": [
+    "BETA",
+    "GAMMA",
+    "energy",
+    "run"
+   ],
+   "class": "Newmark"
+  },
+  "NewmarkResult": {
+   "attrs": [],
+   "class": "NewmarkResult"
+  },
+  "mass_matrix_element": "mass_matrix_element(dim,h,thickness)"
+ },
  "toporlogy.fem.elastic": {
   "BACKWARD_TOL": "<float>",
   "Elasticity": {

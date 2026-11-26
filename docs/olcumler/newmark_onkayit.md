@@ -16,3 +16,16 @@ Yeni modül `fem/dynamics_newmark.py`.
 | ND4 | J = Σ_n u_tip(t_n)² (darbe yükü), E ve ρ tasarıma bağlı: yönlü türev merkezi farkla | ≤ 1e-6 göreli |
 | ND5 | Faktörizasyon: sabit Δt ve katsayılarla N adımda K_eff tek faktörize | sayaç = 1 (+ kütle çözümü 1) |
 | ND6 | Δt ≤ 0, yanlış şekilli u₀/v₀ | açık `ValueError` |
+
+## Sonuç (2026-11-26, ilk koşu)
+
+`python -m pytest tests/toporlogy/test_newmark.py -q -p no:randomly -s` → 6 passed, 1 xfailed.
+
+| # | Sonuç |
+|:---|:---|
+| ND1 | **FAIL** (strict xfail): mertebeler 3,97, 3,99, 4,00. Ölçüm t = 2T'de yapıldı; orada sin(ωt) = 0 ve O(Δt²) faz hatası δ yer değiştirmeye yalnız δ²/2 olarak giriyor (mertebe 4). Ön kayıttaki ölçüm noktası kötü seçilmişti. Post hoc t = 2,25T (sin = 1): 1,98, 2,00, 2,00 |
+| ND2 | PASS: 200 adım, enerji ≤ 1e-12 |
+| ND3 | PASS: ζ = 0,02, 10 periyot, genlik 0,284552 / kuram 0,284516 (1,3e-4 göreli) |
+| ND4 | PASS: darbe yükü altında Σ u_tip² yönlü türevi ≤ 1e-6 |
+| ND5 | PASS: 50 adımda K_eff ve kütle birer kez faktörize |
+| ND6 | PASS |

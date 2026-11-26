@@ -2,7 +2,7 @@
 
 `tests/toporlogy/test_catalog_ledger.py` bu kütüğü toplanan testlerle karşılaştırır: her xfail strict (XPASS koşuyu kırar), kütük toplanan strict xfail listesiyle ve test kaynaklarındaki atlama noktalarıyla birebir aynı. Beklenen başarısızlık PASS sayılmaz; atlanan bir arka ucun testi NOT VERIFIED'dır. Yeniden üretim: `python tests/toporlogy/test_catalog_ledger.py --write`.
 
-Toplam 29 strict xfail (8 tanesi yavaş pakette), 15 atlama noktası.
+Toplam 30 strict xfail (8 tanesi yavaş pakette), 15 atlama noktası.
 
 Risk düzeyleri: **low** ölçüt ya da kontrolün kendisi; kod sonucu başka testle doğrulanmış; **medium** açıklanmamış sayısal fark ya da referans yeniden üretilemiyor; **high** kullanıcıya görünen sessiz kabul (yanlış sonuç üretebilir).
 
@@ -39,6 +39,7 @@ Risk düzeyleri: **low** ölçüt ya da kontrolün kendisi; kod sonucu başka te
 | `test_pareto.py::test_p4c_epsilon_constraint_reaches_the_weighted_point` | pre-registered check failed | Study + MMA, iki yük durumu, ε-kısıt (CPU) | varsayılan başlangıçtan ε-kısıt başka yerel minimuma yakınsıyor (c1 123,77 / 111,50) | low | ε-kısıt için sürekleme / komşu noktadan sıcak başlangıç, yeni ön kayıtla | docs/olcumler/laminat_uq.md | — |
 | `test_rom.py::test_r5b_compliance_gap_equals_the_energy_error` | pre-registered check failed | PODModel, Elasticity Q4 (CPU, doğrudan) | s − s_r iki yakın sayının farkı; e²'ye göre 1e-6 yuvarlamanın altında (en çok 2,3e-5; s'ye göre 1,3e-12) | low | toleransı uyum büyüklüğüne göre tanımlayan yeni ön kayıt | docs/olcumler/laminat_uq.md | — |
 | `test_rom.py::test_r6_a_basis_for_one_load_fails_on_another` | pre-registered check failed | PODModel, eğitim dışı yük (CPU) | ön kayıtlı hata düzeyi (>= 0,5) tutmadı; ölçülen 0,293, sınır yine de uyarıyor | low | başarısızlık düzeyi için gerekçeli yeni ön kayıt | docs/olcumler/laminat_uq.md | — |
+| `test_newmark.py::test_nd1_second_order_against_the_modal_solution` | pre-registered check failed | fem.dynamics_newmark, Q4 (CPU) | mertebe 4 (3,97–4,00) çünkü ölçüm t = 2T'de, sin(ωt) = 0: Δt² faz hatası yer değiştirmeye δ²/2 olarak giriyor | low | yok (ölçüm noktası seçimi); post hoc t = 2,25T'de 1,98–2,00 | docs/olcumler/newmark_onkayit.md | — |
 
 ## 2. Atlama noktaları
 

@@ -296,6 +296,16 @@
    "resolution": "başarısızlık düzeyi için gerekçeli yeni ön kayıt",
    "record": "docs/olcumler/laminat_uq.md",
    "slow": false
+  },
+  {
+   "nodeid": "tests/toporlogy/test_newmark.py::test_nd1_second_order_against_the_modal_solution",
+   "kind": "pre-registered check failed",
+   "model_backend": "fem.dynamics_newmark, Q4 (CPU)",
+   "reason": "mertebe 4 (3,97–4,00) çünkü ölçüm t = 2T'de, sin(ωt) = 0: Δt² faz hatası yer değiştirmeye δ²/2 olarak giriyor",
+   "risk": "low",
+   "resolution": "yok (ölçüm noktası seçimi); post hoc t = 2,25T'de 1,98–2,00",
+   "record": "docs/olcumler/newmark_onkayit.md",
+   "slow": false
   }
  ],
  "skips": [
