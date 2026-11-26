@@ -245,3 +245,10 @@ gradyan farkı 1,49e-12, ikisi de eps · cond(K) altında (PASS). Ayrıca varsay
 farkı açıklamaz. Eşikler değişmedi; kütük girdisi `docs/vv_kutugu.json` (risk low). Kurulum düzeltmesi: ilk
 koşudaki AY2 testinde ön kayıtta olmayan bir "varsayılan başlangıçlar bit düzeyinde eşit" iddiası vardı ve bu 1 ulp
 yüzünden ilk o düştü; çıkarıldı (ön kayıtlı ölçütlere dokunulmadı), ölçülen değerler yukarıda.
+
+Ek (tam hızlı paket, 2026-11-26). `pytest -m "not slow"` ilk koşu: 1 failed, 2259 passed, 4 skipped, 96 deselected,
+48 xfailed (20 dk 49 s). Düşen `test_speedups.py::test_h2a_superlu_input_identical[mesh_cantilever2d]`: bu test de
+`examples/research/*.yaml`'ı topluyor ve ızgara fiziğinin SuperLU girişini (`elimination_order`) denetliyor;
+ön kayıttaki öngörü bu toplayıcıyı atlamıştı. `MeshElasticity` SuperLU'ya bir şey vermediği için test yalnız ızgara
+örneklerini toplayacak şekilde düzeltildi (`is_mesh_config` süzgeci; kurulum düzeltmesi, eşik değil); dosya 32
+passed.
