@@ -17,8 +17,8 @@ EXAMPLES = sorted((Path(__file__).resolve().parents[2] / "examples" / "research"
 
 
 def test_examples_are_found() -> None:
-    assert [p.stem for p in EXAMPLES] == ["buckling_column2d", "inverter2d", "mbb_simpl2d", "stress_al_lbracket2d",
-                                          "stress_lbracket2d"]
+    assert [p.stem for p in EXAMPLES] == ["buckling_column2d", "fiber_angle_cantilever2d", "inverter2d", "mbb_simpl2d",
+                                          "stress_al_lbracket2d", "stress_lbracket2d"]
 
 
 @pytest.mark.parametrize("path", EXAMPLES, ids=lambda p: p.stem)
@@ -41,7 +41,7 @@ def test_example_builds_and_runs(path: Path, tmp_path: Path) -> None:
 
 def test_inverter_inverts() -> None:
     """After 40 iterations the output moves against the input (negative x displacement), and less than the input."""
-    raw = yaml.safe_load((EXAMPLES[1]).read_text(encoding="utf-8"))
+    raw = yaml.safe_load(next(p for p in EXAMPLES if p.stem == "inverter2d").read_text(encoding="utf-8"))
     study = build_setup(raw).study
     res = study.run(max_iter=40)
     assert res.objective < -0.3 and res.feasible

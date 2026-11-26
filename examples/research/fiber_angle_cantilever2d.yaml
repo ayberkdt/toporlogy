@@ -1,0 +1,30 @@
+# Cantilever (2-D, 40 x 20, plane stress) of one orthotropic fibre material: density and the fibre angle of every
+# element are designed together (docs/olcumler/malzeme_tasarimi.md, check A8). The angle is the second block of the
+# design vector (embed link, angle:), filtered in the doubled-angle representation (cos 2θ, sin 2θ) so that +89°
+# and −89° average to 90°, not 0°. Physics tensor_elasticity takes the element tensors C_e(ρ, θ) of interpolation
+# tensor_phases. Units: consistent (h = 1, E1 = 1, unit load); angles in degrees.
+name: fiber_angle_cantilever2d
+domain: {type: box, shape: [40, 20], h: 1.0}
+material: {E0: 1.0, nu: 0.3}
+supports:
+  - {type: fixed, where: {type: plane, axis: x, at: min}}
+load_cases:
+  - name: tip
+    loads:
+      - {type: force, where: {type: point, at: [max, mid]}, force: [0, -1]}
+chain:
+  - {type: embed, angle: {location: element, bounds: [-90, 90], start: 0, rmin: 2.0}}
+  - {type: density_filter, rmin: 2.0}
+interpolation:
+  type: tensor_phases
+  rule: simplex
+  penal: 3.0
+  phases:
+    - name: fibre
+      orthotropic: {E1: 1.0, E2: 0.1, E3: 0.1, G12: 0.05, G13: 0.05, G23: 0.04, nu12: 0.3, nu13: 0.3, nu23: 0.3}
+physics: {type: tensor_elasticity}
+objective: compliance
+constraints:
+  - {response: volume, upper: 0.4}
+optimizer: {type: mma, move: 0.1}
+run: {max_iter: 60, tol: 0.001}

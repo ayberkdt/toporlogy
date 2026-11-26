@@ -69,7 +69,8 @@ class Element:
 
 _GRID = "regular grid, undistorted unit square/cube elements only (no Jacobian varies)"
 ELEMENTS: tuple[Element, ...] = (
-    Element("Q4", 2, "square", 4, 2, "bilinear", "2 x 2 Gauss", ("elasticity", "modal", "nonlinear_elasticity"),
+    Element("Q4", 2, "square", 4, 2, "bilinear", "2 x 2 Gauss", ("elasticity", "modal", "nonlinear_elasticity",
+                                                                  "tensor_elasticity"),
             "shear-locks in bending (parasitic shear)", _GRID, ("andreassen_2011", "cook_2002"),
             (T + "test_fem_mms.py::test_manufactured_solution_converges_at_second_order",
              T + "test_skfem_crosscheck.py::test_x1_stiffness",
@@ -82,7 +83,8 @@ ELEMENTS: tuple[Element, ...] = (
              T + "test_buckling_physics.py::test_gradient_q4im_with_modes_in_kg"),
             "fem/elements.py: ke_q4im_from_D"),
     Element("H8", 3, "cube", 8, 3, "trilinear", "2 x 2 x 2 Gauss",
-            ("elasticity", "elasticity_gmg", "modal", "nonlinear_elasticity"), "shear-locks in bending", _GRID,
+            ("elasticity", "elasticity_gmg", "modal", "nonlinear_elasticity", "tensor_elasticity"),
+            "shear-locks in bending", _GRID,
             ("liu_tovar_2014", "cook_2002"),
             (T + "test_fem_mms.py::test_manufactured_solution_converges_at_second_order",
              T + "test_regression.py::test_topo3d_box_no_projection",
@@ -163,6 +165,17 @@ PHYSICS: tuple[Physics, ...] = (
                                                T + "test_nonlinear.py::test_v6_end_compliance_gradient_finite_"
                                                    "difference"),
             "E_active through an energy interpolation; general D with material svk only"),
+    Physics("tensor_elasticity", "K(C) u = f (linear, small strain)",
+            "K(C), linear in the element tensors C_e (Q4, H8: KE(C) = sum_a c_a KE(S_a))",
+            "symmetric positive definite on the free DOFs (every C_e a convex combination of SPD tensors)",
+            "direct (solver: direct)", ("cpu",), (2, 3), ("Q4", "H8"), "axis-aligned fixed DOFs, one support set",
+            "direct solve; relative residual <= 1e-6 or backward error <= 1e-14 accepted, else SolveResidualError",
+            "assembled sparse K, element matrices (n_active, nloc, nloc) refilled per evaluation",
+            (T + "test_material_design.py::test_k8b_scalar_limit_matches_multiphase_simp",
+             T + "test_material_design.py::test_k7_independent_assembly",
+             T + "test_material_design.py::test_g1_compliance_gradient_finite_difference"),
+            "per-element elasticity tensor C_e (MaterialField of interpolation tensor_phases); the scalar grid the "
+            "study passes is only checked against the field"),
 )
 
 
@@ -584,7 +597,7 @@ class Cell:
     enforced: str = ""                    # UNSUPPORTED: component | catalog | first_evaluation
 
 
-PHYS = ("elasticity", "elasticity_gmg", "modal", "nonlinear_elasticity")
+PHYS = ("elasticity", "elasticity_gmg", "modal", "nonlinear_elasticity", "tensor_elasticity")
 
 # responses that do not read the study's physics (no state solve, or an own auxiliary solve); evidence with elasticity
 PHYSICS_INDEPENDENT: dict[str, tuple[str, ...]] = {
@@ -621,7 +634,10 @@ RESPONSE_MATRIX: dict[str, dict[str, Cell]] = {
         nonlinear_elasticity=Cell(EXPERIMENTAL, (T + "test_nonlinear.py::test_v6_end_compliance_gradient_finite_"
                                                      "difference",),
                                   "same number as end_compliance by construction (EndCompliance subclasses "
-                                  "Compliance); only end_compliance is tested")),
+                                  "Compliance); only end_compliance is tested"),
+        tensor_elasticity=Cell(SUPPORTED, (
+            T + "test_material_design.py::test_k8b_scalar_limit_matches_multiphase_simp",
+            T + "test_material_design.py::test_g1_compliance_gradient_finite_difference"))),
     "robust_compliance": _row(
         elasticity=Cell(SUPPORTED, (T + "test_robust.py::test_gradcheck_robust_compliance_and_dilated_volume",)),
         modal=_NO_STATE),
@@ -736,6 +752,40 @@ RULES: tuple[Rule, ...] = (
          enforced="component"),
     Rule("cuda_gmg", {"physics": "elasticity_gmg", "device": "cuda"}, NOT_VERIFIED,
          "no GPU in CI or in this record"),
+    # material design (docs/olcumler/malzeme_tasarimi.md)
+    Rule("tensor_phases_elasticity", {"interpolation": "tensor_phases", "physics": "tensor_elasticity"}, SUPPORTED,
+         "phases with their own tensors, rules simplex and recursive",
+         (T + "test_material_design.py::test_k7_independent_assembly",
+          T + "test_material_design.py::test_k6_series_parallel_bar")),
+    Rule("angle_elasticity", {"link": "embed.angle", "physics": "tensor_elasticity"}, SUPPORTED,
+         "density + fibre angle, 2-D, one phase", (T + "test_material_design.py::test_a5_off_axis_tension_and_gradient",
+                                                   T + "test_material_design.py::test_a8_yaml_example_runs")),
+    Rule("tensor_responses", {"physics": "tensor_elasticity",
+                              "response": "other_than_compliance_volume_phase_volume_mass_cost"}, UNSUPPORTED,
+         "only Compliance, Volume, PhaseVolume, Mass, Cost verified with tensor_elasticity", enforced="catalog"),
+    Rule("tensor_interpolation", {"physics": "tensor_elasticity", "interpolation": "other_than_tensor_phases"},
+         UNSUPPORTED, "tensor_elasticity reads the material field of interpolation tensor_phases",
+         enforced="catalog"),
+    Rule("tensor_phases_physics", {"interpolation": "tensor_phases", "physics": "other_than_tensor_elasticity"},
+         UNSUPPORTED, "the scalar-modulus physics cannot take the element tensors", enforced="component"),
+    Rule("tensor_incompatible_modes", {"physics": "tensor_elasticity", "element": "Q4IM|H8IM"}, UNSUPPORTED,
+         "condensed incompatible modes are not linear in D", enforced="component"),
+    Rule("tensor_per_case_supports", {"physics": "tensor_elasticity", "supports": "per_case"}, UNSUPPORTED,
+         "one support set only", enforced="component"),
+    Rule("tensor_oblique_supports", {"physics": "tensor_elasticity", "supports": "oblique_or_spring"}, UNSUPPORTED,
+         "axis-aligned fixed DOFs only", enforced="component"),
+    Rule("tensor_post", {"physics": "tensor_elasticity", "post": "other_than_phase_report"}, UNSUPPORTED,
+         "the other post steps assume a scalar modulus or an isotropic material", enforced="catalog"),
+    Rule("angle_3d", {"link": "embed.angle", "dim": "3"}, UNSUPPORTED, "3-D orientation is not implemented",
+         enforced="component"),
+    Rule("angle_phases", {"link": "embed.angle", "interpolation": "tensor_phases with several phases"}, UNSUPPORTED,
+         "Study takes several design fields only through the plain embed link", enforced="component"),
+    Rule("angle_interpolation", {"link": "embed.angle", "interpolation": "other_than_tensor_phases"}, UNSUPPORTED,
+         "the angle turns the phase tensors of tensor_phases", enforced="component"),
+    Rule("angle_isotropic", {"link": "embed.angle", "material": "isotropic phase"}, UNSUPPORTED,
+         "the material does not depend on the angle (zero gradient)", enforced="component"),
+    Rule("angle_oc", {"link": "embed.angle", "optimizer": "oc"}, UNSUPPORTED,
+         "OC assumes a constraint gradient positive in every variable; the angle has none", enforced="catalog"),
 )
 
 
@@ -792,10 +842,38 @@ def check_build(resolved: Mapping[str, Any], physics: Any, responses: Sequence[A
         if state:
             raise ConfigError(f"unsupported combination (catalog): response(s) {state} with physics modal: needs the "
                               "static state u; physics modal solves an eigenproblem only", "physics")
+    _check_material_design(resolved, physics, responses)
     if "buckling" in kinds and isinstance(physics, ConstrainedElasticity | PerCaseSupports):
         what = "oblique supports or springs" if isinstance(physics, ConstrainedElasticity) else "per-case supports"
         raise ConfigError(f"unsupported combination (catalog): response buckling with {what}: linear buckling "
                           "needs axis-aligned fixed DOFs and one support set", "supports")
+
+
+_TENSOR_RESPONSES = ("Compliance", "Volume", "PhaseVolume", "Mass", "Cost")
+
+
+def _check_material_design(resolved: Mapping[str, Any], physics: Any, responses: Sequence[Any]) -> None:
+    """Rules tensor_interpolation, tensor_responses, tensor_post and angle_oc."""
+    from toporlogy.fem.tensor_elastic import TensorElasticity
+    angle = any(isinstance(lk, Mapping) and lk.get("type") == "embed" and lk.get("angle") is not None
+                for lk in resolved.get("chain") or [])
+    if angle and (resolved.get("optimizer") or {}).get("type") == "oc":
+        raise ConfigError("unsupported combination (catalog): an angle block with optimizer oc: OC assumes a "
+                          "constraint gradient positive in every variable; use mma or gcmma", "optimizer")
+    if not isinstance(physics, TensorElasticity):
+        return
+    itype = resolved["interpolation"]["type"]
+    if itype != "tensor_phases":
+        raise ConfigError(f"unsupported combination (catalog): physics tensor_elasticity with interpolation {itype}: "
+                          "it reads the material field of interpolation tensor_phases", "interpolation")
+    bad = [getattr(r, "name", type(r).__name__) for r in responses if type(r).__name__ not in _TENSOR_RESPONSES]
+    if bad:
+        raise ConfigError(f"unsupported combination (catalog): response(s) {bad} with physics tensor_elasticity: "
+                          f"only {', '.join(_TENSOR_RESPONSES)} are verified", "physics")
+    posts = [p["type"] for p in resolved.get("post") or [] if p["type"] != "phase_report"]
+    if posts:
+        raise ConfigError(f"unsupported combination (catalog): post step(s) {posts} with physics tensor_elasticity: "
+                          "only phase_report is available", "post")
 
 
 # ---------------------------------------------------------------------------------------------- output

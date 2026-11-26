@@ -102,13 +102,31 @@ def register_core() -> None:
     register("load", "force", force, nested={"where": "selector"}, units={"force": "force (total)"})
 
     # ---------------------------------------------------------------- chain links
-    def embed(ctx: BuildContext) -> Embed:
+    def embed(ctx: BuildContext, angle: dict | None = None, density: bool = True) -> Embed:
         """Design vector → element grid (keep 1, void 0, outside 0); one design field per entry of
-        material.phases (field-major), else one."""
-        ph = ctx.material.get("phases")
-        return Embed(ctx.domain, n_fields=len(ph) if ph else 1)
+        material.phases or interpolation.phases (tensor_phases; field-major), else one. angle {location: element |
+        global, bounds: [lo, hi], start, keep_angle (degrees), rmin}: a fibre-angle design block after the density
+        block (2-D, one phase, interpolation tensor_phases); density false: the density is not designed."""
+        ip = ctx.config.get("interpolation") or {}
+        ph = ip.get("phases") if ip.get("type") == "tensor_phases" else ctx.material.get("phases")
+        n = len(ph) if ph else 1
+        if angle is None:
+            if not density:
+                raise ValueError("density false needs an angle block (nothing would be designed)")
+            return Embed(ctx.domain, n_fields=n)
+        from toporlogy.design.orientation import AngleBlock, OrientedEmbed
+        if ip.get("type") != "tensor_phases":
+            raise ValueError("an angle block needs interpolation tensor_phases (the fibre angle turns the phase "
+                             "tensors)")
+        if n != 1:
+            raise ValueError(f"an angle block with {n} phases is not supported: Study accepts several design fields "
+                             "only through the plain embed link (one phase with an angle, or several phases without)")
+        if ctx.domain.dim != 2:
+            raise ValueError("an angle block is 2-D only (3-D orientation is not implemented)")
+        return OrientedEmbed(ctx.domain, AngleBlock.from_degrees(angle), density=density)
 
-    register("link", "embed", embed)
+    register("link", "embed", embed, types={"angle": None}, units={"angle": "degrees (bounds, start, keep_angle); "
+                                                                            "rmin in elements"})
     register("link", "density_filter", DensityFilter, context=("domain",), types={"rmin": float},
              units={"rmin": "elements"})
     register("link", "heaviside_projection", HeavisideProjection)

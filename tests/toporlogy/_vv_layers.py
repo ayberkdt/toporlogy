@@ -51,6 +51,7 @@ FILE_LAYERS: dict[str, tuple[str, ...]] = {
     "test_material.py": ("MP", "EL"), "test_material_config.py": ("MP", "IC"), "test_mechanisms.py": ("AS",),
     "test_merged_physics.py": ("IC",), "test_method_components.py": ("IC",), "test_mma.py": ("OG",),
     "test_modal.py": ("EL", "AN", "OG"), "test_multi_material.py": ("MP", "AN", "OG"),
+    "test_material_design.py": ("U", "MP", "AS", "AN", "IS", "OG", "IC"),
     "test_nonlinear.py": ("MP", "AN", "OG"), "test_nonlinear_orientation.py": ("MP", "OG"),
     "test_onebody.py": ("OG", "E2E"), "test_ordering.py": ("AS", "PF"), "test_pde_filter.py": ("U", "OG"),
     "test_post_cantilever.py": ("E2E",), "test_post_checks.py": ("E2E",), "test_post_pipeline.py": ("E2E",),

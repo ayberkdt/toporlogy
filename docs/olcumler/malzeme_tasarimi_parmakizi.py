@@ -62,7 +62,8 @@ def main() -> int:
     a = ap.parse_args()
     fp = fingerprints()
     if a.write:
-        sha = subprocess.run(["git", "rev-parse", "HEAD"], capture_output=True, text=True).stdout.strip()
+        sha = subprocess.run(["git", "rev-parse", "HEAD"], capture_output=True,  # noqa: S607
+                             text=True).stdout.strip()
         Path(a.write).write_text(json.dumps({"commit": sha, "fingerprints": fp}, indent=2) + "\n", encoding="utf-8")
         print(f"wrote {len(fp)} fingerprints at {sha}")
         return 0
