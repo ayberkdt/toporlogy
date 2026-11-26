@@ -466,6 +466,23 @@ def test_a6_global_angle_matches_the_sweep() -> None:
 
 
 @pytest.mark.slow
+def test_a6_posthoc_gcmma_reaches_the_sweep_minimum() -> None:
+    """Post hoc (after A6 failed): the plain-MMA 2-cycle of an interior optimum with no active constraint is the
+    documented MMA limitation (``optimizers/mma.py``); GCMMA on the same problem meets both A6 criteria."""
+    from toporlogy.optimizers import GCMMA
+    angles, cs = sweep_cantilever()
+    k = int(np.argmin(cs))
+    for start in (0.0, 45.0, -45.0):
+        st, emb = _cantilever_angle_study("global", None, start, 30)
+        st.optimizer = GCMMA(move=0.1)
+        res = st.run(x0=emb.reduce(np.zeros(0)), max_iter=30, tol=1e-9)
+        lo, hi = emb.angle_block.bounds
+        th = math.degrees(lo + (hi - lo) * float(res.x[0]))
+        assert abs(float(wrap_angle(th - angles[k], 180.0))) <= 1.0
+        assert res.objective <= cs[k] * (1 + 1e-9)
+
+
+@pytest.mark.slow
 def test_a7_element_angles_improve_on_the_best_uniform_angle() -> None:
     angles, cs = sweep_cantilever()
     k = int(np.argmin(cs))

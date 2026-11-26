@@ -154,3 +154,11 @@ benzerlik iddiası yok.
 * Gerilme / burkulma / modal yanıtları tensör alanıyla (eleman başına D zaten `TensorElasticity.D`'de).
 * MMA tek değişkenli salınımı (A6) ve torch iş parçacığı yükü (§4): perf.
 * Konstitutif protokol (§2) ile birleşme: `MaterialField` small-strain C taşıyor; tanjant / durum değişkeni yok.
+
+## Birleştirmeden sonra: A6 ve GCMMA (koordinatör, 2026-11-26, post hoc)
+
+A6'daki ±1,6° salınım, `optimizers/mma.py`'de belgelenmiş düz MMA sınırlamasıdır: iç optimumlu ve etkin kısıtın
+dokunmadığı bir değişken, asimptotlar x'ten asymin = 0,01 uzakta tutulunca 2-döngüde kalabilir (13 Kasım ölçümü,
+`test_mma.py`). Aynı problem GCMMA ile (move 0,1, 30 iterasyon): başlangıç 0°, ±45° için açı 9,5e-5°, 3,3e-4°,
+3,0e-4°; c / c_min − 1 = 7,4e-12, 9,0e-11, 7,8e-11 (A6'nın iki ölçütü de tutuyor). Post hoc test
+`test_a6_posthoc_gcmma_reaches_the_sweep_minimum` (yavaş). A6 strict xfail olarak kalır (MMA ile ön kayıtlıydı).
