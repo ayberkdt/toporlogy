@@ -82,4 +82,41 @@ shared helper), state VJP/JVP, fractional kernels, spectrum fitting.
 * C1b: "strain after 150 s of recovery ≤ 1e-3 of the peak" was wrong by the closed form itself (remaining strain
   ≈ (2/3)(e^{-5} − e^{-6.33})σ0/E∞ ≈ 4e-3 of the peak at 150 s); replaced by 3000 s after the unloading, ≤ 1e-6 of the peak.
 
-First result (append after run): see below.
+First result: appended at the end of this file.
+
+## First result (2026-11-27, `python -m pytest tests/toporlogy/test_viscoelastic.py -p no:randomly`, 28 tests)
+
+First complete run: 27 passed, 1 failed. Two **test set-up errors** (hand values in the test, not the production code) were
+fixed before the final run, thresholds untouched: (a) V1b hand value `J_Maxwell(t = η) = 2/E` is wrong (t/η = 1 at t = η;
+the intended point is t = η/E); (b) C1a hand value at `t = t_u`: `recovery_strain` treats t ≥ t_u as after the unloading
+(H(0) = 1), so the value at t_u is σ0[J(t_u) − J(0)], not the loaded value. The second full run (with measurements printed, `-rP`):
+**28 passed**. No xfail, no ledger entry. Measured values (relative to the stated scale):
+
+| ID | result | measured |
+|---|---|---|
+| V1a | PASS | max rel. error over the 8 curves vs the element ODEs 1.1e-12 (threshold 1e-9) |
+| V1b, V1c, V1d | PASS | special values, refusals, Laplace identity s²ÊĴ = 1 at s = 0.05, 0.3, 2 (≤ 1e-7), recovery values: all within thresholds (asserts; values not printed) |
+| V2 | PASS | shear and volume relaxation max rel. error 2.2e-16 (threshold 1e-10) |
+| V3 | PASS | production vs viscous-strain ODE oracle: 6.4e-16 of the stress scale (threshold 1e-8); oracle control: strain-form vs stress-form ODE 4.9e-14, strain-form vs Van Loan expm 7.3e-16 |
+| V4a | PASS | AN relaxation error at m = 25, 50, 100 per decade: 1.3e-4, 3.3e-5, 8.3e-6 (order 2.0); creep 1.8e-4, 4.4e-5, 1.1e-5 (order 2.0) (threshold 5e-4, order ≥ 1.6) |
+| V4b | PASS | NP relaxation 1.5e-5, 4.5e-6, 1.2e-6; creep 9.3e-5, 2.6e-5, 6.6e-6 (order ≈ 2); oracle control DAE vs residue oracle 4.4e-14 |
+| V4c | PASS | production σ_trans ≤ 5.1e-13 Pa; re-evaluation of σ at the production strain nodes by the oracle: 9.1e-12 Pa (creep), 4.1e-15 of scale (relaxation); oracle σ_trans 4.7e-12 Pa |
+| V4d | PASS (negative control) | pointwise E(t) vs true uniaxial E_R on AN: max relative difference 5.4e-2 (threshold ≥ 3e-2); lateral ratio spread 0.675 (≥ 5e-2); proportional set P: 4.0e-16 and 5.6e-17 |
+| V5 | PASS | FD error / ‖C‖ for h = 1e-3 … 1e-6: 1.8e-16 … 5.3e-14 (no shift), 2.2e-16 … 3.4e-14 (shift); ≤ 1 Newton iteration per step |
+| V6 | PASS | ψ and ΣD vs the augmented oracle at m = 4 … 64: |rel| ≤ 4.7e-15 (sets A and Z); oracle closure W = ψ + D: 9.4e-15 (A), 1.6e-15 (Z); trapezoid residual (A) 3.6e-2, 9.1e-3, 2.3e-3, 5.7e-4, 1.4e-4 for m = 4 … 64 (ratio 4.0; threshold final ≤ 5e-3, ratio ≥ 3); (Z) 3.1e-2 … 1.2e-4 |
+| V7a, V7b | PASS | a_T(T_ref) = 1 exactly; values vs mpmath (≤ 1e-13); refusals (exact) |
+| V7c | PASS | reduced time vs quad: WLF 0, Arrhenius 250 → 400 K 4.4e-16, 300 → 330 K 4.4e-16, WLF 350 → 290 K 1.9e-15 (threshold 1e-11); overflow raises, underflow gives 0 |
+| V7d | PASS | (i) bitwise equal to the unshifted model (regression); (ii) isothermal shifted vs oracle 2.3e-16; (iii) thermal cycle error / scale for m = 4, 8, 16, 32, 64: 2.3e-3, 7.3e-4, 2.2e-4, 6.2e-5, 1.6e-5 (ratio 32 → 64: 3.75, observed order ≈ 1.9; threshold ≤ 5e-3 at m = 64, ratio ≥ 1.8) |
+| V8a | PASS | G' = G∞ + G1/2, G'' = G1/2 (1e-14), limits (1e-8), G'' ≥ 0, peak at ωτ = 1, no overflow at ωτ = 2e300 |
+| V8b | PASS | last-cycle fit of G*: 1.6e-5 (threshold 1e-3); cycle energy vs πG''γ0²: −1.6e-4 (1e-3); ψ periodicity 5e-14 |
+| V8c | PASS | E* fit 1.8e-5, ν* fit 1.3e-5 (threshold 2e-3); identities hold |
+| V9 | PASS | (a) restart in a dwell bitwise equal (regression); (b) subdivision of a hold 9.1e-17 (threshold 1e-12); (c) rejection/rollback: committed arrays bitwise unchanged, read-only (regression) |
+| V10 | PASS | invalid inputs rejected; fluid: held-strain stress ratio 6e-36 at 400 s, steady flow rate rel. error 2.2e-16 vs σ/η, `equilibrium_moduli() == (K∞, 0)`; zero-amplitude branches finite |
+| C1a | PASS | closed-form recovery values 6.7e-16; Maxwell residual σ0 t_u/η = 4e-3 exactly |
+| C1b | PASS | 3-D production creep and unloading: error / (σ0/E∞) at m = 25, 50, 100: 3.0e-4, 7.5e-5, 1.9e-5 (order 2.0; threshold 5e-4, order ≥ 1.6); lateral ratio dev from 0.3: 1.1e-16; final strain / peak 1.1e-12 |
+
+Reading the numbers: the checks that are exact for the piecewise-linear strain (V2, V3, V5, V6 energies, V7d(ii), V9) agree to
+rounding. The checks that compare a continuous history with the piecewise-linear update (V4, C1b, V6 trapezoid, V7d(iii), V8) show
+second-order convergence, as predicted; no threshold was loosened. Raw evidence: `D:/Masaustu/Topology Optimization/.claude/tmp-toporlogy/V_viscoelastic/run2.txt`
+(not committed). Limitations: see "Not implemented" above; V7d(iii) converges at the observed second order, the first-order behaviour
+for stiff branches under a temperature ramp predicted in the model notes was not observed at these parameters.
