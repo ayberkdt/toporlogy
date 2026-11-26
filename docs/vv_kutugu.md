@@ -2,7 +2,7 @@
 
 `tests/toporlogy/test_catalog_ledger.py` bu kütüğü toplanan testlerle karşılaştırır: her xfail strict (XPASS koşuyu kırar), kütük toplanan strict xfail listesiyle ve test kaynaklarındaki atlama noktalarıyla birebir aynı. Beklenen başarısızlık PASS sayılmaz; atlanan bir arka ucun testi NOT VERIFIED'dır. Yeniden üretim: `python tests/toporlogy/test_catalog_ledger.py --write`.
 
-Toplam 23 strict xfail (7 tanesi yavaş pakette), 15 atlama noktası.
+Toplam 24 strict xfail (7 tanesi yavaş pakette), 15 atlama noktası.
 
 Risk düzeyleri: **low** ölçüt ya da kontrolün kendisi; kod sonucu başka testle doğrulanmış; **medium** açıklanmamış sayısal fark ya da referans yeniden üretilemiyor; **high** kullanıcıya görünen sessiz kabul (yanlış sonuç üretebilir).
 
@@ -33,6 +33,7 @@ Risk düzeyleri: **low** ölçüt ya da kontrolün kendisi; kod sonucu başka te
 | `test_anisotropy.py::test_p10_cholesky_parametrisation` | pre-registered check failed | core.anisotropy.stiffness_from_cholesky (NumPy float64) | P10: 1000 θ'nın 37'si float64'te Cholesky'den geçmiyor (κ 7.6e16–1e35); gidiş-dönüş en kötü 3.1e-8 > 1e-12 (κ 2.4e11'e kadar) | medium | θ dağılımının κ < 1/eps ile sınırlanması ya da κ'ya ölçekli eşikle yeni ön kayıt; post hoc ılımlı varyant geçiyor | docs/olcumler/tensor_elastisite.md | — |
 | `test_stress_lbracket.py::test_y2_one_body_gate_on_the_returned_design[augmented_lagrangian]` | pre-registered check failed | stress_al_lbracket2d + connectivity (MMA, CPU) | tek parça kapısı FAIL: gövdeden kopuk iki 8 hücrelik ada; mesnet ve yük aynı gövdede (Y3 geçiyor) | low | ada temizliği (bridge/drop floating) ya da robust iletim kısıtıyla yeniden koşu; yeni ön kayıt | docs/olcumler/gerilme.md | evet |
 | `test_units.py::test_u8_compliance_in_mm_and_n_scales_exactly` | pre-registered check failed | mbb2d, Elasticity Q4 direct (CPU) | mm/N uyum oranı beklenen 1000²/210000'den 3,75e-12 göreli sapıyor, eşik 1e-12; girdiler bit düzeyinde doğru ölçekli (post hoc) | low | koşul sayısına ölçekli eşikle yeni ön kayıt | docs/olcumler/birimler_onkayit.md | — |
+| `test_homogenization.py::test_h7_taylor_remainder_order` | pre-registered check failed | fem.homogenization, periodic Q4 (CPU) | Taylor kalanı mertebesi ilk adım çiftinde 2,25 > 2,2 (sonra 2,10, 2,05); gradyan merkezi farkla ≤ 1e-6 | low | yok (ölçütün adım seçimi); post hoc asimptotik aralıkta 2,05–2,01 | docs/olcumler/homojenlestirme_onkayit.md | — |
 
 ## 2. Atlama noktaları
 

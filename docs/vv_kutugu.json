@@ -236,6 +236,16 @@
    "resolution": "koşul sayısına ölçekli eşikle yeni ön kayıt",
    "record": "docs/olcumler/birimler_onkayit.md",
    "slow": false
+  },
+  {
+   "nodeid": "tests/toporlogy/test_homogenization.py::test_h7_taylor_remainder_order",
+   "kind": "pre-registered check failed",
+   "model_backend": "fem.homogenization, periodic Q4 (CPU)",
+   "reason": "Taylor kalanı mertebesi ilk adım çiftinde 2,25 > 2,2 (sonra 2,10, 2,05); gradyan merkezi farkla ≤ 1e-6",
+   "risk": "low",
+   "resolution": "yok (ölçütün adım seçimi); post hoc asimptotik aralıkta 2,05–2,01",
+   "record": "docs/olcumler/homojenlestirme_onkayit.md",
+   "slow": false
   }
  ],
  "skips": [

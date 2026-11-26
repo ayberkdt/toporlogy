@@ -20,3 +20,22 @@ değişmez (`Elasticity.matrix` ve `assemble_conduction` okunur).
 | H7 | Duyarlılık: dC_ij/dx yönlü türevi merkezi farkla; Taylor kalanı mertebesi | ≤ 1e-6 göreli; mertebe ∈ [1,8; 2,2] |
 | H8 | 3-B iki fazlı katman (x3 normalli) Backus 3-B formu (normal bileşenler harmonik ortalama, düzlem içi Voigt düzeltmeli) | ≤ 1e-10 göreli |
 | H9 | Başarısızlık: tam kutu olmayan alan (void/kısmi hacim) ve tek elemanlı yön | açık `ValueError` |
+
+## Sonuç (2026-11-26, ilk koşu)
+
+Komut: `python -m pytest tests/toporlogy/test_homogenization.py -q -p no:randomly -s` → 13 passed, 1 xfailed.
+
+| # | Sonuç |
+|:---|:---|
+| H1 | PASS: Q4, Q4IM, H8, H8IM ve iletkenlik; homojen hücrede C_eff = E D (ör. 2-B 2,7e-15, 3-B 2,5e-16 mutlak fark, birim E) |
+| H2 | PASS: 2-B iki fazlı katman, Backus blok formu ve seri/paralel iletkenlik ≤ 1e-10 |
+| H3 | PASS: simetrik, pozitif tanımlı; ⟨ε⟩ = ε̄ ve ⟨σ⟩ = C ε̄ (merkez şekil değiştirmesinden, enerji C'siyle) ≤ 1e-12 |
+| H4 | PASS: periyodik kaydırma ve 90° döndürme |
+| H5 | PASS: kare delikli hücre Voigt ile Reuss arasında (Loewner) |
+| H6 | PASS: KUBC ≥ PBC |
+| H7 | Merkezi fark PASS (≤ 1e-6, elastisite ve iletkenlik). Taylor mertebesi **FAIL** (strict xfail): adımlar 0,1 … 0,0125 için 2,25, 2,10, 2,05; ilk çift bandın dışında (asimptotik değil). Post hoc 0,025 … 0,003125: 2,05, 2,02, 2,01 |
+| H8 | PASS: 3-B iki fazlı katman, Backus ≤ 1e-10 |
+| H9 | PASS, ikinci denemede: ilk sürüm void bölgeyi yakalamadı (void elemanlar `Domain`'de etkin sayılıyor); hücre denetimine `domain.void` eklendi, eşik değişmedi |
+
+Kapsam dışı (sonraki dilim): SUBC (çekiş sınır koşulu), RVE boyut/ağ duyarlılığı çalışması, eleman başına D,
+etkin özellik hedefli tasarım örneği (ör. negatif Poisson), lattice/dehomojenleştirme.

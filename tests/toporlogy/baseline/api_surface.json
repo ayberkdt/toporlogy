@@ -3963,6 +3963,18 @@
   "conduction_matrix": "conduction_matrix(dim)",
   "element_nodes": "element_nodes(domain,elements)"
  },
+ "toporlogy.fem.homogenization": {
+  "BCS": "<tuple>",
+  "Homogenized": {
+   "attrs": [
+    "dC"
+   ],
+   "class": "Homogenized"
+  },
+  "homogenize_conduction": "homogenize_conduction(domain,k,bc,sensitivities)",
+  "homogenize_elasticity": "homogenize_elasticity(domain,E,nu,D,element,bc,sensitivities)",
+  "periodic_map": "periodic_map(domain)"
+ },
  "toporlogy.fem.mechanisms": {
   "InvalidModuliError": {
    "attrs": [
