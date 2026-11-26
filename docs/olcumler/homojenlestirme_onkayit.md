@@ -66,3 +66,15 @@ interpolasyonuyla E) periyodik etkin rijitliğini `summary.json`'a yazar; tam ku
 ### H12 sonucu
 
 PASS: post adımı x̄ ≡ 1'de C = E0 · D_ps(ν) (≤ 1e-12) ve doğrudan `homogenize_elasticity` ile bit düzeyinde aynı.
+
+## Ek ön kayıt: SUBC (düzgün çekiş sınır koşulu, H13–H14)
+
+Ön kayıt 2026-11-26 09:12 +0300, kod yazılmadan önce. `bc="subc"`: birim makro gerilme σ̄ için sınırda t = σ̄ n; sabit σ̄'nın tutarlı
+düğüm yükü f = Σ_e B_eᵀ(merkez) σ̄ V_e (diverjans teoremi; doğrusal B için merkez integrali tamdır). Rijit hareket
+bir düğümün ötelemeleri ve dönmeyi tutan en az DOF ile kaldırılır; ortalama şekil değiştirme ⟨ε⟩ = (1/|Y|) Σ_e B_e u_e V_e
+S'nin sütunudur, C_SUBC = S⁻¹.
+
+| # | Kontrol | Eşik |
+|:---|:---|:---|
+| H13 | Homojen hücre (2-B, 3-B): C_SUBC = E D | ≤ 1e-10 göreli |
+| H14 | Rastgele ve gözenekli hücrede hiyerarşi C_SUBC ≤ C_PBC ≤ C_KUBC (Loewner) | farkların özdeğerleri ≥ −1e-10 · ‖C‖ |
