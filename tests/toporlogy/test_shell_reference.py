@@ -1,9 +1,14 @@
-"""Drill-independent 3-D solid reference for the curved shell segment of DR (docs/olcumler/kabuk_onkayit.md, DB0-DB5).
+"""Drill-independent 3-D solid reference for the curved shell segment of DR (docs/olcumler/kabuk_onkayit.md, DB0-DB5,
+DL0-DL6).
 
 R = 1, 90°, L = 1 segment clamped at z = 0, t = 0.01 and 0.05, a unit force spread over the same patch at the shell's
 mid-surface load point in both models (corner patch, direction +z; free-edge middle patch, direction −e_r(π/4)).
 Solid: T10 (quadratic tetrahedra; ``fem.mesh`` has no H20 / H27 and no incompatible-mode hexahedron off the grid),
 box mesh in (θ, z, r) mapped onto the cylinder node by node, so the edges are isoparametric arcs.
+
+DL: the through-thickness (layer) error of the one-layer reference estimated by Richardson in the layer count and
+corrected for; the layered meshes are solved by the supernodal Cholesky in a nested dissection whose separators are
+even (element-boundary) node planes of the quadratic node grid (an odd plane does not separate T10 cells).
 """
 from __future__ import annotations
 
@@ -12,13 +17,16 @@ from functools import cache
 
 import numpy as np
 import pytest
+import scipy.sparse as sp
 
 from toporlogy.core.linear_elastic import isotropic_stiffness
 from toporlogy.fem import shell as shell_module
+from toporlogy.fem.elastic import checked_residual
 from toporlogy.fem.mesh import Dirichlet, ElasticProblem, box
 from toporlogy.fem.mesh import kernels as kn
 from toporlogy.fem.mesh.assembly import assemble_vector
 from toporlogy.fem.shell import FlatShell, cylinder_surface
+from toporlogy.solvers import DirectSolver
 
 R, L, NU = 1.0, 1.0, 0.3
 ANGLE = math.pi / 2
@@ -219,3 +227,325 @@ def test_db5_record() -> None:
             print(f"DB5 H8 {nt}x{nz}x2 t = {t}: " + ", ".join(
                 f"{k} {h8[i]:.6e} (c / c_inf {h8[i] / reference(t, k)['cinf']:.4f})" for i, k in enumerate(KINDS)))
             assert all(np.isfinite(h8))
+
+
+# ---------------------------------------------------------------------------------------------- DL: layer correction
+DL_DRILLS = (1e-3, 1e-2, 3e-2, 1e-1, 3e-1, 1.0)
+LAYERS = {(16, 12): (1, 2, 4, 8), (32, 24): (1, 2, 4)}
+DL_SHELL_LEVELS = ((32, 24), (64, 48), (128, 96))
+NEGLIGIBLE = 1e-5                  # a layer sequence with |Δ1|, |Δ2| ≤ 1e-5 c(N, 1) has no Richardson to speak of
+GRID = 41                          # perturbation points per case in the separability check (ends included)
+LEAF = 64                          # nodes per leaf box of the nested dissection (as toporlogy.solvers.ordering)
+FREE_GB_64X48X2 = 3.8              # pre-registered: run 64 × 48 × 2 only with at least this much free memory
+
+
+def even_dissection(node_shape: tuple[int, ...], leaf: int = LEAF) -> list[np.ndarray]:
+    """Nested dissection of a quadratic-element node grid (C order): leaf boxes and separator planes in elimination
+    order; a separator is always an even node plane (an element boundary), the one nearest the box centre along the
+    longest axis that has one."""
+    dims = tuple(int(n) for n in node_shape)
+    strides = [int(np.prod(dims[i + 1:], dtype=np.int64)) for i in range(len(dims))]
+    parts: list[np.ndarray] = []
+
+    def nodes(lo: list[int], hi: list[int]) -> np.ndarray:
+        g = np.meshgrid(*[np.arange(a, b, dtype=np.int64) for a, b in zip(lo, hi, strict=True)], indexing="ij")
+        return np.asarray(sum(x.ravel() * s for x, s in zip(g, strides, strict=True)), dtype=np.int64)
+
+    stack: list[tuple[list[int], list[int], bool]] = [([0] * len(dims), list(dims), False)]
+    while stack:
+        lo, hi, emit = stack.pop()
+        ext = [b - a for a, b in zip(lo, hi, strict=True)]
+        if min(ext) <= 0:
+            continue
+        if emit or int(np.prod(ext)) <= leaf:
+            parts.append(nodes(lo, hi))
+            continue
+        for a in np.argsort(ext, kind="stable")[::-1]:
+            ax = int(a)
+            cand = [g for g in range(lo[ax] + 1, hi[ax] - 1) if g % 2 == 0]
+            if cand:
+                centre = (lo[ax] + hi[ax] - 1) / 2
+                mid = min(cand, key=lambda g: abs(g - centre))
+                hi1, lo2, los, his = list(hi), list(lo), list(lo), list(hi)
+                hi1[ax], lo2[ax], los[ax], his[ax] = mid, mid + 1, mid, mid + 1
+                stack += [(los, his, True), (lo2, hi, False), (lo, hi1, False)]   # halves first, separator last
+                break
+        else:
+            parts.append(nodes(lo, hi))
+    return parts
+
+
+def even_blocks(node_shape: tuple[int, ...], free: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    """(order, block sizes) of the reduced system for ``DirectSolver("cholesky")``; DOF 3 · node + d."""
+    parts = even_dissection(node_shape)
+    allnodes = np.concatenate(parts)
+    n_total = 3 * int(np.prod(node_shape))
+    assert np.array_equal(np.sort(allnodes), np.arange(n_total // 3))
+    dofs = (3 * allnodes[:, None] + np.arange(3)).ravel()
+    pos = np.full(n_total, -1, np.int64)
+    pos[free] = np.arange(len(free))
+    p = pos[dofs]
+    keep = p >= 0
+    part_of = np.repeat(np.arange(len(parts)), [3 * len(q) for q in parts])
+    return p[keep], np.bincount(part_of[keep], minlength=len(parts)).astype(np.int64)
+
+
+@cache
+def layered_compliance(nt: int, nz: int, nr: int, t: float) -> tuple[float, float]:
+    """(c corner, c radial) of the T10 solid with nr layers, supernodal Cholesky in the even nested dissection."""
+    pr, cent = _solid(nt, nz, nr, t)
+    F = np.column_stack([_solid_load(pr, cent, k)[0] for k in KINDS])
+    free = np.setdiff1d(np.arange(pr.ndof), pr.mesh.dofs(pr.mesh.node_sets["bottom"]))
+    Kff = sp.csr_matrix(pr.K)[free][:, free]
+    order, blocks = even_blocks((2 * nt + 1, 2 * nz + 1, 2 * nr + 1), free)
+    ds = DirectSolver("cholesky")
+    upper = sp.triu(Kff, format="csr")
+    ds.factor(upper, order=order, blocks=blocks)
+    X = ds.solve(F[free])
+    ds.release()
+    checked_residual(upper, X, F[free])          # the library's check (relative residual or backward error)
+    c = np.einsum("ij,ij->j", F[free], X)
+    return float(c[0]), float(c[1])
+
+
+def layer_extrapolation(c1: float, c2: float, c4: float) -> dict[str, float]:
+    """Richardson in the layer count (1, 2, 4): c_L, p_L, r = c_L / c1 − 1, e_L = |c_L − c4| / c1 (pre-registered)."""
+    d1, d2 = c2 - c1, c4 - c2
+    negligible = max(abs(d1), abs(d2)) <= NEGLIGIBLE * c1
+    if negligible:
+        cl, el, p, ok = c4, abs(d2) / c1 + NEGLIGIBLE, math.nan, True
+    else:
+        ok = d1 * d2 > 0 and abs(d2) < abs(d1)
+        cl = c4 + d2 * d2 / (d1 - d2) if d1 != d2 else math.nan
+        el = abs(cl - c4) / c1
+        p = math.log2(d1 / d2) if d1 * d2 > 0 else math.nan
+    return {"c1": c1, "c2": c2, "c4": c4, "cL": cl, "p": p, "r": cl / c1 - 1, "eL": el, "ok": float(ok),
+            "negligible": float(negligible)}
+
+
+@cache
+def layers(nt: int, nz: int, t: float, kind: str) -> dict[str, float]:
+    i = KINDS.index(kind)
+    return layer_extrapolation(*(layered_compliance(nt, nz, n, t)[i] for n in (1, 2, 4)))
+
+
+@cache
+def corrected(t: float, kind: str) -> dict[str, float]:
+    """c_D = c_∞ (1 + r(32 × 24)) and its budget B = ε_in + e_L(32 × 24) + |r(32 × 24) − r(16 × 12)|."""
+    ref, l32, l16 = reference(t, kind), layers(32, 24, t, kind), layers(16, 12, t, kind)
+    m = abs(l32["r"] - l16["r"])
+    return {"cinf": ref["cinf"], "cD": ref["cinf"] * (1 + l32["r"]), "eps": ref["eps"], "eL": l32["eL"], "m": m,
+            "B": ref["eps"] + l32["eL"] + m}
+
+
+def _dl_shell(t: float, kind: str, drill: float, variant: str) -> float:
+    i = KINDS.index(kind)
+    cs = [shell_compliance(nt, nz, t, drill)[i] for nt, nz in DL_SHELL_LEVELS]
+    if variant == "128":
+        return cs[-1]
+    r = richardson(*cs)
+    return r["cinf"] if r["monotone"] else cs[-1]
+
+
+def _dl2(t: float, kind: str) -> tuple[float, float]:
+    lay = layers(16, 12, t, kind)
+    c8 = layered_compliance(16, 12, 8, t)[KINDS.index(kind)]
+    return abs(c8 - lay["cL"]) / lay["c1"], max(lay["eL"], 1e-6)
+
+
+def _dl3(t: float, kind: str) -> tuple[float, float]:
+    r32, r16 = layers(32, 24, t, kind)["r"], layers(16, 12, t, kind)["r"]
+    return abs(r32 - r16), max(0.25 * abs(r32), 1e-4)
+
+
+def dl_preconditions() -> dict[str, bool]:
+    return {
+        "DB1": all(reference(t, k)["monotone"] and reference(t, k)["eps"] <= 0.01 for t, k in CASES),
+        "DL1": all(layers(nt, nz, t, k)["ok"] for nt, nz in LAYERS for t, k in CASES),
+        "DL2": all(_dl2(t, k)[0] <= _dl2(t, k)[1] for t, k in CASES),
+        "DL3": all(_dl3(t, k)[0] <= _dl3(t, k)[1] for t, k in CASES),
+        "DL4": all(_shell_mesh_change(t, k, a) <= 0.01 for t, k in CASES for a in DL_DRILLS),
+    }
+
+
+def dl_errors(variant: str = "128") -> dict[float, float]:
+    """E(α) = max_k |c_shell(α, k) / c_D(k) − 1|."""
+    return {a: max(abs(_dl_shell(t, k, a, variant) / corrected(t, k)["cD"] - 1) for t, k in CASES)
+            for a in DL_DRILLS}
+
+
+def dl_difference_range(a: float, b: float, variant: str) -> tuple[float, float]:
+    """min and max of E(a) − E(b) over the grid c_D(k)(1 + s_k B(k)), s_k ∈ linspace(−1, 1, GRID), all cases."""
+    s = np.linspace(-1.0, 1.0, GRID)
+    Ea: np.ndarray = np.zeros((1,) * len(CASES))
+    Eb: np.ndarray = np.zeros((1,) * len(CASES))
+    for j, (t, k) in enumerate(CASES):
+        cor = corrected(t, k)
+        ref = cor["cD"] * (1 + s * cor["B"])
+        shape = [1] * len(CASES)
+        shape[j] = GRID
+        Ea = np.maximum(Ea, np.abs(_dl_shell(t, k, a, variant) / ref - 1).reshape(shape))
+        Eb = np.maximum(Eb, np.abs(_dl_shell(t, k, b, variant) / ref - 1).reshape(shape))
+    diff = Ea - Eb
+    return float(diff.min()), float(diff.max())
+
+
+def dl_separable(a: float, b: float) -> bool:
+    """Pre-registered: the sign of E(a) − E(b) is the same, non-zero, on the whole grid for both shell variants."""
+    ranges = [dl_difference_range(a, b, v) for v in ("128", "rich")]
+    return all(lo > 0 for lo, _ in ranges) or all(hi < 0 for _, hi in ranges)
+
+
+def dl_decision() -> dict[str, object]:
+    pre = dl_preconditions()
+    E = dl_errors("128")
+    best = min(DL_DRILLS, key=lambda a: (E[a], abs(math.log10(a) + 1)))
+    if not all(pre.values()) or best == 1e-1:
+        alpha = 1e-1
+    else:
+        alpha = best if dl_separable(best, 1e-1) else 1e-1
+    return {"pre": pre, "E": E, "best": best, "alpha": alpha}
+
+
+def _failed(check: str, measured: str, limit: str) -> pytest.MarkDecorator:
+    return pytest.mark.xfail(strict=True, reason=f"pre-registered {check} failed: measured {measured} > {limit} "
+                                                 "(kabuk_onkayit.md, DL0-DL6)")
+
+
+# ---------------------------------------------------------------------------------------------- DL0 (fast)
+@pytest.mark.parametrize("t", [pytest.param(0.01, marks=_failed("DL0", "c difference 1.2e-9", "1e-10")), 0.05])
+def test_dl0_setup(t: float) -> None:
+    nt, nz, nr = 16, 12, 2
+    m = box(nt, nz, nr, ANGLE, L, t, element="T10", origin=(0.0, 0.0, R - t / 2))
+    shape = (2 * nt + 1, 2 * nz + 1, 2 * nr + 1)
+    grid_err = math.inf
+    if len(m.points) == int(np.prod(shape)):
+        idx = np.stack(np.unravel_index(np.arange(len(m.points)), shape), axis=1)
+        grid = idx * np.array([ANGLE / (2 * nt), L / (2 * nz), t / (2 * nr)]) + np.array([0.0, 0.0, R - t / 2])
+        grid_err = float(np.abs(m.points - grid).max())
+    pr, cent = _solid(nt, nz, nr, t)
+    F = np.column_stack([_solid_load(pr, cent, k)[0] for k in KINDS])
+    U = pr.solve(F, Dirichlet.fixed(pr.mesh.dofs(pr.mesh.node_sets["bottom"]), n_cases=2)).u
+    c_default = np.einsum("ij,ij->j", F, U)
+    c_chol = np.array(layered_compliance(nt, nz, nr, t))
+    rel = float(np.abs(c_chol / c_default - 1).max())
+    print(f"DL0 t = {t}: grid {grid_err:.1e}; c default {c_default[0]:.10e} / {c_default[1]:.10e}, Cholesky "
+          f"{c_chol[0]:.10e} / {c_chol[1]:.10e}, rel {rel:.1e}")
+    assert grid_err <= 1e-12 and rel <= 1e-10
+
+
+# ---------------------------------------------------------------------------------------------- DL1-DL6 (slow)
+@pytest.mark.slow
+@pytest.mark.parametrize("mesh", list(LAYERS), ids=lambda m: f"{m[0]}x{m[1]}")
+@pytest.mark.parametrize("t, kind", CASES)
+def test_dl1_layer_convergence(t: float, kind: str, mesh: tuple[int, int]) -> None:
+    lay = layers(*mesh, t, kind)
+    print(f"DL1 {mesh[0]}x{mesh[1]} t = {t}, {kind}: c n=1 {lay['c1']:.8e}, n=2 {lay['c2']:.8e}, n=4 {lay['c4']:.8e}; "
+          f"p_L {lay['p']:.3f}, c_L {lay['cL']:.8e}, r {lay['r']:+.4e}, e_L {lay['eL']:.3e}, "
+          f"negligible {bool(lay['negligible'])}, ok {bool(lay['ok'])}")
+    assert lay["ok"]
+
+
+@pytest.mark.slow
+@pytest.mark.parametrize("t, kind", CASES)
+def test_dl2_layer_extrapolation_predicts_eight_layers(t: float, kind: str) -> None:
+    v, lim = _dl2(t, kind)
+    c8 = layered_compliance(16, 12, 8, t)[KINDS.index(kind)]
+    print(f"DL2 t = {t}, {kind}: c(16x12, 8) {c8:.8e}, c_L {layers(16, 12, t, kind)['cL']:.8e}, |diff| / c1 {v:.3e}, "
+          f"limit {lim:.3e}")
+    assert v <= lim
+
+
+@pytest.mark.slow
+@pytest.mark.parametrize("t, kind", [
+    (0.01, "corner"),
+    pytest.param(0.01, "radial", marks=_failed("DL3", "|r32 - r16| 2.234e-3", "4.248e-4")),
+    pytest.param(0.05, "corner", marks=_failed("DL3", "|r32 - r16| 1.115e-4", "1.000e-4")),
+    pytest.param(0.05, "radial", marks=_failed("DL3", "|r32 - r16| 1.859e-3", "9.188e-4")),
+])
+def test_dl3_layer_correction_independent_of_mesh(t: float, kind: str) -> None:
+    v, lim = _dl3(t, kind)
+    print(f"DL3 t = {t}, {kind}: r(16x12) {layers(16, 12, t, kind)['r']:+.4e}, r(32x24) "
+          f"{layers(32, 24, t, kind)['r']:+.4e}, |diff| {v:.3e}, limit {lim:.3e}")
+    assert v <= lim
+
+
+@pytest.mark.slow
+@pytest.mark.parametrize("t, kind", CASES)
+def test_dl4_shell_mesh_convergence(t: float, kind: str) -> None:
+    rel = {a: _shell_mesh_change(t, kind, a) for a in DL_DRILLS}
+    print(f"DL4 t = {t}, {kind}: " + ", ".join(f"{a:g}: {v:.3e}" for a, v in rel.items()))
+    assert max(rel.values()) <= 0.01
+
+
+@pytest.mark.slow
+def test_dl5_default_drill_follows_the_rule() -> None:
+    d = dl_decision()
+    E = d["E"]
+    assert isinstance(E, dict)
+    sep = {a: dl_separable(a, 1e-1) for a in DL_DRILLS if a != 1e-1}
+    print(f"DL5: preconditions {d['pre']}; E: " + ", ".join(f"{a:g}: {v:.4%}" for a, v in E.items())
+          + f"; argmin {d['best']:g}; separable from 1e-1: " + ", ".join(f"{a:g} {s}" for a, s in sep.items())
+          + f"; rule -> {d['alpha']:g}; DRILL = {shell_module.DRILL:g}")
+    assert d["alpha"] == shell_module.DRILL
+
+
+@pytest.mark.slow
+def test_dl6_record() -> None:
+    """Record (no threshold): layer table, corrected reference with its budget, d(α, k) and E(α) for both shell
+    variants, the separability range of E(1e-2) − E(1e-1) and the simple comparison with max_k B(k)."""
+    for (nt, nz), ns in LAYERS.items():
+        for t in (0.01, 0.05):
+            cs = [layered_compliance(nt, nz, n, t) for n in ns]
+            for i, k in enumerate(KINDS):
+                print(f"DL6 layers {nt}x{nz} t = {t}, {k}: "
+                      + ", ".join(f"n={n} {c[i]:.8e}" for n, c in zip(ns, cs, strict=True))
+                      + "; rel to n=1: " + ", ".join(f"{c[i] / cs[0][i] - 1:+.4e}" for c in cs[1:]))
+    for t, k in CASES:
+        cor = corrected(t, k)
+        print(f"DL6 reference t = {t}, {k}: c_inf {cor['cinf']:.8e}, c_D {cor['cD']:.8e} "
+              f"(r {cor['cD'] / cor['cinf'] - 1:+.4e}); budget B {cor['B']:.3e} = eps_in {cor['eps']:.3e} + "
+              f"e_L {cor['eL']:.3e} + m {cor['m']:.3e}")
+    for v in ("128", "rich"):
+        for t, k in CASES:
+            print(f"DL6 d [{v}] t = {t}, {k}: " + ", ".join(
+                f"{a:g} {_dl_shell(t, k, a, v) / corrected(t, k)['cD'] - 1:+.4%}" for a in DL_DRILLS))
+        E = dl_errors(v)
+        print(f"DL6 E [{v}]: " + ", ".join(f"{a:g} {e:.4%}" for a, e in E.items()))
+        lo, hi = dl_difference_range(1e-2, 1e-1, v)
+        print(f"DL6 E(1e-2) - E(1e-1) [{v}]: nominal {E[1e-2] - E[1e-1]:+.4%}, over the budget grid "
+              f"[{lo:+.4%}, {hi:+.4%}]")
+    for t, k in CASES:
+        i = KINDS.index(k)
+        print(f"DL6 shell t = {t}, {k}: " + "; ".join(
+            f"{a:g}: " + ", ".join(f"{nt}x{nz} {shell_compliance(nt, nz, t, a)[i]:.8e}" for nt, nz in DL_SHELL_LEVELS)
+            for a in DL_DRILLS))
+    E = dl_errors("128")
+    b_max = max(corrected(t, k)["B"] for t, k in CASES)
+    print(f"DL6 simple comparison: |E(1e-2) - E(1e-1)| {abs(E[1e-2] - E[1e-1]):.4%} vs max_k B {b_max:.4%}; "
+          f"separable(1e-2, 1e-1) {dl_separable(1e-2, 1e-1)}")
+
+
+def _free_memory_gb() -> float | None:
+    try:
+        import psutil
+    except ImportError:
+        return None
+    return float(psutil.virtual_memory().available) / 2**30
+
+
+@pytest.mark.slow
+def test_dl6_record_two_layers_64x48() -> None:
+    """Conditional record (pre-registered): 64 × 48 × 2 only with ≥ 3.8 GB free memory at the start; run alone."""
+    free = _free_memory_gb()
+    if free is None or free < FREE_GB_64X48X2:
+        print(f"DL6 64x48x2: not run, free memory {free} GB < {FREE_GB_64X48X2} GB")
+        return
+    for t in (0.01, 0.05):
+        r2 = {}
+        for nt, nz in ((16, 12), (32, 24), (64, 48)):
+            c1, c2 = layered_compliance(nt, nz, 1, t), layered_compliance(nt, nz, 2, t)
+            r2[(nt, nz)] = [c2[i] / c1[i] - 1 for i in range(2)]
+        print(f"DL6 64x48x2 t = {t} (free {free:.2f} GB): " + "; ".join(
+            f"{k} r2 " + ", ".join(f"{nt}x{nz} {r[i]:+.4e}" for (nt, nz), r in r2.items())
+            for i, k in enumerate(KINDS)))

@@ -666,6 +666,46 @@
    "resolution": "yok bu turda: eşik değişmez; yuvarlama sınırına dayalı bir ölçüt ön kayda alınırsa yeniden değerlendirilir",
    "record": "docs/olcumler/kabuk_onkayit.md",
    "slow": false
+  },
+  {
+   "nodeid": "tests/toporlogy/test_shell_reference.py::test_dl0_setup[0.01]",
+   "kind": "pre-registered check failed",
+   "model_backend": "T10 katı dilim 16 × 12 × 2, süperdüğümlü Cholesky (çift düzlemli iç içe bölme) ile varsayılan SuperLU (CPU)",
+   "reason": "t/R = 0,01: iki çözücünün uyumu 1,2e-9 göreli farklı > 1e-10 (t = 0,05'te 4,1e-12); kötü koşullu ince katı, iki doğrudan çözücünün yuvarlama farkı",
+   "risk": "low",
+   "resolution": "yok (eşik değişmez); fark ölçülen katman etkilerinden (≥ 1e-5) dört mertebe küçük, karar kuralının önkoşulu değil",
+   "record": "docs/olcumler/kabuk_onkayit.md",
+   "slow": false
+  },
+  {
+   "nodeid": "tests/toporlogy/test_shell_reference.py::test_dl3_layer_correction_independent_of_mesh[0.01-radial]",
+   "kind": "pre-registered check failed",
+   "model_backend": "T10 katı, ankastre R = 1, 90°, L = 1 silindir dilimi, kalınlık yönünde 1-8 katman (CPU, numpy/torch Cholesky)",
+   "reason": "katman düzeltmesi r = c_L / c(n = 1) − 1 düzlem içi ağa bağlı; t/R = 0,01 radyal: r(16 × 12) = 3,93e-3, r(32 × 24) = 1,70e-3, fark 2,23e-3 > max(0,25 · 1,70e-3, 1e-4) = 4,25e-4",
+   "risk": "medium",
+   "resolution": "yok bu turda: ön kayıtlı karar kuralı uygulanmadı, varsayılan drilling 1e-1 kaldı; katman düzeltmesi düzlem içi ağla birlikte küçülüyor (etkileşim hatası), toplanabilir düzeltme varsayımı tutmuyor; 64 × 48 × 2 ya da daha ince ağda katman ölçümü (bellek) ya da başka bir referans gerekir",
+   "record": "docs/olcumler/kabuk_onkayit.md",
+   "slow": true
+  },
+  {
+   "nodeid": "tests/toporlogy/test_shell_reference.py::test_dl3_layer_correction_independent_of_mesh[0.05-corner]",
+   "kind": "pre-registered check failed",
+   "model_backend": "T10 katı, ankastre R = 1, 90°, L = 1 silindir dilimi, kalınlık yönünde 1-8 katman (CPU, numpy/torch Cholesky)",
+   "reason": "katman düzeltmesi r = c_L / c(n = 1) − 1 düzlem içi ağa bağlı; t/R = 0,05 köşe: r(16 × 12) = 1,66e-4, r(32 × 24) = 2,77e-4, fark 1,115e-4 > max(0,25 · 2,77e-4, 1e-4) = 1,0e-4",
+   "risk": "medium",
+   "resolution": "yok bu turda: ön kayıtlı karar kuralı uygulanmadı, varsayılan drilling 1e-1 kaldı; katman düzeltmesi düzlem içi ağla birlikte küçülüyor (etkileşim hatası), toplanabilir düzeltme varsayımı tutmuyor; 64 × 48 × 2 ya da daha ince ağda katman ölçümü (bellek) ya da başka bir referans gerekir",
+   "record": "docs/olcumler/kabuk_onkayit.md",
+   "slow": true
+  },
+  {
+   "nodeid": "tests/toporlogy/test_shell_reference.py::test_dl3_layer_correction_independent_of_mesh[0.05-radial]",
+   "kind": "pre-registered check failed",
+   "model_backend": "T10 katı, ankastre R = 1, 90°, L = 1 silindir dilimi, kalınlık yönünde 1-8 katman (CPU, numpy/torch Cholesky)",
+   "reason": "katman düzeltmesi r = c_L / c(n = 1) − 1 düzlem içi ağa bağlı; t/R = 0,05 radyal: r(16 × 12) = 5,53e-3, r(32 × 24) = 3,68e-3, fark 1,86e-3 > max(0,25 · 3,68e-3, 1e-4) = 9,19e-4",
+   "risk": "medium",
+   "resolution": "yok bu turda: ön kayıtlı karar kuralı uygulanmadı, varsayılan drilling 1e-1 kaldı; katman düzeltmesi düzlem içi ağla birlikte küçülüyor (etkileşim hatası), toplanabilir düzeltme varsayımı tutmuyor; 64 × 48 × 2 ya da daha ince ağda katman ölçümü (bellek) ya da başka bir referans gerekir",
+   "record": "docs/olcumler/kabuk_onkayit.md",
+   "slow": true
   }
  ],
  "skips": [
