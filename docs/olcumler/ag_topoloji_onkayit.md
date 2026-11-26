@@ -65,3 +65,48 @@ Hepsi ilk koşuda geçti (`test_mesh_topology.py::test_md*`).
 
 Kalan: YAML (`domain: {type: mesh}`, ağ etiketleriyle mesnet / yük), ızgaraya özgü bileşenlerin ağ alanında açık hatası
 (katalog kuralı), kabuk elemanı.
+
+## Ek ön kayıt: ızgaraya özgü bileşenlerin ızgara dışı alanda açık reddi (RF1–RF4)
+
+Ön kayıt 2026-11-26 17:41 +0300, kod yazılmadan önce. `MeshDomain` ve `ShellDomain` hücreleri `shape = (n,)` olan 1-B
+bir "ızgara" olarak sunar, `dim` ise uzay boyutudur (2 ya da 3). Izgaraya özgü bir halka ya da yanıt bu alanlarda bugün
+ya anlaşılmaz bir hatayla düşüyor ya da sessizce yanlış hesaplıyor. Ortak denetim `toporlogy.core.domain` içinde tek
+yardımcı olacak: `is_grid(domain)` (`len(shape) == dim`; her `Domain` için doğru, `MeshDomain` / `ShellDomain` için
+yanlış) ve `require_grid(domain, bileşen, alternatif)`, ızgara dışı alanda bileşenin adını ve varsa ağ karşılığını
+(`MeshFilterLink`, `MeshVolume`, açık eşlemeli `Tying`) veren bir `ValueError` atar. Uyumluluk adı yok.
+
+Bugünkü davranış bu oturumda bir yoklama betiğiyle ölçüldü (2-B Q4 `MeshDomain`, `Mesh.from_domain` ile 3-B H8
+`MeshDomain`, 8 × 6 silindir parçası `ShellDomain`; üç alanda da aynı sonuç). Izgaraya özgü bulunanlar ve nedeni:
+
+| Bileşen | Neden ızgaraya özgü | Bugün | Ağ karşılığı |
+|:---|:---|:---|:---|
+| `DensityFilter`, `standard_chain`, `manufacturing_chain` | `dim` boyutlu evrişim çekirdeği, mesafe eleman biriminde | `IndexError` / conv3d `RuntimeError` | `MeshFilterLink` |
+| `HelmholtzFilter` | Laplasyen her eksende ızgara komşuları arasında | **sessizce çalışıyor**: (n,) dizisinde k ile k+1 numaralı hücreyi komşu sayıyor | `MeshFilterLink` |
+| `PeriodicAngleFilter` | `DensityFilter` çekirdeği | `IndexError` / `RuntimeError` | yok |
+| `AMFilter`, `Casting` | ızgara ekseni boyunca katmanlar, `h`, `origin` | `IndexError` | yok |
+| `SymmetryTying`, `PatternTying` (`translational`, `cyclic`), `mirror_closure` | `element_centers`, en yakın ızgara hücresi | `AttributeError` | açık eşlemeli `Tying` |
+| `ExtrusionTying` | ızgara ekseni boyunca hücre çizgileri | numpy `AxisError` | açık eşlemeli `Tying` |
+| `overhang_map`, `overhang_violations`, `undercut_map`, `undercuts` (alan verilince) | ızgara ekseni | `ValueError: direction '+y' is not valid in 1-D` | yok |
+| `MultiPhaseSIMP`, `TensorPhases` | alan rankı = `domain.dim` | kendiyle çelişen `ValueError` ("(2, 24) … need (2, *domain.shape)") | yok |
+| `phase_report` | `domain.h` | yoklanmadı (`h` okur) | yok |
+| `Volume` (düz) | x̄ rankını `dim` ile karşılaştırır; eleman sayısıyla ortalar | yanıltıcı `ValueError` ("several phases") | `MeshVolume` |
+| `Mass`, `Cost` | eleman hacmi `h^dim` | çok fazlı enterpolasyon olmadan erişilmiyor; olursa `h` okur | yok |
+| `LocalVolume` | ızgarada top evrişimi | conv `RuntimeError` | yok |
+| `VonMises`, `FailureIndex` | `edof`, `h`, Q4/H8 merkez B matrisi | `VonMises` kurulur, ilk değerlendirmede `AttributeError: h`; `FailureIndex` kurulurken | yok |
+| `StressRecovery` | fiziğin `element`'i, `edof` | `AttributeError: element` | yok |
+| `ConductionConnectivity`, `CouplingCompliance`, `analyse_connectivity`, `tie_regions`, `bridge`, `one_body` | yüz komşuluğu, düğüm ızgarası, ızgara FE fiziği | `AttributeError: edof` / `KeyError: '1'` (son üçü yoklanmadı) | yok |
+| `CentreOfMass`, `InertiaComponent` (`mass_properties`) | `h`, `origin`, ızgara merkezleri | `AttributeError: h` | yok |
+| `RobustSet` gerçekleşmeleri | zincirdeki `DensityFilter` çıktısını okur | `KeyError: no DensityFilter link` | yok |
+
+Bugün ızgara dışı alanda çalışan ve çalışmaya devam etmesi gerekenler (yoklamada üç alanda da çalıştı): `Embed`,
+`Passive`, `HeavisideProjection`, `SIMP`, `RAMP`, `LinearMass`, `TwoRangeMass`, `TwoRangeSIMP`, `MeshFilterLink`,
+`MeshVolume`, `Compliance`, `GreyLevel`, açık eşlemeli `Tying`. Kapsam dışı: ızgara fizikleri (`Elasticity`,
+`HeatConduction`, `Modal` …; halka ya da yanıt değil), dizi alan ölçüm fonksiyonları (`measure_lengthscale` gibi alan
+almayanlar), `OrientedEmbed` (filtresiz hâli bir `Embed`; filtresi `PeriodicAngleFilter` üzerinden reddedilir).
+
+| # | Kontrol | Eşik |
+|:---|:---|:---|
+| RF1 | yukarıdaki tablodaki her bileşen, üç ızgara dışı alanın her birinde | `ValueError`; iletide bileşenin adı ve "grid"; ağ karşılığı olanlarda onun adı; başka tür istisna 0 |
+| RF2 | "çalışmaya devam etmesi gerekenler" listesi, üç alanda | hatasız çalışır; MD1–MD5 ve KS1–KS5 geçer |
+| RF3 | `is_grid` doğruluk tablosu: 1-B, 2-B, 3-B `Domain` (boşluk / koruma / kısmi `frac` dâhil) doğru; 2-B ve 3-B `MeshDomain`, `ShellDomain` yanlış | tablonun tamamı |
+| RF4 | ızgara davranışı | `pytest -m baseline` 8 passed bit düzeyinde; dokunulan modüllerin test dosyaları ve mimari / API yüzeyi testleri geçer |
