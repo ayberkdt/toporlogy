@@ -38,9 +38,16 @@ Run: `python -m pytest tests/toporlogy/test_history_fem.py -q -p no:randomly`. F
 4 passed, 2 failed on the first run.
 
 * H0, H1, H4, H5: PASS.
-* H3: the stress check passed (every point −E(T) ε_th to 1e-10); the reaction check failed for a **test set-up
-  sign error**: the support reaction on the x = 0 face is the traction σ·n A with n = −e_x, i.e. −σ_xx A, not
-  +σ_xx A as written in the test. Corrected in the test (threshold unchanged); passes.
+* H3: the stress check passed (every point −E(T) ε_th to 1e-10). The reaction check failed: the **preregistered
+  wording itself had the wrong sign** ("reaction = −E(T) ε_th · A" is σ_xx A, the stress resultant); the support
+  reaction f_int − f_ext on the x = 0 face is the traction σ·n A with n = −e_x, i.e. +E(T) ε_th A. Recorded as a
+  failed prediction of the wording (sign); the test now checks the derived sign with the preregistered tolerance
+  and passes. No tolerance changed.
+* H0 (integrator correction, same session, before the commit of the first results was reviewed): the first
+  version of the H0 test checked only that the boundary reactions sum to zero, which is weaker than the
+  preregistered "reaction equals the analytic traction resultant". It was replaced by the preregistered check:
+  each boundary node's reaction against Σ σ·n L/2 over its straight boundary edges (independent closed form, valid
+  because div σ = 0 for the affine field): PASS at rel 1e-10.
 * **H2 FAILED** (flawed hypothesis): end displacement 2.777e-3 vs 4.200e-3 (sum of the uniaxial-stress material
   points) at F = 1.1e-3. In a 3-D bar the two cells contract laterally by different amounts (plastic flow vs
   elastic) and the shared interface nodes constrain this, so the stress is not uniaxial; the 1-D series reference

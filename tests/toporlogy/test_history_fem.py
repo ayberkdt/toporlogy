@@ -33,16 +33,28 @@ def test_h0_affine_patch_linear() -> None:
     u = r.u.reshape(-1, 2)
     assert np.abs(u - exact).max() <= 1e-10 * np.abs(exact).max()
     eps = np.array([A[0, 0], A[1, 1], A[0, 1] + A[1, 0]])
-    sig = D @ eps
-    # resultant of the reactions on the right edge (x = 2) = traction sigma.n integrated over the edge (length 1)
-    right = np.flatnonzero(np.isclose(m.points[:, 0], 2.0))
-    order = {d: i for i, d in enumerate(dofs)}
-    Rx = sum(r.reactions[order[2 * n]] for n in right)
-    Ry = sum(r.reactions[order[2 * n + 1]] for n in right)
-    # reactions on the corner nodes include the top/bottom edge share; use the whole boundary balance instead:
-    total = np.array([r.reactions[:len(bnd)].sum(), r.reactions[len(bnd):].sum()])
-    assert np.abs(total).max() <= 1e-10 * abs(sig).max()                     # no net force (self-equilibrated)
-    assert np.isfinite(Rx) and np.isfinite(Ry)
+    sx, sy, sxy = D @ eps
+    sig = np.array([[sx, sxy], [sxy, sy]])
+    # independent reference: div sigma = 0, so the reaction (f_int) at boundary node a is the boundary integral of
+    # N_a sigma.n; on straight boundary edges with linear N each end node gets sigma.n L / 2 of every edge it is on
+    P = m.points
+    ref = np.zeros((m.n_nodes, 2))
+    sides = [(lambda q: np.isclose(q[:, 0], 0.0), np.array([-1.0, 0.0]), 1),
+             (lambda q: np.isclose(q[:, 0], 2.0), np.array([1.0, 0.0]), 1),
+             (lambda q: np.isclose(q[:, 1], 0.0), np.array([0.0, -1.0]), 0),
+             (lambda q: np.isclose(q[:, 1], 1.0), np.array([0.0, 1.0]), 0)]
+    for on, nrm, coord in sides:
+        nodes = np.flatnonzero(on(P))
+        nodes = nodes[np.argsort(P[nodes, coord])]
+        t = sig @ nrm
+        for a, b in zip(nodes[:-1], nodes[1:]):
+            L = float(np.linalg.norm(P[b] - P[a]))
+            ref[a] += 0.5 * L * t
+            ref[b] += 0.5 * L * t
+    got = np.zeros((m.n_nodes, 2))
+    got[bnd, 0] = r.reactions[:len(bnd)]
+    got[bnd, 1] = r.reactions[len(bnd):]
+    assert np.abs(got - ref).max() <= 1e-10 * np.abs(ref).max()
 
 
 def _j2_axial_history():
