@@ -506,6 +506,26 @@
    "resolution": "gövdeye uyumlu T10 (gmsh) ya da basamak etkisini içeren referans",
    "record": "docs/olcumler/burkulma_geometri.md",
    "slow": true
+  },
+  {
+   "nodeid": "tests/toporlogy/test_model_epoch.py::test_me1_one_reset_per_epoch_change",
+   "kind": "pre-registered check failed",
+   "model_backend": "Study + nonlinear_elasticity (CPU)",
+   "reason": "reset çağrısı 6, epoch değişimi 5: fazlası koşu başındaki restart(); kancanın sayacı eşit (post hoc)",
+   "risk": "low",
+   "resolution": "yok (ölçütün tanımı)",
+   "record": "docs/olcumler/model_donemi_onkayit.md",
+   "slow": false
+  },
+  {
+   "nodeid": "tests/toporlogy/test_model_epoch.py::test_me3_fixed_cutoff_gives_the_same_run_with_and_without_reset",
+   "kind": "pre-registered check failed",
+   "model_backend": "Study + nonlinear_elasticity (CPU)",
+   "reason": "sabit kesme 0,1 ve yük 0,05 ile Newton bir tasarımda durdu; karşılaştırma yapılamadı (post hoc 0,01 yükte aynı)",
+   "risk": "low",
+   "resolution": "yok (problem kurulumu)",
+   "record": "docs/olcumler/model_donemi_onkayit.md",
+   "slow": false
   }
  ],
  "skips": [

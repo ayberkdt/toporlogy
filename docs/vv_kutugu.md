@@ -2,7 +2,7 @@
 
 `tests/toporlogy/test_catalog_ledger.py` bu kütüğü toplanan testlerle karşılaştırır: her xfail strict (XPASS koşuyu kırar), kütük toplanan strict xfail listesiyle ve test kaynaklarındaki atlama noktalarıyla birebir aynı. Beklenen başarısızlık PASS sayılmaz; atlanan bir arka ucun testi NOT VERIFIED'dır. Yeniden üretim: `python tests/toporlogy/test_catalog_ledger.py --write`.
 
-Toplam 50 strict xfail (16 tanesi yavaş pakette), 17 atlama noktası.
+Toplam 52 strict xfail (16 tanesi yavaş pakette), 17 atlama noktası.
 
 Risk düzeyleri: **low** ölçüt ya da kontrolün kendisi; kod sonucu başka testle doğrulanmış; **medium** açıklanmamış sayısal fark ya da referans yeniden üretilemiyor; **high** kullanıcıya görünen sessiz kabul (yanlış sonuç üretebilir).
 
@@ -60,6 +60,8 @@ Risk düzeyleri: **low** ölçüt ya da kontrolün kendisi; kod sonucu başka te
 | `test_buckling_geometry.py::test_sp2_low_stress_exponent_produces_a_spurious_mode` | pre-registered check failed | LinearBuckling, 16 × 48 compliance design, E_G = x^1 (CPU) | pozitif kontrol çıkmadı: pg = 1 λ1'i 0,768 katına indirdi ama 1. modun düşük yoğunluk payı 0,026 | medium | sahte modu gerçekten üreten bir tasarımla (gri bölgesi gerilme taşıyan) yeniden | docs/olcumler/burkulma_geometri.md | evet |
 | `test_buckling_geometry.py::test_gc4_neck_thickness` | pre-registered check failed | post.finalize + sdf_local_thickness, stepped bar 32 × 12 × 12 (CPU) | boyun orta hattında yerel kalınlık eşik adımında 4,08–4,57, son alanda 4,08–4,34 (sınır 4 ± 0,5) | low | kalınlık ölçüsünün basamak yakınındaki davranışı incelenip ön kayıtlı yeni ölçütle | docs/olcumler/burkulma_geometri.md | evet |
 | `test_buckling_geometry.py::test_gc8_staircase_compliance_against_the_nominal_series_bar` | pre-registered check failed | post.reanalysis staircase voxels, ElasticityGMG (CPU) | h = 1/4 merdiven uyumu 0,6756, nominal seri çubuk 0,625 (+%8,1; sınır %5); ölçülen kesitlerle seri değer 0,6307 | low | gövdeye uyumlu T10 (gmsh) ya da basamak etkisini içeren referans | docs/olcumler/burkulma_geometri.md | evet |
+| `test_model_epoch.py::test_me1_one_reset_per_epoch_change` | pre-registered check failed | Study + nonlinear_elasticity (CPU) | reset çağrısı 6, epoch değişimi 5: fazlası koşu başındaki restart(); kancanın sayacı eşit (post hoc) | low | yok (ölçütün tanımı) | docs/olcumler/model_donemi_onkayit.md | — |
+| `test_model_epoch.py::test_me3_fixed_cutoff_gives_the_same_run_with_and_without_reset` | pre-registered check failed | Study + nonlinear_elasticity (CPU) | sabit kesme 0,1 ve yük 0,05 ile Newton bir tasarımda durdu; karşılaştırma yapılamadı (post hoc 0,01 yükte aynı) | low | yok (problem kurulumu) | docs/olcumler/model_donemi_onkayit.md | — |
 
 ## 2. Atlama noktaları
 

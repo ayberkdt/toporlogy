@@ -153,6 +153,10 @@ class Study:
     constraints : sequence of Constraint
     optimizer : Optimizer
     schedule : Schedule, optional
+    reset_on_model_change : bool
+        A physics with ``model_epoch`` (the energy interpolation of the non-linear physics changes its model when its
+        adaptive cutoff moves) resets the optimizer when the epoch changes, so asymptotes and multipliers of the old
+        model are not reused (docs/olcumler/model_donemi_onkayit.md). No effect on other physics.
     torch_threads : int or None
         Torch intra-op threads while :meth:`run` loops (``torch.set_num_threads``; the previous value is restored when
         the run ends, also on an error). Default 1: the loop's tensors are element grids and vectors, whose parallel
@@ -165,10 +169,13 @@ class Study:
     def __init__(self, domain: Domain, physics: Any, loads: np.ndarray, chain: Chain, interp: torch.nn.Module,
                  objective: Response, constraints: Sequence[Constraint], optimizer: Optimizer,
                  schedule: Schedule | None = None, recorder: Any = None,
-                 move_beta_ref: float | None = None, torch_threads: int | None = 1) -> None:
+                 move_beta_ref: float | None = None, torch_threads: int | None = 1,
+                 reset_on_model_change: bool = True) -> None:
         if torch_threads is not None and int(torch_threads) < 1:
             raise ValueError("torch_threads: None or an integer >= 1")
         self.torch_threads = None if torch_threads is None else int(torch_threads)
+        self.reset_on_model_change = bool(reset_on_model_change)
+        self.n_model_resets = 0
         self.domain, self.physics, self.chain, self.interp = domain, physics, chain, interp
         # move limit shrinks as move0 · min(1, move_beta_ref / β) after every β step of the schedule (sharp
         # projections make large steps unstable; 2.0 is the common choice). None: move limit unchanged.
@@ -380,6 +387,10 @@ class Study:
             hist[c.key] = []
         for k in self.schedule.state():
             hist[k] = []
+        epoch = getattr(self.physics, "model_epoch", None)
+        if epoch is not None:
+            hist["model_epoch"] = []
+        self.n_model_resets = 0
         if self.recorder is not None:
             self.recorder.start(self)
         it, change, ev = 0, 1.0, None
@@ -396,6 +407,13 @@ class Study:
                 for k, v in self.schedule.state().items():
                     hist[k].append(v)
                 ev = self.evaluate(x)
+                if epoch is not None:
+                    now = self.physics.model_epoch
+                    hist["model_epoch"].append(float(now))
+                    if self.reset_on_model_change and now != epoch:
+                        self.optimizer.reset()
+                        self.n_model_resets += 1
+                    epoch = now
                 hist["f0"].append(ev.f0)
                 for c in self.constraints:
                     hist[c.key].append(ev.values[c.key])
@@ -476,4 +494,6 @@ class Study:
         if hasattr(self.optimizer, "subproblem_failures"):       # MMA: dual solves that did not converge this run
             s["subproblem_failures"] = int(self.optimizer.subproblem_failures)
         s["torch_threads"] = self.torch_threads
+        if hasattr(self.physics, "model_epoch"):
+            s["reset_on_model_change"] = self.reset_on_model_change
         return s
