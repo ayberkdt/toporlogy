@@ -83,3 +83,15 @@ S'nin sütunudur, C_SUBC = S⁻¹.
 
 PASS: homojen hücrede (2-B, 3-B) C_SUBC = E D ≤ 1e-10; rastgele ve gözenekli hücrede C_SUBC ≤ C_PBC ≤ C_KUBC.
 Gözenekli 8 × 7 hücre (3 × 4 delik, E = 1e-3): C11 / E0 = 0,60621 (SUBC), 0,66892 (PBC), 0,67564 (KUBC).
+
+## Ek ön kayıt: Study yanıtları (H15–H17)
+
+Ön kayıt 2026-11-26 09:38 +0300, kod yazılmadan önce. `optimization/homogenization_responses.py`: `EffectiveStiffness(i, j)`
+(C_ij) ve `EffectivePoisson` (2-B: C12/C11), x̄'nin çalışmanın interpolasyonuyla E'si üzerinden; torch autograd
+fonksiyonu, geri adım dC/dE ile. Durum çözümü yok. YAML: `effective_stiffness`, `effective_poisson`.
+
+| # | Kontrol | Eşik |
+|:---|:---|:---|
+| H15 | Study değeri = `homogenize_elasticity` doğrudan | ≤ 1e-14 göreli |
+| H16 | Study gradyanı (filtre + SIMP + homojenleştirme + oran) merkezi farkla | ≤ 1e-6 göreli |
+| H17 | YAML: amaç `effective_poisson`, kısıt hacim ve `effective_stiffness` (C11 alt sınırı), MMA birkaç iterasyon | sonlu değerler, kısıt değerlendirilir |
