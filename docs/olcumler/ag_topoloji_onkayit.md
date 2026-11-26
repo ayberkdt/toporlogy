@@ -252,3 +252,93 @@ Ek (tam hızlı paket, 2026-11-26). `pytest -m "not slow"` ilk koşu: 1 failed, 
 ön kayıttaki öngörü bu toplayıcıyı atlamıştı. `MeshElasticity` SuperLU'ya bir şey vermediği için test yalnız ızgara
 örneklerini toplayacak şekilde düzeltildi (`is_mesh_config` süzgeci; kurulum düzeltmesi, eşik değil); dosya 32
 passed.
+
+## Ek ön kayıt: ağ yolunda çok yük durumu, tutarlı çekme yükü, düzlem şekil değiştirme ve VTU (AX1–AX8)
+
+Ön kayıt 2026-11-26 22:09 +0300, kod yazılmadan önce (HEAD `fc8109d`). Kabuk kolunun eşi:
+`kabuk_onkayit.md`, SX1–SX6. Ağ ve kabuk yolu (`configuration/mesh_build.py`) dört yönde genişler; ikinci ad ya da
+uyumluluk takma adı yok.
+
+**1. Yük durumları, tek biçim.** Üst düzey `loads:` kalkar; iki yol da ızgara yolunun biçimini alır:
+
+```yaml
+load_cases:                        # *zorunlu*, en az 1
+  - name: tip                      # [case<i>]; aynı ad iki kez ConfigError
+    weight: 1.0                    # [1.0]; sonlu olmalı; compliance = Σ_c w_c F_cᵀ U_c (ızgaradaki Compliance(weights))
+    loads: [...]                   # en az 1; bir durumun yükleri toplanır
+```
+
+Örnekler dönüştürülür: `mesh_cantilever2d.yaml` tek durum `tip`, `shell_cylinder.yaml` tek durum `radial`; yükler
+aynı. Üst düzey `loads:` artık `ConfigError` (yol `loads`, iletide `load_cases`). Durum başına `supports` ve
+`combinations` "henüz desteklenmiyor". Ağırlıklar `ctx.case_weights`'e, durum sayısı `ctx.n_cases`'e gider; F'nin her
+sütunu bir durum; `Setup.cases` her durum için ad, ağırlık, bileşke ve yüklü düğüm sayısını taşır.
+
+**2. Kümeye yayılan kuvvet: iki anlam, bir anahtar.** `{set: <küme>, force: [...], distribute: nodes | traction}`:
+
+* `nodes` [varsayılan, bugünkü davranış]: toplam kuvvet kümenin düğümlerine **eşit** bölünür (f / n_düğüm).
+* `traction`: kümenin sınır yüzeylerine (`mesh.facet_sets[<küme>]`: 2-B'de kenarlar, 3-B'de yüzler) **düzgün çekme**
+  t = force / |Γ| (|Γ| = Σ facet ölçüsü, 2-B'de kalınlık 1), tutarlı düğüm kuvvetleri `ElasticProblem.traction`
+  ile. Bileşke = force.
+* `{point, force}` değişmez (en yakın düğüm); `point` ile `distribute` birlikte `ConfigError`.
+
+Çözülmüş biçimde küme yükü her zaman `distribute` taşır (varsayılan dolar).
+
+**3. Düzlem şekil değiştirme.** `material.plane: strain` (yalnız 2-B) → D = `toporlogy.fem.elements.D_plane_strain(nu)`
+(= `core.linear_elastic.isotropic_plane_strain(1, nu)`; okundu, `fem/elements.py` satır 67). 3-B ağda `plane: strain`
+`ConfigError` (`material.plane`). `stress` ve `strain` dışındaki değerler `ConfigError`.
+
+**4. VTU son adımı.** `post: [{type: vtu, name: result}]` (`name` [result]; başka parametre ya da başka post türü
+"henüz desteklenmiyor"). `core.vtu`'ya genel yazıcı `write_cells_vtu(path, points, cells, cell_type, point_data,
+cell_data, meta)` ve sabitler `VTK_TRIANGLE` (5), `VTK_TETRA` (10); ızgara `write_vtu` aynı iç yazıcıyı kullanır,
+çıktısı bayt bayt aynı kalır. Ağ dosyası: noktalar `mesh.points` (2-B'de z = 0 eklenir), hücreler `mesh.cells`
+(sırası aynı), hücre tipi Q4 → 9 (VTK_QUAD), T3 → 5, H8 → 12, T4 → 10; hücre verisi `xphys`, `E` (interp(x̄));
+nokta verisi durum başına `displacement_<c>` (n, 3; 2-B'de z bileşeni 0). Meta: sözleşme, `dim`, `element`,
+`design`. `read_vtu` değişmez.
+
+Kapalı formlar (burada türetildi). Dikdörtgen [0, L] × [0, H] (3-B: × [0, W]), E = 1, ν; sol yüzde u_x = 0, alt yüzde
+u_y = 0 (3-B: arka yüzde u_z = 0) makaralar; sağ yüzde bileşke P e_x düzgün çekme olarak. Tek eksenli gerilme
+σ_xx = σ = P / A (A = H · 1; 3-B: H W), diğer bileşenler 0; denge ve sınır koşulları sağlanır, çözüm tektir.
+
+* Düzlem gerilme: ε_xx = σ / E, ε_yy = −ν σ / E → u_x = σ x / E, u_y = −ν σ y / E.
+* Düzlem şekil değiştirme (ε_zz = 0 → σ_zz = ν σ): ε_xx = (σ − ν σ_zz) / E = (1 − ν²) σ / E,
+  ε_yy = (−ν σ − ν σ_zz) / E = −ν (1 + ν) σ / E → u_x = (1 − ν²) σ x / E, u_y = −ν (1 + ν) σ y / E.
+* 3-B: u_x = σ x / E, u_y = −ν σ y / E, u_z = −ν σ z / E.
+
+Doğrusal yer değiştirme alanı Q4, T3, H8, T4'ün (bozulmuş ağda da, izoparametrik tamlık) uzayında; tutarlı yük ile
+FE çözümü düğümlerde bunu yuvarlama düzeyinde verir. Eşit bölüşüm (`nodes`) tutarlı değildir (uç düğümler fazla
+yük alır), çözüm doğrusal alandan ayrılır. Düzgün kenarda tutarlı yükün düğüm payları: n eşit parçalı kenarda uç
+düğümler f / (2n), iç düğümler f / n; n_y × n_z eşit karelik yüzde (H8) köşe f / (4 n_y n_z), kenar f / (2 n_y n_z),
+iç f / (n_y n_z).
+
+Çapalar (kod yazılmadan önce ölçüldü, `fc8109d`; betikler scratchpad'de, sonuçları burada):
+
+* ızgara VTU (test_vtu W1'in alanları ve meta'sı): 2-B sha256
+  `aa39645340d0cfd74c748d040828f8cc93422058dfd4da0b09ffb30eaeffa1b8` (7732 bayt), 3-B
+  `3ed5230e38c0241143500535abc7a2a7b83f16098b6fe7789762416e1cee88ce` (12149 bayt);
+* varsayılan başlangıçta amaç: `mesh_cantilever2d` 1908.3237613774095 (df0 sha256[:16] `4793a979cd435212`, F
+  `a627b5d4d61a4200`, (1666, 1)); `shell_cylinder` 30131.882810400843 (df0 `ce282cdd37f56919`, F `1581708cfbc900cb`,
+  (1326, 1)).
+
+Öngörüler. (U1) `test_units.py --write` sonrası `baseline/resolved_configs.json`'da yalnız iki girdi değişir:
+`examples/research/mesh_cantilever2d.yaml`'da `loads` anahtarı silinir, `load_cases: [{"loads": [{"force": [0.0,
+-1.0], "point": [3.0, 0.0]}], "name": "tip", "weight": 1.0}]` eklenir; `shell_cylinder.yaml`'da aynısı `name:
+radial` ve eski nokta yüküyle; öteki 15 girdi bayt bayt aynı. (A) `test_api_surface.py --write` sonrası
+`api_surface.json` farkı yalnız: `toporlogy.core.vtu`'ya üç yeni ad (`write_cells_vtu`, `VTK_TRIANGLE`, `VTK_TETRA`) ve
+`toporlogy.fem.shell.FlatShell` özniteliklerine `line_load`; `list.txt` değişmez (yeni kayıtlı bileşen yok). (D)
+`resolve.py`, `build.py`, `post_steps.py`, `boundary/*` farkı yok. (R) `test_research_examples.py` sabit listesi
+değişmez. (H2) `test_speedups.py` H2 parametreleri değişmez (15). (C) `catalog --write docs` farkı yok.
+
+| # | Kontrol | Eşik |
+|:---|:---|:---|
+| AX1 | iki durumlu YAML (ağırlıklar 0,7 ve 1,3; durum a: `point` kuvveti, durum b: `set: top`, `distribute: traction`) = 0,7 · (yalnız a'lı YAML) + 1,3 · (yalnız b'li YAML), rastgele x ∈ [0,2; 0,9]'da değer ve gradyan; bozulmuş Q4 (24 × 8) ve H8 kutu (6 × 3 × 3); ayrıca `Setup.cases` iki satır, adları ve ağırlıkları | ≤ 1e-12 göreli |
+| AX2 | `distribute: traction` bileşkesi: Σ_düğüm F = force; F yalnız küme düğümlerinde sıfırdan farklı; bozulmamış Q4 48 × 16 `right` (n = 16) ve bozulmuş T3 24 × 8 `right` (n = 8) uç / iç payları f/(2n), f/n; H8 4 × 2 × 2 `right` (2 × 2 yüz) köşe / kenar / iç payları; T4 2 × 2 × 2 `right` yalnız bileşke | bileşke ≤ 1e-14 göreli (\|ΣF − f\| / \|f\|); paylar ≤ 1e-14 göreli |
+| AX3 | düzlem gerilme yama testi YAML'dan (`physics` ve `F` kurulumdan, x̄ = 1 → E = 1): bozulmuş Q4 8 × 4 [0, 2] × [0, 1] (perturb 0,05, seed 1), bozulmuş T3 8 × 4 (0,05, seed 2), bozulmuş H8 4 × 2 × 2 [0, 2] × [0, 1] × [0, 1] (0,03, seed 3), bozulmuş T4 4 × 2 × 2 (0,03, seed 4); P = 0,5; düğüm yer değiştirmesi kapalı forma karşı; karşıt örnek: aynı Q4'te `distribute: nodes` | traction: max \|u − u_kapalı\| / max \|u_kapalı\| ≤ 1e-10; nodes: aynı oran ≥ 1e-3 |
+| AX4 | düzlem şekil değiştirme: YAML `plane: strain` (bozulmuş Q4 24 × 8 ve T3) = Python çalışması `MeshElasticity(D_plane_strain(0,3))` değer ve gradyan; plane strain yama testi (AX3'ün Q4 ve T3 ağları, kapalı form yukarıda); 3-B'de `plane: strain` | ≤ 1e-12 göreli; yama ≤ 1e-10; 3-B `ConfigError` yol `material.plane` |
+| AX5 | VTU: Q4 (bozulmuş, 2 durum), T3, H8, T4 küçük ağlarda `post: [{type: vtu}]` adımı (2 MMA iterasyonu sonra): `read_vtu` noktalar (2-B'de z = 0), bağlantı = `mesh.cells`, hücre tipi (9, 5, 12, 10), `xphys` = res.xphys, `E` = interp(res.xphys), `displacement_<c>` = res.U sütunları; vtk 9.x `vtkXMLUnstructuredGridReader` hücre sayısı ve tipi aynı, `vtkCellSizeFilter` her hücre > 0, toplam = Σ `MeshDomain.cell_volume`; CLI'dan bir koşu `result.vtu` yazar ve x̄ `result.npz` ile aynı | bit düzeyinde aynı (vtk toplamı ≤ 1e-12 göreli) |
+| AX6 | hâlâ desteklenmeyen / geçersiz: `combinations`, durum `supports`, üst düzey `loads`, aynı durum adı iki kez, sonsuz ağırlık, `post` `export` ve `finalize`, `vtu`'da bilinmeyen parametre, bilinmeyen `distribute` değeri, `point` ile `distribute`, 3-B `plane: strain`, `plane: membrane`, AY4'ün kalan desteklenmeyenleri (AY4 `load_cases`, `post: vtu`, `plane_strain` satırları artık destekli: AY4 listesinden çıkar, yerlerine buradakiler) | `ConfigError`; o yolda ileti ve "mesh"; desteklenmeyenlerde "not support"; başka istisna 0 |
+| AX7 | dokunulmamışlık: AY1–AY4 testleri (girdileri `load_cases` biçimine çevrilmiş; kurulum düzeltmesi, ölçüt aynı) geçer; dönüştürülmüş örnekler çapadaki amaç, df0 ve F'yi **bit düzeyinde** verir; ızgara VTU baytları çapadaki sha256; `test_vtu.py` geçer; `pytest -m baseline` 8 passed bit düzeyinde | aynen |
+| AX8 | öngörüler U1, A, D, R, H2, C (yukarıda) | tam olarak öngörüldüğü gibi |
+
+Kurallar: ilk koşuda tutmayan kontrol, ölçülen değeriyle `xfail(strict=True)` olur ve `docs/vv_kutugu.json`'a girer;
+eşik gevşetilmez; test kurulum hatası düzeltilebilir ama burada yazılır; tutmayan fark öngörüsü burada FAIL diye
+yazılır; ilk koşudan sonra eklenen kontrol "post hoc" diye işaretlenir. Testler: `tests/toporlogy/test_mesh_yaml_ext.py`.

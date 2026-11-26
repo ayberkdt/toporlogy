@@ -512,3 +512,41 @@ Post hoc (ilk koşudan sonra değil, kodla birlikte yazıldı ama ön kayıtta y
 
 Kalan: kabukta birden çok yük durumu, düğüm kümesine yayılı kuvvet ve nokta momenti, `post` (VTU) çıktısı, jeodezik
 filtre mesafesi; YAML'da `angle` derece, Python API'de radyan (`cylinder_surface(angle=...)`).
+
+## Ek ön kayıt: kabukta çok yük durumu, kenar boyunca çizgi yükü ve VTU (SX1–SX6)
+
+Ön kayıt 2026-11-26 22:09 +0300, kod yazılmadan önce (HEAD `fc8109d`). Ortak kısımlar (tek `load_cases` biçimi,
+ağırlıklı uyum, `post: [{type: vtu}]`, genel VTU yazıcısı, çapalar ve fark öngörüleri U1, A, D, R, H2, C) ağ yolunun eşi
+olan `ag_topoloji_onkayit.md` AX1–AX8 bölümünde; burada yalnız kabuğa özgü olanlar.
+
+* `load_cases: [{name, weight, loads: [...]}]`; bir durumun yükleri: `{pressure: p}`, `{point, force}` (değişmez) ve
+  yeni `{set: <düğüm kümesi>, force: [fx, fy, fz], distribute: nodes | traction}`:
+  * `nodes` [varsayılan]: toplam kuvvet kümenin düğümlerinin öteleme DOF'larına eşit bölünür;
+  * `traction`: kümenin **kenar kümesi** boyunca düzgün çizgi yükü q = force / L. Kenar kümesi: iki köşesi de kümede
+    olan ve yalnız bir parçaya ait (sınır) parça kenarları; L = Σ kenar uzunluğu. Çift doğrusal şekil fonksiyonları
+    kenar boyunca doğrusaldır, tutarlı yük her kenarın iki ucuna q L_e / 2 (global eksenlerde, yalnız öteleme
+    DOF'ları). Bileşke = force. Python: `FlatShell.line_load(nodes, force)` (yeni yöntem; kenar kümesi boşsa
+    `ValueError`, YAML'da `ConfigError`).
+  * `pressure` ile `set` / `distribute` birlikte `ConfigError`.
+* `post: [{type: vtu, name: result}]`: noktalar `mesh.nodes`, hücreler `mesh.facets` (köşe sırası (−1, −1), (1, −1),
+  (1, 1), (−1, 1) = VTK_QUAD sırası), tip 9; hücre verisi `xphys`, `E`; nokta verisi durum başına
+  `displacement_<c>` (nn, 3: u, v, w) ve **ayrı** `rotation_<c>` (nn, 3: θx, θy, θz).
+
+Kapalı form (burada türetildi): düz levha zar yama testi. lx × ly levha, kalınlık t, E = 1, ν; `left` {u, w, rx, ry,
+rz}, `bottom` {v}; `right` kenarında bileşke P e_x çizgi yükü olarak (N_xx = P / ly). Zar D = t/(1 − ν²)[[1, ν, 0],
+[ν, 1, 0], [0, 0, (1 − ν)/2]]: N_yy = 0 → ε_yy = −ν ε_xx, N_xx = t ε_xx → ε_xx = P / (ly t). Çözüm u = P x / (ly t),
+v = −ν P y / (ly t), w = 0, θ = 0 (θz − ω = 0, çünkü ω = ½(∂v/∂x − ∂u/∂y) = 0; eğilme yok). Mesnetler altı rijit
+hareketi durdurur (u, v, w ötelemeleri; z ekseni etrafında dönme sol kenarda u = −θ y; x ekseni etrafında w = θ y ve rx;
+y ekseni etrafında ry). Düzgün kenarda (n eşit parça) tutarlı paylar: uçlar f / (2n), içler f / n; kapalı halkada her
+düğüm f / n.
+
+| # | Kontrol | Eşik |
+|:---|:---|:---|
+| SX1 | iki durumlu YAML (ağırlıklar 0,7 ve 1,3; durum a: örnekteki radyal nokta kuvveti, durum b: basınç 0,5 + `set: top` `distribute: traction` [0, 0, 0,2]) = 0,7 · (yalnız a) + 1,3 · (yalnız b), rastgele x ∈ [0,2; 0,9]'da değer ve gradyan; örnek dilim (16 × 12) ve düz dikdörtgen 8 × 6 (`left` all; a: köşede nokta kuvveti, b: basınç); `Setup.cases` iki satır | ≤ 1e-12 göreli |
+| SX2 | `distribute: traction` bileşkesi ve payları: düz dikdörtgen 2 × 1, 8 × 4 `right` (n = 4) [1, 0, 0]; dilim 90°, 16 × 12 `top` (n = 16, eşit kirişler) [0, 0, 1]; kapalı boru 12 × 6 `top` (her düğüm f / n) [0, 0, 1]; dönme DOF'ları sıfır; F yalnız küme düğümlerinde | bileşke ≤ 1e-14 göreli; paylar ≤ 1e-14 göreli; dönme DOF'ları tam 0 |
+| SX3 | zar yama testi YAML'dan (x̄ = 1): düz dikdörtgen 2 × 1, 8 × 4, t = 0,05, P = 0,5, kapalı form yukarıda; karşıt örnek `distribute: nodes` | traction: altı bileşenin hepsinde max \|d − d_kapalı\| / max \|u_kapalı\| ≤ 1e-10; nodes: aynı oran ≥ 1e-3 |
+| SX4 | VTU: dilim 8 × 6 (2 durum) ve düz dikdörtgen 4 × 3, `post: [{type: vtu}]` adımı (2 MMA iterasyonu sonra): `read_vtu` noktalar = `mesh.nodes`, bağlantı = `mesh.facets`, tip hep 9, `xphys`, `E`, `displacement_<c>` = U'nun öteleme bileşenleri, `rotation_<c>` = dönme bileşenleri; vtk `vtkCellSizeFilter` alanları > 0, toplam = Σ a b; CLI'dan örnek `post` ile `result.vtu` yazar, x̄ `result.npz` ile aynı | bit düzeyinde aynı (vtk toplamı ≤ 1e-12 göreli) |
+| SX5 | hâlâ desteklenmeyen / geçersiz: `combinations`, durum `supports`, üst düzey `loads`, `post: export`, `pressure` ile `set`, `point` ile `distribute`, bilinmeyen `distribute` değeri, bilinmeyen küme; Python'da `line_load` kenarı olmayan düğüm kümesiyle (tek düğüm) `ValueError`; SY3'ün kalanları (SY3 `load_cases` ve `post` satırları artık destekli: listeden çıkar, yerlerine buradakiler) | `ConfigError` (Python: `ValueError`); o yolda ileti ve "shell"; desteklenmeyenlerde "not support" |
+| SX6 | dokunulmamışlık: SY1–SY4 (girdileri `load_cases` biçimine çevrilmiş) geçer; `test_shell.py`, `test_shell_study.py` geçer; dönüştürülmüş örnek çapadaki amaç, df0, F'yi bit düzeyinde verir (AX7) | aynen |
+
+Kurallar AX bölümündeki gibi. Testler: `tests/toporlogy/test_shell_yaml_ext.py`.
