@@ -173,43 +173,92 @@ class ViscoelasticStructure:
 class OptimizeResult:
     x: np.ndarray
     xphys: np.ndarray
-    objective: float
+    objective: float                 # the objective of the returned design (max over ``steps`` for a min-max run)
     volume: float
     history: dict[str, list[float]] = field(default_factory=dict)
+    objectives: np.ndarray | None = None      # J at each of the objective steps for the returned design
+    converged: bool = False
+    iterations: int = 0
 
 
 def optimize_viscoelastic(structure: ViscoelasticStructure, volume: float, rmin: float, step_index: int = -1,
                           penal: float = 3.0, emin: float = 1e-9, max_iter: int = 40, move: float = 0.2,
-                          x0: np.ndarray | None = None) -> OptimizeResult:
-    """Minimise the compliance f_nᵀ u_n at step ``step_index`` (−1: the last, the service time) subject to the cell
-    volume fraction ≤ ``volume``; centroid density filter of radius ``rmin``; SIMP weights; MMA; fixed iterations."""
+                          x0: np.ndarray | None = None, steps: Sequence[int] | None = None,
+                          tol: float = 0.0) -> OptimizeResult:
+    """Minimise the compliance f_nᵀ u_n at step ``step_index`` (−1: the last, the service time), or with ``steps``
+    (several step indices) the worst of them, min max_k J_k, by the bound formulation min z s.t.
+    J_k/c_ref − z ≤ 0 (z an extra variable in [0, 1], c_ref = 1.5 max_k J_k(x0); ``prereg/VR_viscoelastic_robust.md``);
+    volume fraction ≤ ``volume``; centroid density filter of radius ``rmin``; SIMP weights; MMA. Stops after
+    ``max_iter`` iterations or when the largest change of the variables is below ``tol`` (``converged``)."""
     from toporlogy.optimization.mesh_topology import MeshDensityFilter
     from toporlogy.optimizers.mma import MMA
     filt = MeshDensityFilter(structure.mesh, rmin)
     vol = structure.dV.sum(axis=1)
     vw = vol / vol.sum()
+    ks = [int(step_index)] if steps is None else [int(k) for k in steps]
+    if not ks:
+        raise ValueError("steps must name at least one step")
+    minmax = len(ks) > 1
     x = np.full(structure.ne, float(volume)) if x0 is None else np.asarray(x0, float).copy()
     opt = MMA(move=move)
     hist: dict[str, list[float]] = {"f0": [], "volume": [], "change": []}
-    c0 = None
-    for _ in range(int(max_iter)):
+    c0: float | None = None
+    z = 0.0
+    converged = False
+    it = 0
+
+    def evaluate(x: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         xp = filt(x)
         wt = torch.as_tensor(emin + xp ** penal * (1.0 - emin), dtype=torch.float64).requires_grad_(True)
-        J = structure.response(wt).compliance[step_index]
-        J.backward()
-        assert wt.grad is not None
-        gw = wt.grad.numpy()
-        dc = filt.backward(gw * penal * xp ** (penal - 1.0) * (1.0 - emin))
-        c = float(J)
-        c0 = c if c0 is None else c0
+        comp = structure.response(wt).compliance
+        Js, grads = [], []
+        for j, k in enumerate(ks):
+            g, = torch.autograd.grad(comp[k], wt, retain_graph=j < len(ks) - 1)
+            Js.append(float(comp[k]))
+            grads.append(filt.backward(g.numpy() * penal * xp ** (penal - 1.0) * (1.0 - emin)))
+        return np.array(Js), np.array(grads), xp
+
+    while it < int(max_iter):
+        it += 1
+        Js, dJ, xp = evaluate(x)
         v = float(vw @ xp)
-        hist["f0"].append(c)
-        hist["volume"].append(v)
-        xn = opt.step(x, c / c0, dc / c0, np.array([v / volume - 1.0]), (filt.backward(vw) / volume)[None, :])
-        hist["change"].append(float(np.abs(xn - x).max()))
+        gv = (filt.backward(vw) / volume)[None, :]
+        if not minmax:
+            c = float(Js[0])
+            c0 = c if c0 is None else c0
+            hist["f0"].append(c)
+            hist["volume"].append(v)
+            xn = opt.step(x, c / c0, dJ[0] / c0, np.array([v / volume - 1.0]), gv)
+            change = float(np.abs(xn - x).max())
+        else:
+            if c0 is None:
+                c0 = 1.5 * float(Js.max())
+                z = float(Js.max()) / c0
+            hist["f0"].append(float(Js.max()))
+            hist["volume"].append(v)
+            y = np.concatenate([x, [z]])
+            df0 = np.zeros(len(y))
+            df0[-1] = 1.0
+            g = np.concatenate([[v / volume - 1.0], Js / c0 - z])
+            dg = np.zeros((1 + len(ks), len(y)))
+            dg[0, :-1] = gv[0]
+            dg[1:, :-1] = dJ / c0
+            dg[1:, -1] = -1.0
+            yn = opt.step(y, z, df0, g, dg)
+            change = float(np.abs(yn - y).max())
+            xn, z = yn[:-1], float(yn[-1])
+        hist["change"].append(change)
         x = xn
+        if change < tol:
+            converged = True
+            break
     xp = filt(x)
     wt = torch.as_tensor(emin + xp ** penal * (1.0 - emin), dtype=torch.float64)
     with torch.no_grad():
-        c = float(structure.response(wt).compliance[step_index])
-    return OptimizeResult(x, xp, c, float(vw @ xp), hist)
+        comp = structure.response(wt).compliance
+    Jf = np.array([float(comp[k]) for k in ks])
+    res = OptimizeResult(x, xp, float(Jf.max()), float(vw @ xp), hist, Jf, converged, it)
+    if minmax:
+        res.history["z"] = [z]
+        res.history["c_ref"] = [float(c0 if c0 is not None else 1.0)]
+    return res

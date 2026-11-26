@@ -23,3 +23,17 @@ the result reports `converged`.
 | VR4 | `tol` stop: a run with tol = 1e-3 reports converged = True with its last change < 1e-3 (if it converged before max_iter); a run with max_iter = 3 and tol = 0 reports converged = False | — | exact |
 
 Run: `python -m pytest tests/toporlogy/test_viscoelastic_robust.py -q -p no:randomly`. First result appended below.
+
+## First result (runs 2026-11-27 02:17 and 02:21 +0300 by the clock)
+
+* First run (02:17): VR3, VR4 passed; VR1 and VR2 errored in the fixture — **test set-up error**: the time grid
+  `logspace(-1, 2, 12)` has no point at 10 s (nearest 8.11 s), while VR1 names t = 10 s. Grid changed to
+  `logspace(-1, 2, 13)` (10 s and 1 s on the grid); no threshold changed.
+* Valid run (02:21): VR2, VR3, VR4 PASS. **VR1 FAILED**: worst case (max over 0⁺, 10 s, 100 s) of the min–max design
+  1.21480e-4; single-time designs 1.21382e-4 (0⁺), 1.21229e-4 (10 s), 1.21135e-4 (100 s); min–max +0.28 % over the
+  best. Iterations: min–max 95 (converged), singles 57, 76, 134 (all converged at tol 1e-3); volumes 0.5 to 3e-9.
+  Explanation (measured, not a fix): for a constant load the compliance grows with time, so the worst case is always
+  t = 100 s and the min–max problem reduces to minimising J(100 s); the bound formulation stopped at a worse local
+  point. Strict xfail with these values; ledger `ledger_additions/VR_viscoelastic_robust.json`.
+* Follow-up (not done): a min–max study with time-varying loads or several load cases, where the active time
+  changes with the design; a KKT-residual stop instead of the step-size stop.
