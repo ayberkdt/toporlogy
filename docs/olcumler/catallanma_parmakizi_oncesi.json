@@ -1,0 +1,20 @@
+{
+  "truss_arc_length": {
+    "points": "6542733245120d9fffd40f91459c9d143eeee0e4ef4b33197d4c20a1eea8cd32",
+    "records": "116847f6181657d7570bd3af4d961d1855789cc36a83ca5023d88c7fabc18585",
+    "n_points": 51,
+    "rejected": 0
+  },
+  "truss_displacement_control": {
+    "points": "962e7cb83666aca5d41efbd0147db7e861ad6354f044b2fda815992ca7ef7db1",
+    "records": "6abb4f2b1ae1d7c88141f56fd20bc94b5474b3469eb66630834b1ab96496ec3e",
+    "n_points": 51,
+    "rejected": 0
+  },
+  "fe_cantilever_arc_length": {
+    "points": "ab47d0a41927e14ead379d9d5a55e261b9c69d8271a42e2fa7b9c6cba311a6c0",
+    "records": "f24846ffd79880107bd74a8bb8b9563c88ca8617ab5eeb9c11c2d4ceff103584",
+    "n_points": 14,
+    "rejected": 0
+  }
+}

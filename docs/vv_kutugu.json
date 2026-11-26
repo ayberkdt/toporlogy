@@ -536,6 +536,46 @@
    "resolution": "yok (problem kurulumu)",
    "record": "docs/olcumler/model_donemi_onkayit.md",
    "slow": false
+  },
+  {
+   "nodeid": "tests/toporlogy/test_bifurcation.py::test_a1_asymmetric_bifurcation_located_and_classified",
+   "kind": "pre-registered check failed",
+   "model_backend": "solvers.continuation arc_length, closed-form spring model A (CPU)",
+   "reason": "model A, ds = 0,01 ön kayıtlı: birincil yolda |dx/dλ| = 1/k_a = 0,01, ilk yay boyu adımı Δλ = 1 ve kabul edilen nokta tam λ_c = 1'e düşüyor; K = diag(0, 100) tekil, sonraki tahmin çözümü K⁻¹q başarısız (11 ret, step_limit / singular_tangent). Yerleştirme değil, arc_length'in tam tekil kabul noktasından tahmin üretememesi; post hoc ds = 0,0137 ile geçiyor",
+   "risk": "low",
+   "resolution": "arc_length bir kabul noktasında tekil teğetten tahmin üretebildiğinde (ör. önceki artış yönü)",
+   "record": "docs/olcumler/catallanma_onkayit.md",
+   "slow": false
+  },
+  {
+   "nodeid": "tests/toporlogy/test_bifurcation.py::test_a2_asymmetric_branch_switch[plus]",
+   "kind": "pre-registered check failed",
+   "model_backend": "solvers.continuation arc_length, closed-form spring model A (CPU)",
+   "reason": "model A, ds = 0,01 ön kayıtlı: birincil yolda |dx/dλ| = 1/k_a = 0,01, ilk yay boyu adımı Δλ = 1 ve kabul edilen nokta tam λ_c = 1'e düşüyor; K = diag(0, 100) tekil, sonraki tahmin çözümü K⁻¹q başarısız (11 ret, step_limit / singular_tangent). Yerleştirme değil, arc_length'in tam tekil kabul noktasından tahmin üretememesi; post hoc ds = 0,0137 ile geçiyor",
+   "risk": "low",
+   "resolution": "arc_length bir kabul noktasında tekil teğetten tahmin üretebildiğinde (ör. önceki artış yönü)",
+   "record": "docs/olcumler/catallanma_onkayit.md",
+   "slow": false
+  },
+  {
+   "nodeid": "tests/toporlogy/test_bifurcation.py::test_a2_asymmetric_branch_switch[minus]",
+   "kind": "pre-registered check failed",
+   "model_backend": "solvers.continuation arc_length, closed-form spring model A (CPU)",
+   "reason": "model A, ds = 0,01 ön kayıtlı: birincil yolda |dx/dλ| = 1/k_a = 0,01, ilk yay boyu adımı Δλ = 1 ve kabul edilen nokta tam λ_c = 1'e düşüyor; K = diag(0, 100) tekil, sonraki tahmin çözümü K⁻¹q başarısız (11 ret, step_limit / singular_tangent). Yerleştirme değil, arc_length'in tam tekil kabul noktasından tahmin üretememesi; post hoc ds = 0,0137 ile geçiyor",
+   "risk": "low",
+   "resolution": "arc_length bir kabul noktasında tekil teğetten tahmin üretebildiğinde (ör. önceki artış yönü)",
+   "record": "docs/olcumler/catallanma_onkayit.md",
+   "slow": false
+  },
+  {
+   "nodeid": "tests/toporlogy/test_bifurcation.py::test_fc4_dense_and_sparse_spectra_agree",
+   "kind": "pre-registered check failed",
+   "model_backend": "solvers.continuation locate_critical, fem.nonlinear SVK Q4 column (CPU, numpy eigh / SuperLU)",
+   "reason": "indeks dizileri aynı (dense eigh ↔ sparse LDLᵀ ataleti), ama yerleşen yük bağıl farkı 1,4e-9 > 1e-9: iki konum da ilk koşudan sonra eklenen özdeğer doğruluk tabanında (16 ε ‖K‖₁) 2 değerlendirmede duruyor; bu tabanda yük ~1e-9 çözünürlükte. Post hoc indeks maddesi geçiyor; doğrusal burkulmayla fark 5,3e-4 (FC1)",
+   "risk": "low",
+   "resolution": "yok (konum toleransının çözünürlüğü; eşik değişmez)",
+   "record": "docs/olcumler/catallanma_onkayit.md",
+   "slow": true
   }
  ],
  "skips": [

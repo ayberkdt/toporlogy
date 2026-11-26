@@ -679,6 +679,36 @@ _BENCHMARK_ROWS: tuple[tuple[str, ...], ...] = (
         'fast',
         'code verification',
     ),
+    (
+        'spring_bar_symmetric_bifurcation',
+        'analytic',
+        'test_bifurcation.py::test_s1_s2_symmetric_bifurcation_located_and_classified',
+        'located critical load and classification of a spring-bar model (symmetric bifurcation)',
+        'closed form lambda_c = k_a (L - sqrt(L^2 - 4 k_r / k_a)) / 2 (docs/olcumler/catallanma_onkayit.md)',
+        'relative <= 1e-8; |phi^T q| / |q| <= 1e-8',
+        'fast',
+        'code verification',
+    ),
+    (
+        'spring_bar_secondary_branch',
+        'analytic',
+        'test_bifurcation.py::test_s3_symmetric_branch_switch',
+        'secondary branch after switching at the spring-bar bifurcation',
+        'closed form lambda_S(theta) (docs/olcumler/catallanma_onkayit.md)',
+        '<= 1e-9 lambda_c',
+        'fast',
+        'code verification',
+    ),
+    (
+        'truss_limit_point_location',
+        'analytic',
+        'test_bifurcation.py::test_t1_t2_truss_limit_points',
+        'located limit points of the shallow two-bar truss',
+        'closed form P_max, w_1,2 = h (1 -/+ 1/sqrt 3) (tests/toporlogy/_truss.py)',
+        '|lambda -/+ 1| <= 1e-8; |w - w_1,2| <= 1e-6 h',
+        'fast',
+        'code verification',
+    ),
 )
 BENCHMARKS: tuple[Benchmark, ...] = tuple(Benchmark(r[0], r[1], T + r[2], *r[3:])
                                           for r in _BENCHMARK_ROWS)
