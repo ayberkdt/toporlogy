@@ -53,7 +53,7 @@ shear); q = √(3/2) ‖dev σ‖; p = −tr σ/3 (compression positive); K, G i
 | R3c | τ0 = 1e-12 s: Perzyna → PhysicalJ2 (max abs stress difference / max stress ≤ 1e-5, rate 1 s⁻¹, n = 100); τ0 = 1e12 s: Perzyna → elastic (≤ 1e-6 rel, plastic strain ≤ 1e-9) | PhysicalJ2 / elastic closed form | as stated |
 | R4a | strain hold at ε = 0.02 for 1e4 s (ramp 20 steps at 1 s⁻¹, then 120 geometric steps): overstress f = σ − κ(p) positive and non-increasing during the hold (tolerance 1e-9 σ_y), stress non-increasing, end stress within 1e-5 rel of the rate-independent equilibrium (σ_y + Hε)/(1 + H/E) (continuous-time estimate of f(1e4 s) ≈ τ0 σ_ref²/(Ξ̃ t) ≈ 5 Pa) | closed form | as stated |
 | R4b | hold below yield (ε = 0.005, 1e6 s): no flow (p ≡ 0), stress constant to 1e-12 rel — unlike Norton creep | elastic closed form | exact |
-| R5a | Eyring round trip τ → rate → τ for x = τV/(k_BT) ∈ ±{1e-8, 1e-3, 0.5, 3, 50, 300, 700} (V = 1e-27 m³, T = 300 K, A = 1e-3 s⁻¹); rate vs `mpmath.sinh` at 50 digits | mpmath | rel ≤ 1e-12 (round trip), ≤ 1e-13 (value) |
+| R5a | Eyring round trip τ → rate → τ for x = τV/(k_BT) ∈ ±{1e-8, 1e-3, 0.5, 3, 50, 300, 700} (V = 1e-27 m³, T = 300 K, A = 1e-3 s⁻¹); rate vs `mpmath.sinh` at 50 digits | mpmath | rel ≤ 1e-12 (round trip), ≤ 1e-13 + 5e-16·x (value; amended before any run, see below) |
 | R5b | extreme: x = ±5000 and rate = 1e300, 1e-300: no RuntimeWarning (warnings as errors), log-rate = ln A + |x| − ln 2 (abs ≤ 1e-12 rel to |x|), `eyring_stress_from_log_rate` round trip rel ≤ 1e-12, `eyring_stress(1e300)` = (k_BT/V)(ln 2 + 300 ln 10 − ln A) to 1e-12 rel; negative control: naive `arcsinh(sinh(x))` at x = 800 is not finite | mpmath / math | as stated |
 | R5c | units: stress ∝ T at fixed rate (doubling T doubles τ, 1e-14); low-stress Newtonian limit rate = A x (rel 1e-8 at x = 1e-6); high-stress ln limit; molar variant equals atomic with V = V_m/N_A (1e-12); invalid A, V, T ≤ 0 → ValueError | scipy.constants, closed forms | as stated |
 | R6a | DruckerPrager uniaxial (lateral free), a = 0.6, b0 = 15 MPa, E = 2 GPa, ν = 0.35, a_g ∈ {a, 0.2}: perfect plasticity plateau tension b/(1 + a/3) and compression b/(1 − a/3); with h = 50 MPa the full curve min(Eε, σ_p), σ_p = (b0 + hε/(1 + a_g/3))/((1 + a/3) + h/(E(1 + a_g/3))) (tension) and the compression analogue with (1 − a_g/3), (1 − a/3) | closed form (exact for finite steps) | max abs error / b0 ≤ 1e-9 |
@@ -67,5 +67,14 @@ shear); q = √(3/2) ‖dev σ‖; p = −tr σ/3 (compression positive); K, G i
 | R7b | rollback/restart: repeated `evaluate` from the same committed state is bitwise identical and leaves the committed arrays unchanged; rejected trial (`rollback`) then the same step gives the same bits; 10 steps in one `drive_material_point` call equal 5 + restart from `checkpoint()` with `strain0` (stress, strain, states `np.array_equal`) for PhysicalJ2, Perzyna (with times), DruckerPrager | — | bitwise |
 | R7c | energy balance (extra): ∫σ:dε (trapezoid) − ΔΨ − ΣD → 0 under refinement, uniaxial load–unload of PhysicalJ2, n = 100/200/400: relative to ∫ = |W|: ≤ 1e-3 at n = 400 and decreasing by ≥ 1.5 per doubling | — (the discrepancy is ½ΣΔσ:Δε_p, first order) | stated |
 | R7d | `evaluate` (Kinematics, 3-D and plane strain) equals `update` Voigt-packed; `physical = True`, `NonlinearElasticity` refuses the models (contract CT7, only the attribute is checked here) | — | exact |
+
+## Amendments before the first run
+
+Made on 2026-11-27 01:50 +0300 after the prereg commit and **before any test of this slice was executed** (no result
+was seen): (1) R5a value threshold: the argument x = τV/(k_B T) is formed in floating point (four roundings, ≤ 4.4e-16
+relative), and d ln sinh(x)/d ln x = x coth x ≈ x, so the relative error of any float evaluation of sinh is
+≈ x · 4.4e-16 (1.5e-13 at x = 700); the bound 1e-13 was an error in the error analysis. The threshold is
+1e-13 + 5e-16·x. (2) R6d normalisation: max abs diff divided by max(max|C|, 1e-3 K) (the apex tangent of h = 0 is
+exactly zero, the plain ratio would be 0/0).
 
 Run: `python -m pytest tests/toporlogy/test_viscoplastic.py -q -p no:randomly`. First results are appended below.
