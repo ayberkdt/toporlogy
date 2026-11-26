@@ -377,3 +377,99 @@ test_shell_reference test_mesh_topology test_shell_study test_api_surface test_c
 test_research_examples test_speedups test_cli test_architecture test_grid_refusals` → 496 passed, 8 xfailed (9 dk 10 s;
 xfail'ler SX1 dikdörtgen ve önceden var olan yedisi: AY2, KB3, DR1 × 3, DR2, U8). `pytest -m baseline` → 8 passed
 (1 dk 52 s). ruff ve mypy (`src` dosyaları) temiz.
+
+## Ek ön kayıt: ağ ve kabuk yolunda yük kombinasyonları ve durum başına mesnetler (AC1–AC8)
+
+Ön kayıt 2026-11-26 23:14 +0300, kod yazılmadan önce (HEAD `518f6b2`). Kabuk kolunun eşi: `kabuk_onkayit.md`,
+SC1–SC7. Ağ ve kabuk yolu (`configuration/mesh_build.py`) iki yönde genişler; ikinci ad ya da uyumluluk takma adı yok.
+
+Izgara yolunun anlamı (bu oturumda koddan okundu). `boundary/cases.py`: `Combination` "column = Σ factor × case
+column (cases must share their supports)"; `BoundaryConditions.F("all")` önce durum sütunları, sonra kombinasyonlar
+(`sum(f * base[:, idx[n]] for n, f in cb.factors.items())`); farklı mesnet kümesindeki durumları karıştıran kombinasyon
+`ValueError` ("superposition is only valid for one support set"); mesnet kümesi içeriğiyle tanınır
+(`boundary/constrained.py` `_constraint_key`: sabit DOF'lar, yerel eksenler, yaylar). `configuration/build.py`:
+ağırlıklar = durum ağırlıkları + kombinasyon ağırlıkları (`ctx.case_weights`, `ctx.n_cases` = F'nin sütun sayısı);
+`Setup.cases` kombinasyon satırını `combination: True` ile taşır; sıfır ya da sonlu olmayan sütun `ConfigError`
+(`load_cases.<i>` / `combinations.<i>`). `optimization/responses.py` `Compliance`: Σ_i w_i F_iᵀ U_i bütün sütunlarda,
+yani bir kombinasyon kendi ağırlığıyla ayrı bir terimdir. `configuration/resolve.py`: `_COMBINATION` = {name
+(zorunlu), factors (boş olmayan eşleme, bilinen durum adları, sayı), weight [1.0]}; kombinasyon adı durum adlarıyla ve
+öteki kombinasyonlarla çakışamaz; çözülmüş biçimde her durum `supports` (null ya da liste) ve üst düzeyde
+`combinations` (boş liste dahil) taşır. Izgarada `PerCaseSupports` (`boundary/constrained.py`): sütun grupları kendi
+fiziğiyle çözülür, `torch.cat` + `index_select` ile asıl sıraya döner; gradyan her grubun kendi eşlenik çözümünden
+autograd ile toplanır. Rijit hareket hatası (`_check_bc`) kendi mesnedi olan durumda `load_cases.<i>.supports`, yoksa
+`supports` yolunda; hiçbir durumun kullanmadığı üst düzey küme denetlenmez (`_sets` yalnız durumların kümeleri).
+
+**1. Kombinasyonlar**, iki yolda aynı biçim:
+
+```yaml
+combinations:                      # [[]] F'ye ek sütunlar, durumlardan sonra
+  - name: both                     # *zorunlu*; durum ve kombinasyon adları birlikte tek
+    weight: 1.0                    # [1.0]; sonlu; uyumda bu sütunun ağırlığı
+    factors: {a: 1.0, b: 0.5}      # *zorunlu*, boş olmayan; F_both = Σ çarpan · F_durum; çarpanlar sonlu
+```
+
+Kombinasyonun durumları aynı mesnet kümesinde olmalı (yoksa `ConfigError`, yol `combinations.<i>`, iletide
+"different supports"); sütunu o kümenin fiziğiyle çözülür. Sıfır toplamlı kombinasyon `ConfigError`
+(`combinations.<i>`, "zero load").
+
+**2. Durum başına mesnet.** `load_cases[i].supports` [null = üstteki `supports`]: üst düzeyle aynı biçim (ağ:
+`{set, fix}` eksen harfleri; kabuk: u v w rx ry rz), en az 1. Üst düzey `supports` ızgaradaki gibi zorunlu kalır.
+Küme içeriğiyle tanınır (sabit DOF dizisi); içerikçe aynı kümeler tek kümedir. Fizik: tek küme → bugünkü
+`MeshElasticity` / `ShellPhysics` (değişmez); birden çok küme → her küme için bir fizik (kendi `free` kümesi, kendi
+faktorizasyonu) ve ızgaranın `PerCaseSupports`'u. `PerCaseSupports.__init__` bugün ilk fizikten `domain, elements, geom,
+KE` alıyor; ağ ve kabuk fiziğinde bunların bir kısmı yok (kabukta `domain` de yok): yalnız var olanları alacak biçimde
+değişir (ızgara fiziklerinde hepsi var, davranış aynı). Rijit hareket denetimi kullanılan her küme için bir kez, onu ilk
+kullanan durumun yolunda (yukarıdaki ızgara kuralı). "Yüklü DOF sabit" uyarısı her sütunda o sütunun kümesiyle (ızgara
+bütün kümelerin birleşimini kullanıyor; yalnız uyarı metni). `Setup.fixed` kümelerin birleşimi (ızgaradaki gibi).
+
+Eşik gerekçesi (SX1'den). SX1 düz dikdörtgende 0,7 / 1,3 ağırlıklarla gradyan farkı 5,59e-12 çıktı: iki durumlu
+çalışma K λ = w F'yi, tek durumlu çalışma w (K⁻¹ F)'yi çözüyor ve cond(K_ff) = 4e6'da ikisi farklı yuvarlanıyor; formülle
+ilgisi yok. Bu yüzden toplama kontrollerinde ağırlık ve çarpanlar ikinin kuvveti (0,5, 2, −0,5): ikinin kuvvetiyle
+ölçekleme her yuvarlamayla yer değiştirir (taşma yok), K⁻¹(w F) = w K⁻¹F ve (w f) / n = w (f / n) bit düzeyinde. Kalan
+fark yalnız toplama sırasından (iki grubun dE'si filtre geri yayılımından önce mi sonra mı toplanıyor); uyum
+duyarlılığı tek işaretli, iptal yok; beklenen ~1e-15, eşik 1e-12 göreli. İkinin kuvveti olmayan ağırlıklarla (0,7 /
+1,3) bir değişke daha: değer ≤ 1e-12, gradyan ≤ max(1e-12, eps · max_k cond(K_ff,k)) (o x'te her küme için yoğun
+matrisle ölçülen cond; `docs/vv_kutugu.md` SX1 satırında "yuvarlama sınırına dayalı bir ölçüt ön kayda alınırsa"
+denen ölçüt).
+
+Çapalar (kod yazılmadan önce ölçüldü, `518f6b2`; betik scratchpad'de `anchor.py`, çıktısı burada; df0 ve F için
+float64 baytlarının sha256[:16]'sı):
+
+* `mesh_cantilever2d` varsayılan başlangıç 1908.3237613774095, df0 `4793a979cd435212`, F `a627b5d4d61a4200` (1666, 1);
+  `shell_cylinder` 30131.882810400843, df0 `ce282cdd37f56919`, F `1581708cfbc900cb` (1326, 1) (ikisi de AX7 çapası);
+* AX1 q4 iki durum (x = 0,2 + 0,7 · rng(41)): 455.28516090495594, df0 `07fcc7cfa4c11b66`, F `f9cf9987d1de49fa`
+  (450, 2); AX1 h8: 204.9945594821092, df0 `459c60ad7a8b6822`, F `9cf26f888e3a2684` (336, 2); SX1 örnek iki durum
+  (rng(51)): 11352.463637595167, df0 `75e7cfdc9da9ba7f`, F `15884aeea9091226` (1326, 2);
+* ızgara, kutu 24 × 8: durum a (sol düzlem `fixed`, [24, 0]'da [0, −1], w 0,7), durum b (kendi mesnedi sağ düzlem
+  `fixed`, [0, 8]'de [0, −1], w 1,3), kombinasyon c {a: 2} w 0,5, MMA, hacim 0,4 (rng(61)): fizik `PerCaseSupports`,
+  3124.069453307912, df0 `8bff2dc9fced752e`, F `b32d5426148cb843` (450, 3).
+
+Kontrol kurulumları. Q4 = bozulmuş Q4 24 × 8, [0, 3] × [0, 1], perturb 0,02, seed 5, rmin 0,3; H8 = kutu 6 × 3 × 3,
+[0, 2] × [0, 1] × [0, 1], rmin 0,5 (AX1'in ağları); x = 0,2 + 0,7 · rng rastgele; göreli fark değerde
+|f − f_ref| / |f_ref|, gradyanda max |g − g_ref| / max |g_ref|.
+
+| # | Kontrol | Eşik |
+|:---|:---|:---|
+| AC1 | kombinasyon = açıkça toplanmış durum: Q4'te a {point [3, 0], [0, −1]} w 0,7, b {set top, [0,3, −0,5], traction} w 1,3, c {a: 2, b: −0,5} w 0,8; karşılaştırma: üç durumlu çalışma, c' yükleri [{point [3, 0], [0, −2]}, {set top, −0,5 · [0,3, −0,5], traction}] w 0,8; H8'de aynı (a {point [2, 0, 0], [0, 0, −1]}, b {set top, [0,2, 0, −0,4], traction}); `Setup.cases` [(a, 0,7, false), (b, 1,3, false), (c, 0,8, true)] | F sütunu c ile c' ≤ 1e-15 göreli; değer ve gradyan ≤ 1e-12 göreli |
+| AC2 | durum başına mesnet: iki durumlu çalışma = tek durumlu çalışmaların ağırlıklı toplamı, her tek durumlu çalışmada o durumun mesnedi üst düzey `supports`. Q4: a (üst düzey `left` all, {point [3, 0], [0, −1]}), b (kendi `right` all, {point [0, 1], [0, −1]}); H8: a (`left` all, {point [2, 0, 0], [0, 0, −1]}), b (kendi `right` all, {point [0, 0, 1], [0, 0, −1]}); (i) w 0,5 / 2; (ii) w 0,7 / 1,3; fizik `PerCaseSupports`, 2 grup | (i) değer ve gradyan ≤ 1e-12; (ii) değer ≤ 1e-12, gradyan ≤ max(1e-12, eps · max_k cond(K_ff,k)) |
+| AC3 | gruplama ve faktorizasyon sayısı: Q4'te a (üst düzey `left` all), b (kendi `right` all), c (kendi `[{set: left, fix: [x, y]}]`, içerikçe üst düzeyle aynı), kombinasyon d {a: 1, c: 1}: 2 grup, sütunlar {0, 2, 3} ve {1}; bir `evaluate(x)` (değer + gradyan) sonrası her grubun `MeshElasticity.n_solves` = 1; yalnız içerikçe aynı kendi mesnedi olan tek durum: fizik düz `MeshElasticity` | tam olarak |
+| AC4 | gradyan merkezi farka karşı, bozulmuş Q4: a (üst düzey `left` all, point [3, 0] [0, −1], w 0,7), b (kendi `right` all, point [0, 1] [0, −1], w 1,3), c (üst düzey, {set top, [0,2, −0,3]} nodes, w 0,9), d {a: 1, c: −0,5} w 0,6; rastgele yönde (rng 43) dördüncü mertebe fark [f(−2s) − 8f(−s) + 8f(s) − f(2s)]/(12s), s = 1e-3 (KS2'nin yöntemi) | ≤ 1e-6 göreli |
+| AC5 | rijit hareket durum başına: Q4'te b'nin kendi mesnedi `[{set: bottom, fix: [y]}]` (1 rijit öteleme serbest) → `ConfigError` yol `load_cases.1.supports`, iletide "rigid motion"; üst düzey `[{set: bottom, fix: [y]}]` ve her durumun kendi tam mesnedi var → kurulur; aynı üst düzey küme mesnetsiz bir durumda kullanılırsa → `ConfigError` yol `supports` | tam olarak |
+| AC6 | geçersiz girdiler (Q4 iki durum a, b): kombinasyonda bilinmeyen durum (`combinations.0.factors.x`), adsız kombinasyon (`combinations.0.name`), durum adıyla aynı ad (`combinations.0.name`), boş `factors` (`combinations.0.factors`), sonsuz çarpan (`combinations.0.factors.a`), sonsuz ağırlık (`combinations.0.weight`), bilinmeyen anahtar (`combinations.0.scale`), farklı mesnet kümelerini karıştıran kombinasyon (`combinations.0`, "different supports"), sıfır toplamlı kombinasyon {a: 1, a2: −1}, a2 a'nın yükleriyle (`combinations.0`, "zero load"), boş durum `supports: []` (`load_cases.1.supports`), durum mesnedinde bilinmeyen küme (`load_cases.1.supports.0.set`) ve bilinmeyen eksen (`load_cases.1.supports.0.fix`) | `ConfigError`, o yolda ileti, iletide "mesh"; başka istisna 0 |
+| AC7 | dokunulmamışlık: yukarıdaki çapalar (iki örnek, AX1 q4 / h8, SX1 örnek, ızgara per-case + kombinasyon) **bit düzeyinde**; AY1–AY6, AX1–AX8, SY1–SY6, SX1–SX6 testleri geçer (SX1 dikdörtgen strict xfail kalır); şimdi desteklenen satırlar listelerden çıkar: AY4 `combinations`, AX6 `combinations` ve `case_supports`, SX5 `combinations` ve `case_supports` (kurulum değişikliği, ölçüt aynı); `test_bc.py`, `test_registry_features.py` geçer; `pytest -m baseline` 8 passed bit düzeyinde | aynen |
+| AC8 | öngörüler U2, A2, D2, R2, C2, L2 (aşağıda) | tam olarak öngörüldüğü gibi |
+
+Öngörüler. (U2) `test_units.py --write` sonrası `tests/toporlogy/baseline/resolved_configs.json`'da yalnız
+`examples/research/mesh_cantilever2d.yaml` ve `examples/research/shell_cylinder.yaml` girdileri değişir; her birinde
+yalnız üst düzey `"combinations": []` ve tek yük durumunda `"supports": null` eklenir (+4 / −0 satır); öteki 15 girdi
+bayt bayt aynı; `--write` öncesi U1 bu iki girdide düşer. (A2) `test_api_surface.py --write` `api_surface.json` ve
+`list.txt`'te fark üretmez (yeni genel ad yok; `PerCaseSupports` öznitelikleri `solve` olarak kalır; `MESH_KEYS`
+`<tuple>`). (D2) `resolve.py`, `build.py`, `schema.py`, `boundary/cases.py`, `mesh_study.py`, `shell_study.py` farkı
+yok; `boundary/constrained.py` farkı yalnız `PerCaseSupports.__init__`'te. (R2) `test_research_examples.py`
+değişmez ve geçer. (C2) `python -m toporlogy.configuration.catalog --write docs` fark üretmez. (L2)
+`_vv_layers.py --write`: `docs/vv_risk_kapsam.md` farkı yalnız iki yeni test dosyasından gelen sayılar.
+
+Kurallar AX bölümündeki gibi: ilk koşuda tutmayan kontrol ölçülen değeriyle `xfail(strict=True)` olur ve
+`docs/vv_kutugu.json`'a girer; eşik gevşetilmez; test kurulum hatası düzeltilebilir ama burada yazılır; tutmayan fark
+öngörüsü FAIL diye yazılır; ilk koşudan sonra eklenen kontrol "post hoc". Testler:
+`tests/toporlogy/test_mesh_yaml_comb.py`.

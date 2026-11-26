@@ -581,3 +581,34 @@ yük; satır bilinmeyen bir anahtarla (`{edge: top, force}`, yol `load_cases.0.l
 
 Kalan: durum başına mesnet, `combinations`, nokta momenti, jeodezik filtre mesafesi, VTU'da gerilme / kabuk kesit
 kuvvetleri.
+
+## Ek ön kayıt: kabukta yük kombinasyonları ve durum başına mesnetler (SC1–SC7)
+
+Ön kayıt 2026-11-26 23:14 +0300, kod yazılmadan önce (HEAD `518f6b2`). Ortak kısımlar (ızgaradan okunan anlam,
+`combinations` biçimi, durum başına `supports`, `PerCaseSupports`'un genelleşmesi, eşik gerekçesi, çapalar ve fark
+öngörüleri U2, A2, D2, R2, C2, L2) ağ yolunun eşi olan `ag_topoloji_onkayit.md` AC1–AC8 bölümünde; burada yalnız
+kabuğa özgü olanlar.
+
+* Durum mesnedi üst düzeyle aynı biçimde: `{set, fix}`, küme adları yüzeyin düğüm kümeleri (silindir `bottom top` +
+  açık dilimde `start end`; dikdörtgen `left right bottom top`), bileşenler u v w rx ry rz ya da all. Her küme için bir
+  `FlatShell` (aynı ağ, kalınlık, ν, drill; kendi `fixed`) ve onun `ShellPhysics`'i; `FlatShell` LU'yu E'ye göre önbelleğe
+  alıyor (`_forward`), yani bir E'de küme başına bir `splu`. Yükler (`pressure_load`, `line_load`, nokta, düğüm payı)
+  mesnetten bağımsız, ilk kümenin `FlatShell`'inden kurulur. Rijit denetim (altı rijit hareket, `_shell_rigid_modes`)
+  küme başına, ilk kullanan durumun yolunda.
+* Kombinasyon sütunu ağ yolundaki gibi; farklı kümeleri karıştırmak `ConfigError` (`combinations.<i>`).
+
+Kurulumlar. Dilim = örnek (`shell_cylinder.yaml`: R 1, 90°, L 1, 16 × 12, t 0,05, `bottom` all, rmin 0,15);
+dikdörtgen = 2 × 1, 8 × 6, t 0,05, rmin 0,3 (SX1'in ağı). RADIAL = {point [c, c, 1], force [−c, −c, 0]}, c = cos 45°;
+RADIAL0 = {point [c, c, 0], force [−c, −c, 0]}. Göreli farklar AC bölümündeki gibi.
+
+| # | Kontrol | Eşik |
+|:---|:---|:---|
+| SC1 | kombinasyon = açıkça toplanmış durum. Dilim: a RADIAL w 0,7; b [{pressure 0,5}, {set start, [0, 0,2, 0], traction}] w 1,3; c {a: 2, b: −0,5} w 0,8; karşılaştırma: üç durumlu çalışma, c' yükleri [RADIAL · 2, {pressure −0,25}, {set start, [0, −0,1, 0], traction}] w 0,8. Dikdörtgen (`left` all): a {point [2, 1, 0], [0, 0, −1]}, b {pressure 1}, c {a: 2, b: −0,5}, c' [{point [2, 1, 0], [0, 0, −2]}, {pressure −0,5}]; `Setup.cases` [(a, 0,7, false), (b, 1,3, false), (c, 0,8, true)] | F sütunu c ile c' ≤ 1e-15 göreli; değer ve gradyan ≤ 1e-12 göreli |
+| SC2 | durum başına mesnet = tek durumlu çalışmaların ağırlıklı toplamı (her birinde o durumun mesnedi üst düzey `supports`). Dilim: a (üst düzey `bottom` all, RADIAL), b (kendi `top` all, RADIAL0); dikdörtgen: a (`left` all, {point [2, 1, 0], [0, 0, −1]}), b (kendi `right` all, {point [0, 1, 0], [0, 0, −1]}); (i) w 0,5 / 2; (ii) w 0,7 / 1,3; fizik `PerCaseSupports`, 2 grup | (i) değer ve gradyan ≤ 1e-12; (ii) değer ≤ 1e-12, gradyan ≤ max(1e-12, eps · max_k cond(K_ff,k)) |
+| SC3 | gruplama ve faktorizasyon sayısı: dilimde a (üst düzey `bottom` all), b (kendi `top` all), c (kendi `[{set: bottom, fix: all}]`, içerikçe aynı): 2 grup, sütunlar {0, 2} ve {1}; yeni bir x'te bir `evaluate(x)` (değer + gradyan) sırasında `scipy.sparse.linalg.splu` çağrısı (`toporlogy.fem.shell.spla.splu` sayılarak) = 2 | tam olarak |
+| SC4 | gradyan merkezi farka karşı, eğri kabuk (dilim): a (üst düzey `bottom` all, RADIAL, w 0,7), b (kendi `top` all, RADIAL0, w 1,3), c (üst düzey, {pressure 0,5}, w 0,9), d {a: 1, c: −0,5} w 0,6; rastgele yönde (rng 43) dördüncü mertebe fark, s = 1e-3 | ≤ 1e-6 göreli |
+| SC5 | rijit hareket durum başına: dilimde b'nin kendi mesnedi `[{set: top, fix: [w]}]` → `ConfigError` yol `load_cases.1.supports`, iletide "rigid motion"; üst düzey `[{set: top, fix: [w]}]` ve her durumun kendi tam mesnedi var → kurulur; aynı küme mesnetsiz bir durumda → `ConfigError` yol `supports` | tam olarak |
+| SC6 | geçersiz girdiler (dilim, iki durum a, b): AC6'nın kombinasyon satırları (bilinmeyen durum, adsız, durum adıyla aynı ad, boş `factors`, sonsuz çarpan, sonsuz ağırlık, bilinmeyen anahtar, farklı kümeleri karıştıran, sıfır toplamlı); boş durum `supports: []`; durum mesnedinde bilinmeyen küme (`left`, `load_cases.1.supports.0.set`) ve bilinmeyen bileşen (`x`, `load_cases.1.supports.0.fix`) | `ConfigError`, o yolda ileti, iletide "shell" |
+| SC7 | dokunulmamışlık: AC7'deki kabuk çapaları (örnek, SX1 örnek iki durum) bit düzeyinde; SY1–SY4, SX1–SX6 geçer (SX5'ten `combinations` ve `case_supports` satırları çıkar, SX1 dikdörtgen strict xfail kalır); `test_shell.py`, `test_shell_study.py` geçer | aynen |
+
+Kurallar AX bölümündeki gibi. Testler: `tests/toporlogy/test_shell_yaml_comb.py`.
