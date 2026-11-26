@@ -60,7 +60,8 @@ __all__ = ["VOIGT_3D", "VOIGT_2D", "SYMMETRY_RTOL", "voigt_pairs", "sym", "skew"
            "tensor_to_compliance", "tensor_to_mandel", "mandel_to_tensor", "stiffness_to_mandel",
            "mandel_to_stiffness", "compliance_to_mandel", "mandel_to_compliance", "mandel_eigenvalues",
            "mandel_condition_number", "check_rotation", "rotate2", "rotate4", "rotation_from_rotvec",
-           "rotvec_from_rotation", "random_rotations", "cofactor", "det_derivative", "principal_invariants", "j2", "j3", "lode_angle",
+           "rotvec_from_rotation", "random_rotations", "cofactor", "det_derivative", "principal_invariants", "j2",
+           "j3", "lode_angle",
            "von_mises_squared", "principal_values", "principal_directions", "principal_value_gradients", "tresca",
            "DeformationError", "InvertedDeformationError", "SingularDeformationError", "deformation_gradient",
            "jacobian", "jacobian_minus_one", "deformation_state", "right_cauchy_green", "left_cauchy_green",
@@ -601,7 +602,8 @@ def deformation_gradient(H: Any) -> Any:
 def cofactor(F: Any) -> Any:
     """Cofactor matrix cof F = (adj F)ᵀ of square 2×2 or 3×3 matrices (batched over leading axes; NumPy or torch),
     from the explicit 2×2 minors — no inverse, so it is exact for singular F (rank 2: one nonzero rank-1 cofactor;
-    rank ≤ 1 in 3-D: zero). For invertible F, cof F = det(F) F⁻ᵀ (``docs/foundations/prereg/TK_cofactor_rotation.md``)."""
+    rank ≤ 1 in 3-D: zero). For invertible F, cof F = det(F) F⁻ᵀ
+    (``docs/foundations/prereg/TK_cofactor_rotation.md``)."""
     F = _arr(F)
     if F.ndim < 2 or F.shape[-1] != F.shape[-2] or F.shape[-1] not in (2, 3):
         raise ValueError(f"cofactor needs (..., 2, 2) or (..., 3, 3) matrices, got shape {tuple(F.shape)}")
