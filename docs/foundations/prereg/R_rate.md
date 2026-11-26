@@ -107,3 +107,9 @@ Run: `python -m pytest tests/toporlogy/test_viscoplastic.py -q -p no:randomly`. 
 Set-up fix after the first run (no threshold touched): R6f used a strain (STEP1) that lies on the apex branch for the
 non-associated model, while its plastic-volume check needs the cone branch; it now uses a strain with a small trace
 and asserts the branch.
+
+## Integrator note (merge, 2026-11-27)
+
+The time written in "Amendments before the first run" ("01:50 +0300") is later than the commit that holds the
+amendment (4e2daaa, committer time 01:31 +0300); the text time is not reliable. Order by commit time: prereg 021ffbc
+(01:26) → amendment 4e2daaa (01:31) → code, tests and first results f4018f7 (01:42).
