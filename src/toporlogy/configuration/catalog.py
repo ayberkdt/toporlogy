@@ -73,7 +73,8 @@ _MESH = ("general meshes (toporlogy.fem.mesh); signed detJ checked at every quad
          "degenerate cells refused; distorted-mesh patch test and MMS rates measured")
 ELEMENTS: tuple[Element, ...] = (
     Element("Q4", 2, "square", 4, 2, "bilinear", "2 x 2 Gauss", ("elasticity", "modal", "nonlinear_elasticity",
-                                                                  "tensor_elasticity", "thermoelastic"),
+                                                                  "tensor_elasticity", "thermoelastic",
+                                                                  "transient_heat", "dynamics_newmark"),
             "shear-locks in bending (parasitic shear)", _GRID, ("andreassen_2011", "cook_2002"),
             (T + "test_fem_mms.py::test_manufactured_solution_converges_at_second_order",
              T + "test_skfem_crosscheck.py::test_x1_stiffness",
@@ -86,7 +87,8 @@ ELEMENTS: tuple[Element, ...] = (
              T + "test_buckling_physics.py::test_gradient_q4im_with_modes_in_kg"),
             "fem/elements.py: ke_q4im_from_D"),
     Element("H8", 3, "cube", 8, 3, "trilinear", "2 x 2 x 2 Gauss",
-            ("elasticity", "elasticity_gmg", "modal", "nonlinear_elasticity", "tensor_elasticity", "thermoelastic"),
+            ("elasticity", "elasticity_gmg", "modal", "nonlinear_elasticity", "tensor_elasticity", "thermoelastic",
+             "transient_heat", "dynamics_newmark"),
             "shear-locks in bending", _GRID,
             ("liu_tovar_2014", "cook_2002"),
             (T + "test_fem_mms.py::test_manufactured_solution_converges_at_second_order",
@@ -229,6 +231,28 @@ PHYSICS: tuple[Physics, ...] = (
              T + "test_thermoelastic_study.py::test_ts3_gradient_finite_difference",
              T + "test_thermoelastic.py::test_te1_free_expansion"),
             "E_active scales ONE unit D (per-element D refused) and the thermal load; compliance is F_totᵀ U"),
+    Physics("transient_heat", "C(x) dT/dt + K(E) T = q, theta-method (C/dt + theta K) T_n+1 = (C/dt - (1 - theta) K) "
+                              "T_n + q", "C/dt + theta K, linear in the element conductivities and capacities",
+            "symmetric positive definite (C SPD: capacity_min_ratio > 0)",
+            "direct (GridSPD supernodal / SuperLU factor), one factorisation per evaluation", ("cpu",), (2, 3),
+            ("Q4", "H8"), "heat sinks = nodes of support type fixed (every component), one support set",
+            "direct solve per step (GridSPD); time-step order measured (TH1, TH5)",
+            "assembled sparse system and its factor; the autograd graph holds every step (no checkpointing)",
+            (T + "test_transient_study.py::test_hs1_value_equals_direct_run",
+             T + "test_transient_study.py::test_hs3_gradient_finite_difference",
+             T + "test_transient_heat.py::test_th1_time_order"),
+            "E_active scales the conductivity (k = conductivity E / E0); capacity linear in the physical density x"),
+    Physics("dynamics_newmark", "M(x) u'' + C u' + K(E) u = s(t) F (Newmark average acceleration, from rest, Rayleigh "
+                                "C = a M + b K)", "K_eff = K + c0 M + c1 C, linear in E and rho",
+            "symmetric positive definite (M SPD: rhomin_ratio > 0)",
+            "direct (GridSPD supernodal / SuperLU factor): K_eff and M factorised once per evaluation", ("cpu",),
+            (2, 3), ("Q4", "H8"), "axis-aligned fixed DOFs, one support set, one load case",
+            "direct solve per step (GridSPD); energy conservation and time-step order measured (ND1, ND2)",
+            "assembled sparse K_eff and M with their factors; the autograd graph holds every step",
+            (T + "test_transient_study.py::test_ds1_value_equals_direct_run",
+             T + "test_transient_study.py::test_ds3_gradient_finite_difference",
+             T + "test_newmark.py::test_nd2_energy_is_conserved_without_damping_and_load"),
+            "E_active scales ONE unit D (per-element D refused); mass linear in the physical density x"),
 )
 
 
@@ -848,7 +872,8 @@ class Cell:
     enforced: str = ""                    # UNSUPPORTED: component | catalog | first_evaluation
 
 
-PHYS = ("elasticity", "elasticity_gmg", "modal", "nonlinear_elasticity", "tensor_elasticity", "thermoelastic")
+PHYS = ("elasticity", "elasticity_gmg", "modal", "nonlinear_elasticity", "tensor_elasticity", "thermoelastic",
+        "transient_heat", "dynamics_newmark")
 
 # responses that do not read the study's physics (no state solve, or an own auxiliary solve); evidence with elasticity
 PHYSICS_INDEPENDENT: dict[str, tuple[str, ...]] = {
@@ -873,6 +898,13 @@ _MODAL_ONLY = Cell(UNSUPPORTED, reason="needs physics modal", enforced="componen
 _NO_STATE = Cell(UNSUPPORTED, reason="needs the static state u; physics modal solves an eigenproblem only",
                  enforced="catalog")
 _NV = Cell(NOT_VERIFIED)
+TRANSIENT_PHYSICS = ("transient_heat", "dynamics_newmark")
+_NO_STATE_TRANSIENT = Cell(UNSUPPORTED, reason="needs the static state u; the transient physics integrates a time "
+                                               "history (no static state)", enforced="catalog")
+_STATE_T = {p: _NO_STATE_TRANSIENT for p in TRANSIENT_PHYSICS}
+_MODAL_ONLY_T = {p: _MODAL_ONLY for p in TRANSIENT_PHYSICS}
+_NONLINEAR_ONLY_T = {p: Cell(UNSUPPORTED, reason="needs physics nonlinear_elasticity", enforced="component")
+                     for p in TRANSIENT_PHYSICS}
 
 
 def _row(**cells: Cell) -> dict[str, Cell]:
@@ -881,6 +913,7 @@ def _row(**cells: Cell) -> dict[str, Cell]:
 
 RESPONSE_MATRIX: dict[str, dict[str, Cell]] = {
     "compliance": _row(
+        **_STATE_T,
         elasticity=Cell(SUPPORTED, (T + "test_gradients.py::test_compliance_single_case",
                                     T + "test_independent_vv.py::test_top88_fixed_design_objective_and_sensitivity")),
         elasticity_gmg=Cell(SUPPORTED, (T + "test_gmg.py::test_gradients",
@@ -897,16 +930,20 @@ RESPONSE_MATRIX: dict[str, dict[str, Cell]] = {
                                        T + "test_thermoelastic_study.py::test_ts3_gradient_finite_difference"),
                            "c = F_totᵀ U with the design-dependent thermal load")),
     "robust_compliance": _row(
+        **_STATE_T,
         elasticity=Cell(SUPPORTED, (T + "test_robust.py::test_gradcheck_robust_compliance_and_dilated_volume",)),
         modal=_NO_STATE),
     "scenario_compliance": _row(
+        **_STATE_T,
         elasticity=Cell(SUPPORTED, (T + "test_yaml_research_responses.py::test_value_and_gradient",
                                     T + "test_uq.py::test_u10b_robust_gradients_match_finite_differences")),
         modal=_NO_STATE),
     "compliance_case": _row(
+        **_STATE_T,
         elasticity=Cell(SUPPORTED, (T + "test_yaml_research_responses.py::test_value_and_gradient",)),
         modal=_NO_STATE),
     "displacement": _row(
+        **_STATE_T,
         elasticity=Cell(SUPPORTED, (T + "test_gradients.py::test_non_self_adjoint_displacement",
                                     T + "test_compose.py::test_displacement_value_and_gradient")),
         modal=_NO_STATE,
@@ -914,15 +951,18 @@ RESPONSE_MATRIX: dict[str, dict[str, Cell]] = {
                                               T + "test_nonlinear.py::test_v6_end_compliance_gradient_finite_"
                                                   "difference"))),
     "stress": _row(
+        **_STATE_T,
         elasticity=Cell(SUPPORTED, (T + "test_stress.py::test_gradient_aggregated_stress",
                                     T + "test_independent_stress.py::test_s2_von_mises_index")),
         modal=_NO_STATE,
         nonlinear_elasticity=Cell(NOT_VERIFIED, reason="builds; the small-strain stress of the stress response on a "
                                                        "large-displacement state is not a verified measure (risk)")),
     "stress_augmented_lagrangian": _row(
+        **_STATE_T,
         elasticity=Cell(SUPPORTED, (T + "test_stress.py::test_gradient_augmented_lagrangian",)),
         modal=_NO_STATE),
     "buckling": _row(
+        **_STATE_T,
         elasticity=Cell(SUPPORTED, (T + "test_buckling.py::test_gradient_buckling_ks",
                                     T + "test_independent_buckling.py::test_load_factors_equal_the_dense_"
                                         "independent_solution")),
@@ -931,6 +971,7 @@ RESPONSE_MATRIX: dict[str, dict[str, Cell]] = {
         nonlinear_elasticity=Cell(UNSUPPORTED, reason="linear buckling about a linear prestress; not defined on the "
                                                       "non-linear state", enforced="catalog")),
     "end_strain_energy": _row(
+        **_NONLINEAR_ONLY_T,
         elasticity=Cell(UNSUPPORTED, reason="needs physics nonlinear_elasticity", enforced="component"),
         elasticity_gmg=Cell(UNSUPPORTED, reason="needs physics nonlinear_elasticity", enforced="component"),
         modal=Cell(UNSUPPORTED, reason="needs physics nonlinear_elasticity", enforced="component"),
@@ -939,6 +980,7 @@ RESPONSE_MATRIX: dict[str, dict[str, Cell]] = {
                                   "hyperelastic materials only (svk, neo_hooke); a stateful law is refused"),
         tensor_elasticity=Cell(UNSUPPORTED, reason="needs physics nonlinear_elasticity", enforced="component")),
     "end_compliance": _row(
+        **_NONLINEAR_ONLY_T,
         elasticity=Cell(UNSUPPORTED, reason="needs physics nonlinear_elasticity", enforced="component"),
         elasticity_gmg=Cell(UNSUPPORTED, reason="needs physics nonlinear_elasticity", enforced="component"),
         modal=Cell(UNSUPPORTED, reason="needs physics nonlinear_elasticity", enforced="component"),
@@ -946,10 +988,21 @@ RESPONSE_MATRIX: dict[str, dict[str, Cell]] = {
                                                   "difference",
                                               T + "test_nonlinear_orientation.py::test_n4_end_compliance_gradient_"
                                                   "with_a_field"))),
-    **{r: _row(elasticity=_MODAL_ONLY, elasticity_gmg=_MODAL_ONLY, nonlinear_elasticity=_MODAL_ONLY,
+    **{r: _row(elasticity=_MODAL_ONLY, elasticity_gmg=_MODAL_ONLY, nonlinear_elasticity=_MODAL_ONLY, **_MODAL_ONLY_T,
                modal=Cell(SUPPORTED, (T + "test_modal.py::test_response_gradients",
                                       T + "test_modal.py::test_eigenpairs_match_dense")))
        for r in ("frequency", "eigenvalue", "min_eigenvalue_ks", "min_frequency")},
+    **{r: {p: (Cell(SUPPORTED, ev, "time-averaged (trapezoid); the autograd graph holds every step") if p == own else
+               Cell(UNSUPPORTED, reason=f"needs physics {own}", enforced="component")) for p in PHYS}
+       for r, own, ev in (
+           ("transient_thermal_compliance", "transient_heat",
+            (T + "test_transient_study.py::test_hs1_value_equals_direct_run",
+             T + "test_transient_study.py::test_hs2_value_equals_dense_theta_method",
+             T + "test_transient_study.py::test_hs3_gradient_finite_difference")),
+           ("dynamic_compliance", "dynamics_newmark",
+            (T + "test_transient_study.py::test_ds1_value_equals_direct_run",
+             T + "test_transient_study.py::test_ds2_value_equals_dense_newmark",
+             T + "test_transient_study.py::test_ds3_gradient_finite_difference")))},
 }
 
 
@@ -1136,6 +1189,11 @@ def check_build(resolved: Mapping[str, Any], physics: Any, responses: Sequence[A
         if state:
             raise ConfigError(f"unsupported combination (catalog): response(s) {state} with physics modal: needs the "
                               "static state u; physics modal solves an eigenproblem only", "physics")
+    if ptype in TRANSIENT_PHYSICS:  # responses outside the matrix (user components) that need the static state
+        state = [getattr(r, "name", type(r).__name__) for r in responses if "u" in getattr(r, "needs", ())]
+        if state:
+            raise ConfigError(f"unsupported combination (catalog): response(s) {state} with physics {ptype}: needs "
+                              "the static state u; the transient physics integrates a time history", "physics")
     _check_material_design(resolved, physics, responses)
     if "buckling" in kinds and isinstance(physics, ConstrainedElasticity | PerCaseSupports):
         what = "oblique supports or springs" if isinstance(physics, ConstrainedElasticity) else "per-case supports"

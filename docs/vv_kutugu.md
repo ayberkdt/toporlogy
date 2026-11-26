@@ -2,7 +2,7 @@
 
 `tests/toporlogy/test_catalog_ledger.py` bu kütüğü toplanan testlerle karşılaştırır: her xfail strict (XPASS koşuyu kırar), kütük toplanan strict xfail listesiyle ve test kaynaklarındaki atlama noktalarıyla birebir aynı. Beklenen başarısızlık PASS sayılmaz; atlanan bir arka ucun testi NOT VERIFIED'dır. Yeniden üretim: `python tests/toporlogy/test_catalog_ledger.py --write`.
 
-Toplam 57 strict xfail (17 tanesi yavaş pakette), 17 atlama noktası.
+Toplam 58 strict xfail (17 tanesi yavaş pakette), 17 atlama noktası.
 
 Risk düzeyleri: **low** ölçüt ya da kontrolün kendisi; kod sonucu başka testle doğrulanmış; **medium** açıklanmamış sayısal fark ya da referans yeniden üretilemiyor; **high** kullanıcıya görünen sessiz kabul (yanlış sonuç üretebilir).
 
@@ -67,6 +67,7 @@ Risk düzeyleri: **low** ölçüt ya da kontrolün kendisi; kod sonucu başka te
 | `test_bifurcation.py::test_a2_asymmetric_branch_switch[plus]` | pre-registered check failed | solvers.continuation arc_length, closed-form spring model A (CPU) | model A, ds = 0,01 ön kayıtlı: birincil yolda |dx/dλ| = 1/k_a = 0,01, ilk yay boyu adımı Δλ = 1 ve kabul edilen nokta tam λ_c = 1'e düşüyor; K = diag(0, 100) tekil, sonraki tahmin çözümü K⁻¹q başarısız (11 ret, step_limit / singular_tangent). Yerleştirme değil, arc_length'in tam tekil kabul noktasından tahmin üretememesi; post hoc ds = 0,0137 ile geçiyor | low | arc_length bir kabul noktasında tekil teğetten tahmin üretebildiğinde (ör. önceki artış yönü) | docs/olcumler/catallanma_onkayit.md | — |
 | `test_bifurcation.py::test_a2_asymmetric_branch_switch[minus]` | pre-registered check failed | solvers.continuation arc_length, closed-form spring model A (CPU) | model A, ds = 0,01 ön kayıtlı: birincil yolda |dx/dλ| = 1/k_a = 0,01, ilk yay boyu adımı Δλ = 1 ve kabul edilen nokta tam λ_c = 1'e düşüyor; K = diag(0, 100) tekil, sonraki tahmin çözümü K⁻¹q başarısız (11 ret, step_limit / singular_tangent). Yerleştirme değil, arc_length'in tam tekil kabul noktasından tahmin üretememesi; post hoc ds = 0,0137 ile geçiyor | low | arc_length bir kabul noktasında tekil teğetten tahmin üretebildiğinde (ör. önceki artış yönü) | docs/olcumler/catallanma_onkayit.md | — |
 | `test_bifurcation.py::test_fc4_dense_and_sparse_spectra_agree` | pre-registered check failed | solvers.continuation locate_critical, fem.nonlinear SVK Q4 column (CPU, numpy eigh / SuperLU) | indeks dizileri aynı (dense eigh ↔ sparse LDLᵀ ataleti), ama yerleşen yük bağıl farkı 1,4e-9 > 1e-9: iki konum da ilk koşudan sonra eklenen özdeğer doğruluk tabanında (16 ε ‖K‖₁) 2 değerlendirmede duruyor; bu tabanda yük ~1e-9 çözünürlükte. Post hoc indeks maddesi geçiyor; doğrusal burkulmayla fark 5,3e-4 (FC1) | low | yok (konum toleransının çözünürlüğü; eşik değişmez) | docs/olcumler/catallanma_onkayit.md | evet |
+| `test_transient_study.py::test_hs6_rejects[roller]` | pre-registered check failed | configuration build + transient_heat (CPU) | kurulum açık hatayla reddediliyor, ama fizikten önce yapı denetimi (rijit cisim modu) reddediyor; beklenen ileti 'every component' gelmiyor: sonda mekanik olarak eksik mesnetli kurulmuştu (post hoc roller_posthoc fizik denetimine ulaşıyor ve geçiyor) | low | yok (sonda kurulumu); post hoc sonda roller_posthoc | docs/olcumler/gecici_study_onkayit.md | — |
 
 ## 2. Atlama noktaları
 
