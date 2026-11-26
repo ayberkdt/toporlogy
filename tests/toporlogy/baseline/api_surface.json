@@ -2343,6 +2343,37 @@
   "STATUS_OK": "<str>",
   "annotations": "<_Feature>"
  },
+ "toporlogy.configuration.units": {
+  "SCHEMA_VERSIONS": "<tuple>",
+  "UnitError": {
+   "attrs": [
+    "add_note",
+    "args",
+    "with_traceback"
+   ],
+   "class": "UnitError"
+  },
+  "UnitSystem": {
+   "attrs": [
+    "force",
+    "from_config",
+    "from_si",
+    "length",
+    "mass",
+    "names",
+    "temperature_offset"
+   ],
+   "class": "UnitSystem"
+  },
+  "active": "active()",
+  "check_schema_version": "check_schema_version(v)",
+  "convert": "convert(text,kind,system)",
+  "dimension_name": "dimension_name(d)",
+  "is_quantity": "is_quantity(text)",
+  "kind_dimension": "kind_dimension(kind)",
+  "parse_quantity": "parse_quantity(text)",
+  "use": "use(system)"
+ },
  "toporlogy.core": {},
  "toporlogy.core.anisotropy": {
   "QUANTITIES": "<tuple>",

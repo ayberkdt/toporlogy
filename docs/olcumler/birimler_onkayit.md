@@ -23,3 +23,22 @@ denetimi ve boyut tutarlılığı; kütle/ağırlık, basınç/kuvvet, sıcaklı
 | U6 | `units` yokken "1 mm" | `ConfigError` "number" (mevcut davranış) |
 | U7 | `schema_version`: yok → "1"; 1 / "1" kabul; "2" | "2" için `ConfigError` sürümü ve desteklenenleri adlandırır |
 | U8 | `mbb2d` sabit tasarımda: mm/N ile E0 "210 GPa", kuvvet "-1 kN" uyumu = birimsiz uyum · (1000² / 210000) | ≤ 1e-12 göreli |
+
+## Sonuç (2026-11-26, ilk koşu)
+
+Komut: `python -m pytest tests/toporlogy/test_units.py -q -p no:randomly` → 22 passed, 1 xfailed.
+
+| # | Sonuç |
+|:---|:---|
+| U1 | PASS: 12 örneğin çözümlenmiş yapılandırması, değişiklikten önceki kodun (`cb1a483`) yazdığı `tests/toporlogy/baseline/resolved_configs.json` ile aynı (yeni iki anahtar dışında) |
+| U2 | PASS: sekiz dönüşüm ≤ 1e-15 göreli (mm, m, GPa, kN, kg/m³ → t/mm³, m/s² → mm/s², N/mm²) |
+| U3 | PASS: "5 kg" kuvvete, "100 N" E0'a, "1 s" uzunluğa; mesaj iki boyutu da adlandırıyor |
+| U4 | PASS |
+| U5 | PASS: mm/N ile kg reddediliyor, t kabul ediliyor |
+| U6 | PASS: `units` yokken "expected number … (a value with a unit needs the top-level units: section …)" |
+| U7 | PASS |
+| U8 | **FAIL** (strict xfail): uyum oranı 1000²/210000'den 3,75e-12 göreli sapıyor, eşik 1e-12. Girdiler tam ölçekli (post hoc: yük vektörü 1000 × birimsiz, E0 = 210000 bit düzeyinde); fark çözümün yuvarlamasında olmalı (Emin ile cond K ≈ 1e8–1e11; neden doğrulanmadı) ve eşik bunu öngörmemişti |
+
+İlk denemede bir uygulama hatası çıktı (kontrol eşiği değil): liste parametrelerinde "min"/"max" gibi anahtar
+sözcükler de birim olarak okunmaya çalışıldı; yalnız "sayı + birim" biçimindeki öğeler dönüştürülecek şekilde
+düzeltildi.

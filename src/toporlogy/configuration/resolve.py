@@ -11,6 +11,7 @@ from typing import Any, cast
 
 import yaml
 
+from toporlogy.configuration import units as U
 from toporlogy.configuration.registry import BuildContext, ConfigError, Param, REGISTRY, join, normalise_name, suggest
 from toporlogy.configuration.schema import (
     SCHEMA_KEYS, _CASE, _COMBINATION, _CONNECTIVITY, _CONSTRAINT, _DEFAULTS, _MATERIAL, _NEEDS_FINALIZE, _OUTPUT,
@@ -215,10 +216,27 @@ def _resolve_connectivity(raw: dict[str, Any], errors: list[tuple[str, str]]) ->
 
 
 def resolve(raw: dict[str, Any]) -> dict[str, Any]:
-    """Validate a raw config and fill every default; raises :class:`ConfigError` listing all problems found."""
-    errors: list[tuple[str, str]] = []
+    """Validate a raw config and fill every default; raises :class:`ConfigError` listing all problems found.
+
+    ``schema_version`` (default "1") is checked first; a ``units`` section makes values with units ("210 GPa")
+    convert into it while the config is resolved (:mod:`toporlogy.configuration.units`)."""
     if not isinstance(raw, dict):
         raise ConfigError("the config must be a mapping")
+    try:
+        version = U.check_schema_version(raw.get("schema_version"))
+        system = None if raw.get("units") is None else U.UnitSystem.from_config(raw["units"])
+    except U.UnitError as e:
+        raise ConfigError(str(e), "units" if "units" in str(e) else "schema_version") from None
+    with U.use(system):
+        r = _resolve(raw)
+    r["schema_version"] = version
+    r["units"] = None if system is None else dict(zip(("length", "force", "temperature"), system.names,
+                                                      strict=True))
+    return r
+
+
+def _resolve(raw: dict[str, Any]) -> dict[str, Any]:
+    errors: list[tuple[str, str]] = []
     for k in raw:
         if k not in SCHEMA_KEYS:
             errors.append((k, f"unknown top-level key{suggest(k, SCHEMA_KEYS) or ''}"))

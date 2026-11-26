@@ -226,6 +226,16 @@
    "resolution": "ada temizliği (bridge/drop floating) ya da robust iletim kısıtıyla yeniden koşu; yeni ön kayıt",
    "record": "docs/olcumler/gerilme.md",
    "slow": true
+  },
+  {
+   "nodeid": "tests/toporlogy/test_units.py::test_u8_compliance_in_mm_and_n_scales_exactly",
+   "kind": "pre-registered check failed",
+   "model_backend": "mbb2d, Elasticity Q4 direct (CPU)",
+   "reason": "mm/N uyum oranı beklenen 1000²/210000'den 3,75e-12 göreli sapıyor, eşik 1e-12; girdiler bit düzeyinde doğru ölçekli (post hoc)",
+   "risk": "low",
+   "resolution": "koşul sayısına ölçekli eşikle yeni ön kayıt",
+   "record": "docs/olcumler/birimler_onkayit.md",
+   "slow": false
   }
  ],
  "skips": [
