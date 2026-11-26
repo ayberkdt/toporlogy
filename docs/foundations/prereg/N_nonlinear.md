@@ -91,4 +91,44 @@ Run: `python -m pytest tests/toporlogy/test_nonlinear_foundations.py -q -p no:ra
 the brief), a few seconds; no slow tests. Negative controls: N1e (linear strain not objective), N1i (non-coaxial Hencky
 rate), N4b-style failure kept as measured, N5 jump (a smooth tangent would fail it).
 
-First result (append below after the run):
+## First result (run 2026-11-27 02:57 +0300 for the first run, 02:58 +0300 final; SHA b4b9fa9 + test file)
+
+`python -m pytest tests/toporlogy/test_nonlinear_foundations.py -q -p no:randomly` (TMP/TEMP under
+`.claude/tmp-toporlogy/N_nonlinear`): 55 passed in 13 s. No production code changed; no defect found.
+
+One set-up correction between the first and second run (no threshold changed): in the first run the SVK identity of N1g
+(`S = sigma_lin(E)`, rel 1e-13) failed at 4.4e-13 because the test formed the small displacement gradient as
+(I + H) − I, losing log10(1/|H|) digits (the cancellation that `core/constitutive.py` documents). The test now passes H to
+the model directly (`evaluate(..., H=H)`). The first run stopped there (`-x`) and had passed N1a–N1f only; the other
+checks ran for the first time in the second run.
+
+Measured values (max over the cases of each check):
+
+| ID | Result | Measured |
+|---|---|---|
+| N1a | PASS | psi, S exactly 0; C(I) vs Lame C: 1.6e-16 |
+| N1b | PASS | worst of psi, S, P, Cauchy over 20 rotations up to pi: 1.4e-15 (SVK 8.7e-16) |
+| N1c | PASS | worst 2.2e-14 (NeoHooke), 4.0e-16 (SVK), including the hand-derived Cauchy components |
+| N1d | PASS | worst 2.2e-15; spherical NeoHooke P = kappa s^2 (s^3−1) I included |
+| N1e | PASS | P and Cauchy transform: worst 8.0e-14 (NeoHooke), 1.9e-14 (SVK); control: linear-strain energy of a 30 degree rotation 3.45e-2 (≥ 1e-3) |
+| N1f | PASS | values 3.2e-14; C symmetry 2.6e-16; A vs FD 2.6e-10 (limit 1e-6); A vs torch Hessian 4.5e-15 (limit 1e-10); major symmetry 2.5e-16 |
+| N1g | PASS | slope of r(S): 1.000 (SVK, nu 0.3 and 0.45), 1.001 and 0.999 (NeoHooke); r(1e-5) = 1.2e-5 to 1.9e-5; NeoHooke tangent slope 1.001 and 1.000. The SVK tangent is the constant D: its deviation from the Lame C is ≤ 7.6e-17 at every delta, so the registered "same slope for C" is degenerate for SVK and is checked as a constant (≤ 1e-13) |
+| N1h | PASS | spectral log vs logm 3.6e-15; tensor.hencky_strain vs logm 3.6e-15; derivative vs FD 1.4e-9 |
+| N1i | PASS | S:Edot = P:Fdot = tau:d 1.8e-16; coaxial Hencky 8.9e-16; non-coaxial control: tau:Hdot differs from tau:d by 0.744 relative (≥ 1e-3) |
+| N2a | PASS | E33 6.2e-15, in-plane S 5.4e-15, max abs P33 / max abs P 1.9e-14 |
+| N2b | PASS | condensed tangent vs FD 1.0e-9 (limit 1e-6); symmetry 3.7e-17 |
+| N2c | PASS | 3-D, plane strain, plane stress: InadmissibleState code invalid_deformation for J = 0 and J < 0, inputs unchanged; FE: converged False, invalid_deformation, rolled back, start displacement unchanged bytewise |
+| N3a | PASS | interior nodal forces 8.8e-15, sum 1.7e-15, face resultant 2.2e-15 relative (six configurations): the Q4/H8 grid kernel including the thickness factor is exact for affine F |
+| N3b | PASS | rotation patch: max nodal force 4.7e-16, abs(min det F − 1) 2.3e-15 |
+| N3c | NOT VERIFIED | no distorted-mesh nonlinear element exists in the repository; no test |
+| N4a | PASS | ds = 0.02, 0.01, 0.005, 0.0025: path vs closed form 1.2e-13, 9.3e-14, 1.1e-13, 1.2e-13; limit-point lambda error 1.7e-12, 1.5e-13, 3.9e-14, 3.3e-12; w error / h 3.2e-13, 2.9e-14, 7.6e-15, 6.4e-13. The errors do not decrease with ds: the point is located by a hyperplane Newton inside the interval, so the remaining error is the rounding floor of the 1e-12 tolerance, not a discretisation error |
+| N4b | PASS (failure reproduced) | R07 confirmed still present: ContinuationError step_limit / singular_tangent, 2 accepted points, last lambda = 1.000000000000000, K11 = 0 and det K = 0 exactly. A characterisation of an open defect; the desired behaviour remains in the strict xfails of test_bifurcation.py |
+| N4c | NOT VERIFIED | bordered / previous-tangent predictor at a singular point, branch orientation there, repeated-eigenvalue subspace diagnostics are not implemented |
+| N5a | PASS | hydrostatic c = 1, 10, 100 eps_y: elastic, alpha = 0, eps_p = 0; sigma, C, psi relative error ≤ 1.7e-16 |
+| N5b | PASS | flags 0 then 1; jump of C_xxxx −0.4915213 (H = 0.05) and −0.5128205 (H = 0), equal to the prediction to the printed digits; continuum-tangent jump equal; abs(d sigma_xx) 6.9e-11 (limit 1e-6 sigma_y = 1e-9), abs(d psi) 9.0e-14. The energy continuity limit had no number in the table; the test used 1e-6 sigma_y eps_y = 1e-12, fixed before the first run |
+
+Limitations: the grid patch has a constant element Jacobian, so it does not test distorted geometry; plane stress is verified
+for the isotropic neo-Hooke only (the condensation uses sigma_zz alone); SVK plane stress is the 2-D law with the
+plane-stress constants, not a condensed 3-D body (as `core/constitutive.py` states). Follow-up (separate
+preregistration): a distorted Q4/H8 finite-strain element with patch and convergence tests; a bordered predictor for
+`arc_length` and a fix of R07.

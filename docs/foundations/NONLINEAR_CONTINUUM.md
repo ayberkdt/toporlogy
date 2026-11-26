@@ -1,0 +1,65 @@
+# Nonlinear continuum mechanics: what is verified and what is not (WP10 slice N1–N5)
+
+Record: `docs/foundations/prereg/N_nonlinear.md` (preregistered 2026-11-27 02:53 +0300; first result appended there).
+New tests: `tests/toporlogy/test_nonlinear_foundations.py` (55 tests, 13 s). All values below are from that run.
+Units: unit Young modulus, synthetic parameters (not material data).
+
+## Implemented formulations
+
+* Total Lagrangian, F = I + ∇u, E = ½(FᵀF − I) formed from H = F − I without cancellation, S = ∂ψ/∂E, P = F S.
+  Elements: Q4 (2-D, plane stress or plane strain, thickness) and H8 on the regular `Domain` grid only
+  (`fem/nonlinear.py`; non-grid domains are refused).
+* Laws: Saint Venant–Kirchhoff (SVK; moderate strain, softens without bound in compression) and compressible
+  neo-Hooke ψ = ½κ(J−1)² + ½μ(J^(−2/3) tr C − 3) (`core/constitutive.py`); plane stress for neo-Hooke by a local scalar
+  Newton on S₃₃ = 0 with the condensed tangent (valid for this isotropic law only; SVK plane stress is the 2-D law with
+  the plane-stress constants).
+* Small-strain J2 plasticity with isotropic hardening through the history contract (no finite-strain plasticity).
+* Path following: arc length, displacement control, critical-point location (`solvers/continuation.py`).
+
+## Verified in this slice (independent references)
+
+| Item | Reference | Result |
+|---|---|---|
+| F = I, pure rotation (to π) | zero stress and energy | ≤ 1.4e-15 |
+| Simple shear, uniaxial / biaxial / spherical stretch | closed forms for ψ, S, P, Cauchy (hand-derived in the record) | ≤ 2.2e-14 |
+| Objectivity of ψ, S, P, Cauchy under F → QF | invariance / transformation, 50 random pairs | ≤ 8e-14; negative control (linear strain energy of a 30° rotation 3.5e-2) |
+| Tangent ∂S/∂E, pushed to ∂P/∂F | central FD of an independent P; torch Hessian of an independent ψ(F); major symmetry | FD 2.6e-10, autograd 4.5e-15 |
+| Small-strain limit | S − σ_lin(ε) over σ_lin, δ from 1e-1 to 1e-5 | log–log slope 0.999 to 1.001 (expected 1) |
+| Hencky strain with `core.spectral` | ½ logm(C) (scipy); derivative vs FD | 3.6e-15; 1.4e-9 |
+| Work conjugacy S:Ė = P:Ḟ = τ:d; Hencky rate in the coaxial case | identities | ≤ 8.9e-16; non-coaxial negative control 0.74 |
+| Plane-stress neo-Hooke local solution σ₃₃ = 0 | brentq root of the closed-form P₃₃ | 1.9e-14 |
+| Condensed plane-stress tangent | central FD of the constrained S | 1.0e-9 |
+| Inadmissible trial J ≤ 0 | raises `InadmissibleState` (code `invalid_deformation`); FE Newton rolls back, start displacement unchanged | exact |
+| Affine patch on the grid element (Q4 plane stress/strain, H8; SVK and neo-Hooke) | interior nodal forces zero, face resultant = −t A P e₁ | ≤ 8.8e-15 |
+| Rigid-rotation patch (to π) | zero nodal forces, det F = 1 | ≤ 4.7e-16 |
+| Two-bar truss snap-through, step refinement ds = 0.02 … 0.0025 | closed-form P(w), limit points | curve 1.2e-13; limit point 3.3e-12 (rounding floor, no ds trend) |
+| J2 hydrostatic strain | never yields, σ = 3Kc | 1.7e-16 |
+| J2 yield kink | jump of the algorithmic tangent −2μ·3μ/(3μ+H)·(2/3) | equal to printed digits; stress C⁰ |
+
+Earlier tests that already covered parts of N1–N5 (autograd tangent, FE small load, uniaxial tension, K_T vs FD, truss
+arc length, load-control negative control, J2 closed forms, consistent tangent, energy identity, plastic sensitivities)
+were not repeated; the record lists them.
+
+## Not verified / not implemented
+
+* **Distorted-mesh nonlinear element (N3).** There is no finite-strain element on a general Q4/T6/H8/T10 mesh; the grid
+  kernel has a constant element Jacobian. Homogeneous deformation patches on distorted meshes, mesh convergence of such an
+  element and "agreement with the grid path" are NOT VERIFIED. `fem/mesh` is small-strain only.
+* **R07 (exactly singular accepted point) is still present.** With model A and ds = 0.01 `arc_length` accepts the point
+  with K₁₁ = 0 exactly and the next predictor K⁻¹q fails (`ContinuationError`, `step_limit`, cause `singular_tangent`).
+  The test `test_n4b_*` asserts this measured failure; the desired behaviour stays in the strict xfails of
+  `test_bifurcation.py`. No bordered or previous-tangent predictor exists, so branch orientation at a singular point and
+  repeated-eigenvalue subspace diagnostics are NOT VERIFIED (not implemented).
+* **Finite-strain plasticity and viscoelasticity are NOT implemented.** J2 is small strain (no multiplicative split, no
+  objective rate); replacing ε by a logarithmic strain is not a valid substitute and no claim is made. Viscoelastic and
+  rate-dependent laws are small-strain history models outside `NonlinearElasticity` (it refuses `physical = True`).
+* Updated Lagrangian formulation, follower loads, mixed finite-strain elements, anisotropic neo-Hooke, contact: not provided.
+* Plane stress is verified for the isotropic neo-Hooke only; an anisotropic law would need the full Schur complement with
+  out-of-plane shear.
+* SVK is not robust under large compression (admissible region not enforced beyond J > 0); the tests use stretches
+  0.6 to 2.5 for the closed forms and are not a statement about SVK at J → 0.
+
+## Test-set-up note
+
+A small H must be passed as H, not as (I + H) − I: forming F − I loses log₁₀(1/|H|) digits (first N1g run: 4.4e-13
+instead of 1e-16). This is the cancellation documented in `core/constitutive.py`, not a defect.
