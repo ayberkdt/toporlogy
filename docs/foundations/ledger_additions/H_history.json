@@ -1,0 +1,12 @@
+[
+ {
+  "nodeid": "tests/toporlogy/test_history_fem.py::test_h2_series_bar_two_materials",
+  "kind": "pre-registered check failed",
+  "model_backend": "fem.mesh.history.HistoryProblem H8 + legacy J2 (two yield stresses), CPU",
+  "reason": "end displacement 2.777e-3 vs 4.200e-3 from the sum of uniaxial-stress material points at F = 1.1e-3: the 1-D series reference does not hold in 3-D, the interface nodes constrain the different lateral contraction of the two materials",
+  "risk": "low",
+  "resolution": "hypothesis wrong, not the code; the post hoc H2b (lateral DOFs held, uniaxial strain) passes to 1e-8",
+  "record": "docs/foundations/prereg/H_history.md",
+  "slow": false
+ }
+]

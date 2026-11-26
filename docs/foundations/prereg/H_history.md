@@ -32,3 +32,18 @@ accepted time grid is recorded.
 | H5 | `HistoryProblem` refuses a finite-strain model, plane stress in 2-D, a prescribed DOF outside the mesh, a model without the small-strain contract | — | ValueError |
 
 Run: `python -m pytest tests/toporlogy/test_history_fem.py -q -p no:randomly`. First result appended below.
+
+## First result (run 2026-11-27 01:42 +0300 by the clock, SHA 0f7bc99 + module)
+
+4 passed, 2 failed on the first run.
+
+* H0, H1, H4, H5: PASS.
+* H3: the stress check passed (every point −E(T) ε_th to 1e-10); the reaction check failed for a **test set-up
+  sign error**: the support reaction on the x = 0 face is the traction σ·n A with n = −e_x, i.e. −σ_xx A, not
+  +σ_xx A as written in the test. Corrected in the test (threshold unchanged); passes.
+* **H2 FAILED** (flawed hypothesis): end displacement 2.777e-3 vs 4.200e-3 (sum of the uniaxial-stress material
+  points) at F = 1.1e-3. In a 3-D bar the two cells contract laterally by different amounts (plastic flow vs
+  elastic) and the shared interface nodes constrain this, so the stress is not uniaxial; the 1-D series reference
+  does not apply. Strict xfail with these values; ledger `ledger_additions/H_history.json`.
+* H2b (**post hoc**, added after H2 failed): lateral DOFs held everywhere → uniaxial strain in both cells; reference
+  material points with zero lateral strain and σ_xx = F: PASS (rel 1e-8).
