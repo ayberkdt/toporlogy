@@ -12,7 +12,7 @@ Kaynak: `tests/toporlogy/_vv_layers.py` (dosya → katman sınıflaması elle, d
 | IS independent solver / implementation | 4/14 | — | — | — | 7/53 | 1/12 | 2/15 | — | 1/14 | — | — | — |
 | OG optimization / KKT / gradient | 9/97 | — | — | 5/56 | 12/132 | 4/48 | 19/164 | 13/137 | 6/70 | 2/30 | 2/30 | — |
 | E2E end-to-end geometry | 2/38 | 5/39 | — | 2/13 | 2/38 | — | 7/61 | 1/21 | 4/38 | 1/10 | 10/67 | — |
-| IC integration / compatibility | 4/18 | 2/34 | — | 3/31 | 4/25 | — | 5/50 | 2/23 | 13/120 | 8/81 | 1/8 | 1/11 |
+| IC integration / compatibility | 4/18 | 2/34 | — | 3/31 | 4/25 | — | 5/50 | 2/23 | 13/120 | 9/85 | 1/8 | 1/11 |
 | PF performance | — | — | 1/11 | — | 2/23 | 2/23 | — | — | — | — | — | — |
 
 Boş hücreler (açık risk adayı; her biri bir risk değildir, örn. `references` için çoğu katman anlamsız):
@@ -113,6 +113,7 @@ Katman sınıflaması (dosya → katmanlar):
 - `test_study_options.py`: IC
 - `test_sweep_connectivity.py`: E2E
 - `test_sweep_post.py`: E2E
+- `test_sweep_resume.py`: IC
 - `test_symmetric_ties.py`: E2E
 - `test_symmetry.py`: U, E2E
 - `test_t10_convergence.py`: AN, E2E

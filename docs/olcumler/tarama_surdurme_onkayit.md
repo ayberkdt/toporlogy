@@ -19,3 +19,12 @@ hızlandırma oturumunda).
 | R4 | `--resume` farklı bir istekle (başka değer, başka `--set`) | çıkış 2, mesaj farkı adlandırır |
 | R5 | `--resume` olmadan dolu klasöre tarama: eski davranış (çıkış 2) | aynen |
 | R6 | Manifesto ortamı ve her koşunun süresini taşır; psutil varken tepe bellek > 0 | aynen |
+
+## Sonuç (2026-11-26, ilk koşu)
+
+`python -m pytest tests/toporlogy/test_sweep_resume.py -q -p no:randomly` → 4 passed (R1–R6 PASS).
+
+İlk denemedeki iki düzeltme (eşik değil, testin ve durum adının tasarımı): (1) 3 iterasyonluk koşular yakınsamadığı
+için biten tarama 1 ile çıkar (başarısız kontrol), 0 ile değil; testler "yapılandırma hatası değil" (≠ 2) bekler.
+(2) Manifesto tamamlanmış ama yakınsamamış koşuyu "failed" diye işaretliyordu; ön kayıttaki anlamla "done" ve ayrı
+`run_status` alanı oldu.
