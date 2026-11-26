@@ -233,7 +233,7 @@ def section_GC() -> dict[str, Any]:
     from toporlogy.post.chain import UNEVALUABLE, UNVERIFIED, ChainRequirements, record_chain
     from toporlogy.post.checks import sdf_local_thickness
     from toporlogy.post.primitives import element_fraction
-    from toporlogy.post.reanalysis import solve_voxels, staircase_series, voxelize
+    from toporlogy.post.reanalysis import solve_voxels, staircase_series, voxel_solid
     out: dict[str, Any] = {"checks": {}}
     d = Domain((32, 12, 12), 1.0)
     x = element_fraction(d, _bar_sdf)
@@ -277,7 +277,7 @@ def section_GC() -> dict[str, Any]:
                                   and rec["geometry_verdict"] != "PASS")
     sup = [lambda X: X[:, 0] < 1e-9]
     load = [(lambda X: X[:, 0] > 32 - 1e-9, (1.0, 0.0, 0.0))]
-    solid, org = voxelize(res.implicit, (0, 0, 0), (32, 12, 12), 0.5)
+    solid, org = voxel_solid(res.implicit, (0, 0, 0), (32, 12, 12), 0.5)
     r7 = solve_voxels(solid, org, 0.5, sup, load, 1.0, 0.0, backends=("toporlogy", "skfem"))
     dif = abs(r7["toporlogy"]["compliance"] / r7["skfem"]["compliance"] - 1)
     out["GC7"] = r7
@@ -441,11 +441,11 @@ def _gc8_sections() -> dict[str, Any]:
     from toporlogy import Domain
     from toporlogy.post import finalize
     from toporlogy.post.primitives import element_fraction
-    from toporlogy.post.reanalysis import voxelize
+    from toporlogy.post.reanalysis import voxel_solid
     d = Domain((32, 12, 12), 1.0)
     res = finalize(d, element_fraction(d, C.stepped_bar_sdf))
     h = 0.25
-    solid, _ = voxelize(res.implicit, (0, 0, 0), (32, 12, 12), h)
+    solid, _ = voxel_solid(res.implicit, (0, 0, 0), (32, 12, 12), h)
     A = solid.sum(axis=(1, 2)) * h * h
     xs = (np.arange(len(A)) + 0.5) * h
     return {"series_measured_areas": float(np.sum(h / A)), "nominal": 0.625,

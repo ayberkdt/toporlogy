@@ -282,9 +282,9 @@ def test_gc4_neck_thickness(bar) -> None:
 @pytest.mark.slow
 def test_gc7_toporlogy_and_scikit_fem_agree_on_the_voxel_mesh(bar) -> None:
     pytest.importorskip("skfem")
-    from toporlogy.post.reanalysis import solve_voxels, voxelize
+    from toporlogy.post.reanalysis import solve_voxels, voxel_solid
     _, _, res = bar
-    solid, org = voxelize(res.implicit, (0, 0, 0), (32, 12, 12), 0.5)
+    solid, org = voxel_solid(res.implicit, (0, 0, 0), (32, 12, 12), 0.5)
     r7 = solve_voxels(solid, org, 0.5, [lambda X: X[:, 0] < 1e-9], [(lambda X: X[:, 0] > 32 - 1e-9, (1.0, 0, 0))],
                       1.0, 0.0)
     assert abs(r7["toporlogy"]["compliance"] / r7["skfem"]["compliance"] - 1) <= 1e-8

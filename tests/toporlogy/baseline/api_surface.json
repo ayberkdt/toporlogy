@@ -5920,7 +5920,7 @@
   "face_weights": "face_weights(solid,h,selected)",
   "solve_voxels": "solve_voxels(solid,origin,h,supports,loads,E,nu,backends,solver,tol)",
   "staircase_series": "staircase_series(phi,lo,hi,sizes,supports,loads,E,nu,backends,volume_reference,solver)",
-  "voxelize": "voxelize(phi,lo,hi,h)"
+  "voxel_solid": "voxel_solid(phi,lo,hi,h)"
  },
  "toporlogy.post.regularize": {
   "adaptive_closing": "adaptive_closing(phi,combine,h,r_start,max_gain,factor,n_trials)",

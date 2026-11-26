@@ -27,12 +27,12 @@ from typing import Any
 import numpy as np
 import scipy.sparse as sp
 
-__all__ = ["voxelize", "face_weights", "solve_voxels", "staircase_series"]
+__all__ = ["voxel_solid", "face_weights", "solve_voxels", "staircase_series"]
 
 Select = Callable[[np.ndarray], Any]
 
 
-def voxelize(phi: Callable[[np.ndarray], np.ndarray], lo: Sequence[float], hi: Sequence[float],
+def voxel_solid(phi: Callable[[np.ndarray], np.ndarray], lo: Sequence[float], hi: Sequence[float],
              h: float) -> tuple[np.ndarray, np.ndarray]:
     """(solid (nx, ny, nz) bool, origin (3,)) of the voxels of spacing ``h`` covering [lo, hi] whose centre has
     φ < 0. The grid starts at ``lo`` exactly, so planes at lo + k·h are voxel faces."""
@@ -201,7 +201,7 @@ def staircase_series(phi: Callable[[np.ndarray], np.ndarray], lo: Sequence[float
     from toporlogy.post.verify import assess_convergence
     meshes = []
     for h in sorted((float(s) for s in sizes), reverse=True):
-        solid, org = voxelize(phi, lo, hi, h)
+        solid, org = voxel_solid(phi, lo, hi, h)
         r = solve_voxels(solid, org, h, supports, loads, E, nu, backends, solver=solver)
         if volume_reference:
             r["volume_error"] = r["volume"] / float(volume_reference) - 1.0
