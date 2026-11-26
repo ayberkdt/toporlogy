@@ -4,17 +4,27 @@
        alt="toporlogy: topology optimisation you can take apart. A cantilever designed by toporlogy, clamped on the left and loaded at the right, coloured by strain energy density, next to the same run at iterations 6, 18 and 45.">
 </picture>
 
-**toporlogy** is a research core for structural optimisation and computational mechanics on regular 2-D and 3-D
-grids, built from small, replaceable, verified pieces:
+**toporlogy** is a research core for structural optimisation and computational mechanics, on regular 2-D and 3-D
+grids and, through a general-mesh package, on unstructured meshes. It is built from small, replaceable, verified
+pieces:
 
-- **mechanics:** one tensor algebra for NumPy and Torch; linear elastic materials from isotropic to general
-  anisotropic; per-element orientation; several phases; geometric non-linearity; heat conduction; modal analysis
-  and linear buckling;
-- **design:** a differentiable design chain; four optimisers (OC, MMA, GCMMA, SiMPL);
-- **responses:** stress, buckling, frequency, manufacturing and one-body constraints;
-- **solvers:** a direct solver with a nested-dissection order, and a GPU multigrid solver;
-- **post-processing:** a pipeline that turns the density field into a checked, printable surface;
-- **verification:** a registry of what is verified and what is not.
+- **materials:** one tensor algebra for NumPy and Torch; linear elastic materials from isotropic to general
+  anisotropic; per-element orientation; phases with their own elasticity tensors; a constitutive protocol with
+  hyperelastic laws and small-strain J2 plasticity; classical lamination theory;
+- **mechanics:** linear and geometrically non-linear elasticity; Newton and arc-length path following; heat
+  conduction, steady and transient; one-way thermoelasticity; structural dynamics; modal analysis and linear
+  buckling; periodic homogenisation; general-mesh elements (Q4, Q9, T3, T6, H8, T4, T10) and a Taylor–Hood u-p
+  formulation;
+- **design:** a differentiable design chain with density, phase and fibre-angle blocks; four optimisers (OC, MMA,
+  GCMMA, SiMPL);
+- **responses:** stress, buckling (with a reliability record), frequency, manufacturing and one-body constraints;
+  mass properties; scenario, Pareto and identification tools;
+- **solvers:** direct solvers with a nested-dissection order (SuperLU, optional supernodal Cholesky), a GPU
+  multigrid solver, and implicit differentiation of any residual;
+- **post-processing:** a pipeline that turns the density field into a checked, printable surface, VTU field
+  export;
+- **verification:** pre-registered checks, a ledger of every expected failure, catalogs and a compatibility matrix
+  of what is verified and what is not.
 
 The banner is one of its results ([`docs/assets/make_banner.py`](docs/assets/make_banner.py) re-runs and redraws
 it).
@@ -141,15 +151,34 @@ run: {max_iter: 300, tol: 0.01}
 - connectivity;
 - the full post-processing chain.
 
-Five more are in `examples/research/`:
+Six more are in `examples/research/`:
 
-- stress constraints, aggregated and by an augmented Lagrangian;
+- stress constraints, aggregated and by an augmented Lagrangian (with a solid load pad and the one-body
+  protection);
 - buckling;
 - a compliant inverter;
-- SiMPL with a PDE filter.
+- SiMPL with a PDE filter;
+- a fibre-angle design block on an orthotropic cantilever.
 
-104 components in 13 kinds can be used from YAML. `python -m toporlogy list` documents them, and
+109 components in 13 kinds can be used from YAML. `python -m toporlogy list` documents them, and
 [`docs/registry.md`](docs/registry.md) shows how to add one in a single line.
+
+**Units and schema.** A config may carry `schema_version: "1"` (another version is refused) and a `units` section.
+Without `units`, every value is a plain number in one consistent set of units chosen by the user. With
+`units: {length: mm, force: N}`, a parameter with a physical unit may be given as `"210 GPa"`, `"-1 kN"` or
+`"0.001 m"`. The value is converted into that consistent system (time in s, mass = force·s²/length); a value of the
+wrong dimension (a mass for a force, a force for a modulus) is refused with both dimensions named
+([`birimler_onkayit.md`](docs/olcumler/birimler_onkayit.md)). Duplicate YAML/JSON keys, non-finite loads and a
+volume bound outside (0, 1] are refused.
+
+**Material records.** `material: {catalog: <id>}` takes the values of a record of the material data catalog
+([`docs/vv_katalog.md`](docs/vv_katalog.md) §4). The records carry source, page, licence, condition and uncertainty
+fields and are checked for admissibility; the catalog holds synthetic records only, since no real material value
+is entered without a read source and licence.
+
+**Outputs.** `post: [{type: vtu}]` writes the fields of the design (density, modulus, displacements, solid von
+Mises stress) as `result.vtu`, an exact ASCII roundtrip that vtk reads; `post: [{type: homogenize}]` writes the
+effective stiffness of the design as a periodic cell.
 
 ## Python API
 
@@ -182,15 +211,15 @@ module, class and config component has one name: there are no alias modules and 
 
 | Stage | Module | Provides |
 |:---|:---|:---|
-| Tensors and materials | `core` (`tensor`, `linear_elastic`, `anisotropy`, `material`) | tensor algebra, linear elastic family, directional analysis, failure strengths (next section) |
+| Tensors and materials | `core` (`tensor`, `linear_elastic`, `anisotropy`, `material`, `material_field`, `constitutive`, `laminate`, `mass_properties`, `vtu`) | tensor algebra, linear elastic family, directional analysis, failure strengths, phase material fields, the constitutive protocol (SVK, neo-Hooke, J2 plasticity), lamination theory, mass properties, VTU I/O |
 | Geometry | `geometry` | CSG primitives, STL voxelisation with partial volumes, bore detection |
 | Boundary conditions | `boundary` | 18 geometric selectors; 5 support types (fixed, roller, symmetry, pinned bore, springs); nodal and 9 distributed load types incl. bearing and remote loads; load cases and combinations; resultant and rigid-body checks |
 | Design chain | `design` (`chain`, `pde_filter`, `interp`, `phases`, `manufacturing`) | cone density filter, Helmholtz (PDE) filter, tanh projection, keep/void regions; SIMP, RAMP, Hashin–Shtrikman and multi-phase interpolation; AM overhang filter, symmetry, extrusion and pattern tying, casting/milling pull direction |
-| Physics | `fem`, `solvers` | Q4, Q4IM, H8 and H8IM elasticity with any material D (per element if needed); geometrically non-linear elasticity; heat conduction; modal analysis; linear buckling; direct and multigrid solvers |
+| Physics | `fem`, `solvers` | Q4, Q4IM, H8 and H8IM elasticity with any material D (per element if needed) or element tensors (`tensor_elastic`); geometrically non-linear elasticity; heat conduction, steady and transient (`transient_heat`); thermoelasticity (`thermoelastic`); Newmark dynamics (`dynamics_newmark`); modal analysis; linear buckling; periodic homogenisation (`homogenization`); the general-mesh package `fem.mesh`; direct (SuperLU, supernodal Cholesky), multigrid, Newton and arc-length solvers (`solvers.newton`, `solvers.continuation`) |
 | Responses | `optimization` | compliance, end compliance, volume, phase volume, mass, cost; robust minimum solid/void size; maximum thickness; one-body constraints; eigenfrequencies; von Mises stress and failure indices; buckling load factor; displacement; sums and ratios of responses |
-| Method toolkit | `optimization` (`aggregates`, `local`, `benchmark`, `diagnostics`, `stress_recovery`, `stress_singularity`) | six smooth aggregates with proven bounds; any local criterion as one aggregated constraint or as an augmented Lagrangian; evaluation of the thresholded design; optimizer-independent first-order optimality; stress output types; peak-stress convergence diagnosis |
+| Method toolkit | `optimization` (`aggregates`, `local`, `benchmark`, `diagnostics`, `stress_recovery`, `stress_singularity`, `implicit`, `mode_tracking`, `uq`, `pareto`, `identification`, `rom`, `laminate_failure`) | six smooth aggregates with proven bounds; any local criterion as one aggregated constraint or as an augmented Lagrangian; evaluation of the thresholded design; optimizer-independent first-order optimality; stress output types; peak-stress convergence diagnosis; implicit differentiation of a residual; mode tracking by MAC; sampling and uncertainty propagation; Pareto scalarisations; parameter identification; POD reduced models; first-ply failure |
 | Optimisation | `optimizers`, `optimization.study` | OC (one constraint), MMA and GCMMA (any number of constraints), SiMPL (one volume-type constraint), β continuation, multiplier updates, move-limit control; run folders with git revision |
-| Configuration | `configuration` (`registry`, `catalog`) | YAML components; versioned catalogs of elements, physics, solvers, benchmarks; a compatibility matrix checked at build time |
+| Configuration | `configuration` (`registry`, `catalog`, `units`) | YAML components; schema version and unit-checked values; versioned catalogs of elements, physics, solvers, benchmarks and materials; a compatibility matrix checked at build time |
 | Post-processing | `post` | density → signed distance → topology-preserving opening/closing → exact functional faces → smooth surface (optionally clipped to the exact CAD envelope) → manufacturing checks → T10 re-analysis with a mesh-convergence verdict → STL/PLY/OBJ; symmetry report |
 
 ## Materials and tensors
@@ -233,8 +262,29 @@ violates the Hashin–Shtrikman bounds of a porous solid. At ν = 0.3 it is 3.08
 strain and 2.63 in 3-D. So p = 3 is not admissible in 2-D at ν = 0.3. The Hashin–Shtrikman interpolation
 (`interpolation: hashin_shtrikman`) does not penalise grey material: use it to judge a grey design.
 
+**Phases with their own tensors and the fibre angle (`core.material_field`, `design.phases`,
+`design.orientation`).** `interpolation: tensor_phases` mixes phases that each have their own `ElasticTensor`
+(own ν, anisotropy and orientation) as a convex combination of positive definite tensors (rules `simplex` and
+`recursive`; the latter equals `multiphase_simp` for scalar multiples of one D). `physics: tensor_elasticity`
+solves it on Q4 / H8 with the adjoint dJ/dC. In 2-D the fibre angle is a design block
+(`embed: {angle: {location: element | global, rmin}}`), filtered in the doubled-angle representation so that +89°
+and −89° average to 90°. Checked against Voigt/Reuss bars, an independent assembly, the off-axis modulus in closed
+form and a 1-D angle sweep. Plain MMA settles into a 2-cycle on a single angle with no active constraint (the
+documented MMA limitation); GCMMA reaches the sweep minimum.
+
+**Constitutive protocol (`core.constitutive`).** Material laws share one protocol: small or finite kinematics,
+explicit stress and tangent measures, a trial state that never touches the committed one, commit only after a
+converged step. It covers St. Venant–Kirchhoff and neo-Hooke (moved, bit for bit the same results), small-strain
+linear elasticity and J2 plasticity with isotropic hardening (radial return, consistent tangent; closed-form
+material-point checks, FE loading/unloading, dissipation and energy balance).
+
+**Laminates (`core.laminate`, `optimization.laminate_failure`).** Classical lamination theory: ply Q and Q̄, ABD,
+thermal resultants, ply stresses, angle and thickness derivatives; first-ply failure by Tsai–Wu and Hashin
+(strengths are user input).
+
 Records: [`tensor_elastisite.md`](docs/olcumler/tensor_elastisite.md),
-[`malzeme_modelleri.md`](docs/olcumler/malzeme_modelleri.md).
+[`malzeme_modelleri.md`](docs/olcumler/malzeme_modelleri.md), [`malzeme_tasarimi.md`](docs/olcumler/malzeme_tasarimi.md),
+[`nonlineer_cozucu.md`](docs/olcumler/nonlineer_cozucu.md), [`laminat_uq.md`](docs/olcumler/laminat_uq.md).
 
 ## Physics
 
@@ -258,13 +308,25 @@ constraints:
 | Geometrically non-linear statics (`physics: nonlinear_elasticity`: Total Lagrangian, Q4 / H8, St. Venant–Kirchhoff with any D or compressible neo-Hooke; energy interpolation for void) and `end_compliance` | uniaxial tension closed form 2e-14; cantilever elastica −0.13 %; tangent 1.9e-10; design gradient 1.2e-9; quadratic error contraction | [`geometrik_dogrusal_olmama.md`](docs/olcumler/geometrik_dogrusal_olmama.md) |
 | 2-D incompatible-mode element `Q4IM` (Wilson's Q6), also in the geometric stiffness | pure bending exact (Q4 −11 %); Ferrari & Sigmund 2019 column: Q4 20 × 2 gives their published error 0.119 | [`malzeme_modelleri.md`](docs/olcumler/malzeme_modelleri.md) |
 | Heat conduction, modal analysis (eigenfrequencies with KS aggregation of repeated eigenvalues) | conduction second order on three grids; first bending frequency 0.997–1.001 of Euler–Bernoulli (H8IM) | `test_fem_mms_extended.py`, `test_modal.py` |
+| Newton and path following (`solvers.newton`, `solvers.continuation`: load control, displacement control, Crisfield arc length), failure codes, line search with residual or energy merit | shallow truss snap-through against its closed form; FE arch: arc length = displacement control to 7.3e-15; no branch switching (the arch bifurcates before its limit point) | [`nonlineer_cozucu.md`](docs/olcumler/nonlineer_cozucu.md) |
+| General-mesh FEM (`fem.mesh`: Q4, Q9, T3, T6, H8, T4, T10; signed-Jacobian check, tags, boundary facets, nonzero Dirichlet, consistent tractions, reactions, rigid-mode rank check); Taylor–Hood u-p (T6-T3, Q9-Q4, T10-T4) | `Mesh.from_domain` = grid path (K ≤ 8.9e-16, u ≤ 1.3e-13); scikit-fem on seven elements (K ≤ 7.1e-16); optimal MMS rates on distorted meshes; Taylor–Hood removes the volumetric locking that Q4/T3/H8/T4 show at ν = 0.4999 | [`fem_genel.md`](docs/olcumler/fem_genel.md) |
+| Periodic homogenisation (`fem.homogenization`): effective stiffness and conductivity, element sensitivities, kinematic-bound option, post step `homogenize` | homogeneous cell = D to 1e-12; two-phase laminates = Backus closed form (2-D, 3-D) to 1e-10; Hill–Mandel; Voigt/Reuss and KUBC ≥ PBC; tiling invariance; gradients ≤ 1e-6 | [`homojenlestirme_onkayit.md`](docs/olcumler/homojenlestirme_onkayit.md) |
+| One-way thermoelasticity (`fem.thermoelastic`), differentiable in modulus, conductivity and thermal load | free and constrained expansion (plane stress, plane strain, 3-D), rotated orthotropic α, layered conduction to 1e-12; design gradient to central differences; cutting either coupling chain is detected | [`termoelastisite_onkayit.md`](docs/olcumler/termoelastisite_onkayit.md) |
+| Transient heat (`fem.transient_heat`, θ-method) and Newmark structural dynamics (`fem.dynamics_newmark`, Rayleigh damping), both differentiable through time | backward Euler order 1.00, Crank–Nicolson 2.00, conservation to 1e-12; Newmark energy conserved to 1e-12, damping decay to 1.3e-4, order 2 against the modal solution | [`gecici_isi_onkayit.md`](docs/olcumler/gecici_isi_onkayit.md), [`newmark_onkayit.md`](docs/olcumler/newmark_onkayit.md) |
+| Mass properties (`core.mass_properties`): mass, centre, inertia tensor, differentiable | closed forms, parallel-axis theorem, superposition to 1e-12 | [`kutle_ozellikleri_onkayit.md`](docs/olcumler/kutle_ozellikleri_onkayit.md) |
+
+A small example of inverse homogenisation: a 30 × 30 periodic cell designed for a negative Poisson ratio has
+ν12 = −1.01 after thresholding ([`auxetic_hucre_onkayit.md`](docs/olcumler/auxetic_hucre_onkayit.md); a
+demonstration on a coarse grid, not a metamaterial claim).
 
 ## Stress
 
 **Stress fields.** `optimization.stress` provides the solid von Mises stress, with qp or polynomial relaxation. It
 can be used as one aggregated constraint or as local constraints through an augmented Lagrangian.
 `FailureIndex` applies any criterion of `optimization.strength` (von Mises, Tresca, Drucker–Prager, Raghava,
-Tsai–Wu) with any elasticity, also per element.
+Tsai–Wu) with any elasticity, also per element. Tsai–Wu is positive semidefinite in its normal-stress block only for
+−1/2 ≤ f12 < 1 when all three normal stresses act; a stress for which the quadratic form is negative raises
+instead of returning a negative index ([`tsai_wu_kabul_onkayit.md`](docs/olcumler/tsai_wu_kabul_onkayit.md)).
 
 **At zero density.** For exponents 0 < q < 1 the one-sided derivative of x̄^q at x̄ = 0 is +∞, and the library
 sets it to 0 there. With p-norm aggregation (q·P > 1) this is the true derivative of the aggregate. With KS or a
@@ -310,10 +372,23 @@ or a clamped edge. Such a peak must not be compared with an allowable.
 - **Verified.** The Euler column converges with refinement (2-D 1.125 → 1.0015; 3-D H8IM 0.9975). A preload c on
   the same pattern lowers λ by exactly c (1e-8). Gradients are below 1e-8.
 - **A localised mode.** The published wall's λ1 does not converge (2.85 → 1.20 from 40² to 320²), because its mode
-  sits at a singular stress. The localisation measure flags this.
+  sits at a singular stress. The localisation measure flags this; excluding the clamp end only moves the mode to
+  the next singular corner.
+- **Reliability record.** Every buckling evaluation carries one (`BucklingKS.last_reliability`): a cut eigenvalue
+  cluster, a mode living in grey or void material, or no buckling make it unreliable; localisation is reported.
+  The modes are tracked between iterations by MAC and subspace angle (`optimization.mode_tracking`). Mesh series
+  give a verdict: the Euler column and a column embedded in a void design domain converge (order 2), the wall
+  with a singular clamp end does not.
 
-Record: [`malzeme_modelleri.md`](docs/olcumler/malzeme_modelleri.md), `test_buckling*.py`,
-`test_independent_buckling.py`.
+**Geometry transfer.** `post.chain.record_chain` records every step from density to surface (volume, bodies and
+voids, local thickness, overshoot of the CAD envelope, watertightness) as PASS / FAIL / MEASURED / UNVERIFIED /
+NOT VERIFIED, with the geometric and the structural verdict kept apart. `post.reanalysis` re-analyses the finished
+shape on a staircase voxel mesh with toporlogy's H8 and, independently, scikit-fem (agreement 1.5e-12); it does not
+replace the T10 re-analysis. Correcting the volume alone does not fix stress or buckling: at equal volume λ1 moved
+by 10 % and the peak von Mises stress by 21 %.
+
+Records: [`malzeme_modelleri.md`](docs/olcumler/malzeme_modelleri.md),
+[`burkulma_geometri.md`](docs/olcumler/burkulma_geometri.md), `test_buckling*.py`, `test_independent_buckling.py`.
 
 ## Keeping the part in one body
 
@@ -359,8 +434,17 @@ PASS means one body holding every interface at thresholds 0.3, 0.5 and 0.7, and 
   Jacobi scaling, so it reflects scale, not instability.
 - **Multigrid (`ElasticityGMG`).** Matrix-free geometric multigrid PCG on CUDA or CPU, for 3-D H8/H8IM only. It is
   7.2× faster than PARDISO at 163 k DOF and solves 10⁶ elements to 1e-8.
+- **Optimisation loop.** `Study.run` runs torch on one thread (`Study(torch_threads=1)`; `None` leaves torch
+  alone). On a loaded machine large OC runs became 5–11× faster per iteration (mbb2d 300 × 100: 13.2 → 1.15 s;
+  cantilever3d 40 × 20 × 10: 24.8 → 5.27 s); the gain depends on the load and was not measured on an idle machine.
+  The SuperLU input is built from a cached index map (same arrays, 10–13× faster set-up). The seven examples stay
+  bit for bit the same.
+- **Supernodal Cholesky (opt-in).** `physics.solver: {type: direct, method: cholesky}` factorises 3-D systems
+  2.3–3.1× faster than SuperLU (to 2e-11 of its solution), also with oblique supports; it is not faster in 2-D.
+- **Implicit differentiation (`optimization.implicit`).** Any residual R(y, x) = 0 is solved by Newton and
+  differentiated by the transposed factorisation of R_y, shared between responses.
 
-Records: [`cozucu_siralama.md`](docs/olcumler/cozucu_siralama.md),
+Records: [`hizlandirma.md`](docs/olcumler/hizlandirma.md), [`cozucu_siralama.md`](docs/olcumler/cozucu_siralama.md),
 [`dogrulama_turu.md`](docs/olcumler/dogrulama_turu.md), [`A2.md`](docs/olcumler/A2.md).
 
 ## Verification and validation
@@ -379,11 +463,12 @@ Three categories are kept apart, as in 08 of the research plan:
 | Catalogs and compatibility matrix | elements, physics, solvers, benchmarks and physics × response states SUPPORTED / EXPERIMENTAL / UNSUPPORTED / NOT VERIFIED from one versioned schema over the registry; unsupported combinations are refused at build | [`docs/vv_katalog.md`](docs/vv_katalog.md), `test_catalog.py`, `test_compatibility.py` |
 | Fault injection | NaN/Inf, non-SPD material, inverted element, singular supports, wrong shapes and units, malformed YAML must stop with a named error | [`docs/vv_fault_injection.md`](docs/vv_fault_injection.md) |
 | Baseline record | environment, BLAS and threads, and objective, constraints, KKT, residual, time and peak memory of the twelve examples | [`baseline_ornekler.md`](docs/olcumler/baseline_ornekler.md) |
+| Resumable sweeps | `sweep_manifest.json` (request hash, environment, seconds and peak memory per run) written atomically before the first solve and after every run; `run ... --sweep ... --out DIR --resume` continues an interrupted sweep without re-running finished runs | [`tarama_surdurme_onkayit.md`](docs/olcumler/tarama_surdurme_onkayit.md) |
 
 | Check | Reference | Result | Source |
 |:---|:---|:---|:---|
 | Compliance problems against published codes | NumPy transcriptions of Top88 (`mbb2d.yaml`) and Top3D (24 × 8 × 4) | objective and gradient ≤ 2.1e-11; histories ≤ 1e-11; same iteration count to convergence | `test_independent_vv.py` |
-| Another team's FE code | scikit-fem 12: same grid with its own mesh, elements, forms and quadrature | Q4 and H8 stiffness, mass, conduction ≤ 5.8e-16; cantilever solution ≤ 7e-15 | `test_skfem_crosscheck.py` |
+| Another team's FE code | scikit-fem 12: same grid with its own mesh, elements, forms and quadrature; the general-mesh package on seven element types; the voxel re-analysis of finished shapes | grid: stiffness, mass, conduction ≤ 5.8e-16, cantilever ≤ 7e-15; general mesh: K ≤ 7.1e-16, u ≤ 1.7e-14; re-analysis 1.5e-12 | `test_skfem_crosscheck.py`, `test_mesh_verification.py`, `test_buckling_geometry.py` |
 | Matrices, stresses, failure indices, buckling | separately written dense implementation in the tests (same author) | matrices ≤ 4.6e-16, stresses ≤ 1.1e-15, eigenvalues ≤ 3.2e-14, load factors ≤ 4e-13 | `test_independent_matrices.py`, `test_independent_stress.py`, `test_independent_buckling.py` |
 | Tensor algebra and elastic family | exact roundtrips, energy equivalence, 3-D elimination, central differences | ≤ 1e-12 (plane stress / strain), derivatives ≤ 1e-6 | `test_tensor.py`, `test_linear_elastic.py`, `test_anisotropy.py` |
 | Manufactured solutions | isotropic Q4 / H8 / H8IM; Q4IM; varying orthotropic axes; heat conduction; SVK and neo-Hooke | second order on three grids (1.97–2.05); wrong constants stall | `test_fem_mms.py`, `test_fem_mms_extended.py` |
@@ -393,59 +478,66 @@ Three categories are kept apart, as in 08 of the research plan:
 | First-order optimality of the result | closed-form constrained problem; MBB with MMA, OC, GCMMA, SiMPL | 1.4e-16 at the closed-form solution; falls by 46–27 600× at convergence | `test_kkt_estimate.py` |
 | Frame invariance and objectivity | 90° rotation and mirror with orientation fields; rigid rotation of large deformations | ≤ 7e-15 | `test_frame_invariance.py` |
 | T10 mesh convergence | three-grid order, Richardson value, GCI | box cantilever: CONVERGED (order 1.47, GCI 0.07 %) on the fine sequence | `test_t10_convergence.py` |
+| Material point and path-dependent laws | J2 plasticity closed forms (uniaxial, cyclic, shear), consistent tangent by central differences, AD oracle of the hyperelastic laws | ≤ 1e-14 σ_y; tangent 1.4e-10; oracle ≤ 1.3e-14 | `test_constitutive.py`, `test_nonlinear_solvers.py` |
+| Laminates, sampling, reduced models | single ply and symmetric / balanced laminates in closed form; ABD by a second integration path; seeded MC / LHS / Sobol convergence; POD with an error bound | see the record (four pre-registered checks failed and are strict xfail) | `test_laminate.py`, `test_uq.py`, `test_rom.py`, [`laminat_uq.md`](docs/olcumler/laminat_uq.md) |
 | Reproducibility | stored baseline of the seven examples | bitwise in the reference environment; elsewhere scalars to 1e-6 | `test_baseline.py` |
 
 ## Known limitations
 
-- **Geometry of the analysis.** Regular grid only: undistorted square/cube elements. No general-mesh FE backend
-  yet, so there is no distorted-element verification, no NAFEMS benchmark (curved boundaries), and no locking
-  study of nearly incompressible material (no mixed u-p, B-bar or F-bar). T10 is used only to re-analyse finished
-  parts.
+- **Geometry of the analysis.** The optimisation runs on the regular grid (undistorted square/cube elements). The
+  general-mesh package (`fem.mesh`) is verified on distorted meshes but is Python API only: no YAML physics and no
+  optimisation on it yet. There is no NAFEMS benchmark. Incompatible modes do not remove volumetric locking in 3-D
+  on the tested mesh (H8IM error 0.72 at ν = 0.4999); use the Taylor–Hood elements there.
 - **Independent references.** The second implementation in the tests has the same author, so it is not another
   team's code; scikit-fem is. The Timoshenko–Goodier three-grid rate check failed (1.34–1.82) because the largest
   error sits at a loaded corner; that is a strict xfail.
 - **T10 convergence of finished parts.** The finest mesh of a converging sequence on `cantilever3d` (about 750 000
   T10 elements) does not fit in 16 GB. The R-01 experiment that needs it is pre-registered but not run
-  ([`r01_onkayit.md`](docs/olcumler/r01_onkayit.md)).
+  ([`r01_onkayit.md`](docs/olcumler/r01_onkayit.md)). Without gmsh, the T10 re-analysis is NOT VERIFIED.
 - **`Result.converged`** means "design change below `tol` and continuation finished". It does not include
   constraint feasibility or optimality. Check `summary.json` → `status`, the constraint values, and `stationarity`.
-- **Literature.** Several methods (stress relaxation, SiMPL, augmented Lagrangian, energy interpolation,
-  Hashin–Shtrikman, Ting & Chen's unbounded Poisson ratio) were implemented from records and abstracts. Every
-  docstring says what was read; those implementations are not verified reproductions of the papers.
+- **Literature.** Several methods were implemented from records, abstracts or textbook knowledge: stress relaxation,
+  SiMPL, the augmented Lagrangian, energy interpolation, Hashin–Shtrikman, the unbounded Poisson ratio of Ting and
+  Chen, radial return, the cylindrical arc length, Taylor–Hood, the Hashin criterion and the Sobol estimators.
+  Every docstring and record says what was read; those implementations are not verified reproductions of the
+  papers.
 - **Stress.**
   - Centroid stress of a voxel model is inaccurate at jagged boundaries and under-reported in grey elements.
   - There is no regional aggregation, no robust (eroded/dilated) stress, and no body-fitted check in the loop.
   - No stress design in this repository has met the stress limit on its 0/1 design.
 - **Buckling.**
-  - Linear bifurcation only.
+  - Linear bifurcation only; no imperfection or post-buckling path.
   - A 2-D plane model cannot buckle out of its plane.
   - Plain `Elasticity` only.
   - No regularisation against localised modes: `exclude` moves a singular localisation rather than removing it.
-  - The number of aggregated modes is fixed by the user.
+  - The number of aggregated modes is fixed by the user; a cut cluster now marks the result unreliable.
 - **Materials.**
-  - The fibre angle is data, not a design variable.
-  - No laminate theory, and no damage after first failure.
+  - The fibre angle is a design block in 2-D only; 3-D orientation design is not implemented.
+  - Several phases together with the angle block are refused by `Study` (rule `angle_phases`).
+  - No damage after first ply failure; no plate or shell element for laminates.
   - The Tsai–Wu interaction f12 = −0.5 is a common choice, not a measured value.
   - The multigrid solver takes one D only.
   - The material data catalog holds synthetic entries only.
-- **Several phases.**
-  - The phases share ν and the material axes (one unit D scaled by E).
-  - Stress, buckling, modal, robust, connectivity, manufacturing ties and the geometry post steps refuse several
-    phases.
-- **Geometric non-linearity.**
-  - Load control only, no arc-length: a limit point ends the solve.
-  - Dead loads only.
-  - No plasticity, contact or follower loads.
-  - The adaptive energy-interpolation cutoff can make the objective jump between designs.
+- **Several phases (`multiphase_simp`).** The phases share ν and the material axes (one unit D scaled by E); use
+  `tensor_phases` for phases with their own tensors. Stress, buckling, modal, robust, connectivity, manufacturing
+  ties and the geometry post steps refuse several phases.
+- **Non-linearity.**
+  - Dead loads only; no contact or follower loads.
+  - No branch switching at bifurcations; the path follower stays on the primary path.
+  - No design sensitivities for path-dependent (plastic) models.
+  - The adaptive energy-interpolation cutoff can make the objective jump between designs (7 model changes on 21
+    points of a design line); a monotone policy exists (`cutoff_policy: monotone`).
   - The neo-Hooke plane-stress tangent condenses σzz only, which is right for the isotropic model it serves.
-- **Input checks.** The fault-injection record lists inputs that are still accepted silently or fail with an
-  unrelated error (for example a NaN force component, a negative 2-D thickness, a duplicated YAML key):
-  [`docs/vv_fault_injection.md`](docs/vv_fault_injection.md).
+- **Coupled and transient physics.** Thermoelasticity is one-way (temperature → displacement). Transient heat and
+  Newmark dynamics keep the whole time history in the autograd graph, so memory grows with the number of steps.
+  These modules and the mass properties are Python API, not yet `Study` responses; the homogenisation is also a
+  post step.
 - **Optimisers.**
-  - MMA has no global convergence guarantee; GCMMA removes the observed two-cycle at the cost of extra solves.
+  - MMA has no global convergence guarantee: a variable with an interior optimum and no active constraint can end
+    in a two-cycle (seen on the fibre angle); GCMMA removes it at the cost of extra solves.
   - OC and SiMPL handle exactly one constraint that needs no state solve.
-- **Not provided:** thermoelasticity, plasticity, contact, post-buckling, homogenisation and de-homogenisation, STEP
-  or other B-rep output (STL/PLY/OBJ only).
+- **Not provided:** contact, damage, post-buckling, de-homogenisation, plate and shell elements, STEP or other B-rep
+  output (STL/PLY/OBJ only).
 
 The research plan and its status are in [`docs/gelistirme_plani.md`](docs/gelistirme_plani.md) and
 [`docs/yol_haritasi_2026-11-18.md`](docs/yol_haritasi_2026-11-18.md). The method decisions are in
@@ -456,9 +548,9 @@ The research plan and its status are in [`docs/gelistirme_plani.md`](docs/gelist
 ## Development
 
 ```bash
-python -m pytest tests/toporlogy -m "not slow"                  # main suite (1149 pass, 22 strict xfail on 26 Nov 2026)
+python -m pytest tests/toporlogy -m "not slow"                  # main suite (MAIN_SUITE_COUNT)
 python -m pytest tests/toporlogy/test_baseline.py -m baseline   # bitwise baseline of the examples (~3.5 min)
-python -m pytest tests/toporlogy -m slow                        # pre-registered sweeps and full example runs
+python -m pytest tests/toporlogy -m slow                        # pre-registered sweeps and full example runs (weekly in CI)
 ```
 
 Guard rails for refactoring (`tests/toporlogy`):
@@ -478,14 +570,15 @@ After an intended change, rewrite the snapshot and say why in the commit:
 - `python tests/toporlogy/test_catalog_ledger.py --write` (after editing `docs/vv_kutugu.json`)
 - `python tests/toporlogy/_vv_layers.py --write`
 - `python -m toporlogy.configuration.catalog --write docs`
+- `python tests/toporlogy/test_units.py --write` (resolved configs of the examples)
 
 Other notes:
 
 - `tests/toporlogy/topo_oracles/` holds frozen copies of earlier drivers, used only as regression oracles.
 - Optional native packages outside site-packages are found through `TOPORLOGY_PYLIB` (folders separated by the
   path separator), and the MKL DLLs through `TOPORLOGY_MKL_BIN`.
-- Under heavy CPU load, multithreaded MKL and torch can be 10–25× slower than single-threaded. Set
-  `torch.set_num_threads` in long runs.
+- Under heavy CPU load, multithreaded MKL and torch can be 10–25× slower than single-threaded; `Study.run` sets one
+  torch thread for its loop.
 - Static checks: `ruff check src/toporlogy tests/toporlogy` and `mypy src/toporlogy`, both clean and both run by CI
   (`.github/workflows/tests.yml`). PARDISO, gmsh/T10 and the Linux baseline run in `backends.yml`. A test that needs
   a missing backend reports it as NOT VERIFIED, never as passed.

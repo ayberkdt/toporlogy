@@ -4,14 +4,14 @@ Kaynak: `tests/toporlogy/_vv_layers.py` (dosya → katman sınıflaması elle, d
 
 | Katman | core | geometry | boundary | design | fem | solvers | optimization | optimizers | configuration | execution | post | references |
 |:---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| U unit / property | 14/195 | 3/30 | — | 7/103 | 9/118 | 3/43 | 15/192 | 3/64 | 3/53 | 2/14 | 4/44 | — |
+| U unit / property | 14/195 | 3/30 | — | 7/103 | 10/142 | 3/43 | 16/216 | 3/64 | 3/53 | 2/14 | 5/68 | — |
 | MP material point | 16/205 | — | — | 8/126 | 11/154 | 1/25 | 13/163 | 5/91 | 7/97 | 1/13 | 4/55 | — |
 | EL element patch / quadrature | 7/80 | — | — | 1/10 | 10/109 | 1/14 | 4/52 | 1/14 | 1/17 | — | 3/40 | — |
 | AS assembly / BC / reactions | 5/111 | 1/23 | 5/62 | 2/59 | 8/127 | 6/78 | 3/82 | 2/59 | 1/34 | — | 1/20 | — |
-| AN analytical / MMS | 17/213 | — | — | 5/94 | 22/254 | 1/25 | 17/233 | 5/100 | 5/89 | 1/13 | 2/20 | — |
-| IS independent solver / implementation | 8/96 | — | 1/14 | 3/73 | 12/149 | 3/51 | 6/98 | 3/73 | 3/62 | — | — | — |
-| OG optimization / KKT / gradient | 14/180 | — | 1/14 | 8/129 | 17/221 | 6/87 | 25/272 | 16/210 | 9/132 | 2/30 | 2/30 | — |
-| E2E end-to-end geometry | 2/38 | 5/39 | — | 2/13 | 2/38 | — | 7/61 | 1/21 | 4/38 | 1/10 | 10/67 | — |
+| AN analytical / MMS | 17/213 | — | — | 5/94 | 23/278 | 1/25 | 18/257 | 5/100 | 5/89 | 1/13 | 3/44 | — |
+| IS independent solver / implementation | 8/96 | — | 1/14 | 3/73 | 13/173 | 3/51 | 7/122 | 3/73 | 3/62 | — | 1/24 | — |
+| OG optimization / KKT / gradient | 14/180 | — | 1/14 | 8/129 | 18/245 | 6/87 | 26/296 | 16/210 | 9/132 | 2/30 | 3/54 | — |
+| E2E end-to-end geometry | 2/38 | 5/39 | — | 2/13 | 3/62 | — | 8/85 | 1/21 | 4/38 | 1/10 | 11/91 | — |
 | IC integration / compatibility | 5/52 | 2/34 | — | 4/65 | 5/59 | — | 6/84 | 3/57 | 14/154 | 9/85 | 1/8 | 1/11 |
 | PF performance | — | — | 2/25 | 1/14 | 3/37 | 3/37 | 1/14 | 1/14 | 1/14 | — | — | — |
 
@@ -22,7 +22,7 @@ Boş hücreler (açık risk adayı; her biri bir risk değildir, örn. `referenc
 - **EL** (element patch / quadrature): geometry, boundary, execution, references
 - **AS** (assembly / BC / reactions): execution, references
 - **AN** (analytical / MMS): geometry, boundary, references
-- **IS** (independent solver / implementation): geometry, execution, post, references
+- **IS** (independent solver / implementation): geometry, execution, references
 - **OG** (optimization / KKT / gradient): geometry, references
 - **E2E** (end-to-end geometry): boundary, solvers, references
 - **IC** (integration / compatibility): boundary, solvers
@@ -40,6 +40,7 @@ Katman sınıflaması (dosya → katmanlar):
 - `test_bc.py`: AS
 - `test_benchmark.py`: OG
 - `test_buckling.py`: EL, AN, OG
+- `test_buckling_geometry.py`: U, AN, IS, OG, E2E
 - `test_buckling_physics.py`: AN, OG
 - `test_catalog.py`: IC
 - `test_catalog_ledger.py`: IC

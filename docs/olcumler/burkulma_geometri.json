@@ -1,0 +1,4053 @@
+{
+ "GC": {
+  "checks": {
+   "GC1": {
+    "value": [
+     0.0,
+     2.7942853948470514e-06,
+     -0.00028143770176536353
+    ],
+    "threshold": "<= 1e-9 / 5e-3 / 3e-2",
+    "pass": true
+   },
+   "GC2": {
+    "value": {
+     "density": [
+      1,
+      0
+     ],
+     "threshold": [
+      1,
+      0
+     ],
+     "islands_removed": [
+      1,
+      0
+     ],
+     "opened": [
+      1,
+      0
+     ],
+     "closed": [
+      1,
+      0
+     ],
+     "final": [
+      1,
+      0
+     ],
+     "surface": [
+      1,
+      0
+     ]
+    },
+    "threshold": "bodies 1, cavities 0 on every stage",
+    "pass": true
+   },
+   "GC3": {
+    "value": {
+     "edges": 55290,
+     "open": 0,
+     "non_manifold": 0,
+     "misoriented": 0,
+     "non_manifold_vertices": 0
+    },
+    "threshold": "open = non-manifold = misoriented = 0",
+    "pass": true
+   },
+   "GC4": {
+    "value": {
+     "threshold": {
+      "min": 4.0841588331945236,
+      "max": 4.569255391964152,
+      "y": 5.875,
+      "z": 5.875
+     },
+     "final": {
+      "min": 4.083661099902251,
+      "max": 4.342613944874041,
+      "y": 5.875,
+      "z": 5.875
+     }
+    },
+    "threshold": "4 +- 0.5",
+    "pass": false
+   },
+   "GC5": {
+    "value": {
+     "excursion": 0.0,
+     "h_f": 0.25
+    },
+    "threshold": "<= 0.05 h_f",
+    "pass": true
+   },
+   "GC6": {
+    "value": {
+     "statuses": {
+      "self_intersection": "UNVERIFIED",
+      "symmetry": "UNVERIFIED",
+      "hole_preservation": "UNVERIFIED"
+     },
+     "geometry_verdict": "UNVERIFIED"
+    },
+    "threshold": "UNVERIFIED each; verdict not PASS",
+    "pass": true
+   },
+   "GC7": {
+    "value": 1.5114576257246881e-12,
+    "threshold": "<= 1e-8",
+    "pass": true
+   },
+   "GC8": {
+    "value": {
+     "C_fine": 0.6756096683109427,
+     "C_over_Ca_minus_1": 0.08097546929750843,
+     "verdict": "NOT CONVERGED"
+    },
+    "threshold": "|C/C_a - 1| <= 0.05",
+    "pass": false
+   },
+   "GC9": {
+    "value": {
+     "status": "NOT VERIFIED",
+     "note": "gmsh is not installed: no tetrahedral mesh, no T10 re-analysis"
+    },
+    "threshold": "NOT VERIFIED",
+    "pass": true
+   }
+  },
+  "finalize_seconds": 12.718544300005306,
+  "record": {
+   "stages": [
+    {
+     "name": "density",
+     "kind": "voxel",
+     "metrics": {
+      "volume": 1792.0,
+      "volume_voxels_x_ge_half": 1792.0,
+      "topology": {
+       "bodies": 1,
+       "cavities": 0,
+       "euler": 1,
+       "tunnels": 0
+      },
+      "grey_fraction": 0.0
+     },
+     "checks": [
+      {
+       "name": "bodies",
+       "value": 1,
+       "threshold": 1,
+       "status": "PASS",
+       "note": ""
+      },
+      {
+       "name": "min_wall_p1",
+       "value": null,
+       "threshold": null,
+       "status": "MEASURED",
+       "note": "no surface on a grey density"
+      }
+     ]
+    },
+    {
+     "name": "threshold",
+     "kind": "field",
+     "metrics": {
+      "volume": 1792.0050073594275,
+      "topology": {
+       "bodies": 1,
+       "cavities": 0,
+       "euler": 1,
+       "tunnels": 0
+      },
+      "thickness": {
+       "min": 0.06739184517308973,
+       "p1": 2.5154257479409776,
+       "median": 8.083568131544876,
+       "uncovered": 0
+      },
+      "cad_excursion": -0.125
+     },
+     "checks": [
+      {
+       "name": "bodies",
+       "value": 1,
+       "threshold": 1,
+       "status": "PASS",
+       "note": ""
+      },
+      {
+       "name": "enclosed_voids",
+       "value": 0,
+       "threshold": 0,
+       "status": "PASS",
+       "note": ""
+      },
+      {
+       "name": "min_wall_p1",
+       "value": 2.5154257479409776,
+       "threshold": null,
+       "status": "MEASURED",
+       "note": "inscribed-ball local thickness of the redistanced field"
+      },
+      {
+       "name": "cad_tolerance",
+       "value": -0.125,
+       "threshold": null,
+       "status": "MEASURED",
+       "note": "largest envelope distance of a solid sample (> 0: outside)"
+      }
+     ]
+    },
+    {
+     "name": "islands_removed",
+     "kind": "field",
+     "metrics": {
+      "volume": 1792.0050073594275,
+      "topology": {
+       "bodies": 1,
+       "cavities": 0,
+       "euler": 1,
+       "tunnels": 0
+      },
+      "thickness": {
+       "min": 0.06739184517308973,
+       "p1": 2.5154257479409776,
+       "median": 8.083568131544876,
+       "uncovered": 0
+      },
+      "cad_excursion": -0.125
+     },
+     "checks": [
+      {
+       "name": "bodies",
+       "value": 1,
+       "threshold": 1,
+       "status": "PASS",
+       "note": ""
+      },
+      {
+       "name": "enclosed_voids",
+       "value": 0,
+       "threshold": 0,
+       "status": "PASS",
+       "note": ""
+      },
+      {
+       "name": "min_wall_p1",
+       "value": 2.5154257479409776,
+       "threshold": null,
+       "status": "MEASURED",
+       "note": "inscribed-ball local thickness of the redistanced field"
+      },
+      {
+       "name": "cad_tolerance",
+       "value": -0.125,
+       "threshold": null,
+       "status": "MEASURED",
+       "note": "largest envelope distance of a solid sample (> 0: outside)"
+      }
+     ]
+    },
+    {
+     "name": "opened",
+     "kind": "field",
+     "metrics": {
+      "volume": 1791.3604008345576,
+      "topology": {
+       "bodies": 1,
+       "cavities": 0,
+       "euler": 1,
+       "tunnels": 0
+      },
+      "thickness": {
+       "min": 0.03302220373663628,
+       "p1": 3.040333022334151,
+       "median": 8.041777852831183,
+       "uncovered": 0
+      },
+      "cad_excursion": -0.125
+     },
+     "checks": [
+      {
+       "name": "bodies",
+       "value": 1,
+       "threshold": 1,
+       "status": "PASS",
+       "note": ""
+      },
+      {
+       "name": "enclosed_voids",
+       "value": 0,
+       "threshold": 0,
+       "status": "PASS",
+       "note": ""
+      },
+      {
+       "name": "min_wall_p1",
+       "value": 3.040333022334151,
+       "threshold": null,
+       "status": "MEASURED",
+       "note": "inscribed-ball local thickness of the redistanced field"
+      },
+      {
+       "name": "cad_tolerance",
+       "value": -0.125,
+       "threshold": null,
+       "status": "MEASURED",
+       "note": "largest envelope distance of a solid sample (> 0: outside)"
+      }
+     ]
+    },
+    {
+     "name": "closed",
+     "kind": "field",
+     "metrics": {
+      "volume": 1794.0776587849098,
+      "topology": {
+       "bodies": 1,
+       "cavities": 0,
+       "euler": 1,
+       "tunnels": 0
+      },
+      "thickness": {
+       "min": 0.05325375769723892,
+       "p1": 3.0417681258834337,
+       "median": 8.041777852831183,
+       "uncovered": 0
+      },
+      "cad_excursion": -0.125
+     },
+     "checks": [
+      {
+       "name": "bodies",
+       "value": 1,
+       "threshold": 1,
+       "status": "PASS",
+       "note": ""
+      },
+      {
+       "name": "enclosed_voids",
+       "value": 0,
+       "threshold": 0,
+       "status": "PASS",
+       "note": ""
+      },
+      {
+       "name": "min_wall_p1",
+       "value": 3.0417681258834337,
+       "threshold": null,
+       "status": "MEASURED",
+       "note": "inscribed-ball local thickness of the redistanced field"
+      },
+      {
+       "name": "cad_tolerance",
+       "value": -0.125,
+       "threshold": null,
+       "status": "MEASURED",
+       "note": "largest envelope distance of a solid sample (> 0: outside)"
+      }
+     ]
+    },
+    {
+     "name": "final",
+     "kind": "field",
+     "metrics": {
+      "volume": 1794.0776587849098,
+      "topology": {
+       "bodies": 1,
+       "cavities": 0,
+       "euler": 1,
+       "tunnels": 0
+      },
+      "thickness": {
+       "min": 0.05325375769723892,
+       "p1": 3.0417681258834337,
+       "median": 8.041777852831183,
+       "uncovered": 0
+      },
+      "cad_excursion": -0.125
+     },
+     "checks": [
+      {
+       "name": "bodies",
+       "value": 1,
+       "threshold": 1,
+       "status": "PASS",
+       "note": ""
+      },
+      {
+       "name": "enclosed_voids",
+       "value": 0,
+       "threshold": 0,
+       "status": "PASS",
+       "note": ""
+      },
+      {
+       "name": "min_wall_p1",
+       "value": 3.0417681258834337,
+       "threshold": null,
+       "status": "MEASURED",
+       "note": "inscribed-ball local thickness of the redistanced field"
+      },
+      {
+       "name": "cad_tolerance",
+       "value": -0.125,
+       "threshold": null,
+       "status": "MEASURED",
+       "note": "largest envelope distance of a solid sample (> 0: outside)"
+      }
+     ]
+    },
+    {
+     "name": "surface",
+     "kind": "surface",
+     "metrics": {
+      "volume": 1791.4956636384366,
+      "topology": {
+       "shells": 1,
+       "bodies": 1,
+       "cavities": 0,
+       "euler": 1.0,
+       "tunnels": 0.0
+      },
+      "edges": {
+       "edges": 55290,
+       "open": 0,
+       "non_manifold": 0,
+       "misoriented": 0,
+       "non_manifold_vertices": 0
+      },
+      "thickness_ray": {
+       "min": 3.995095973400255,
+       "p1": 4.081776798460596,
+       "median": 8.095847496675521
+      },
+      "faces": 36860,
+      "vertices": 18432,
+      "cad_excursion": 0.0
+     },
+     "checks": [
+      {
+       "name": "watertight_manifold",
+       "value": {
+        "edges": 55290,
+        "open": 0,
+        "non_manifold": 0,
+        "misoriented": 0,
+        "non_manifold_vertices": 0
+       },
+       "threshold": "all 0",
+       "status": "PASS",
+       "note": ""
+      },
+      {
+       "name": "bodies",
+       "value": 1,
+       "threshold": 1,
+       "status": "PASS",
+       "note": ""
+      },
+      {
+       "name": "enclosed_voids",
+       "value": 0,
+       "threshold": 0,
+       "status": "PASS",
+       "note": ""
+      },
+      {
+       "name": "min_wall_p1",
+       "value": 4.081776798460596,
+       "threshold": null,
+       "status": "MEASURED",
+       "note": "ray thickness along the inner normal"
+      },
+      {
+       "name": "volume_vs_optimised",
+       "value": -0.00028143770176536353,
+       "threshold": null,
+       "status": "MEASURED",
+       "note": ""
+      },
+      {
+       "name": "cad_tolerance",
+       "value": 0.0,
+       "threshold": null,
+       "status": "MEASURED",
+       "note": "largest envelope distance of a vertex (> 0: outside)"
+      },
+      {
+       "name": "self_intersection",
+       "value": null,
+       "threshold": "required",
+       "status": "UNVERIFIED",
+       "note": "not evaluated by toporlogy.post"
+      },
+      {
+       "name": "symmetry",
+       "value": null,
+       "threshold": "required",
+       "status": "UNVERIFIED",
+       "note": "not evaluated by toporlogy.post"
+      },
+      {
+       "name": "hole_preservation",
+       "value": null,
+       "threshold": "required",
+       "status": "UNVERIFIED",
+       "note": "not evaluated by toporlogy.post"
+      }
+     ]
+    },
+    {
+     "name": "volume_mesh",
+     "kind": "volume_mesh",
+     "status": "NOT VERIFIED",
+     "note": "gmsh is not installed: no tetrahedral mesh, no T10 re-analysis",
+     "metrics": {},
+     "checks": []
+    },
+    {
+     "name": "reanalysis_t10",
+     "kind": "analysis",
+     "status": "NOT VERIFIED",
+     "note": "gmsh is not installed: no tetrahedral mesh, no T10 re-analysis",
+     "metrics": {},
+     "checks": []
+    }
+   ],
+   "geometry_verdict": "UNVERIFIED",
+   "structural_verdict": "NOT VERIFIED",
+   "intermediate_failures": [],
+   "requirements": {
+    "max_bodies": 1,
+    "max_voids": 0,
+    "min_wall": null,
+    "cad_tol": null,
+    "volume_tol": null,
+    "required": [
+     "self_intersection",
+     "symmetry",
+     "hole_preservation"
+    ]
+   },
+   "statuses_seen": [
+    "MEASURED",
+    "PASS",
+    "UNVERIFIED"
+   ]
+  },
+  "GC7": {
+   "h": 0.5,
+   "elements": 14072,
+   "nodes": 16477,
+   "dofs": 49431,
+   "volume": 1759.0,
+   "applied_force": [
+    0.9999999999999969,
+    0.0,
+    0.0
+   ],
+   "toporlogy": {
+    "compliance": 0.6799368905695726,
+    "solver": "direct",
+    "seconds": 18.80181019999145
+   },
+   "skfem": {
+    "compliance": 0.6799368905706004,
+    "reaction_sum": [
+     -1.000000000000004,
+     1.6347306012787265e-15,
+     9.5578217062841e-16
+    ],
+    "solver": "splu",
+    "seconds": 2180.408582799995
+   }
+  },
+  "GC8": {
+   "meshes": [
+    {
+     "h": 0.5,
+     "elements": 14072,
+     "nodes": 16477,
+     "dofs": 49431,
+     "volume": 1759.0,
+     "applied_force": [
+      0.9999999999999969,
+      0.0,
+      0.0
+     ],
+     "toporlogy": {
+      "compliance": 0.6799368905699055,
+      "solver": "gmg",
+      "seconds": 3.8851713000040036
+     },
+     "volume_error": -0.018138845824744898
+    },
+    {
+     "h": 0.3333333333333333,
+     "elements": 48034,
+     "nodes": 53379,
+     "dofs": 160137,
+     "volume": 1779.0370370370365,
+     "applied_force": [
+      1.0000000000000075,
+      0.0,
+      0.0
+     ],
+     "toporlogy": {
+      "compliance": 0.6706124955412105,
+      "solver": "gmg",
+      "seconds": 1.8264750000089407
+     },
+     "volume_error": -0.0069543158011877715
+    },
+    {
+     "h": 0.25,
+     "elements": 113148,
+     "nodes": 122573,
+     "dofs": 367719,
+     "volume": 1767.9375,
+     "applied_force": [
+      0.9999999999999978,
+      0.0,
+      0.0
+     ],
+     "toporlogy": {
+      "compliance": 0.6756096683109427,
+      "solver": "gmg",
+      "seconds": 3.1901970000035362
+     },
+     "volume_error": -0.013149997578331352
+    }
+   ],
+   "convergence": {
+    "meshes": 3,
+    "h": [
+     0.25,
+     0.3333333333333333,
+     0.5
+    ],
+    "values": [
+     0.6756096683109427,
+     0.6706124955412105,
+     0.6799368905699055
+    ],
+    "reasons": [
+     "oscillatory or stalled: the differences between successive meshes change sign or vanish"
+    ],
+    "refinement": [
+     1.3333333333333333,
+     1.5
+    ],
+    "verdict": "NOT CONVERGED"
+   },
+   "backend": "toporlogy",
+   "note": "staircase boundary: geometry error O(h) is part of every difference (not body-fitted)",
+   "seconds": 9.600032399990596
+  },
+  "seconds_section": 2237.2097404000087,
+  "env": {
+   "sha": "478ed4acd3b567d09ea96bd9e942a75d0a314364",
+   "python": "3.12.1",
+   "numpy": "2.2.6",
+   "scipy": "1.14.1",
+   "torch": "2.5.1+cu121",
+   "skfem": "12.0.2",
+   "platform": "Windows-11-10.0.26200-SP0",
+   "date": "2026-11-26 05:57 +0300"
+  }
+ },
+ "RL": {
+  "checks": {
+   "RL1": {
+    "value": {
+     "1": [
+      false,
+      [
+       "cluster_cut"
+      ]
+     ],
+     "2": [
+      true,
+      []
+     ]
+    },
+    "threshold": "n=1: not reliable, cluster_cut; n=2: reliable",
+    "pass": true
+   },
+   "RL2": {
+    "value": 1.993865563481229,
+    "threshold": ">= 1e-2",
+    "pass": true
+   },
+   "RL2b": {
+    "value": {
+     "asym": 1.07887979853371e-05,
+     "ad_vs_fd": 1.1560909431453186e-06
+    },
+    "threshold": "asym <= 1e-5 and AD vs FD <= 1e-6",
+    "pass": false
+   },
+   "RL3": {
+    "value": {
+     "identity": true,
+     "mac_min": 0.9999999999999982
+    },
+    "threshold": "identity; MAC >= 1 - 1e-8",
+    "pass": true
+   }
+  },
+  "RL1": {
+   "1": {
+    "reliable": false,
+    "flags": [
+     "cluster_cut"
+    ],
+    "load_factor_1": 0.3821661651209147,
+    "low_density_share_1": 0.0,
+    "stress_energy_share_1": 0.0,
+    "localization_1": 0.07174952444816858,
+    "mu_next": 2.6166628321960075
+   },
+   "2": {
+    "reliable": true,
+    "flags": [],
+    "load_factor_1": 0.3821661651211093,
+    "low_density_share_1": 0.0,
+    "stress_energy_share_1": 0.0,
+    "localization_1": 0.07186302274661109,
+    "mu_next": 0.317701335483397
+   }
+  },
+  "RL2": {
+   "1": [
+    {
+     "D+": 0.43241522145187616,
+     "D-": 0.25717835192118343,
+     "asym": 0.405251389954123
+    },
+    {
+     "D+": 0.44385805051394556,
+     "D-": 0.21118907741257686,
+     "asym": 0.5241968075873809
+    },
+    {
+     "D+": 0.46973534687300145,
+     "D-": -0.4248290126573906,
+     "asym": 1.9044007769171525
+    },
+    {
+     "D+": 0.7220932840779071,
+     "D-": -0.7176636486661003,
+     "asym": 1.993865563481229
+    }
+   ],
+   "2": [
+    {
+     "D+": 0.3447968027670001,
+     "D-": 0.3447968011283109,
+     "asym": 4.752622910642509e-09
+    },
+    {
+     "D+": 0.32752366150745615,
+     "D-": 0.32752360025867233,
+     "asym": 1.8700567629409668e-07
+    },
+    {
+     "D+": 0.022453063603933288,
+     "D-": 0.022453042478609575,
+     "asym": 9.40865980928624e-07
+    },
+    {
+     "D+": 0.0022147249367776567,
+     "D-": 0.0022147010425577207,
+     "asym": 1.07887979853371e-05
+    }
+   ]
+  },
+  "RL2b": {
+   "asym_max": 1.07887979853371e-05,
+   "ad_vs_fd": 1.1560909431453186e-06
+  },
+  "RL3": {
+   "order": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "mac": [
+    0.9999999999999987,
+    0.9999999999999993,
+    0.9999999999999982,
+    0.9999999999999993,
+    1.0000000000000022,
+    1.0
+   ]
+  },
+  "RL4": {
+   "lambda0": 0.008825609920010446,
+   "target": 0.014120975872016715,
+   "evaluations": 61,
+   "switches": 5,
+   "mac_mode1_min": 0.957478834792589,
+   "unreliable": 9,
+   "flags_seen": [
+    "spurious_low_density"
+   ],
+   "iterations": 60,
+   "objective": 13.825759860600305,
+   "seconds": 26.185337200004142,
+   "log": [
+    {
+     "lambda": [
+      0.014395124427609221,
+      0.07303847784006749,
+      0.08340275604541966,
+      0.08518123824846552,
+      0.10188412994819893,
+      0.10749196789502123
+     ],
+     "reliable": false,
+     "flags": [
+      "spurious_low_density"
+     ],
+     "switch": null,
+     "mac_mode1": null,
+     "order": null
+    },
+    {
+     "lambda": [
+      0.014104459447532226,
+      0.07632571721251397,
+      0.12425280310033,
+      0.1548803158569214,
+      0.17049958232679896,
+      0.1717009565694033
+     ],
+     "reliable": false,
+     "flags": [
+      "spurious_low_density"
+     ],
+     "switch": true,
+     "mac_mode1": 0.9840080322707886,
+     "order": [
+      0,
+      1,
+      5,
+      4,
+      2,
+      3
+     ]
+    },
+    {
+     "lambda": [
+      0.014749274622068936,
+      0.07224898156085954,
+      0.1263990371714149,
+      0.16400505053455608,
+      0.18693212854199145,
+      0.20094784472355243
+     ],
+     "reliable": false,
+     "flags": [
+      "spurious_low_density"
+     ],
+     "switch": false,
+     "mac_mode1": 0.9846674729247024,
+     "order": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+     ]
+    },
+    {
+     "lambda": [
+      0.01525586303444816,
+      0.06868520945043065,
+      0.13171239395644752,
+      0.17246092017142045,
+      0.1984613635779813,
+      0.21499512127032433
+     ],
+     "reliable": false,
+     "flags": [
+      "spurious_low_density"
+     ],
+     "switch": false,
+     "mac_mode1": 0.9750484722590053,
+     "order": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+     ]
+    },
+    {
+     "lambda": [
+      0.015505466443198888,
+      0.06820708373190099,
+      0.13593661816275146,
+      0.18136099789668264,
+      0.21302973358944144,
+      0.23131980829875043
+     ],
+     "reliable": false,
+     "flags": [
+      "spurious_low_density"
+     ],
+     "switch": false,
+     "mac_mode1": 0.9677708579092708,
+     "order": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+     ]
+    },
+    {
+     "lambda": [
+      0.015049768812260745,
+      0.06879834129598539,
+      0.13536754176809573,
+      0.18900753037138618,
+      0.22306662547693637,
+      0.2425164212642867
+     ],
+     "reliable": false,
+     "flags": [
+      "spurious_low_density"
+     ],
+     "switch": false,
+     "mac_mode1": 0.9695395941335407,
+     "order": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+     ]
+    },
+    {
+     "lambda": [
+      0.014702332876071957,
+      0.06984335133375212,
+      0.13733065094532432,
+      0.1958688443232983,
+      0.2271443350207698,
+      0.24940088651508718
+     ],
+     "reliable": false,
+     "flags": [
+      "spurious_low_density"
+     ],
+     "switch": false,
+     "mac_mode1": 0.9751698892560958,
+     "order": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+     ]
+    },
+    {
+     "lambda": [
+      0.01469641968079357,
+      0.07124021133300491,
+      0.14396335171244867,
+      0.1957940075672034,
+      0.2151051430169744,
+      0.25035160717513383
+     ],
+     "reliable": false,
+     "flags": [
+      "spurious_low_density"
+     ],
+     "switch": false,
+     "mac_mode1": 0.9822521041840528,
+     "order": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+     ]
+    },
+    {
+     "lambda": [
+      0.014801377391830827,
+      0.07385491426291398,
+      0.1550935503281609,
+      0.1637705864127869,
+      0.21313461134041004,
+      0.2509785266914931
+     ],
+     "reliable": false,
+     "flags": [
+      "spurious_low_density"
+     ],
+     "switch": false,
+     "mac_mode1": 0.9796356264587764,
+     "order": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+     ]
+    },
+    {
+     "lambda": [
+      0.014849031275402725,
+      0.07497378526096182,
+      0.1252198803755672,
+      0.1685570826131921,
+      0.21847203388300449,
+      0.23992644530966253
+     ],
+     "reliable": true,
+     "flags": [],
+     "switch": true,
+     "mac_mode1": 0.9639607058644916,
+     "order": [
+      0,
+      1,
+      3,
+      2,
+      4,
+      5
+     ]
+    },
+    {
+     "lambda": [
+      0.014793908740980495,
+      0.07208589451037763,
+      0.11617345963630953,
+      0.1854618842207134,
+      0.22103359670575098,
+      0.22267948743753294
+     ],
+     "reliable": true,
+     "flags": [],
+     "switch": false,
+     "mac_mode1": 0.957478834792589,
+     "order": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+     ]
+    },
+    {
+     "lambda": [
+      0.014845079557045043,
+      0.06882903988118719,
+      0.12055153030650083,
+      0.20097632400520485,
+      0.20476662286936723,
+      0.2107237724354821
+     ],
+     "reliable": true,
+     "flags": [],
+     "switch": true,
+     "mac_mode1": 0.9702645419588607,
+     "order": [
+      0,
+      1,
+      2,
+      5,
+      4,
+      3
+     ]
+    },
+    {
+     "lambda": [
+      0.014644001616721318,
+      0.06716386369859918,
+      0.1302187958431945,
+      0.1780512896752386,
+      0.18937682861564528,
+      0.23423603358636783
+     ],
+     "reliable": true,
+     "flags": [],
+     "switch": false,
+     "mac_mode1": 0.9724386750748237,
+     "order": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+     ]
+    },
+    {
+     "lambda": [
+      0.014380711491661478,
+      0.06678504489714375,
+      0.13886921883988645,
+      0.16148972158390712,
+      0.18121213820253587,
+      0.25177687978609764
+     ],
+     "reliable": true,
+     "flags": [],
+     "switch": false,
+     "mac_mode1": 0.9823004793058477,
+     "order": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+     ]
+    },
+    {
+     "lambda": [
+      0.0142604355935632,
+      0.06668242328287985,
+      0.1408414103515456,
+      0.15498810312563624,
+      0.18157381015566837,
+      0.2590889448456749
+     ],
+     "reliable": true,
+     "flags": [],
+     "switch": false,
+     "mac_mode1": 0.9962894279855175,
+     "order": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+     ]
+    },
+    {
+     "lambda": [
+      0.014182902834765261,
+      0.06581209271663499,
+      0.14132683731815912,
+      0.1489998806733561,
+      0.17883307118571368,
+      0.2636193976879997
+     ],
+     "reliable": true,
+     "flags": [],
+     "switch": false,
+     "mac_mode1": 0.9965398581462183,
+     "order": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+     ]
+    },
+    {
+     "lambda": [
+      0.01413818860998527,
+      0.06533307835852531,
+      0.14106064553012956,
+      0.14424879658148174,
+      0.1754388132404769,
+      0.2666713933956915
+     ],
+     "reliable": true,
+     "flags": [],
+     "switch": false,
+     "mac_mode1": 0.9970398502726806,
+     "order": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+     ]
+    },
+    {
+     "lambda": [
+      0.014127224769752643,
+      0.06484335733852063,
+      0.14055567552310813,
+      0.14065828699060318,
+      0.17234200576760544,
+      0.26892864405679323
+     ],
+     "reliable": true,
+     "flags": [],
+     "switch": false,
+     "mac_mode1": 0.997797114785952,
+     "order": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+     ]
+    },
+    {
+     "lambda": [
+      0.014123789512275872,
+      0.0645784443334317,
+      0.13780223669024122,
+      0.13948690426652713,
+      0.16966847498993204,
+      0.270713157341254
+     ],
+     "reliable": true,
+     "flags": [],
+     "switch": true,
+     "mac_mode1": 0.9983368664943689,
+     "order": [
+      0,
+      1,
+      3,
+      2,
+      4,
+      5
+     ]
+    },
+    {
+     "lambda": [
+      0.014122307335690625,
+      0.06450170444030633,
+      0.1357902129888756,
+      0.1381494686543442,
+      0.16836689912089273,
+      0.26834701018711593
+     ],
+     "reliable": true,
+     "flags": [],
+     "switch": false,
+     "mac_mode1": 0.9986959760305327,
+     "order": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+     ]
+    },
+    {
+     "lambda": [
+      0.01412242589299031,
+      0.06447302846645264,
+      0.1347752811932359,
+      0.1373671017593782,
+      0.16764224338254194,
+      0.2648723920328182
+     ],
+     "reliable": true,
+     "flags": [],
+     "switch": false,
+     "mac_mode1": 0.9994846269195493,
+     "order": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+     ]
+    },
+    {
+     "lambda": [
+      0.01412225876438792,
+      0.06447197608480237,
+      0.13415289920355267,
+      0.13681428971530527,
+      0.16734380216120714,
+      0.26315471225537973
+     ],
+     "reliable": true,
+     "flags": [],
+     "switch": false,
+     "mac_mode1": 0.9996655290360322,
+     "order": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+     ]
+    },
+    {
+     "lambda": [
+      0.014121570214800561,
+      0.06455346932955167,
+      0.1341821563317881,
+      0.13676342350669984,
+      0.16709784759382998,
+      0.26349681642388034
+     ],
+     "reliable": true,
+     "flags": [],
+     "switch": false,
+     "mac_mode1": 0.9997423472284387,
+     "order": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+     ]
+    },
+    {
+     "lambda": [
+      0.01412167255149198,
+      0.064758561635965,
+      0.13454320091109284,
+      0.13684608919818128,
+      0.1670045740426948,
+      0.2645181192426667
+     ],
+     "reliable": true,
+     "flags": [],
+     "switch": false,
+     "mac_mode1": 0.9997246019617073,
+     "order": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+     ]
+    },
+    {
+     "lambda": [
+      0.014121859675939194,
+      0.0649269472186519,
+      0.13526241661586413,
+      0.1371789154042603,
+      0.16695134807386763,
+      0.26506466922318017
+     ],
+     "reliable": true,
+     "flags": [],
+     "switch": false,
+     "mac_mode1": 0.9997133594302877,
+     "order": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+     ]
+    },
+    {
+     "lambda": [
+      0.014121872447542021,
+      0.0651142780647954,
+      0.13605510326209413,
+      0.1375402917702823,
+      0.16687962300887665,
+      0.26565707326085597
+     ],
+     "reliable": true,
+     "flags": [],
+     "switch": false,
+     "mac_mode1": 0.9997258334669348,
+     "order": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+     ]
+    },
+    {
+     "lambda": [
+      0.014121867762318763,
+      0.06532785244735824,
+      0.13695060798141606,
+      0.1379450131383223,
+      0.16679453492734408,
+      0.26636895210976985
+     ],
+     "reliable": true,
+     "flags": [],
+     "switch": false,
+     "mac_mode1": 0.9996720083227201,
+     "order": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+     ]
+    },
+    {
+     "lambda": [
+      0.014121273655207477,
+      0.06552690049545831,
+      0.13726401650379486,
+      0.13822231017597827,
+      0.16625946624156146,
+      0.2663501619897688
+     ],
+     "reliable": true,
+     "flags": [],
+     "switch": false,
+     "mac_mode1": 0.9995696826174402,
+     "order": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+     ]
+    },
+    {
+     "lambda": [
+      0.014121291071183683,
+      0.06578283521162938,
+      0.13781376110199628,
+      0.1386148822629922,
+      0.16575406676228766,
+      0.2662072409849027
+     ],
+     "reliable": true,
+     "flags": [],
+     "switch": false,
+     "mac_mode1": 0.9995374257495281,
+     "order": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+     ]
+    },
+    {
+     "lambda": [
+      0.01412141277668697,
+      0.06604991706651656,
+      0.13878516600583904,
+      0.13932059462076443,
+      0.16532311177279063,
+      0.2662866700132127
+     ],
+     "reliable": true,
+     "flags": [],
+     "switch": false,
+     "mac_mode1": 0.9995361233394152,
+     "order": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+     ]
+    },
+    {
+     "lambda": [
+      0.01412095012260145,
+      0.06632182089628172,
+      0.14013008869395616,
+      0.14027233084574003,
+      0.16538779696249467,
+      0.2676157128438637
+     ],
+     "reliable": true,
+     "flags": [],
+     "switch": false,
+     "mac_mode1": 0.9994457169432993,
+     "order": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+     ]
+    },
+    {
+     "lambda": [
+      0.014121260883248435,
+      0.06657522672748609,
+      0.1409961459558714,
+      0.14126071135758128,
+      0.16549975390610577,
+      0.269057881137118
+     ],
+     "reliable": true,
+     "flags": [],
+     "switch": true,
+     "mac_mode1": 0.999416081960669,
+     "order": [
+      0,
+      1,
+      3,
+      2,
+      4,
+      5
+     ]
+    },
+    {
+     "lambda": [
+      0.014121257093101556,
+      0.06679939161372744,
+      0.14159056590414495,
+      0.1422884790104316,
+      0.16599767113775923,
+      0.2708597032800899
+     ],
+     "reliable": true,
+     "flags": [],
+     "switch": false,
+     "mac_mode1": 0.9993967006118998,
+     "order": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+     ]
+    },
+    {
+     "lambda": [
+      0.014121269335655409,
+      0.06694027263193165,
+      0.1423866815610399,
+      0.14361430194296604,
+      0.16653056948644707,
+      0.27170667216512967
+     ],
+     "reliable": true,
+     "flags": [],
+     "switch": false,
+     "mac_mode1": 0.9994653859402426,
+     "order": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+     ]
+    },
+    {
+     "lambda": [
+      0.014121634984051825,
+      0.06708352229120039,
+      0.1432250453704938,
+      0.14511000635919716,
+      0.16710627961478045,
+      0.2712371531418073
+     ],
+     "reliable": true,
+     "flags": [],
+     "switch": false,
+     "mac_mode1": 0.9994792007256685,
+     "order": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+     ]
+    },
+    {
+     "lambda": [
+      0.014121569358402737,
+      0.06720846242365829,
+      0.14404108954264613,
+      0.14662523381055798,
+      0.1676387075839017,
+      0.2708585840821176
+     ],
+     "reliable": true,
+     "flags": [],
+     "switch": false,
+     "mac_mode1": 0.9994026554047205,
+     "order": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+     ]
+    },
+    {
+     "lambda": [
+      0.014121677136431606,
+      0.06737413125300422,
+      0.1447087873530682,
+      0.14804059663351138,
+      0.16814867351484278,
+      0.270622440540925
+     ],
+     "reliable": true,
+     "flags": [],
+     "switch": false,
+     "mac_mode1": 0.9993487110962682,
+     "order": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+     ]
+    },
+    {
+     "lambda": [
+      0.014121399162977296,
+      0.06764142977166694,
+      0.14524194073253763,
+      0.14938827704407107,
+      0.16844881189745625,
+      0.2701617806612613
+     ],
+     "reliable": true,
+     "flags": [],
+     "switch": false,
+     "mac_mode1": 0.9993788288241189,
+     "order": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+     ]
+    },
+    {
+     "lambda": [
+      0.014121518901500563,
+      0.06784116251667158,
+      0.14564223184618277,
+      0.150656310236058,
+      0.16899891059734365,
+      0.2699035563793373
+     ],
+     "reliable": true,
+     "flags": [],
+     "switch": false,
+     "mac_mode1": 0.9994303157643292,
+     "order": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+     ]
+    },
+    {
+     "lambda": [
+      0.014121089022881814,
+      0.0679333767693193,
+      0.14598144066123805,
+      0.1517389641081467,
+      0.1694353071978216,
+      0.2699083159972593
+     ],
+     "reliable": true,
+     "flags": [],
+     "switch": false,
+     "mac_mode1": 0.9994923076666451,
+     "order": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+     ]
+    },
+    {
+     "lambda": [
+      0.014121138887405425,
+      0.06803967816129361,
+      0.14621290746121332,
+      0.15265000445743054,
+      0.16994368524779782,
+      0.27014169228976276
+     ],
+     "reliable": true,
+     "flags": [],
+     "switch": false,
+     "mac_mode1": 0.9995290219838484,
+     "order": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+     ]
+    },
+    {
+     "lambda": [
+      0.01412056860592149,
+      0.0681269784723367,
+      0.14636122906700386,
+      0.15286165572196048,
+      0.169766592941188,
+      0.2708730556173954
+     ],
+     "reliable": true,
+     "flags": [],
+     "switch": false,
+     "mac_mode1": 0.9995454564636586,
+     "order": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+     ]
+    },
+    {
+     "lambda": [
+      0.01412096463082476,
+      0.06821878768602892,
+      0.14664116798596963,
+      0.15295536077137512,
+      0.1693205387059799,
+      0.27149687284002044
+     ],
+     "reliable": true,
+     "flags": [],
+     "switch": false,
+     "mac_mode1": 0.9995134776968007,
+     "order": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+     ]
+    },
+    {
+     "lambda": [
+      0.014121190611274474,
+      0.06825322902710237,
+      0.14689618960017187,
+      0.15294302584204178,
+      0.1687995430237335,
+      0.27183915931648495
+     ],
+     "reliable": true,
+     "flags": [],
+     "switch": false,
+     "mac_mode1": 0.9995549111440667,
+     "order": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+     ]
+    },
+    {
+     "lambda": [
+      0.014121099367393856,
+      0.0683425296176795,
+      0.14720725723020536,
+      0.15331233729289076,
+      0.16869696029791087,
+      0.27177044792784194
+     ],
+     "reliable": true,
+     "flags": [],
+     "switch": false,
+     "mac_mode1": 0.9995245989343099,
+     "order": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+     ]
+    },
+    {
+     "lambda": [
+      0.014120639920008766,
+      0.06838701990158212,
+      0.1477626916056792,
+      0.15427860130239648,
+      0.16917996010868622,
+      0.271280580940909
+     ],
+     "reliable": true,
+     "flags": [],
+     "switch": false,
+     "mac_mode1": 0.9995866234421218,
+     "order": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+     ]
+    },
+    {
+     "lambda": [
+      0.014121183921744813,
+      0.06843248278847319,
+      0.14822061227978944,
+      0.1552445539189737,
+      0.16986560318321123,
+      0.2709616424798619
+     ],
+     "reliable": true,
+     "flags": [],
+     "switch": false,
+     "mac_mode1": 0.99978143262871,
+     "order": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+     ]
+    },
+    {
+     "lambda": [
+      0.014121467694747567,
+      0.06847004290767866,
+      0.1486131272646029,
+      0.15610383370824854,
+      0.17046678284768363,
+      0.27056073650195117
+     ],
+     "reliable": true,
+     "flags": [],
+     "switch": false,
+     "mac_mode1": 0.99979821170893,
+     "order": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+     ]
+    },
+    {
+     "lambda": [
+      0.014121619712709603,
+      0.06851786739017862,
+      0.14895296488051127,
+      0.15694175127364146,
+      0.1711946554093812,
+      0.2703553293956381
+     ],
+     "reliable": true,
+     "flags": [],
+     "switch": false,
+     "mac_mode1": 0.9997786185218986,
+     "order": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+     ]
+    },
+    {
+     "lambda": [
+      0.014121528392245479,
+      0.06856152268548826,
+      0.14929555211665035,
+      0.15780118219400183,
+      0.1718733391782662,
+      0.27011794886496576
+     ],
+     "reliable": true,
+     "flags": [],
+     "switch": false,
+     "mac_mode1": 0.9997099373694546,
+     "order": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+     ]
+    },
+    {
+     "lambda": [
+      0.014121765872505878,
+      0.06861819683169243,
+      0.14957116646274998,
+      0.15864904232865726,
+      0.17262529908805943,
+      0.270078905771291
+     ],
+     "reliable": true,
+     "flags": [],
+     "switch": false,
+     "mac_mode1": 0.9996648802535235,
+     "order": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+     ]
+    },
+    {
+     "lambda": [
+      0.014121614970339202,
+      0.06867166507860804,
+      0.1498579313951538,
+      0.15958084453380045,
+      0.17333762337860353,
+      0.27003208547135943
+     ],
+     "reliable": true,
+     "flags": [],
+     "switch": false,
+     "mac_mode1": 0.9995333270199576,
+     "order": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+     ]
+    },
+    {
+     "lambda": [
+      0.014121482719782343,
+      0.06874867990113888,
+      0.15012020828457678,
+      0.16053489103287483,
+      0.17404024134777327,
+      0.27020718668520866
+     ],
+     "reliable": true,
+     "flags": [],
+     "switch": false,
+     "mac_mode1": 0.9994458091743456,
+     "order": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+     ]
+    },
+    {
+     "lambda": [
+      0.014121208865562961,
+      0.06882562355829891,
+      0.15033853184258616,
+      0.16151993848136023,
+      0.17488606303419738,
+      0.27049049876075965
+     ],
+     "reliable": true,
+     "flags": [],
+     "switch": false,
+     "mac_mode1": 0.9993528524022341,
+     "order": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+     ]
+    },
+    {
+     "lambda": [
+      0.014121282027462687,
+      0.06892623737685746,
+      0.15061898558251655,
+      0.1626940963334589,
+      0.1757572251803429,
+      0.27065171321284875
+     ],
+     "reliable": true,
+     "flags": [],
+     "switch": false,
+     "mac_mode1": 0.9993309122278303,
+     "order": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+     ]
+    },
+    {
+     "lambda": [
+      0.014121810927235695,
+      0.0691886886287719,
+      0.1508468896927757,
+      0.16383698165257513,
+      0.1764564519511794,
+      0.2706477350670867
+     ],
+     "reliable": true,
+     "flags": [],
+     "switch": false,
+     "mac_mode1": 0.9994695349522783,
+     "order": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+     ]
+    },
+    {
+     "lambda": [
+      0.014122132210175943,
+      0.06942698225170273,
+      0.15103995041686255,
+      0.16501779328242272,
+      0.17746745257219823,
+      0.2704990489469064
+     ],
+     "reliable": true,
+     "flags": [],
+     "switch": false,
+     "mac_mode1": 0.9995232020999141,
+     "order": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+     ]
+    },
+    {
+     "lambda": [
+      0.01412123348945679,
+      0.06951510784024191,
+      0.15129643000063217,
+      0.16496353228153146,
+      0.17743745102961136,
+      0.27070393874543386
+     ],
+     "reliable": true,
+     "flags": [],
+     "switch": false,
+     "mac_mode1": 0.999475489376998,
+     "order": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+     ]
+    },
+    {
+     "lambda": [
+      0.014121159351149055,
+      0.06954978275380347,
+      0.1513959873746457,
+      0.16489016583798388,
+      0.17754392612817982,
+      0.27098266786691777
+     ],
+     "reliable": true,
+     "flags": [],
+     "switch": false,
+     "mac_mode1": 0.9994114735787457,
+     "order": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+     ]
+    },
+    {
+     "lambda": [
+      0.01412118112087193,
+      0.0695872554747526,
+      0.15139386164801164,
+      0.16491047335909106,
+      0.177782230538596,
+      0.2711519695471786
+     ],
+     "reliable": true,
+     "flags": [],
+     "switch": false,
+     "mac_mode1": 0.9995108753874196,
+     "order": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+     ]
+    },
+    {
+     "lambda": [
+      0.014119833425268083,
+      0.06952916977951529,
+      0.1514033065292385,
+      0.1650216418346749,
+      0.17797180024513837,
+      0.27095223988637257
+     ],
+     "reliable": true,
+     "flags": [],
+     "switch": false,
+     "mac_mode1": 0.9996922474434992,
+     "order": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+     ]
+    }
+   ]
+  },
+  "seconds_section": 40.68961479999416,
+  "env": {
+   "sha": "478ed4acd3b567d09ea96bd9e942a75d0a314364",
+   "python": "3.12.1",
+   "numpy": "2.2.6",
+   "scipy": "1.14.1",
+   "torch": "2.5.1+cu121",
+   "skfem": "12.0.2",
+   "platform": "Windows-11-10.0.26200-SP0",
+   "date": "2026-11-26 05:57 +0300"
+  }
+ },
+ "A": {
+  "checks": {
+   "A1": {
+    "value": {
+     "verdict": "CONVERGED",
+     "order": 1.9999641565027537,
+     "ext_over_PT_minus_1": -0.00012893726158835772
+    },
+    "threshold": "CONVERGED; 1.5 <= p <= 2.5; |ext/P_T - 1| <= 1e-3",
+    "pass": true
+   },
+   "A2": {
+    "value": -0.00012754036957829396,
+    "threshold": "|lambda/P_T - 1| <= 1e-3",
+    "pass": true
+   },
+   "A3": {
+    "value": {
+     "max_ratio_dev": 0.00012393119310583067,
+     "verdict": "CONVERGED"
+    },
+    "threshold": "|ratio - 1| <= 1e-3 on every mesh; CONVERGED",
+    "pass": true
+   },
+   "A4": {
+    "value": {
+     "verdict": "NOT CONVERGED",
+     "localization": [
+      0.880921117851815,
+      0.9208700132227076,
+      0.9535721002442461,
+      0.981431195985641
+     ]
+    },
+    "threshold": "NOT CONVERGED; localisation strictly increasing",
+    "pass": true
+   },
+   "A5": {
+    "value": "NOT CONVERGED",
+    "threshold": "NOT CONVERGED",
+    "pass": true
+   },
+   "A6": {
+    "value": 9.740404443148165e-05,
+    "threshold": ">= 0.10",
+    "pass": false
+   }
+  },
+  "A1": {
+   "nb": [
+    2,
+    4,
+    8,
+    16
+   ],
+   "lambda_q4": [
+    0.5780928538112362,
+    0.529887051442367,
+    0.5178347196349224,
+    0.5148215618226306
+   ],
+   "lambda_q4im": [
+    0.5138603151919644,
+    0.5138292867662178,
+    0.5138202716421361,
+    0.5138178604524127
+   ],
+   "P_T": 0.5138834013313387,
+   "convergence": {
+    "meshes": 4,
+    "h": [
+     0.25,
+     0.5,
+     1.0,
+     2.0
+    ],
+    "values": [
+     0.5148215618226306,
+     0.5178347196349224,
+     0.529887051442367,
+     0.5780928538112362
+    ],
+    "reasons": [],
+    "refinement": [
+     2.0,
+     2.0,
+     2.0
+    ],
+    "order": 1.9999641565027537,
+    "extrapolated": 0.5138171426127953,
+    "gci_fine": 0.002438755688182913,
+    "order_coarse": 1.9998945124198475,
+    "verdict": "CONVERGED"
+   }
+  },
+  "A3": {
+   "nb": [
+    2,
+    4,
+    8,
+    16
+   ],
+   "embedded": [
+    {
+     "lambda1": 0.0023034356499635074,
+     "low_density_share": 0.00010833354215793193,
+     "stress_energy_share": 0.0,
+     "localization": 0.09966421710361187,
+     "dofs": 880
+    },
+    {
+     "lambda1": 0.0021162750196598986,
+     "low_density_share": 0.00011749209326932612,
+     "stress_energy_share": 0.0,
+     "localization": 0.1705341117127194,
+     "dofs": 3360
+    },
+    {
+     "lambda1": 0.002069192537715961,
+     "low_density_share": 0.0001200499379838251,
+     "stress_energy_share": 0.0,
+     "localization": 0.22217669228748113,
+     "dofs": 13120
+    },
+    {
+     "lambda1": 0.002057331690402671,
+     "low_density_share": 0.00012071024590232713,
+     "stress_energy_share": 0.0,
+     "localization": 0.23323198550152238,
+     "dofs": 51840
+    }
+   ],
+   "alone": [
+    {
+     "lambda1": 0.00230317865268841,
+     "low_density_share": 0.0,
+     "stress_energy_share": 0.0,
+     "localization": 0.025138827641383858,
+     "dofs": 240
+    },
+    {
+     "lambda1": 0.00211601956628807,
+     "low_density_share": 0.0,
+     "stress_energy_share": 0.0,
+     "localization": 0.04299290705017483,
+     "dofs": 800
+    },
+    {
+     "lambda1": 0.0020689374914373863,
+     "low_density_share": 0.0,
+     "stress_energy_share": 0.0,
+     "localization": 0.04654688956702419,
+     "dofs": 2880
+    },
+    {
+     "lambda1": 0.002057076754426185,
+     "low_density_share": 0.0,
+     "stress_energy_share": 0.0,
+     "localization": 0.05319409495828334,
+     "dofs": 10880
+    }
+   ],
+   "ratio": [
+    1.0001115837344174,
+    1.0001207235395637,
+    1.0001232740378239,
+    1.0001239311931058
+   ],
+   "convergence": {
+    "meshes": 4,
+    "h": [
+     0.25,
+     0.5,
+     1.0,
+     2.0
+    ],
+    "values": [
+     0.002057331690402671,
+     0.002069192537715961,
+     0.0021162750196598986,
+     0.0023034356499635074
+    ],
+    "reasons": [],
+    "refinement": [
+     2.0,
+     2.0,
+     2.0
+    ],
+    "order": 1.9889832971911523,
+    "extrapolated": 0.002053337562916414,
+    "gci_fine": 0.0024267644255477213,
+    "order_coarse": 1.9910147135204739,
+    "verdict": "CONVERGED"
+   },
+   "convergence_alone": {
+    "meshes": 4,
+    "h": [
+     0.25,
+     0.5,
+     1.0,
+     2.0
+    ],
+    "values": [
+     0.002057076754426185,
+     0.0020689374914373863,
+     0.00211601956628807,
+     0.00230317865268841
+    ],
+    "reasons": [],
+    "refinement": [
+     2.0,
+     2.0,
+     2.0
+    ],
+    "order": 1.988984239705867,
+    "extrapolated": 0.0020530826675720735,
+    "gci_fine": 0.00242704048689307,
+    "order_coarse": 1.991015286712938,
+    "verdict": "CONVERGED"
+   }
+  },
+  "A4": {
+   "n": [
+    40,
+    80,
+    160,
+    320
+   ],
+   "lambda1": [
+    2.8524850836383973,
+    2.1055185858983587,
+    1.6023070461424718,
+    1.2018633628326403
+   ],
+   "localization": [
+    0.880921117851815,
+    0.9208700132227076,
+    0.9535721002442461,
+    0.981431195985641
+   ],
+   "energy_near_clamp_end": [
+    0.49035405362332357,
+    0.6640684455913206,
+    0.7918867437701105,
+    0.9253213195074669
+   ],
+   "convergence": {
+    "meshes": 4,
+    "h": [
+     0.003125,
+     0.00625,
+     0.0125,
+     0.025
+    ],
+    "values": [
+     1.2018633628326403,
+     1.6023070461424718,
+     2.1055185858983587,
+     2.8524850836383973
+    ],
+    "reasons": [
+     "apparent order 0.33 outside [0.5, 6]: no asymptotic range",
+     "fine-grid GCI 162.29 % > 5 %",
+     "apparent order not stable: 0.57 (coarser triplet) vs 0.33"
+    ],
+    "refinement": [
+     2.0,
+     2.0,
+     2.0
+    ],
+    "order": 0.3295656443634059,
+    "extrapolated": -0.3584994689728251,
+    "gci_fine": 1.622857972107461,
+    "order_coarse": 0.5698785312322989,
+    "verdict": "NOT CONVERGED"
+   }
+  },
+  "A5": {
+   "n": [
+    40,
+    80,
+    160
+   ],
+   "lambda1": [
+    4.768033711152386,
+    3.563902834440313,
+    2.6425165020305825
+   ],
+   "localization": [
+    0.9159782534877605,
+    0.976487923618832,
+    0.9917513155647042
+   ],
+   "energy_near_clamp_end": [
+    0.0010449744743078085,
+    0.0002938498698479789,
+    9.597993755721205e-05
+   ],
+   "convergence": {
+    "meshes": 3,
+    "h": [
+     0.00625,
+     0.0125,
+     0.025
+    ],
+    "values": [
+     2.6425165020305825,
+     3.563902834440313,
+     4.768033711152386
+    ],
+    "reasons": [
+     "apparent order 0.39 outside [0.5, 6]: no asymptotic range",
+     "fine-grid GCI 142.03 % > 5 %"
+    ],
+    "refinement": [
+     2.0,
+     2.0
+    ],
+    "order": 0.3861141041429793,
+    "extrapolated": -0.36002692686634324,
+    "gci_fine": 1.4203049567475212,
+    "verdict": "NOT CONVERGED"
+   }
+  },
+  "A6": {
+   "r": [
+    0.025,
+    0.05,
+    0.1
+   ],
+   "lambda1": [
+    3.563741560662746,
+    3.563902834440313,
+    3.564088683504063
+   ],
+   "localization": [
+    0.9760383082394034,
+    0.976487923618832,
+    0.976625931450118
+   ],
+   "lambda1_no_exclusion": 2.1055185858983587
+  },
+  "seconds_section": 104.17203889999655,
+  "env": {
+   "sha": "478ed4acd3b567d09ea96bd9e942a75d0a314364",
+   "python": "3.12.1",
+   "numpy": "2.2.6",
+   "scipy": "1.14.1",
+   "torch": "2.5.1+cu121",
+   "skfem": "12.0.2",
+   "platform": "Windows-11-10.0.26200-SP0",
+   "date": "2026-11-26 05:59 +0300"
+  }
+ },
+ "SP": {
+  "checks": {
+   "SP1": {
+    "value": 0.00012072353956371629,
+    "threshold": "<= 1e-3",
+    "pass": true
+   },
+   "SP2": {
+    "value": {
+     "low_density_share": 0.02573283839947705,
+     "lambda_ratio": 0.7677564558999568
+    },
+    "threshold": "share >= 0.5 and ratio <= 0.5",
+    "pass": false
+   },
+   "SP3": {
+    "value": {
+     "pg=3|0.001": 0.06163598626630877,
+     "pg=3|1e-06": 0.025736025685825663,
+     "pg=3|1e-09": 0.0256986522733703,
+     "pg=4|0.001": 0.06163536408233411,
+     "pg=4|1e-06": 0.025736967323188226,
+     "pg=4|1e-09": 0.02569959550215106
+    },
+    "threshold": "every share < 0.5",
+    "pass": true
+   }
+  },
+  "D1": {
+   "lambda_alone": 0.00211601956628807,
+   "cases": {
+    "stiffness|0.001": {
+     "lambda1": 0.002364557237845429,
+     "low_density_share": 0.10514207651719323,
+     "stress_energy_share": 0.0032467484326400174,
+     "localization": 0.15225496651866346,
+     "dofs": 3360
+    },
+    "stiffness|1e-06": {
+     "lambda1": 0.00211626812400309,
+     "low_density_share": 0.0001174921081177233,
+     "stress_energy_share": 3.2591117821547767e-06,
+     "localization": 0.17053417328742929,
+     "dofs": 3360
+    },
+    "stiffness|1e-09": {
+     "lambda1": 0.002116019814889755,
+     "low_density_share": 1.1750591020109179e-07,
+     "stress_energy_share": 3.2591242320649466e-09,
+     "localization": 0.17055463738004004,
+     "dofs": 3360
+    },
+    "pg=1|0.001": {
+     "lambda1": 0.0023722574509926217,
+     "low_density_share": 0.10514152071147469,
+     "stress_energy_share": 0.0,
+     "localization": 0.15219919122895378,
+     "dofs": 3360
+    },
+    "pg=1|1e-06": {
+     "lambda1": 0.0021162750196598986,
+     "low_density_share": 0.00011749209326932612,
+     "stress_energy_share": 0.0,
+     "localization": 0.1705341117127194,
+     "dofs": 3360
+    },
+    "pg=1|1e-09": {
+     "lambda1": 0.0021160198218062986,
+     "low_density_share": 1.1750589597405624e-07,
+     "stress_energy_share": 0.0,
+     "localization": 0.17055463731697612,
+     "dofs": 3360
+    },
+    "pg=2|0.001": {
+     "lambda1": 0.0023722574509926217,
+     "low_density_share": 0.10514152071147469,
+     "stress_energy_share": 0.0,
+     "localization": 0.15219919122895378,
+     "dofs": 3360
+    },
+    "pg=2|1e-06": {
+     "lambda1": 0.0021162750196598986,
+     "low_density_share": 0.00011749209326932612,
+     "stress_energy_share": 0.0,
+     "localization": 0.1705341117127194,
+     "dofs": 3360
+    },
+    "pg=2|1e-09": {
+     "lambda1": 0.0021160198218062986,
+     "low_density_share": 1.1750589597405624e-07,
+     "stress_energy_share": 0.0,
+     "localization": 0.17055463731697612,
+     "dofs": 3360
+    },
+    "pg=3|0.001": {
+     "lambda1": 0.0023722574509926217,
+     "low_density_share": 0.10514152071147469,
+     "stress_energy_share": 0.0,
+     "localization": 0.15219919122895378,
+     "dofs": 3360
+    },
+    "pg=3|1e-06": {
+     "lambda1": 0.0021162750196598986,
+     "low_density_share": 0.00011749209326932612,
+     "stress_energy_share": 0.0,
+     "localization": 0.1705341117127194,
+     "dofs": 3360
+    },
+    "pg=3|1e-09": {
+     "lambda1": 0.0021160198218062986,
+     "low_density_share": 1.1750589597405624e-07,
+     "stress_energy_share": 0.0,
+     "localization": 0.17055463731697612,
+     "dofs": 3360
+    },
+    "pg=4|0.001": {
+     "lambda1": 0.0023722574509926217,
+     "low_density_share": 0.10514152071147469,
+     "stress_energy_share": 0.0,
+     "localization": 0.15219919122895378,
+     "dofs": 3360
+    },
+    "pg=4|1e-06": {
+     "lambda1": 0.0021162750196598986,
+     "low_density_share": 0.00011749209326932612,
+     "stress_energy_share": 0.0,
+     "localization": 0.1705341117127194,
+     "dofs": 3360
+    },
+    "pg=4|1e-09": {
+     "lambda1": 0.0021160198218062986,
+     "low_density_share": 1.1750589597405624e-07,
+     "stress_energy_share": 0.0,
+     "localization": 0.17055463731697612,
+     "dofs": 3360
+    }
+   }
+  },
+  "D2": {
+   "cases": {
+    "stiffness|0.001": {
+     "compliance": 11.271823978761596,
+     "lambda1": 0.009174366691875647,
+     "low_density_share": 0.061636068082863156,
+     "stress_energy_share": 0.005907856709161168,
+     "localization": 0.08197616064359876,
+     "vm_max_solid": 0.24304272047330866,
+     "volume": 268.7999976266243,
+     "bodies": 1
+    },
+    "stiffness|1e-06": {
+     "compliance": 11.300535861133913,
+     "lambda1": 0.00882558883231211,
+     "low_density_share": 0.025736025582427612,
+     "stress_energy_share": 0.003960498134348206,
+     "localization": 0.08544181220053523,
+     "vm_max_solid": 0.24384429263206617,
+     "volume": 268.7999976266243,
+     "bodies": 1
+    },
+    "stiffness|1e-09": {
+     "compliance": 11.30056471110618,
+     "lambda1": 0.008825239613504825,
+     "low_density_share": 0.025698652273322166,
+     "stress_energy_share": 0.003958535878588634,
+     "localization": 0.08544543098292041,
+     "vm_max_solid": 0.24384509850133698,
+     "volume": 268.7999976266243,
+     "bodies": 1
+    },
+    "pg=1|0.001": {
+     "compliance": 11.271823978761596,
+     "lambda1": 0.00706362046237424,
+     "low_density_share": 0.06163918138428632,
+     "stress_energy_share": 0.06966558083253756,
+     "localization": 0.08250125996783682,
+     "vm_max_solid": 0.24304272047330866,
+     "volume": 268.7999976266243,
+     "bodies": 1
+    },
+    "pg=1|1e-06": {
+     "compliance": 11.300535861133913,
+     "lambda1": 0.006775918993314554,
+     "low_density_share": 0.02573283839947705,
+     "stress_energy_share": 0.07000816268602415,
+     "localization": 0.08598762482724227,
+     "vm_max_solid": 0.24384429263206617,
+     "volume": 268.7999976266243,
+     "bodies": 1
+    },
+    "pg=1|1e-09": {
+     "compliance": 11.30056471110618,
+     "lambda1": 0.006775631209624318,
+     "low_density_share": 0.025695460634384968,
+     "stress_energy_share": 0.07000856547161209,
+     "localization": 0.0859912619966904,
+     "vm_max_solid": 0.24384509850133698,
+     "volume": 268.7999976266243,
+     "bodies": 1
+    },
+    "pg=2|0.001": {
+     "compliance": 11.271823978761596,
+     "lambda1": 0.008333793946926323,
+     "low_density_share": 0.061636772732276385,
+     "stress_energy_share": 0.017136998595543757,
+     "localization": 0.0821448723697575,
+     "vm_max_solid": 0.24304272047330866,
+     "volume": 268.7999976266243,
+     "bodies": 1
+    },
+    "pg=2|1e-06": {
+     "compliance": 11.300535861133913,
+     "lambda1": 0.007997150673416905,
+     "low_density_share": 0.025734563469091188,
+     "stress_energy_share": 0.017210693907231865,
+     "localization": 0.08563181620794424,
+     "vm_max_solid": 0.24384429263206617,
+     "volume": 268.7999976266243,
+     "bodies": 1
+    },
+    "pg=2|1e-09": {
+     "compliance": 11.30056471110618,
+     "lambda1": 0.007996814217439571,
+     "low_density_share": 0.025697187904869297,
+     "stress_energy_share": 0.01721078096915799,
+     "localization": 0.08563545621677061,
+     "vm_max_solid": 0.24384509850133698,
+     "volume": 268.7999976266243,
+     "bodies": 1
+    },
+    "pg=3|0.001": {
+     "compliance": 11.271823978761596,
+     "lambda1": 0.009196166353734913,
+     "low_density_share": 0.06163598626630877,
+     "stress_energy_share": 0.003945873654986437,
+     "localization": 0.08195765609511237,
+     "vm_max_solid": 0.24304272047330866,
+     "volume": 268.7999976266243,
+     "bodies": 1
+    },
+    "pg=3|1e-06": {
+     "compliance": 11.300535861133913,
+     "lambda1": 0.008825609919973759,
+     "low_density_share": 0.025736025685825663,
+     "stress_energy_share": 0.003958518624646213,
+     "localization": 0.08544179341011178,
+     "vm_max_solid": 0.24384429263206617,
+     "volume": 268.7999976266243,
+     "bodies": 1
+    },
+    "pg=3|1e-09": {
+     "compliance": 11.30056471110618,
+     "lambda1": 0.00882523963467311,
+     "low_density_share": 0.0256986522733703,
+     "stress_energy_share": 0.003958533899059558,
+     "localization": 0.08544543096339942,
+     "vm_max_solid": 0.24384509850133698,
+     "volume": 268.7999976266243,
+     "bodies": 1
+    },
+    "pg=4|0.001": {
+     "compliance": 11.271823978761596,
+     "lambda1": 0.009853024845562502,
+     "low_density_share": 0.06163536408233411,
+     "stress_energy_share": 0.0008828214844719629,
+     "localization": 0.08183381195552997,
+     "vm_max_solid": 0.24304272047330866,
+     "volume": 268.7999976266243,
+     "bodies": 1
+    },
+    "pg=4|1e-06": {
+     "compliance": 11.300535861133913,
+     "lambda1": 0.009456406998872931,
+     "low_density_share": 0.025736967323188226,
+     "stress_energy_share": 0.0008843981732895376,
+     "localization": 0.08531505780501275,
+     "vm_max_solid": 0.24384429263206617,
+     "volume": 268.7999976266243,
+     "bodies": 1
+    },
+    "pg=4|1e-09": {
+     "compliance": 11.30056471110618,
+     "lambda1": 0.009456010681039202,
+     "low_density_share": 0.02569959550215106,
+     "stress_energy_share": 0.0008844002169787553,
+     "localization": 0.08531869244066434,
+     "vm_max_solid": 0.24384509850133698,
+     "volume": 268.7999976266243,
+     "bodies": 1
+    }
+   },
+   "grey_fraction": 0.3619791666666667,
+   "volume_fraction": 0.34999999690966704,
+   "optimisation_seconds": 1.1672223000059603
+  },
+  "seconds_section": 10.161045600005309,
+  "env": {
+   "sha": "478ed4acd3b567d09ea96bd9e942a75d0a314364",
+   "python": "3.12.1",
+   "numpy": "2.2.6",
+   "scipy": "1.14.1",
+   "torch": "2.5.1+cu121",
+   "skfem": "12.0.2",
+   "platform": "Windows-11-10.0.26200-SP0",
+   "date": "2026-11-26 05:59 +0300"
+  }
+ },
+ "VC": {
+  "checks": {
+   "VC1": {
+    "value": 0.2103594255618222,
+    "threshold": "some volume-equal pair differs by >= 5 % in lambda1 or max vM",
+    "pass": true
+   }
+  },
+  "variants": {
+   "V0_grey": {
+    "compliance": 11.300535861133913,
+    "lambda1": 0.008825609919973759,
+    "low_density_share": 0.025736025685825663,
+    "stress_energy_share": 0.003958518624646213,
+    "localization": 0.08544179341011178,
+    "vm_max_solid": 0.24384429263206617,
+    "volume": 268.7999976266243,
+    "bodies": 1
+   },
+   "V1_threshold": {
+    "compliance": 9.024734962566205,
+    "lambda1": 0.009848474685969515,
+    "low_density_share": 4.3014158167575166e-05,
+    "stress_energy_share": 0.0,
+    "localization": 0.2628877151982237,
+    "vm_max_solid": 0.3088041578987493,
+    "volume": 269.0,
+    "bodies": 1
+   },
+   "V2_blur1": {
+    "compliance": 8.960690601282911,
+    "lambda1": 0.009660816869373397,
+    "low_density_share": 4.364157726087171e-05,
+    "stress_energy_share": 0.0,
+    "localization": 0.2583038005207487,
+    "vm_max_solid": 0.2855321827537744,
+    "volume": 269.0,
+    "bodies": 1
+   },
+   "V3_blur2": {
+    "compliance": 8.980844417841698,
+    "lambda1": 0.009671997916150268,
+    "low_density_share": 4.2813616607785296e-05,
+    "stress_energy_share": 0.0,
+    "localization": 0.25505827891196964,
+    "vm_max_solid": 0.2855327995767321,
+    "volume": 269.0,
+    "bodies": 1
+   }
+  },
+  "pairs": [
+   {
+    "pair": [
+     "V0_grey",
+     "V1_threshold"
+    ],
+    "lambda_rel": 0.10386022187303434,
+    "vm_rel": 0.2103594255618222,
+    "compliance_rel": 0.2521737101430155
+   },
+   {
+    "pair": [
+     "V0_grey",
+     "V2_blur1"
+    ],
+    "lambda_rel": 0.08645303608304611,
+    "vm_rel": 0.14600067046612863,
+    "compliance_rel": 0.26112331782954357
+   },
+   {
+    "pair": [
+     "V0_grey",
+     "V3_blur2"
+    ],
+    "lambda_rel": 0.08750911688713392,
+    "vm_rel": 0.1460025153203559,
+    "compliance_rel": 0.25829324452874647
+   },
+   {
+    "pair": [
+     "V1_threshold",
+     "V2_blur1"
+    ],
+    "lambda_rel": 0.019424632423271415,
+    "vm_rel": 0.08150386033732415,
+    "compliance_rel": 0.007147257296677978
+   },
+   {
+    "pair": [
+     "V1_threshold",
+     "V3_blur2"
+    ],
+    "lambda_rel": 0.018246154656895275,
+    "vm_rel": 0.08150152401585453,
+    "compliance_rel": 0.004887128947174801
+   },
+   {
+    "pair": [
+     "V2_blur1",
+     "V3_blur2"
+    ],
+    "lambda_rel": 0.001156022455112482,
+    "vm_rel": 2.160252547622754e-06,
+    "compliance_rel": 0.0022440892661216294
+   }
+  ],
+  "seconds_section": 0.9827328999963356,
+  "env": {
+   "sha": "478ed4acd3b567d09ea96bd9e942a75d0a314364",
+   "python": "3.12.1",
+   "numpy": "2.2.6",
+   "scipy": "1.14.1",
+   "torch": "2.5.1+cu121",
+   "skfem": "12.0.2",
+   "platform": "Windows-11-10.0.26200-SP0",
+   "date": "2026-11-26 05:59 +0300"
+  }
+ },
+ "POST": {
+  "label": "post-hoc",
+  "steps": [
+   {
+    "h": 1e-05,
+    "asym_whole_max": 0.00015125570658947436,
+    "ad_vs_fd": 5.025051221456619e-06,
+    "asym_cut_max": 1.9938629030262027
+   },
+   {
+    "h": 0.0001,
+    "asym_whole_max": 1.07887979853371e-05,
+    "ad_vs_fd": 1.1560909431453186e-06,
+    "asym_cut_max": 1.993865563481229
+   },
+   {
+    "h": 0.001,
+    "asym_whole_max": 0.000883559721595268,
+    "ad_vs_fd": 7.872588248449765e-08,
+    "asym_cut_max": 1.993867436058377
+   },
+   {
+    "h": 0.01,
+    "asym_whole_max": 0.6605965897904343,
+    "ad_vs_fd": 1.3477598172795081e-08,
+    "asym_cut_max": 1.9940406907852293
+   }
+  ],
+  "GC8_sections": {
+   "series_measured_areas": 0.6306990891916044,
+   "nominal": 0.625,
+   "area_wide_mid": 63.25,
+   "area_neck_mid": 31.25,
+   "nominal_areas": [
+    64.0,
+    32.0
+   ]
+  },
+  "A6_mode_location": {
+   "None": {
+    "lambda1": 2.1055185858983587,
+    "near_clamp_end": 0.6640684455913206,
+    "near_opening_corners": 0.0007213901458462512
+   },
+   "0.025": {
+    "lambda1": 3.563741560662746,
+    "near_clamp_end": 0.0003226317194159234
+   },
+   "0.05": {
+    "lambda1": 3.563902834440313,
+    "near_clamp_end": 0.0002938498698479789,
+    "near_opening_corners": 0.950798237049665
+   },
+   "0.1": {
+    "lambda1": 3.564088683504063,
+    "near_clamp_end": 0.0002757912524621102
+   }
+  },
+  "seconds_section": 102.97483660001308,
+  "env": {
+   "sha": "478ed4acd3b567d09ea96bd9e942a75d0a314364",
+   "python": "3.12.1",
+   "numpy": "2.2.6",
+   "scipy": "1.14.1",
+   "torch": "2.5.1+cu121",
+   "skfem": "12.0.2",
+   "platform": "Windows-11-10.0.26200-SP0",
+   "date": "2026-11-26 06:04 +0300"
+  }
+ },
+ "CANT": {
+  "checks": {
+   "VC3": {
+    "value": {
+     "threshold": -0.0020826838933055702,
+     "final": -0.004791560411632645
+    },
+    "threshold": "|V/V_target - 1| <= 0.01 for both",
+    "pass": true
+   }
+  },
+  "optimisation": {
+   "seconds": 88.59942539999611,
+   "iterations": 40,
+   "objective": 37.83359952816455
+  },
+  "threshold": {
+   "record": {
+    "stages": [
+     {
+      "name": "density",
+      "kind": "voxel",
+      "metrics": {
+       "volume": 899.9996377492456,
+       "volume_voxels_x_ge_half": 920.0,
+       "topology": {
+        "bodies": 1,
+        "cavities": 0,
+        "euler": -12,
+        "tunnels": 13
+       },
+       "grey_fraction": 0.2753333333333333
+      },
+      "checks": [
+       {
+        "name": "bodies",
+        "value": 1,
+        "threshold": 1,
+        "status": "PASS",
+        "note": ""
+       },
+       {
+        "name": "min_wall_p1",
+        "value": null,
+        "threshold": 1.0,
+        "status": "UNVERIFIED",
+        "note": "no surface on a grey density"
+       }
+      ]
+     },
+     {
+      "name": "threshold",
+      "kind": "field",
+      "metrics": {
+       "volume": 900.0004846702483,
+       "topology": {
+        "bodies": 1,
+        "cavities": 0,
+        "euler": -7,
+        "tunnels": 8
+       },
+       "thickness": {
+        "min": 8.134367120442203e-06,
+        "p1": 0.6231974273827101,
+        "median": 1.712199765238974,
+        "uncovered": 469
+       },
+       "cad_excursion": -0.125
+      },
+      "checks": [
+       {
+        "name": "bodies",
+        "value": 1,
+        "threshold": 1,
+        "status": "PASS",
+        "note": ""
+       },
+       {
+        "name": "enclosed_voids",
+        "value": 0,
+        "threshold": 0,
+        "status": "PASS",
+        "note": ""
+       },
+       {
+        "name": "min_wall_p1",
+        "value": 0.6231974273827101,
+        "threshold": 1.0,
+        "status": "FAIL",
+        "note": "inscribed-ball local thickness of the redistanced field"
+       },
+       {
+        "name": "cad_tolerance",
+        "value": -0.125,
+        "threshold": null,
+        "status": "MEASURED",
+        "note": "largest envelope distance of a solid sample (> 0: outside)"
+       }
+      ]
+     },
+     {
+      "name": "islands_removed",
+      "kind": "field",
+      "metrics": {
+       "volume": 900.0004846702483,
+       "topology": {
+        "bodies": 1,
+        "cavities": 0,
+        "euler": -7,
+        "tunnels": 8
+       },
+       "thickness": {
+        "min": 8.134367120442203e-06,
+        "p1": 0.6231974273827101,
+        "median": 1.712199765238974,
+        "uncovered": 469
+       },
+       "cad_excursion": -0.125
+      },
+      "checks": [
+       {
+        "name": "bodies",
+        "value": 1,
+        "threshold": 1,
+        "status": "PASS",
+        "note": ""
+       },
+       {
+        "name": "enclosed_voids",
+        "value": 0,
+        "threshold": 0,
+        "status": "PASS",
+        "note": ""
+       },
+       {
+        "name": "min_wall_p1",
+        "value": 0.6231974273827101,
+        "threshold": 1.0,
+        "status": "FAIL",
+        "note": "inscribed-ball local thickness of the redistanced field"
+       },
+       {
+        "name": "cad_tolerance",
+        "value": -0.125,
+        "threshold": null,
+        "status": "MEASURED",
+        "note": "largest envelope distance of a solid sample (> 0: outside)"
+       }
+      ]
+     },
+     {
+      "name": "opened",
+      "kind": "field",
+      "metrics": {
+       "volume": 900.2609446913424,
+       "topology": {
+        "bodies": 1,
+        "cavities": 0,
+        "euler": -7,
+        "tunnels": 8
+       },
+       "thickness": {
+        "min": 0.00015144043970186094,
+        "p1": 0.6271928912029767,
+        "median": 1.7094785113552935,
+        "uncovered": 486
+       },
+       "cad_excursion": -0.125
+      },
+      "checks": [
+       {
+        "name": "bodies",
+        "value": 1,
+        "threshold": 1,
+        "status": "PASS",
+        "note": ""
+       },
+       {
+        "name": "enclosed_voids",
+        "value": 0,
+        "threshold": 0,
+        "status": "PASS",
+        "note": ""
+       },
+       {
+        "name": "min_wall_p1",
+        "value": 0.6271928912029767,
+        "threshold": 1.0,
+        "status": "FAIL",
+        "note": "inscribed-ball local thickness of the redistanced field"
+       },
+       {
+        "name": "cad_tolerance",
+        "value": -0.125,
+        "threshold": null,
+        "status": "MEASURED",
+        "note": "largest envelope distance of a solid sample (> 0: outside)"
+       }
+      ]
+     },
+     {
+      "name": "closed",
+      "kind": "field",
+      "metrics": {
+       "volume": 902.3878909907552,
+       "topology": {
+        "bodies": 1,
+        "cavities": 0,
+        "euler": -7,
+        "tunnels": 8
+       },
+       "thickness": {
+        "min": 0.00024401881510264636,
+        "p1": 0.6369907980828378,
+        "median": 1.7222776581057548,
+        "uncovered": 514
+       },
+       "cad_excursion": -0.125
+      },
+      "checks": [
+       {
+        "name": "bodies",
+        "value": 1,
+        "threshold": 1,
+        "status": "PASS",
+        "note": ""
+       },
+       {
+        "name": "enclosed_voids",
+        "value": 0,
+        "threshold": 0,
+        "status": "PASS",
+        "note": ""
+       },
+       {
+        "name": "min_wall_p1",
+        "value": 0.6369907980828378,
+        "threshold": 1.0,
+        "status": "FAIL",
+        "note": "inscribed-ball local thickness of the redistanced field"
+       },
+       {
+        "name": "cad_tolerance",
+        "value": -0.125,
+        "threshold": null,
+        "status": "MEASURED",
+        "note": "largest envelope distance of a solid sample (> 0: outside)"
+       }
+      ]
+     },
+     {
+      "name": "final",
+      "kind": "field",
+      "metrics": {
+       "volume": 902.3878909907552,
+       "topology": {
+        "bodies": 1,
+        "cavities": 0,
+        "euler": -7,
+        "tunnels": 8
+       },
+       "thickness": {
+        "min": 0.00024401881510264636,
+        "p1": 0.6369907980828378,
+        "median": 1.7222776581057548,
+        "uncovered": 514
+       },
+       "cad_excursion": -0.125
+      },
+      "checks": [
+       {
+        "name": "bodies",
+        "value": 1,
+        "threshold": 1,
+        "status": "PASS",
+        "note": ""
+       },
+       {
+        "name": "enclosed_voids",
+        "value": 0,
+        "threshold": 0,
+        "status": "PASS",
+        "note": ""
+       },
+       {
+        "name": "min_wall_p1",
+        "value": 0.6369907980828378,
+        "threshold": 1.0,
+        "status": "FAIL",
+        "note": "inscribed-ball local thickness of the redistanced field"
+       },
+       {
+        "name": "cad_tolerance",
+        "value": -0.125,
+        "threshold": null,
+        "status": "MEASURED",
+        "note": "largest envelope distance of a solid sample (> 0: outside)"
+       }
+      ]
+     },
+     {
+      "name": "surface",
+      "kind": "surface",
+      "metrics": {
+       "volume": 898.1252229997244,
+       "topology": {
+        "shells": 1,
+        "bodies": 1,
+        "cavities": 0,
+        "euler": -7.0,
+        "tunnels": 8.0
+       },
+       "edges": {
+        "edges": 92328,
+        "open": 0,
+        "non_manifold": 0,
+        "misoriented": 0,
+        "non_manifold_vertices": 0
+       },
+       "thickness_ray": {
+        "min": 1.6355677705685865e-12,
+        "p1": 0.5040848973060527,
+        "median": 1.4747204845683899
+       },
+       "faces": 61552,
+       "vertices": 30762,
+       "cad_excursion": 0.0
+      },
+      "checks": [
+       {
+        "name": "watertight_manifold",
+        "value": {
+         "edges": 92328,
+         "open": 0,
+         "non_manifold": 0,
+         "misoriented": 0,
+         "non_manifold_vertices": 0
+        },
+        "threshold": "all 0",
+        "status": "PASS",
+        "note": ""
+       },
+       {
+        "name": "bodies",
+        "value": 1,
+        "threshold": 1,
+        "status": "PASS",
+        "note": ""
+       },
+       {
+        "name": "enclosed_voids",
+        "value": 0,
+        "threshold": 0,
+        "status": "PASS",
+        "note": ""
+       },
+       {
+        "name": "min_wall_p1",
+        "value": 0.5040848973060527,
+        "threshold": 1.0,
+        "status": "FAIL",
+        "note": "ray thickness along the inner normal"
+       },
+       {
+        "name": "volume_vs_optimised",
+        "value": -0.0020826838933055702,
+        "threshold": null,
+        "status": "MEASURED",
+        "note": ""
+       },
+       {
+        "name": "cad_tolerance",
+        "value": 0.0,
+        "threshold": null,
+        "status": "MEASURED",
+        "note": "largest envelope distance of a vertex (> 0: outside)"
+       }
+      ]
+     },
+     {
+      "name": "volume_mesh",
+      "kind": "volume_mesh",
+      "status": "NOT VERIFIED",
+      "note": "gmsh is not installed: no tetrahedral mesh, no T10 re-analysis",
+      "metrics": {},
+      "checks": []
+     },
+     {
+      "name": "reanalysis_t10",
+      "kind": "analysis",
+      "status": "NOT VERIFIED",
+      "note": "gmsh is not installed: no tetrahedral mesh, no T10 re-analysis",
+      "metrics": {},
+      "checks": []
+     }
+    ],
+    "geometry_verdict": "FAIL",
+    "structural_verdict": "NOT VERIFIED",
+    "intermediate_failures": [
+     [
+      "threshold",
+      "min_wall_p1"
+     ],
+     [
+      "islands_removed",
+      "min_wall_p1"
+     ],
+     [
+      "opened",
+      "min_wall_p1"
+     ],
+     [
+      "closed",
+      "min_wall_p1"
+     ],
+     [
+      "final",
+      "min_wall_p1"
+     ]
+    ],
+    "requirements": {
+     "max_bodies": 1,
+     "max_voids": 0,
+     "min_wall": 1.0,
+     "cad_tol": null,
+     "volume_tol": null,
+     "required": []
+    },
+    "statuses_seen": [
+     "FAIL",
+     "MEASURED",
+     "PASS"
+    ]
+   },
+   "reanalysis_voxel": {
+    "meshes": [
+     {
+      "h": 0.5,
+      "elements": 7191,
+      "nodes": 11248,
+      "dofs": 33744,
+      "volume": 898.875,
+      "applied_force": [
+       0.0,
+       0.0,
+       -0.9999999999999996
+      ],
+      "toporlogy": {
+       "compliance": 31.45178592854246,
+       "solver": "gmg",
+       "seconds": 1.7552119000029052
+      },
+      "volume_error": 0.0008348245668585719
+     },
+     {
+      "h": 0.3333333333333333,
+      "elements": 24191,
+      "nodes": 33143,
+      "dofs": 99429,
+      "volume": 895.9629629629627,
+      "applied_force": [
+       0.0,
+       0.0,
+       -0.9999999999999984
+      ],
+      "toporlogy": {
+       "compliance": 31.46913504404231,
+       "solver": "gmg",
+       "seconds": 1.8842569999978878
+      },
+      "volume_error": -0.002407526235083113
+     },
+     {
+      "h": 0.25,
+      "elements": 57382,
+      "nodes": 73201,
+      "dofs": 219603,
+      "volume": 896.59375,
+      "applied_force": [
+       0.0,
+       0.0,
+       -0.9999999999999999
+      ],
+      "toporlogy": {
+       "compliance": 31.392034105111115,
+       "solver": "gmg",
+       "seconds": 3.032477699991432
+      },
+      "volume_error": -0.0017051887203538563
+     }
+    ],
+    "convergence": {
+     "meshes": 3,
+     "h": [
+      0.25,
+      0.3333333333333333,
+      0.5
+     ],
+     "values": [
+      31.392034105111115,
+      31.46913504404231,
+      31.45178592854246
+     ],
+     "reasons": [
+      "oscillatory or stalled: the differences between successive meshes change sign or vanish"
+     ],
+     "refinement": [
+      1.3333333333333333,
+      1.5
+     ],
+     "verdict": "NOT CONVERGED"
+    },
+    "backend": "toporlogy",
+    "note": "staircase boundary: geometry error O(h) is part of every difference (not body-fitted)"
+   },
+   "surface_volume_over_target": -0.0020826838933055702
+  },
+  "final": {
+   "record": {
+    "stages": [
+     {
+      "name": "density",
+      "kind": "voxel",
+      "metrics": {
+       "volume": 899.9996377492456,
+       "volume_voxels_x_ge_half": 920.0,
+       "topology": {
+        "bodies": 1,
+        "cavities": 0,
+        "euler": -12,
+        "tunnels": 13
+       },
+       "grey_fraction": 0.2753333333333333
+      },
+      "checks": [
+       {
+        "name": "bodies",
+        "value": 1,
+        "threshold": 1,
+        "status": "PASS",
+        "note": ""
+       },
+       {
+        "name": "min_wall_p1",
+        "value": null,
+        "threshold": 1.0,
+        "status": "UNVERIFIED",
+        "note": "no surface on a grey density"
+       }
+      ]
+     },
+     {
+      "name": "threshold",
+      "kind": "field",
+      "metrics": {
+       "volume": 900.0004846702483,
+       "topology": {
+        "bodies": 1,
+        "cavities": 0,
+        "euler": -7,
+        "tunnels": 8
+       },
+       "thickness": {
+        "min": 8.134367120442203e-06,
+        "p1": 0.6231974273827101,
+        "median": 1.712199765238974,
+        "uncovered": 469
+       },
+       "cad_excursion": -0.125
+      },
+      "checks": [
+       {
+        "name": "bodies",
+        "value": 1,
+        "threshold": 1,
+        "status": "PASS",
+        "note": ""
+       },
+       {
+        "name": "enclosed_voids",
+        "value": 0,
+        "threshold": 0,
+        "status": "PASS",
+        "note": ""
+       },
+       {
+        "name": "min_wall_p1",
+        "value": 0.6231974273827101,
+        "threshold": 1.0,
+        "status": "FAIL",
+        "note": "inscribed-ball local thickness of the redistanced field"
+       },
+       {
+        "name": "cad_tolerance",
+        "value": -0.125,
+        "threshold": null,
+        "status": "MEASURED",
+        "note": "largest envelope distance of a solid sample (> 0: outside)"
+       }
+      ]
+     },
+     {
+      "name": "islands_removed",
+      "kind": "field",
+      "metrics": {
+       "volume": 900.0004846702483,
+       "topology": {
+        "bodies": 1,
+        "cavities": 0,
+        "euler": -7,
+        "tunnels": 8
+       },
+       "thickness": {
+        "min": 8.134367120442203e-06,
+        "p1": 0.6231974273827101,
+        "median": 1.712199765238974,
+        "uncovered": 469
+       },
+       "cad_excursion": -0.125
+      },
+      "checks": [
+       {
+        "name": "bodies",
+        "value": 1,
+        "threshold": 1,
+        "status": "PASS",
+        "note": ""
+       },
+       {
+        "name": "enclosed_voids",
+        "value": 0,
+        "threshold": 0,
+        "status": "PASS",
+        "note": ""
+       },
+       {
+        "name": "min_wall_p1",
+        "value": 0.6231974273827101,
+        "threshold": 1.0,
+        "status": "FAIL",
+        "note": "inscribed-ball local thickness of the redistanced field"
+       },
+       {
+        "name": "cad_tolerance",
+        "value": -0.125,
+        "threshold": null,
+        "status": "MEASURED",
+        "note": "largest envelope distance of a solid sample (> 0: outside)"
+       }
+      ]
+     },
+     {
+      "name": "opened",
+      "kind": "field",
+      "metrics": {
+       "volume": 900.2609446913424,
+       "topology": {
+        "bodies": 1,
+        "cavities": 0,
+        "euler": -7,
+        "tunnels": 8
+       },
+       "thickness": {
+        "min": 0.00015144043970186094,
+        "p1": 0.6271928912029767,
+        "median": 1.7094785113552935,
+        "uncovered": 486
+       },
+       "cad_excursion": -0.125
+      },
+      "checks": [
+       {
+        "name": "bodies",
+        "value": 1,
+        "threshold": 1,
+        "status": "PASS",
+        "note": ""
+       },
+       {
+        "name": "enclosed_voids",
+        "value": 0,
+        "threshold": 0,
+        "status": "PASS",
+        "note": ""
+       },
+       {
+        "name": "min_wall_p1",
+        "value": 0.6271928912029767,
+        "threshold": 1.0,
+        "status": "FAIL",
+        "note": "inscribed-ball local thickness of the redistanced field"
+       },
+       {
+        "name": "cad_tolerance",
+        "value": -0.125,
+        "threshold": null,
+        "status": "MEASURED",
+        "note": "largest envelope distance of a solid sample (> 0: outside)"
+       }
+      ]
+     },
+     {
+      "name": "closed",
+      "kind": "field",
+      "metrics": {
+       "volume": 902.3878909907552,
+       "topology": {
+        "bodies": 1,
+        "cavities": 0,
+        "euler": -7,
+        "tunnels": 8
+       },
+       "thickness": {
+        "min": 0.00024401881510264636,
+        "p1": 0.6369907980828378,
+        "median": 1.7222776581057548,
+        "uncovered": 514
+       },
+       "cad_excursion": -0.125
+      },
+      "checks": [
+       {
+        "name": "bodies",
+        "value": 1,
+        "threshold": 1,
+        "status": "PASS",
+        "note": ""
+       },
+       {
+        "name": "enclosed_voids",
+        "value": 0,
+        "threshold": 0,
+        "status": "PASS",
+        "note": ""
+       },
+       {
+        "name": "min_wall_p1",
+        "value": 0.6369907980828378,
+        "threshold": 1.0,
+        "status": "FAIL",
+        "note": "inscribed-ball local thickness of the redistanced field"
+       },
+       {
+        "name": "cad_tolerance",
+        "value": -0.125,
+        "threshold": null,
+        "status": "MEASURED",
+        "note": "largest envelope distance of a solid sample (> 0: outside)"
+       }
+      ]
+     },
+     {
+      "name": "final",
+      "kind": "field",
+      "metrics": {
+       "volume": 899.9988675830691,
+       "topology": {
+        "bodies": 1,
+        "cavities": 0,
+        "euler": -7,
+        "tunnels": 8
+       },
+       "thickness": {
+        "min": 0.0005071343794566652,
+        "p1": 0.6378717797339688,
+        "median": 1.7175563653503159,
+        "uncovered": 543
+       },
+       "cad_excursion": -0.125
+      },
+      "checks": [
+       {
+        "name": "bodies",
+        "value": 1,
+        "threshold": 1,
+        "status": "PASS",
+        "note": ""
+       },
+       {
+        "name": "enclosed_voids",
+        "value": 0,
+        "threshold": 0,
+        "status": "PASS",
+        "note": ""
+       },
+       {
+        "name": "min_wall_p1",
+        "value": 0.6378717797339688,
+        "threshold": 1.0,
+        "status": "FAIL",
+        "note": "inscribed-ball local thickness of the redistanced field"
+       },
+       {
+        "name": "cad_tolerance",
+        "value": -0.125,
+        "threshold": null,
+        "status": "MEASURED",
+        "note": "largest envelope distance of a solid sample (> 0: outside)"
+       }
+      ]
+     },
+     {
+      "name": "surface",
+      "kind": "surface",
+      "metrics": {
+       "volume": 895.6872351145227,
+       "topology": {
+        "shells": 1,
+        "bodies": 1,
+        "cavities": 0,
+        "euler": -7.0,
+        "tunnels": 8.0
+       },
+       "edges": {
+        "edges": 92244,
+        "open": 0,
+        "non_manifold": 0,
+        "misoriented": 0,
+        "non_manifold_vertices": 0
+       },
+       "thickness_ray": {
+        "min": 1.554826963511153e-12,
+        "p1": 0.5065397767812811,
+        "median": 1.4709739523107153
+       },
+       "faces": 61496,
+       "vertices": 30734,
+       "cad_excursion": 0.0
+      },
+      "checks": [
+       {
+        "name": "watertight_manifold",
+        "value": {
+         "edges": 92244,
+         "open": 0,
+         "non_manifold": 0,
+         "misoriented": 0,
+         "non_manifold_vertices": 0
+        },
+        "threshold": "all 0",
+        "status": "PASS",
+        "note": ""
+       },
+       {
+        "name": "bodies",
+        "value": 1,
+        "threshold": 1,
+        "status": "PASS",
+        "note": ""
+       },
+       {
+        "name": "enclosed_voids",
+        "value": 0,
+        "threshold": 0,
+        "status": "PASS",
+        "note": ""
+       },
+       {
+        "name": "min_wall_p1",
+        "value": 0.5065397767812811,
+        "threshold": 1.0,
+        "status": "FAIL",
+        "note": "ray thickness along the inner normal"
+       },
+       {
+        "name": "volume_vs_optimised",
+        "value": -0.004791560411632645,
+        "threshold": null,
+        "status": "MEASURED",
+        "note": ""
+       },
+       {
+        "name": "cad_tolerance",
+        "value": 0.0,
+        "threshold": null,
+        "status": "MEASURED",
+        "note": "largest envelope distance of a vertex (> 0: outside)"
+       }
+      ]
+     },
+     {
+      "name": "volume_mesh",
+      "kind": "volume_mesh",
+      "status": "NOT VERIFIED",
+      "note": "gmsh is not installed: no tetrahedral mesh, no T10 re-analysis",
+      "metrics": {},
+      "checks": []
+     },
+     {
+      "name": "reanalysis_t10",
+      "kind": "analysis",
+      "status": "NOT VERIFIED",
+      "note": "gmsh is not installed: no tetrahedral mesh, no T10 re-analysis",
+      "metrics": {},
+      "checks": []
+     }
+    ],
+    "geometry_verdict": "FAIL",
+    "structural_verdict": "NOT VERIFIED",
+    "intermediate_failures": [
+     [
+      "threshold",
+      "min_wall_p1"
+     ],
+     [
+      "islands_removed",
+      "min_wall_p1"
+     ],
+     [
+      "opened",
+      "min_wall_p1"
+     ],
+     [
+      "closed",
+      "min_wall_p1"
+     ],
+     [
+      "final",
+      "min_wall_p1"
+     ]
+    ],
+    "requirements": {
+     "max_bodies": 1,
+     "max_voids": 0,
+     "min_wall": 1.0,
+     "cad_tol": null,
+     "volume_tol": null,
+     "required": []
+    },
+    "statuses_seen": [
+     "FAIL",
+     "MEASURED",
+     "PASS"
+    ]
+   },
+   "reanalysis_voxel": {
+    "meshes": [
+     {
+      "h": 0.5,
+      "elements": 7170,
+      "nodes": 11226,
+      "dofs": 33678,
+      "volume": 896.25,
+      "applied_force": [
+       0.0,
+       0.0,
+       -0.9999999999999996
+      ],
+      "toporlogy": {
+       "compliance": 31.53825247765683,
+       "solver": "gmg",
+       "seconds": 1.3444221999961883
+      },
+      "volume_error": 0.0006283051308701992
+     },
+     {
+      "h": 0.3333333333333333,
+      "elements": 24147,
+      "nodes": 33095,
+      "dofs": 99285,
+      "volume": 894.3333333333331,
+      "applied_force": [
+       0.0,
+       0.0,
+       -0.9999999999999984
+      ],
+      "toporlogy": {
+       "compliance": 31.545451500465518,
+       "solver": "gmg",
+       "seconds": 2.004089900001418
+      },
+      "volume_error": -0.0015115787387730562
+     },
+     {
+      "h": 0.25,
+      "elements": 57177,
+      "nodes": 72983,
+      "dofs": 218949,
+      "volume": 893.390625,
+      "applied_force": [
+       0.0,
+       0.0,
+       -0.9999999999999999
+      ],
+      "toporlogy": {
+       "compliance": 31.51726248114171,
+       "solver": "gmg",
+       "seconds": 3.085921000005328
+      },
+      "volume_error": -0.0025640759681352376
+     }
+    ],
+    "convergence": {
+     "meshes": 3,
+     "h": [
+      0.25,
+      0.3333333333333333,
+      0.5
+     ],
+     "values": [
+      31.51726248114171,
+      31.545451500465518,
+      31.53825247765683
+     ],
+     "reasons": [
+      "oscillatory or stalled: the differences between successive meshes change sign or vanish"
+     ],
+     "refinement": [
+      1.3333333333333333,
+      1.5
+     ],
+     "verdict": "NOT CONVERGED"
+    },
+    "backend": "toporlogy",
+    "note": "staircase boundary: geometry error O(h) is part of every difference (not body-fitted)"
+   },
+   "surface_volume_over_target": -0.004791560411632645
+  },
+  "grey_voxel_compliance_grid": 35.82635661040765,
+  "seconds_section": 165.77837349999754,
+  "env": {
+   "sha": "478ed4acd3b567d09ea96bd9e942a75d0a314364",
+   "python": "3.12.1",
+   "numpy": "2.2.6",
+   "scipy": "1.14.1",
+   "torch": "2.5.1+cu121",
+   "skfem": "12.0.2",
+   "platform": "Windows-11-10.0.26200-SP0",
+   "date": "2026-11-26 06:07 +0300"
+  }
+ }
+}

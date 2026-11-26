@@ -121,6 +121,7 @@ class PostResult:
     implicit: Implicit
     params: PostParams
     report: dict[str, Any] = field(default_factory=dict)
+    fields: dict[str, np.ndarray] = field(default_factory=dict)   # stage fields, ``finalize(keep_fields=True)``
 
     def checks(self, **kw: Any) -> Any:
         from toporlogy.post.checks import manufacturing_checks
@@ -170,11 +171,13 @@ def _cache(roles: Sequence[Role], X: np.ndarray, shape: tuple[int, ...]) -> dict
 
 def finalize(domain: Any, xphys: np.ndarray, preserve: Sequence[Role] = (), params: PostParams | None = None,
              envelope: Role | None = None, target_volume: float | None = None,
-             log: Callable[[str], None] | None = None, part: Any = None) -> PostResult:
+             log: Callable[[str], None] | None = None, part: Any = None, keep_fields: bool = False) -> PostResult:
     """Run the whole pipeline on the physical density ``xphys`` (``domain.shape``) of a 3-D :class:`Domain`.
 
     ``envelope`` (a Bound role) replaces the one built from ``params.envelope``; ``part`` is the part geometry that
-    ``params.envelope="cad"`` needs (see :func:`_envelope_role`)."""
+    ``params.envelope="cad"`` needs (see :func:`_envelope_role`). ``keep_fields``: keep the part's field φ (roles
+    re-imposed) after every stage in ``PostResult.fields`` — "threshold", "islands_removed", "opened", "closed",
+    "final" — for a per-stage record (:mod:`toporlogy.post.chain`); the result is otherwise unchanged."""
     p = params or PostParams()
     for r in preserve:                      # a bore whose stock removes it fails here, not after the pipeline
         if r.stock > 0 and isinstance(r, Cut):
@@ -228,17 +231,24 @@ def finalize(domain: Any, xphys: np.ndarray, preserve: Sequence[Role] = (), para
         raise ValueError("volume_match: threshold | final | none")
     stages["thresholded"] = v_t
     phi0 = phi_t if p.volume_match != "none" else S.redistance(phi_t, hf)
+    kept: dict[str, np.ndarray] = {}
+    if keep_fields:
+        kept["threshold"] = combine(phi0)
     times["threshold_sdf"] = time.perf_counter() - tic
     say(f"post: level {t_level:.4f} -> volume {v_t:.6g} (target {target:.6g})")
     # ---- islands, opening, closing
     tic = time.perf_counter()
     phi0, isl = remove_islands(phi0, combine, keep_masks, hf, p.keep_bodies)
     stages["islands_removed"] = S.solid_volume(combine(phi0), hf)
+    if keep_fields:
+        kept["islands_removed"] = combine(phi0)
     if r_open > 0:
         phi_o, op = adaptive_opening(phi0, combine, hf, r_open, p.max_open_loss, p.radius_factor, p.radius_trials)
     else:
         phi_o, op = phi0, {"r_used": 0.0, "volume_change": 0.0, "trials": []}
     stages["opened"] = S.solid_volume(combine(phi_o), hf)
+    if keep_fields:
+        kept["opened"] = combine(phi_o)
     say(f"post: opening r={op['r_used']:g} ({100 * op['volume_change']:+.2f} %)")
     # closing acts on the free field united with the Keep bodies (junction fillets); Bounds and Cuts are re-imposed
     # afterwards, so their sharp edges never enter the morphology (the free field runs through them)
@@ -248,6 +258,8 @@ def finalize(domain: Any, xphys: np.ndarray, preserve: Sequence[Role] = (), para
     else:
         phi_c, cl = phi1, {"r_used": 0.0, "volume_change": 0.0, "trials": []}
     stages["closed"] = S.solid_volume(combine(phi_c), hf)
+    if keep_fields:
+        kept["closed"] = combine(phi_c)
     say(f"post: closing r={cl['r_used']:g} ({100 * cl['volume_change']:+.2f} %)")
     times["morphology"] = time.perf_counter() - tic
     # ---- optional final volume match (free surface only), clean-up
@@ -331,7 +343,9 @@ def finalize(domain: Any, xphys: np.ndarray, preserve: Sequence[Role] = (), para
     rep["seconds"] = {**times, "total": time.perf_counter() - t_start}
     say(f"post: {len(F)} triangles, volume {rep['volume_mesh']:.6g} ({100 * rep['volume_vs_target']:+.2f} % vs "
         f"target), {rep['seconds']['total']:.1f} s")
-    return PostResult(V, F, Vr, Fr, grid, phi, phi_c, roles, implicit, p, rep)
+    if keep_fields:
+        kept["final"] = phi
+    return PostResult(V, F, Vr, Fr, grid, phi, phi_c, roles, implicit, p, rep, kept)
 
 
 def _strip(d: dict[str, Any]) -> dict[str, Any]:
