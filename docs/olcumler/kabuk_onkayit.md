@@ -283,3 +283,68 @@ ayrıca ölçülmedi.
 Sonraki adım (ayrı ön kayıt): drilling'den bağımsız bir referans (örneğin aynı dilimin katı / düzgün kabuk çözümü ya
 da drilling serbestliğini kullanmayan bir eleman) ile hangi α aralığının uyumu doğru verdiğini ölçmek; ancak ondan
 sonra varsayılan değişebilir.
+
+## Ek ön kayıt: drilling'den bağımsız referans, katı model (DB0–DB5)
+
+Ön kayıt 2026-11-26 19:43 +0300, referans kodu yazılmadan ve koşulmadan önce. Ön kayıttan önce yalnız bir zamanlama
+denemesi yapıldı (T10 ağında K_ff çarpanlaması; uyum hesaplanmadı, yazdırılmadı): 64 × 48 × 1 T10 111 456 DOF,
+SuperLU 12,5 s, tepe bellek 1,8 GB; makinede o an 2,8 GB boş bellek vardı. Bu yüzden kalınlık yönünde bir T10
+katmanı temel alındı (64 × 48 × 2 yaklaşık 3,5 GB isterdi), iki katman DB2'de daha kaba ağda denetlenir.
+
+Soru: DR'deki dilimin drilling ölçeğinden (α) bağımsız bir 3-B katı çözümü hangi α'nın uyumu doğru verdiğini söylüyor
+mu; varsayılan α = 1e-3 kalmalı mı?
+
+**Eleman seçimi.** `fem.mesh` 3-B elemanları (`reference.py`, `ELEMENTS`): H8, T4, T10. H20 / H27 yok; uyumsuz modlu
+H8 (`H8IM`) yalnız düzgün ızgarada (`fem.elastic`), eğri dilime eşlenemez. Eğilmede H8 kesme kilitlenmesi yapar, T10
+(ikinci derece dörtyüzlü) yapmaz ölçüsünde değil ama çok daha az yapar; referans **T10**. H8 yalnız kayıt (DB5).
+
+**Geometri.** R = 1 (orta yüzey), θ ∈ [0, π/2], z ∈ [0, L], L = 1, ν = 0,3, E = 1, t ∈ {0,01; 0,05}. Katı:
+`box(nθ, nz, nr, π/2, 1, t, element="T10", origin=(0, 0, R − t/2))`, her düğüm (orta kenar düğümleri dahil, böylece
+kenarlar izoparametrik eğri) (x, y, z) → (z cos x, z sin x, y) ile eşlenir; Jacobian det = r > 0 (sütunlar ∂/∂θ =
+(−r sin θ, r cos θ, 0), ∂/∂z = (0, 0, 1), ∂/∂r = (cos θ, sin θ, 0)). Malzeme `isotropic_stiffness(1, 0,3)`. Ankastre:
+`node_sets["bottom"]` (eksenel z = 0 yüzü), üç bileşen. Kabuk: `cylinder_surface(1, 1, nθ, nz, angle=π/2)`, ilk halka
+altı DOF ile ankastre (DR ile aynı), `FlatShell(…, drill=α)`.
+
+**Yük (yama).** Nokta yükü iki modelde de ağ incelirken ıraksar (türetme aşağıda), bu yüzden kabuğun orta yüzey yük
+noktasında aynı yama iki modele de uygulanır:
+* köşe: θ ∈ [7π/16, π/2], z ∈ [5/6, 1], yön d = +e_z (DR köşe yükünün noktası yamanın köşesi);
+* radyal: θ ∈ [π/4 − π/32, π/4 + π/32], z ∈ [5/6, 1], yön d = −(cos π/4, sin π/4, 0) sabit vektör (KS3 / DR radyal yük
+  noktası yamanın serbest kenar ortası).
+Yama ağla hizalı: nθ 16'nın, nz 6'nın katı. Kabukta merkezi yamada olan parçalar, her birine A_e / A_P · d, köşe başına
+dörtte biri (öteleme DOF'ları); toplam tam d. Katıda merkezi yamada olan hücrelere düzgün hacim kuvveti b = d / V_P,h
+(V_P,h ayrık yama hacmi), tutarlı yük; birim ayrışımı ile Σ F = b V_P,h = d. Kalınlık boyunca düzgün olduğundan bileşke
+orta yüzeyde (r̄ = ∫r² dr / ∫r dr = R + t²/(12R)). Ölçülen: **c = Fᵀu** (birim toplam kuvvet; yamada kuvvetle ağırlıklı
+ortalama yer değiştirmenin d bileşeni).
+
+*Nokta yükünün ıraksaması (türetme; eşik yok).* Mindlin plakasında w = w_b + w_s, kesme kısmı k_s G t ∇² w_s = −q.
+Nokta kuvvet F için ∇² nin temel çözümü (1/2π) ln ρ ⇒ w_s ≈ −F ln ρ / (2π k_s G t): yük noktasında sonsuz, ağ h ile
+c ≈ sabit + F² ln(1/h) / (2π k_s G t). Serbest düz kenarda yansıma (görüntü kaynak) çarpanı yaklaşık 2, 90° serbest
+köşede yaklaşık 4. Köşe, t = 0,05: 4 ln 2 / (2π · (5/6) · (1/2,6) · 0,05) = 2,7726 / 0,10069 = 27,5 her ağ ikilemesinde;
+DR3'te 8 × 6 → 16 × 12 → 32 × 24 artışlar +36, +32 (aynı mertebe; bu bir kanıt değil, yamanın gerekçesi). Katıda
+nokta kuvvet Kelvin / Boussinesq 1/ρ tekilliği verir, uyum sonsuzdur.
+
+**Kapalı formlar.** Katı hacim ∫₀^{π/2} ∫₀^L ∫_{R−t/2}^{R+t/2} r dr dz dθ = (π/2) L R t. Yama hacmi aynı yoldan
+V_P = Δθ Δz R t = (π/16)(1/6) R t. Richardson (oran 2, c_h = c_∞ + C h^p): c₁, c₂, c₃ = 16 × 12, 32 × 24, 64 × 48;
+Δ₁ = c₂ − c₁ = −C h₃^p 2^p (2^p − 1), Δ₂ = c₃ − c₂ = −C h₃^p (2^p − 1) ⇒ Δ₁/Δ₂ = 2^p, p = log₂(Δ₁/Δ₂),
+c_∞ = c₃ − C h₃^p = c₃ + Δ₂/(2^p − 1) = **c₃ + Δ₂² / (Δ₁ − Δ₂)**; hata kestirimi ε_ref = |c_∞ − c₃| / |c_∞|.
+
+| # | Kontrol | Eşik |
+|:---|:---|:---|
+| DB0 | kurulum (hızlı, varsayılan takım): T10 16 × 12 × 1, iki kalınlık: (a) Jacobian denetimi hatasız, Σ hücre hacmi / ((π/2) R t L) − 1; (b) yama hacmi V_P,h / ((π/16)(1/6) R t) − 1; (c) iki yükün toplam kuvveti = d, katı ve kabukta (16 × 12) | (a), (b) ≤ 1e-4 göreli; (c) ≤ 1e-12 |
+| DB1 | referans yakınsaması: dört durum (iki t, iki yük), T10 nr = 1, 16 × 12, 32 × 24, 64 × 48: Δ₁ Δ₂ > 0 ve \|Δ₂\| < \|Δ₁\| (tek yönlü, büzülen), ε_ref | ε_ref ≤ %1 (her durum) |
+| DB2 | kalınlık yönü: \|c(32 × 24 × 2) − c(32 × 24 × 1)\| / c(32 × 24 × 1) | ≤ %0,5 (her durum) |
+| DB3 | kabuk ağ yakınsaması (yama yükü): \|c(128 × 96) − c(64 × 48)\| / c(128 × 96), beş α × dört durum | ≤ %1 (her biri) |
+| DB4 | karar kuralının sonucu α* (aşağıda) = `toporlogy.fem.shell.DRILL` | eşit |
+| DB5 | kayıt (eşiksiz): c₁, c₂, c₃, p, c_∞, ε_ref; kabuk 16 × 12 … 128 × 96 beş α (ve kabuğun kendi Richardson değeri); d(α) tablosu; H8 nr = 2, 64 × 48 ve 128 × 96, c / c_∞ (kilitlenme) | — |
+
+**Karar kuralı.** d(α, k) = c_kabuk(α, 128 × 96, k) / c_∞(k) − 1 (k: dört durum), E(α) = max_k \|d(α, k)\|.
+DB1, DB2, DB3'ün hepsi tutarsa: E(1e-3) ≤ %3 ve E(1e-3) − min_α E(α) ≤ 1 yüzde puanı ise α = 1e-3 kalır; değilse
+varsayılan α* = argmin_α E(α) olur (α ∈ {1e-5, 1e-4, 1e-3, 1e-2, 1e-1}; eşitlikte log ölçekte 1e-3'e yakın olan) ve
+burada yazılır. DB1–DB3'ten biri tutmazsa referans güvenilir sayılmaz: kural uygulanmaz, α* = 1e-3 (değişmez),
+tutmayan kontrol strict xfail. Varsayılan değişirse `test_shell.py`, `test_shell_study.py`, `test_shell_drilling.py`
+yeniden koşulur; ön kayıtlı eşiği yeni varsayılanla tutmayan kontrol ölçülen değerle strict xfail olur (eşik
+gevşetilmez); değişen ölçülen değerler burada yazılır, eski kayıtlar eski sayılarıyla ve bir notla kalır.
+
+Kurallar: ilk koşuda tutmayan kontrol, ölçülen değeriyle `xfail(strict=True)` olur ve `docs/vv_kutugu.json`'a girer;
+eşik gevşetilmez; test kurulum hatası (ölçüm değil) düzeltilebilir ama burada yazılır; ilk koşudan sonra eklenen kontrol
+"post hoc" diye işaretlenir. Uzun hesaplar (DB1–DB5) `@pytest.mark.slow`; DB0 varsayılan takımda.
