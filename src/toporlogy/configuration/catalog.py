@@ -816,6 +816,8 @@ PHYSICS_INDEPENDENT: dict[str, tuple[str, ...]] = {
     "volume": (T + "test_gradients.py::test_volume_weighted_and_unweighted",),
     "centre_of_mass": (T + "test_mass_properties.py::test_mp7_mp8_study_responses_value_and_gradient",),
     "inertia": (T + "test_mass_properties.py::test_mp7_mp8_study_responses_value_and_gradient",),
+    "effective_stiffness": (T + "test_homogenization.py::test_h15_h16_study_responses_value_and_gradient",),
+    "effective_poisson": (T + "test_homogenization.py::test_h15_h16_study_responses_value_and_gradient",),
     "dilated_volume": (T + "test_robust.py::test_gradcheck_robust_compliance_and_dilated_volume",),
     "local_volume": (T + "test_lengthscale.py::test_gradcheck_local_volume_and_grey",),
     "grey_level": (T + "test_lengthscale.py::test_gradcheck_local_volume_and_grey",),

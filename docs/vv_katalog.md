@@ -111,6 +111,8 @@ Yalnız sentetik kayıt var; kaynağı, sayfası ve lisansı bu çalışmada oku
 | coupling_compliance | SUPPORTED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED |
 | dilated_volume | SUPPORTED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED |
 | displacement | SUPPORTED | NOT VERIFIED | UNSUPPORTED (catalog) | SUPPORTED | NOT VERIFIED |
+| effective_poisson | SUPPORTED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED |
+| effective_stiffness | SUPPORTED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED |
 | eigenvalue | UNSUPPORTED (component) | UNSUPPORTED (component) | SUPPORTED | UNSUPPORTED (component) | NOT VERIFIED |
 | end_compliance | UNSUPPORTED (component) | UNSUPPORTED (component) | UNSUPPORTED (component) | SUPPORTED | NOT VERIFIED |
 | end_strain_energy | UNSUPPORTED (component) | UNSUPPORTED (component) | UNSUPPORTED (component) | SUPPORTED | UNSUPPORTED (component) |
@@ -171,6 +173,16 @@ Gerekçe ve kanıt (yalnız boş olmayanlar):
 - `displacement` × `elasticity`: SUPPORTED [test_gradients.py::test_non_self_adjoint_displacement; test_compose.py::test_displacement_value_and_gradient]
 - `displacement` × `modal`: UNSUPPORTED — needs the static state u; physics modal solves an eigenproblem only
 - `displacement` × `nonlinear_elasticity`: SUPPORTED [test_nonlinear.py::test_v5_large_deflection_cantilever_elastica; test_nonlinear.py::test_v6_end_compliance_gradient_finite_difference]
+- `effective_poisson` × `elasticity`: SUPPORTED — tested with physics elasticity [test_homogenization.py::test_h15_h16_study_responses_value_and_gradient]
+- `effective_poisson` × `elasticity_gmg`: NOT VERIFIED — does not read the study's physics (read from the code); combination not tested
+- `effective_poisson` × `modal`: NOT VERIFIED — does not read the study's physics (read from the code); combination not tested
+- `effective_poisson` × `nonlinear_elasticity`: NOT VERIFIED — does not read the study's physics (read from the code); combination not tested
+- `effective_poisson` × `tensor_elasticity`: NOT VERIFIED — does not read the study's physics (read from the code); combination not tested
+- `effective_stiffness` × `elasticity`: SUPPORTED — tested with physics elasticity [test_homogenization.py::test_h15_h16_study_responses_value_and_gradient]
+- `effective_stiffness` × `elasticity_gmg`: NOT VERIFIED — does not read the study's physics (read from the code); combination not tested
+- `effective_stiffness` × `modal`: NOT VERIFIED — does not read the study's physics (read from the code); combination not tested
+- `effective_stiffness` × `nonlinear_elasticity`: NOT VERIFIED — does not read the study's physics (read from the code); combination not tested
+- `effective_stiffness` × `tensor_elasticity`: NOT VERIFIED — does not read the study's physics (read from the code); combination not tested
 - `eigenvalue` × `elasticity`: UNSUPPORTED — needs physics modal
 - `eigenvalue` × `elasticity_gmg`: UNSUPPORTED — needs physics modal
 - `eigenvalue` × `modal`: SUPPORTED [test_modal.py::test_response_gradients; test_modal.py::test_eigenpairs_match_dense]

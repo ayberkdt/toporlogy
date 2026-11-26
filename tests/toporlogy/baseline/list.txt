@@ -66,7 +66,7 @@ link  - chain link (design -> physical density) (11)
   am_filter             build=null  base_layer=0  base_coordinate=null [length]  P=40.0
                         eps=0.0001  xi0=0.5  masked=true  autograd=false
   casting               direction=+z  parting=null [length]  p=40.0
-  density_filter        rmin=? [elements]  backend=auto
+  density_filter        rmin=? [elements]  backend=auto  periodic=false
   embed                 angle=null [degrees (bounds, start, keep_angle); rmin in elements]
                         density=true
   extrusion             axis=?
@@ -105,7 +105,7 @@ physics  - physics model (state solve) (5)
                         merit=residual
   tensor_elasticity     element=null  solver=direct
 
-response  - objective or constraint response (27)
+response  - objective or constraint response (29)
   buckling                     load_factor=null  n_modes=6  rho=50.0  case=0  penal_g=3.0
                                scale=null  preload_case=null  exclude=null
   centre_of_mass               axis=x
@@ -117,6 +117,8 @@ response  - objective or constraint response (27)
   coupling_compliance          held=null  aggregate=pnorm  p=8.0  eta=0.7  reference=first
   dilated_volume               weighted=false
   displacement                 where=?  direction=?  case=0  name=displacement
+  effective_poisson            (no parameters)
+  effective_stiffness          i=0  j=0  negate=false
   eigenvalue                   k=1
   end_compliance               weights=null
   end_strain_energy            weights=null

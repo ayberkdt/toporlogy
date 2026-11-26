@@ -265,6 +265,19 @@ def register_responses() -> None:
 
     register("response", "scenario_compliance", scenario_compliance)
     register("response", "compliance_case", compliance_case)
+    def effective_stiffness(ctx: BuildContext, i: int = 0, j: int = 0, negate: bool = False) -> Any:
+        """Component C_ij (Voigt) of the design homogenised as a periodic cell (the whole box; fem.homogenization);
+        negate: -C_ij, for a lower bound. No state solve."""
+        from toporlogy.optimization.homogenization_responses import EffectiveStiffness
+        return EffectiveStiffness(i, j, float(ctx.material["nu"]), negate)
+
+    def effective_poisson(ctx: BuildContext) -> Any:
+        """Effective Poisson ratio nu12 = C12 / C11 of a 2-D periodic cell (fem.homogenization). No state solve."""
+        from toporlogy.optimization.homogenization_responses import EffectivePoisson
+        return EffectivePoisson(float(ctx.material["nu"]))
+
+    register("response", "effective_stiffness", effective_stiffness)
+    register("response", "effective_poisson", effective_poisson)
     register("response", "centre_of_mass", centre_of_mass)
     register("response", "inertia", inertia)
     register("response", "stress", stress, nested={"exclude": "shape[]"}, units={"sigma_lim": "force/length^2"})

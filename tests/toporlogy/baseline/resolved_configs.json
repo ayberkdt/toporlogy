@@ -8,6 +8,7 @@
    },
    {
     "backend": "auto",
+    "periodic": false,
     "rmin": 1.5,
     "type": "density_filter"
    },
@@ -156,6 +157,7 @@
    },
    {
     "backend": "auto",
+    "periodic": false,
     "rmin": 2.0,
     "type": "density_filter"
    },
@@ -298,6 +300,7 @@
    },
    {
     "backend": "auto",
+    "periodic": false,
     "rmin": 3.513399456324598,
     "type": "density_filter"
    },
@@ -645,6 +648,7 @@
    },
    {
     "backend": "auto",
+    "periodic": false,
     "rmin": 2.0,
     "type": "density_filter"
    },
@@ -786,6 +790,7 @@
    },
    {
     "backend": "auto",
+    "periodic": false,
     "rmin": 1.5,
     "type": "density_filter"
    },
@@ -947,6 +952,7 @@
    },
    {
     "backend": "auto",
+    "periodic": false,
     "rmin": 2.0,
     "type": "density_filter"
    },
@@ -1111,6 +1117,7 @@
    },
    {
     "backend": "auto",
+    "periodic": false,
     "rmin": 2.0,
     "type": "density_filter"
    },
@@ -1262,6 +1269,7 @@
    },
    {
     "backend": "auto",
+    "periodic": false,
     "rmin": 1.5,
     "type": "density_filter"
    },
@@ -1628,6 +1636,7 @@
    },
    {
     "backend": "auto",
+    "periodic": false,
     "rmin": 2.0,
     "type": "density_filter"
    },
@@ -1900,6 +1909,7 @@
    },
    {
     "backend": "auto",
+    "periodic": false,
     "rmin": 2.0,
     "type": "density_filter"
    },
@@ -2151,6 +2161,7 @@
    },
    {
     "backend": "auto",
+    "periodic": false,
     "rmin": 2.0,
     "type": "density_filter"
    },
@@ -2296,6 +2307,7 @@
    },
    {
     "backend": "auto",
+    "periodic": false,
     "rmin": 2.0,
     "type": "density_filter"
    },
@@ -2577,6 +2589,7 @@
    },
    {
     "backend": "auto",
+    "periodic": false,
     "rmin": 1.5,
     "type": "density_filter"
    },

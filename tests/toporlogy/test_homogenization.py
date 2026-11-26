@@ -255,3 +255,45 @@ def test_h14_bound_hierarchy(kind: str) -> None:
     tol = 1e-10 * np.abs(Cp).max()
     assert np.linalg.eigvalsh(Cp - Cs).min() >= -tol
     assert np.linalg.eigvalsh(Ck - Cp).min() >= -tol
+
+
+def _cell_study(objective, constraints):
+    from toporlogy.configuration.build import build_setup
+    cfg = {"domain": {"type": "box", "shape": [10, 10], "h": 1.0}, "material": {"E0": 1.0, "nu": NU},
+           "supports": [{"type": "fixed", "where": {"type": "plane", "axis": "x", "at": "min"}}],
+           "load_cases": [{"loads": [{"type": "force", "where": {"type": "point", "at": ["max", "max"]},
+                                      "force": [0, -1]}]}],
+           "chain": [{"type": "density_filter", "rmin": 1.5}], "objective": objective,
+           "constraints": constraints, "optimizer": "mma"}
+    return build_setup(cfg).study
+
+
+def test_h15_h16_study_responses_value_and_gradient() -> None:
+    from toporlogy.optimization.homogenization_responses import EffectiveStiffness
+    st = _cell_study({"type": "effective_poisson"}, [{"response": "volume", "upper": 0.6},
+                     {"response": {"type": "effective_stiffness", "i": 0, "j": 0, "negate": True}, "upper": -0.02}])
+    rng = np.random.default_rng(5)
+    x = 0.2 + 0.6 * rng.random(st.n_var)
+    v = rng.normal(size=st.n_var)
+    ev = st.evaluate(x)
+    d = st.domain
+    import torch
+    E = st.interp(torch.as_tensor(ev.xphys)).numpy().ravel()[d.active_elements]
+    C = homogenize_elasticity(d, E, NU).C
+    assert abs(ev.f0 - C[0, 1] / C[0, 0]) <= 1e-14 * abs(C[0, 1] / C[0, 0])                       # H15
+    t = 1e-6
+    fd = (st.evaluate(x + t * v, False).f0 - st.evaluate(x - t * v, False).f0) / (2 * t)
+    assert abs(ev.df0 @ v - fd) <= 1e-6 * abs(fd)                                                  # H16
+    k = [c.key for c in st.constraints].index("effective_stiffness")
+    gk = (st.evaluate(x + t * v, False).values["effective_stiffness"]
+          - st.evaluate(x - t * v, False).values["effective_stiffness"]) / (2 * t)
+    sc = st.constraints[k].scale if st.constraints[k].scale is not None else 1.0 / abs(st.constraints[k].upper)
+    assert abs(ev.dg[k] @ v / sc - gk) <= 1e-6 * abs(gk)
+    assert isinstance(st.constraints[k].response, EffectiveStiffness)
+
+
+def test_h17_yaml_inverse_homogenisation_runs() -> None:
+    st = _cell_study({"type": "effective_poisson"}, [{"response": "volume", "upper": 0.6},
+                     {"response": {"type": "effective_stiffness", "negate": True}, "upper": -0.02}])
+    res = st.run(max_iter=5)
+    assert np.isfinite(res.objective) and np.isfinite(res.constraint_values["effective_stiffness"])

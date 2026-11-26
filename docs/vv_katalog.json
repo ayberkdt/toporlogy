@@ -1434,6 +1434,74 @@
      "enforced": ""
     }
    },
+   "effective_poisson": {
+    "elasticity": {
+     "status": "SUPPORTED",
+     "evidence": [
+      "tests/toporlogy/test_homogenization.py::test_h15_h16_study_responses_value_and_gradient"
+     ],
+     "reason": "tested with physics elasticity",
+     "enforced": ""
+    },
+    "elasticity_gmg": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "does not read the study's physics (read from the code); combination not tested",
+     "enforced": ""
+    },
+    "modal": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "does not read the study's physics (read from the code); combination not tested",
+     "enforced": ""
+    },
+    "nonlinear_elasticity": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "does not read the study's physics (read from the code); combination not tested",
+     "enforced": ""
+    },
+    "tensor_elasticity": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "does not read the study's physics (read from the code); combination not tested",
+     "enforced": ""
+    }
+   },
+   "effective_stiffness": {
+    "elasticity": {
+     "status": "SUPPORTED",
+     "evidence": [
+      "tests/toporlogy/test_homogenization.py::test_h15_h16_study_responses_value_and_gradient"
+     ],
+     "reason": "tested with physics elasticity",
+     "enforced": ""
+    },
+    "elasticity_gmg": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "does not read the study's physics (read from the code); combination not tested",
+     "enforced": ""
+    },
+    "modal": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "does not read the study's physics (read from the code); combination not tested",
+     "enforced": ""
+    },
+    "nonlinear_elasticity": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "does not read the study's physics (read from the code); combination not tested",
+     "enforced": ""
+    },
+    "tensor_elasticity": {
+     "status": "NOT VERIFIED",
+     "evidence": [],
+     "reason": "does not read the study's physics (read from the code); combination not tested",
+     "enforced": ""
+    }
+   },
    "eigenvalue": {
     "elasticity": {
      "status": "UNSUPPORTED",

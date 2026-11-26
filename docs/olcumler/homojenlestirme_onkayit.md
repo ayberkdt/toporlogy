@@ -95,3 +95,23 @@ fonksiyonu, geri adım dC/dE ile. Durum çözümü yok. YAML: `effective_stiffne
 | H15 | Study değeri = `homogenize_elasticity` doğrudan | ≤ 1e-14 göreli |
 | H16 | Study gradyanı (filtre + SIMP + homojenleştirme + oran) merkezi farkla | ≤ 1e-6 göreli |
 | H17 | YAML: amaç `effective_poisson`, kısıt hacim ve `effective_stiffness` (C11 alt sınırı), MMA birkaç iterasyon | sonlu değerler, kısıt değerlendirilir |
+
+### H15–H17 sonucu (ilk ölçüm, 2026-11-26 09:44)
+
+PASS (`test_homogenization.py::test_h15_h16_study_responses_value_and_gradient`,
+`::test_h17_yaml_inverse_homogenisation_runs`). 10 × 10 hücre, rmin 1,5, rastgele x ∈ [0,2; 0,8]:
+H15 göreli fark 0 (ν12 = 0,28475, C11 = 0,14035); H16 göreli fark 2,9e-9 (amaç; C11 kısıtının gradyanı da aynı
+testte ≤ 1e-6). H17: 5 MMA iterasyonu, ν12 = 0,3, hacim 0,6, C11 = 0,237; değerler sonlu.
+
+Kurulum notu: ilk çağrıda yapı tek nokta mesnetle kurulamadı (rigid-body denetimi, ölçüm değil); mesnet x = min
+düzlemine alındı. Yanıtlar mesneti okumaz.
+
+Post hoc gözlem (ön kayıtlı ölçüt değil): H17'de tasarım hareket etmedi. Düzgün başlangıçta (x = 0,6) |∂ν12/∂x| =
+5,9e-16, çünkü bütün modüllerin ölçeklenmesi ν12'yi değiştirmez ve periyodik hücrede her eleman eşdeğerdir; düzgün
+tasarım durağan noktadır. Gerçek bir ters tasarım için başlangıç düzgün olmamalıdır (auxetic örneği tohumlu
+başlangıç kullanıyor, `auxetic_hucre_onkayit.md`). H17 yalnız YAML zincirinin uçtan uca koştuğunu gösterir.
+
+Post hoc (ön kayıtsız, ölçüt yok): aynı kurulum, Python API'den düzgün olmayan başlangıçla
+(x0 = 0,6 + 0,2 cos(2πi/10) cos(2πj/10)), 40 MMA iterasyonu: ν12 0,324 → −0,372, hacim 0,397, C11 = 0,0200 (sınırda).
+Sınırlama: `density_filter` periyodik değildir, hücre kenarında filtre kesilir; periyodik filtreli ters tasarım
+`_auxetic.py`'deki ayrı döngüdedir. YAML'da başlangıç tasarımı seçeneği yok (takip işi).
