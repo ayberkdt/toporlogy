@@ -756,6 +756,26 @@
    "resolution": "Threshold not loosened; strict xfail. Post hoc characterisation test_c6a_post_hoc_global_error_decreases_with_rtol (error at rtol 1e-5 <= half the error at 1e-4) passes. The doc states that rtol is a local tolerance.",
    "record": "docs/foundations/prereg/C_creep.md",
    "slow": false
+  },
+  {
+   "nodeid": "tests/toporlogy/test_material_identification.py::test_D5a_std_of_the_weak_amplitude_exceeds_the_amplitude",
+   "kind": "pre-registered check failed",
+   "model_backend": "numpy",
+   "reason": "Preregistered prediction that the nominal linearised std of the A_1000 amplitude (relaxation data only on 1e-3..1e-1 s, tau fixed at 0.1/10/1000 s, 1 % noise) is finite and exceeds the amplitude was wrong: the measured condition number of the design is 8.0e8 (the prereg only bounded it below by ~1e5), the smallest singular value falls below RANK_RTOL=1e-8 times the largest (rank 3 of 4), so the report returns std_nominal=None by design (as identification.identify does). The ambiguity is flagged (condition > 1e4, weakest combination 0.711*A_1000 - 0.703*equilibrium); only the numeric std is undefined. Post hoc and labelled: with rank_rtol=1e-12 the std/amplitude ratio is 3.5e6.",
+   "risk": "low",
+   "resolution": "Kept as xfail(strict) with the measured values; the post hoc check test_D5a_post_hoc_std_with_a_stricter_rank_tolerance records the ratio under the stricter rank tolerance.",
+   "record": "docs/foundations/prereg/D_identification.md",
+   "slow": false
+  },
+  {
+   "nodeid": "tests/toporlogy/test_viscoelastic_robust.py::test_vr1_minmax_worst_case_not_worse",
+   "kind": "pre-registered check failed",
+   "model_backend": "optimization.viscoelastic_topology min-max (MMA bound formulation), Q4 plane strain, CPU",
+   "reason": "worst case of the min-max design 1.21480e-4 vs 1.21135e-4 for the single t = 100 s design (+0.28 %); with a constant load the worst case is always the last time, so min-max reduces to J(100 s), and the bound formulation stopped (tol 1e-3, 95 iterations) at a worse local point than the direct run (134 iterations)",
+   "risk": "low",
+   "resolution": "hypothesis too strong for a nonconvex problem with different iteration paths; a min-max study needs time-varying loads or several load cases, and a convergence test on the KKT residual rather than the step size",
+   "record": "docs/foundations/prereg/VR_viscoelastic_robust.md",
+   "slow": false
   }
  ],
  "skips": [
@@ -890,6 +910,13 @@
    "site": "vtk = pytest.importorskip(\"vtk\")",
    "backend": "vtk (post extra)",
    "covers": "kabuk VTU dosyasının bağımsız okuyucuyla okunması ve parça alanları (SX4)",
+   "status_when_skipped": "NOT VERIFIED"
+  },
+  {
+   "file": "tests/toporlogy/test_material_identification.py",
+   "site": "@pytest.mark.skip(reason=\"D8 NOT VERIFIED: no licensed measured data is available; nothing here is real material data\")",
+   "backend": "licensed measured material data (none available)",
+   "covers": "WP20 D8: fitted model against a held-out real experiment",
    "status_when_skipped": "NOT VERIFIED"
   }
  ]

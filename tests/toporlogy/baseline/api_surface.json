@@ -6246,6 +6246,72 @@
    "class": "InertiaComponent"
   }
  },
+ "toporlogy.optimization.material_identification": {
+  "COND_LIMIT": "<float>",
+  "IdentifiabilityReport": {
+   "attrs": [
+    "describe",
+    "identifiable",
+    "practically_unidentifiable",
+    "weakest_combination"
+   ],
+   "class": "IdentifiabilityReport"
+  },
+  "MaterialDataRecord": {
+   "attrs": [
+    "box",
+    "checksum",
+    "digest",
+    "is_si",
+    "license",
+    "ranges",
+    "validity_box",
+    "verify"
+   ],
+   "class": "MaterialDataRecord"
+  },
+  "NortonFit": {
+   "attrs": [
+    "identifiable",
+    "identification",
+    "ln_A",
+    "predict_rate"
+   ],
+   "class": "NortonFit"
+  },
+  "PronyFit": {
+   "attrs": [
+    "identifiable",
+    "n_agree",
+    "n_starts",
+    "predict"
+   ],
+   "class": "PronyFit"
+  },
+  "SI_UNITS": "<dict>",
+  "UNIT_FACTORS": "<dict>",
+  "ValidityBox": {
+   "attrs": [
+    "check"
+   ],
+   "class": "ValidityBox"
+  },
+  "ValidityBoxError": {
+   "attrs": [
+    "add_note",
+    "args",
+    "with_traceback"
+   ],
+   "class": "ValidityBoxError"
+  },
+  "convert_to_si": "convert_to_si(record)",
+  "fit_norton_loglinear": "fit_norton_loglinear(record,sigma_ref,T_ref,rel_sigma)",
+  "fit_norton_nonlinear": "fit_norton_nonlinear(record,sigma_ref,T_ref,theta0,rel_sigma,bounds)",
+  "fit_prony_fixed_times": "fit_prony_fixed_times(record,taus,rel_sigma)",
+  "fit_prony_free_times": "fit_prony_free_times(record,starts,rel_sigma,tau_bounds)",
+  "identifiability_report": "identifiability_report(jac,names,scale,weighted_residuals,rank_rtol,cond_limit)",
+  "log_spaced_taus": "log_spaced_taus(lo,hi,n)"
+ },
  "toporlogy.optimization.mesh_study": {
   "MeshDomain": {
    "attrs": [
@@ -6910,7 +6976,7 @@
    ],
    "class": "ViscoelasticStructure"
   },
-  "optimize_viscoelastic": "optimize_viscoelastic(structure,volume,rmin,step_index,penal,emin,max_iter,move,x0)"
+  "optimize_viscoelastic": "optimize_viscoelastic(structure,volume,rmin,step_index,penal,emin,max_iter,move,x0,steps,tol)"
  },
  "toporlogy.optimizers": {
   "BetaContinuation": {
