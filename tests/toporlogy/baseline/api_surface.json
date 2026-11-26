@@ -6184,6 +6184,7 @@
   },
   "ShellPhysics": {
    "attrs": [
+    "element",
     "name",
     "solve"
    ],

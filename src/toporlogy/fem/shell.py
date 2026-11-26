@@ -16,12 +16,13 @@ K_global = Tᵀ K_local T. In the facet frame:
 
 Element matrices are for unit modulus; :class:`FlatShell` assembles K = Σ_e E_e K_e⁰ and solves with fixed DOFs as a
 torch autograd function (dc/dE_e = −λ_eᵀ K_e⁰ u_e), so a design gradient is available. Pre-registered checks:
-KB1-KB11 in ``docs/olcumler/kabuk_onkayit.md``. Not here: Study / YAML integration, non-rectangular facets.
+KB1-KB11 in ``docs/olcumler/kabuk_onkayit.md``. Study: :mod:`toporlogy.optimization.shell_study`; YAML:
+``domain: {type: shell}`` (:mod:`toporlogy.configuration.mesh_build`). Not here: non-rectangular facets.
 """
 from __future__ import annotations
 
 from collections.abc import Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any
 
 import numpy as np
@@ -176,10 +177,13 @@ def facet_matrix(X: Any, t: float, nu: float = 0.3, drill: float = DRILL) -> np.
 
 @dataclass(frozen=True)
 class ShellMesh:
-    """Surface of rectangular facets: ``nodes`` (nn, 3), ``facets`` (ne, 4) node indices in corner order."""
+    """Surface of rectangular facets: ``nodes`` (nn, 3), ``facets`` (ne, 4) node indices in corner order;
+    ``node_sets``: named node index arrays (the generators name their edges, see :func:`flat_rectangle` and
+    :func:`cylinder_surface`)."""
 
     nodes: np.ndarray
     facets: np.ndarray
+    node_sets: dict[str, np.ndarray] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
         X = np.asarray(self.nodes, float)
@@ -192,8 +196,15 @@ class ShellMesh:
             raise ValueError(f"facet node index out of range [0, {len(X)})")
         if any(len(set(f)) != 4 for f in F.tolist()):
             raise ValueError("a facet repeats a node")
+        sets = {}
+        for name, idx in dict(self.node_sets).items():
+            a = np.asarray(idx)
+            if a.ndim != 1 or (a.size and (not np.issubdtype(a.dtype, np.integer) or a.min() < 0 or a.max() >= len(X))):
+                raise ValueError(f"node set {name!r} must be a 1-D integer array of node indices in [0, {len(X)})")
+            sets[str(name)] = a.astype(np.int64)
         object.__setattr__(self, "nodes", X)
         object.__setattr__(self, "facets", F.astype(np.int64))
+        object.__setattr__(self, "node_sets", sets)
 
     @property
     def nn(self) -> int:
@@ -206,7 +217,7 @@ class ShellMesh:
 
 def flat_rectangle(lx: float, ly: float, nx: int, ny: int) -> ShellMesh:
     """lx × ly rectangle in the xy-plane from the origin, nx × ny facets (a = lx/nx, b = ly/ny), normal +z; node
-    i + (nx + 1) j at (i a, j b, 0)."""
+    i + (nx + 1) j at (i a, j b, 0). Node sets ``left right bottom top``: the edges x = 0, x = lx, y = 0, y = ly."""
     if not (lx > 0 and ly > 0) or nx < 1 or ny < 1:
         raise ValueError(f"need lx, ly > 0 and nx, ny >= 1, got {lx}, {ly}, {nx}, {ny}")
     x, y = np.linspace(0.0, lx, nx + 1), np.linspace(0.0, ly, ny + 1)
@@ -215,13 +226,17 @@ def flat_rectangle(lx: float, ly: float, nx: int, ny: int) -> ShellMesh:
     i, j = np.meshgrid(np.arange(nx), np.arange(ny))
     n0 = (i + (nx + 1) * j).ravel()
     facets = np.column_stack([n0, n0 + 1, n0 + nx + 2, n0 + nx + 1])
-    return ShellMesh(nodes, facets)
+    cols, rows = (nx + 1) * np.arange(ny + 1), np.arange(nx + 1)
+    sets = {"left": cols, "right": cols + nx, "bottom": rows, "top": rows + (nx + 1) * ny}
+    return ShellMesh(nodes, facets, sets)
 
 
 def cylinder_surface(radius: float, length: float, n_theta: int, n_z: int, angle: float | None = None) -> ShellMesh:
     """Circular cylinder about the z axis, z ∈ [0, length], n_theta × n_z facets with nodes on the radius.
     ``angle`` None: closed tube (n_theta ≥ 3, node i + n_theta j at θ = 2π i / n_theta); a value in (0, 2π): open
-    segment θ ∈ [0, angle] (node i + (n_theta + 1) j). Facet normals point outwards (internal pressure p > 0)."""
+    segment θ ∈ [0, angle] (node i + (n_theta + 1) j). Facet normals point outwards (internal pressure p > 0). Node
+    sets ``bottom top``: the rings z = 0 and z = length; an open segment also ``start end``: the edges θ = 0 and
+    θ = angle."""
     if not (radius > 0 and length > 0) or n_z < 1:
         raise ValueError(f"need radius, length > 0 and n_z >= 1, got {radius}, {length}, {n_z}")
     closed = angle is None
@@ -244,7 +259,10 @@ def cylinder_surface(radius: float, length: float, n_theta: int, n_z: int, angle
     i, j = i.ravel(), j.ravel()
     ip = (i + 1) % nt
     facets = np.column_stack([i + nt * j, ip + nt * j, ip + nt * (j + 1), i + nt * (j + 1)])
-    return ShellMesh(nodes, facets)
+    sets = {"bottom": np.arange(nt), "top": nt * n_z + np.arange(nt)}
+    if not closed:
+        sets.update(start=nt * np.arange(n_z + 1), end=n_theta + nt * np.arange(n_z + 1))
+    return ShellMesh(nodes, facets, sets)
 
 
 class _Solve(torch.autograd.Function):

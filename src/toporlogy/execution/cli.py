@@ -396,6 +396,10 @@ def cmd_validate(a: argparse.Namespace) -> int:
         out(kv("elements", f"{d.n_active} active | {d.n_design} design | {int(d.keep.sum())} keep | "
                            f"{int(d.void.sum())} void"))
         n_act = len(d.active_dofs)
+    elif r["domain"].get("type") == "shell":      # domain type shell (configuration/mesh_build.py)
+        out(kv("shell", s.info["notes"][0].removeprefix("shell: ")))
+        out(kv("facets", f"{d.mesh.ne} facets | {d.n_design} design | {d.mesh.nn} nodes"))
+        n_act = d.ndof
     else:                                         # domain type mesh (configuration/mesh_build.py)
         dm = r["domain"]
         out(kv("mesh", f"{dm['generator']} {' x '.join(str(n) for n in dm['n'])} {d.mesh.element} ({d.dim}-D), "

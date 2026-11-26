@@ -194,9 +194,9 @@ def _tie_planes(spec: Any, chain: list[Any], d: Any) -> list[tuple[int, float]]:
 
 def build(resolved: dict[str, Any]) -> Setup:
     """Construct every component of a resolved config (see :func:`resolve`) into a :class:`Setup`."""
-    if (resolved.get("domain") or {}).get("type") == "mesh":
+    if (resolved.get("domain") or {}).get("type") in ("mesh", "shell"):
         from toporlogy.configuration.mesh_build import build_mesh
-        return build_mesh(resolved)                    # domain type mesh: own path (mesh_build.py)
+        return build_mesh(resolved)                    # domain type mesh or shell: own path (mesh_build.py)
     from toporlogy.boundary import AllNodes, Combination, LoadCase
     from toporlogy.design.chain import Chain, DensityFilter, HeavisideProjection
     from toporlogy.design.manufacturing import GroupAverage, Tying, validate_chain

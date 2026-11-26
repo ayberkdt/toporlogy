@@ -14,7 +14,8 @@ As with :class:`~toporlogy.optimization.mesh_study.MeshDomain`, the facets are p
   differentiable in E, with ``state_dofs`` = 6 nn.
 
 Grid-only links and responses refuse a ``ShellDomain`` with a ``ValueError``
-(:func:`toporlogy.core.domain.require_grid`; ``docs/olcumler/ag_topoloji_onkayit.md``, RF1-RF3). No YAML yet.
+(:func:`toporlogy.core.domain.require_grid`; ``docs/olcumler/ag_topoloji_onkayit.md``, RF1-RF3). YAML: ``domain:
+{type: shell}`` (:mod:`toporlogy.configuration.mesh_build`, SY1-SY6 in ``docs/olcumler/kabuk_onkayit.md``).
 """
 from __future__ import annotations
 
@@ -65,13 +66,16 @@ class ShellDomain:
 class ShellPhysics:
     """Study physics of a :class:`~toporlogy.fem.shell.FlatShell`: ``solve(E, F)`` → U (6 nn, n_cases) for facet
     moduli E (ne,), differentiable in E. ``state_dofs`` tells :class:`~toporlogy.optimization.study.Study` the length
-    of a load vector (6 per node: u, v, w, θx, θy, θz)."""
+    of a load vector (6 per node: u, v, w, θx, θy, θz); ``free`` its free DOFs and ``element`` a label (both read by
+    the CLI summary)."""
 
     name = "shell"
+    element = "flat-facet"
 
     def __init__(self, shell: FlatShell) -> None:
         self.shell = shell
         self.state_dofs = shell.ndof
+        self.free = shell.free
         self.n_solves = 0
 
     def solve(self, E: torch.Tensor, F: Any) -> torch.Tensor:

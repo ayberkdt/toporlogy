@@ -480,3 +480,35 @@ toplar, etkilenmez. (A) `test_api_surface.py` farkı yalnız `ShellMesh` girdisi
 Kurallar: ilk koşuda tutmayan kontrol, ölçülen değeriyle `xfail(strict=True)` olur ve `docs/vv_kutugu.json`'a girer;
 eşik gevşetilmez; test kurulum hatası (ölçüm değil) düzeltilebilir ama burada yazılır; ilk koşudan sonra eklenen kontrol
 "post hoc" diye işaretlenir.
+
+### SY1–SY6 sonucu (ilk ölçüm, 2026-11-26)
+
+`tests/toporlogy/test_shell_yaml.py` (33 test: SY1 × 3, SY2, SY3 × 27, SY4, bir post hoc). Değerler `-s`
+çıktısından.
+
+**İlk koşu: 27 passed, 6 failed, hiçbiri ölçüm değil.** Altısı da `KeyError` ile çöktü: `build.py`'nin dağıtım satırı
+yalnız `type == "mesh"`'i ağ yoluna gönderiyordu, kabuk yapılandırması ızgara yoluna düşüp `load_cases` arıyordu
+(SY1 × 3, SY2, SY3 `rigid_motion` ve `zero_load`: kuruluma kadar gidenler); düzeltmeden sonra SY2 bir kez daha
+CLI `validate` özetinde çöktü (özet `domain.generator` okuyordu). Düzeltmeler uygulama kodunda, eşiklere ve testlere
+dokunulmadı: `build.py` dağıtımı `type in ("mesh", "shell")`; `cli.py` `validate`'e kabuk satırları; `ShellPhysics`'e
+CLI özetinin okuduğu `free` ve `element`. Ölçümler bu düzeltmelerden sonraki koşudan; strict xfail yok. Bu iki
+düzeltme SY6 ve (A) öngörülerini bozdu (aşağıda).
+
+| # | Durum | Ölçülen |
+|:---|:---|:---|
+| SY1 | PASS | üç durumda değer, gradyan, hacim, hacim gradyanı farkı 0,00e+00 (bit düzeyinde eşit); c = 1,144431e4 (örnek), 1,069276e3 (silindir, basınç + nokta, drill 1e-2, `top` [u, v]), 1,010915e6 (düz dikdörtgen, basınç −1); varsayılan başlangıçlar eşit |
+| SY2 | PASS | `validate` 0; `run` çıkış 0, `status` ok, 28 iterasyon, uyum 3,0132e4 → 6,8236e3, hacim 0,399999; `config.resolved.yaml` kendisine çözülüyor, varsayılan başlangıçta amaç bit düzeyinde eşit. (KS3 ile aynı sayılar; KS3 α = 1e-1 ile 3,0132e4 → 6,8236e3, 28 iterasyon) |
+| SY3 | PASS | 27 durumun hepsinde `ConfigError`, iletisi o yolda ve "shell" içeriyor; on desteklenmeyen anahtarda "not support"; başka istisna yok |
+| SY4 | PASS | dikdörtgen left / right 4, bottom / top 5 düğüm; dilim bottom / top 9, start / end 7; kapalı boruda yalnız bottom, top; hepsi koordinat koşuluyla seçilenlere eşit |
+| SY5 | **kısmen**: davranış PASS, öngörü (A) FAIL | baseline 8 passed bit düzeyinde (sekiz örnekte en büyük bağıl fark 0,00e+00); `test_mesh_yaml.py` değişmeden geçti; `test_shell*.py` geçti. (U1) tuttu: `--write` sonrası yalnız `examples/research/shell_cylinder.yaml` eklendi (110 satır ekleme, 0 silme; diğer 16 girdi aynı). (R) tuttu: listeye `shell_cylinder` eklendi, örnek 4 iterasyon koşuyor. (H2) tuttu: `test_h2a` parametreleri 15 (17 örnek − ağ − kabuk), önceki gibi. (B) tuttu. **(A) tutmadı**: `api_surface.json` farkı `ShellMesh`'te değil (`node_sets` dataclass alanı, `attrs`'ta listelenmiyor) `ShellPhysics`'te: yeni `element` özniteliği (CLI düzeltmesi) |
+| SY6 | **FAIL** | `boundary/*` ve `resolve.py` farkı yok; `build.py`'de dağıtım satırı değişti (+2 / −2: koşul ve yorumu). Öngörü yanlıştı: `resolve` `is_mesh_config(raw)` ile dağıtıyor, `build` ise türü harfiyen `"mesh"` ile karşılaştırıyordu; ön kayıtta yalnız `resolve.py` okunmuştu |
+
+SY5 (A) ve SY6 bir koşunun farkına bakan, bir kez ölçülen öngörüler; koddaki bir özellik olmadıkları için pytest
+testleri yok, dolayısıyla strict xfail ve `vv_kutugu.json` girdisi de yok, başarısızlık yalnız burada yazılı.
+Tekrarını engelleyecek olan: dağıtım öngörüsü yazmadan önce iki dağıtım satırının ikisini de okumak.
+
+Post hoc (ilk koşudan sonra değil, kodla birlikte yazıldı ama ön kayıtta yoktu):
+`test_shell_mesh_refuses_a_bad_node_set`, aralık dışı düğüm kümesi `ValueError` (geçti).
+
+Kalan: kabukta birden çok yük durumu, düğüm kümesine yayılı kuvvet ve nokta momenti, `post` (VTU) çıktısı, jeodezik
+filtre mesafesi; YAML'da `angle` derece, Python API'de radyan (`cylinder_surface(angle=...)`).

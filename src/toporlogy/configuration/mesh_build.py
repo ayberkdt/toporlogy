@@ -32,6 +32,28 @@ strength / phases / rho / catalog, ``plane: strain``, ``run.start`` / ``checkpoi
 a :class:`ConfigError` that names the key and says the mesh path does not support it yet. No post steps run, so a
 run folder holds what :func:`~toporlogy.execution.runner.run_setup` writes (``config.resolved.yaml``, ``setup.json``,
 ``history.jsonl``, ``result.npz``, ``result.json``, ``summary.json``) and no VTU or STL file.
+
+``domain.type: shell`` (``docs/olcumler/kabuk_onkayit.md``, SY1-SY6) takes a small parallel branch of the same
+functions: the flat-facet shell of :mod:`toporlogy.fem.shell` as a
+:class:`~toporlogy.optimization.shell_study.ShellDomain` with :class:`~toporlogy.optimization.shell_study.ShellPhysics`.
+Its own keys:
+
+.. code-block:: yaml
+
+    domain: {type: shell, surface: cylinder, radius: 1.0, angle: 90.0, length: 1.0, n: [16, 12], thickness: 0.05}
+                                   # cylinder about z (angle in DEGREES, (0, 360); null: closed tube) or
+                                   # {type: shell, surface: rectangle, size: [lx, ly], n: [nx, ny], thickness: t}
+    material: {E0: 1.0, nu: 0.3}   # no plane: a shell is plane stress
+    physics: {type: shell, drill: 0.1}              # [shell; drill = toporlogy.fem.shell.DRILL], drill > 0
+    supports:                      # node sets: cylinder bottom top (+ start end for an open segment),
+      - {set: bottom, fix: all}    # rectangle left right bottom top; fix: u v w rx ry rz (global axes) or all
+    loads:                         # one load case, summed: a normal pressure and / or a force at the nearest node
+      - {pressure: 1.0}
+      - {point: [0.7071, 0.7071, 1.0], force: [-0.7071, -0.7071, 0]}
+
+``chain`` (rmin a length: the 3-D chord distance between facet centres), ``interpolation``, ``objective``,
+``constraints`` (``volume``: area weighted), ``optimizer``, ``run``, ``output`` and the refusals are those of the mesh
+path; messages name the shell path.
 """
 from __future__ import annotations
 
@@ -58,12 +80,25 @@ _DOMAIN = {"type": Param("type", "mesh", str), "generator": Param("generator", "
            "element": Param("element", None, str, nullable=True), "perturb": Param("perturb", 0.0, float),
            "seed": Param("seed", 0, int)}
 _MATERIAL = {"E0": Param("E0", 1.0, float), "nu": Param("nu", 0.3, float), "plane": Param("plane", "stress", str)}
+_SHELL_DOMAIN = {"type": Param("type", "shell", str), "surface": Param("surface", type=str),
+                 "radius": Param("radius", None, float, nullable=True),
+                 "angle": Param("angle", None, float, nullable=True),
+                 "length": Param("length", None, float, nullable=True), "size": Param("size", None, nullable=True),
+                 "n": Param("n"), "thickness": Param("thickness", type=float)}
+_SURFACE_KEYS = {"cylinder": ("radius", "angle", "length"), "rectangle": ("size",)}
+_SHELL_MATERIAL = {"E0": Param("E0", 1.0, float), "nu": Param("nu", 0.3, float)}
+_SHELL_FIX = ("u", "v", "w", "rx", "ry", "rz")
+
+
+def _domain_type(raw: Any) -> str:
+    d = raw.get("domain") if isinstance(raw, dict) else None
+    return normalise_name(str(d.get("type", ""))) if isinstance(d, dict) else ""
 
 
 def is_mesh_config(raw: Any) -> bool:
-    """True when ``raw`` is a mapping whose ``domain`` is a mapping with ``type: mesh``."""
-    d = raw.get("domain") if isinstance(raw, dict) else None
-    return isinstance(d, dict) and normalise_name(str(d.get("type", ""))) == "mesh"
+    """True when ``raw`` is a mapping whose ``domain`` is a mapping with ``type: mesh`` or ``type: shell`` (both are
+    resolved and built here, not by the grid path)."""
+    return _domain_type(raw) in ("mesh", "shell")
 
 
 def _not_yet(errors: list[tuple[str, str]], path: str, what: str | None = None) -> None:
@@ -111,19 +146,20 @@ def _resolve_domain(raw: Any, errors: list[tuple[str, str]]) -> dict[str, Any] |
     return d
 
 
-def _resolve_material(raw: Any, dim: int, errors: list[tuple[str, str]]) -> dict[str, Any]:
+def _resolve_material(raw: Any, errors: list[tuple[str, str]], schema: dict[str, Param] = _MATERIAL,
+                      path_name: str = "mesh") -> dict[str, Any]:
     raw = {} if raw is None else raw
     if isinstance(raw, dict):
-        extra = {k: v for k, v in raw.items() if k not in _MATERIAL}
+        extra = {k: v for k, v in raw.items() if k not in schema}
         for k, v in extra.items():
             if k in ("rho", "orthotropic", "strength", "phases", "catalog"):
                 if v is not None:
                     _not_yet(errors, join("material", k))
             else:
-                errors.append((join("material", k), f"unknown key in material{suggest(k, list(_MATERIAL)) or ''} "
-                                                    f"(mesh path keys: {', '.join(_MATERIAL)})"))
-        raw = {k: v for k, v in raw.items() if k in _MATERIAL}
-    m = _section(raw, _MATERIAL, "material", errors, "material")
+                errors.append((join("material", k), f"unknown key in material{suggest(k, list(schema)) or ''} "
+                                                    f"({path_name} path keys: {', '.join(schema)})"))
+        raw = {k: v for k, v in raw.items() if k in schema}
+    m = _section(raw, schema, "material", errors, "material")
     if "E0" in m and not (math.isfinite(m["E0"]) and m["E0"] > 0):
         errors.append(("material.E0", f"must be > 0, got {m['E0']}"))
     if "nu" in m and not -1.0 < m["nu"] < 0.5:
@@ -299,13 +335,22 @@ def resolve_mesh(raw: dict[str, Any]) -> dict[str, Any]:
         if k not in raw:
             errors.append((k, "required key is missing"))
     r: dict[str, Any] = {"name": str(raw.get("name") or "study")}
-    d = _resolve_domain(raw["domain"], errors)
-    dim = 2 if d is None else d.pop("dim")
-    r["domain"] = d
-    r["material"] = _resolve_material(raw.get("material"), dim, errors)
-    r["physics"] = _resolve_physics(raw.get("physics"), errors)
-    r["supports"] = _resolve_supports(raw.get("supports"), dim, errors) if "supports" in raw else []
-    r["loads"] = _resolve_loads(raw.get("loads"), dim, errors) if "loads" in raw else []
+    kind = _domain_type(raw)
+    if kind == "shell":
+        sd = r["domain"] = _resolve_shell_domain(raw["domain"], errors)
+        r["material"] = _resolve_material(raw.get("material"), errors, _SHELL_MATERIAL, "shell")
+        r["physics"] = _resolve_shell_physics(raw.get("physics"), errors)
+        sets = _shell_sets(sd)
+        r["supports"] = _resolve_shell_supports(raw.get("supports"), sets, errors) if "supports" in raw else []
+        r["loads"] = _resolve_shell_loads(raw.get("loads"), errors) if "loads" in raw else []
+    else:
+        d = _resolve_domain(raw["domain"], errors)
+        dim = 2 if d is None else d.pop("dim")
+        r["domain"] = d
+        r["material"] = _resolve_material(raw.get("material"), errors)
+        r["physics"] = _resolve_physics(raw.get("physics"), errors)
+        r["supports"] = _resolve_supports(raw.get("supports"), dim, errors) if "supports" in raw else []
+        r["loads"] = _resolve_loads(raw.get("loads"), dim, errors) if "loads" in raw else []
     r["chain"] = _resolve_chain(raw.get("chain"), errors)
     r["interpolation"] = _resolve_component("interpolation", raw.get("interpolation", "simp"), "interpolation",
                                             "simp", errors)
@@ -332,13 +377,156 @@ def resolve_mesh(raw: dict[str, Any]) -> dict[str, Any]:
     if "provenance" in raw:
         r["provenance"] = raw["provenance"]
     if errors:
-        raise ConfigError(_tagged(errors))
+        raise ConfigError(_tagged(errors, kind))
     return r
 
 
-def _tagged(errors: list[tuple[str, str]]) -> list[tuple[str, str]]:
-    """Every message says it comes from the mesh path."""
-    return [(p, m if "mesh" in m else f"{m} (domain type mesh)") for p, m in errors]
+def _tagged(errors: list[tuple[str, str]], kind: str = "mesh") -> list[tuple[str, str]]:
+    """Every message says which path it comes from (mesh, or shell: the shared messages are renamed)."""
+    if kind != "shell":
+        return [(p, m if "mesh" in m else f"{m} (domain type mesh)") for p, m in errors]
+    out = []
+    for p, m in errors:
+        m = m.replace("mesh path (domain type mesh)", "shell path (domain type shell)").replace("mesh path",
+                                                                                                  "shell path")
+        out.append((p, m if "shell" in m else f"{m} (domain type shell)"))
+    return out
+
+
+# ============================================================================================== shell (resolve)
+def _resolve_shell_domain(raw: Any, errors: list[tuple[str, str]]) -> dict[str, Any]:
+    d = _section(raw, _SHELL_DOMAIN, "domain", errors, "domain type shell")
+    surface = normalise_name(str(d.get("surface") or ""))
+    if surface not in _SURFACE_KEYS:
+        if "surface" in d:
+            errors.append(("domain.surface", f'cylinder | rectangle, got "{d.get("surface")}"'))
+        return {"type": "shell", "surface": d.get("surface"), "n": [], "thickness": d.get("thickness")}
+    own = _SURFACE_KEYS[surface]
+    for k in sorted(set(_SURFACE_KEYS["cylinder"] + _SURFACE_KEYS["rectangle"]) - set(own)):
+        if isinstance(raw, dict) and k in raw:
+            errors.append((join("domain", k), f"not a parameter of surface {surface} (its keys: "
+                                              f"{', '.join(own)}, n, thickness; domain type shell)"))
+    out: dict[str, Any] = {"type": "shell", "surface": surface}
+    n = _number_list(d.get("n"), "domain.n", 2, errors, int) if "n" in d else []
+    if n and min(n) < 1:
+        errors.append(("domain.n", f"facet counts must be >= 1, got {n}"))
+    if surface == "cylinder":
+        for k in ("radius", "length"):
+            v = d.get(k)
+            if v is None:
+                errors.append((join("domain", k), "required key of a cylinder surface is missing"))
+            elif not (math.isfinite(v) and v > 0):
+                errors.append((join("domain", k), f"must be a length > 0, got {v}"))
+            out[k] = v
+        a = d.get("angle")
+        if a is not None and not (math.isfinite(a) and 0 < a < 360):
+            errors.append(("domain.angle", f"segment angle in degrees must lie in (0, 360) (null: a closed tube), "
+                                           f"got {a}"))
+        out["angle"] = a
+        if a is None and n and n[0] < 3:
+            errors.append(("domain.n", f"a closed tube needs n_theta >= 3, got {n[0]}"))
+    else:
+        size: list[Any] = []
+        if d.get("size") is None:
+            errors.append(("domain.size", "required key of a rectangle surface is missing"))
+        else:
+            size = _number_list(d.get("size"), "domain.size", 2, errors)
+            if size and min(size) <= 0:
+                errors.append(("domain.size", f"lengths must be > 0, got {size}"))
+        out["size"] = size
+    t = d.get("thickness")
+    if t is not None and not (math.isfinite(t) and t > 0):
+        errors.append(("domain.thickness", f"must be a length > 0, got {t}"))
+    out.update(n=n, thickness=t)
+    return out
+
+
+def _shell_sets(dom: dict[str, Any]) -> tuple[str, ...]:
+    """Node set names of the resolved shell surface (as :func:`toporlogy.fem.shell.cylinder_surface` /
+    :func:`toporlogy.fem.shell.flat_rectangle` name them)."""
+    if dom.get("surface") == "rectangle":
+        return ("left", "right", "bottom", "top")
+    if dom.get("surface") == "cylinder":
+        return ("bottom", "top") + (("start", "end") if dom.get("angle") is not None else ())
+    return ()
+
+
+def _resolve_shell_physics(raw: Any, errors: list[tuple[str, str]]) -> dict[str, Any]:
+    from toporlogy.fem.shell import DRILL
+    spec = {"type": raw} if isinstance(raw, str) else ({"type": "shell"} if raw is None else raw)
+    out: dict[str, Any] = {"type": "shell", "drill": DRILL}
+    if not isinstance(spec, dict) or normalise_name(str(spec.get("type", ""))) != "shell":
+        _not_yet(errors, "physics", f"physics {spec.get('type') if isinstance(spec, dict) else spec!r} (shell path "
+                                    "physics: shell)")
+        return out
+    for k in sorted(set(spec) - {"type", "drill"}):
+        _not_yet(errors, join("physics", k), f"shell physics parameter {k}")
+    if "drill" in spec:
+        try:
+            out["drill"] = Param("drill", DRILL, float).coerce(spec["drill"], "physics.drill")
+        except ConfigError as e:
+            errors.extend(e.errors)
+            return out
+        if not (math.isfinite(out["drill"]) and out["drill"] > 0):
+            errors.append(("physics.drill", f"must be a finite number > 0 (0 leaves the drilling rotation of a "
+                                            f"flat facet singular), got {out['drill']}"))
+    return out
+
+
+def _resolve_shell_supports(raw: Any, sets: tuple[str, ...], errors: list[tuple[str, str]]) -> list[dict[str, Any]]:
+    out = []
+    for i, s in enumerate(_list(raw, "supports", errors, 1)):
+        p = join("supports", i)
+        if not isinstance(s, dict):
+            errors.append((p, "expected a mapping {set, fix}"))
+            continue
+        for k in s:
+            if k not in ("set", "fix"):
+                errors.append((join(p, k), f"unknown key of a shell support (keys: set, fix)"
+                                           f"{suggest(k, ['set', 'fix'])}"))
+        name = s.get("set")
+        if name not in sets:
+            errors.append((join(p, "set"), f"a named node set of the shell surface ({', '.join(sets)}), "
+                                           f"got {name!r}"))
+        fix = s.get("fix", "all")
+        comps = list(_SHELL_FIX) if fix == "all" else [fix] if isinstance(fix, str) else fix
+        if not isinstance(comps, list) or not comps or any(c not in _SHELL_FIX for c in comps):
+            errors.append((join(p, "fix"), f"shell components out of {list(_SHELL_FIX)} or all, got {fix!r}"))
+            comps = []
+        out.append({"set": name, "fix": sorted(set(comps), key=_SHELL_FIX.index)})
+    return out
+
+
+def _resolve_shell_loads(raw: Any, errors: list[tuple[str, str]]) -> list[dict[str, Any]]:
+    out: list[dict[str, Any]] = []
+    for i, ld in enumerate(_list(raw, "loads", errors, 1)):
+        p = join("loads", i)
+        if not isinstance(ld, dict):
+            errors.append((p, "expected a mapping {pressure} or {point, force}"))
+            continue
+        for k in ld:
+            if k not in ("pressure", "point", "force"):
+                errors.append((join(p, k), f"unknown key of a shell load (keys: pressure, point, force)"
+                                           f"{suggest(k, ['pressure', 'point', 'force'])}"))
+        if "pressure" in ld:
+            if "point" in ld or "force" in ld:
+                errors.append((p, "a shell load is either {pressure} or {point, force}, not both"))
+                continue
+            try:
+                pr = Param("pressure", type=float).coerce(ld["pressure"], join(p, "pressure"))
+            except ConfigError as e:
+                errors.extend(e.errors)
+                continue
+            if not math.isfinite(pr):
+                errors.append((join(p, "pressure"), f"must be finite, got {pr}"))
+            out.append({"pressure": pr})
+            continue
+        if "point" not in ld or "force" not in ld:
+            errors.append((p, "a shell load needs pressure, or point and force"))
+            continue
+        out.append({"point": _number_list(ld["point"], join(p, "point"), 3, errors),
+                    "force": _number_list(ld["force"], join(p, "force"), 3, errors)})
+    return out
 
 
 # ============================================================================================== build
@@ -367,19 +555,18 @@ def _check_rigid(mesh: Any, fixed: np.ndarray) -> None:
 
 def build_mesh(r: dict[str, Any]) -> Setup:
     """Construct a resolved mesh config (:func:`resolve_mesh`) into a :class:`~toporlogy.configuration.build.Setup`:
-    ``MeshDomain``, ``MeshElasticity``, a chain ``Embed, MeshFilterLink…, Passive``, the interpolation, compliance,
-    ``MeshVolume`` constraints and MMA."""
+    ``MeshDomain``, ``MeshElasticity`` (``domain.type: shell``: ``ShellDomain``, ``ShellPhysics``), a chain
+    ``Embed, MeshFilterLink…, Passive``, the interpolation, compliance, ``MeshVolume`` constraints and MMA."""
+    kind = "shell" if r["domain"].get("type") == "shell" else "mesh"
     try:
-        return _build_mesh(r)
+        return _build_shell(r) if kind == "shell" else _build_mesh(r)
     except ConfigError as e:
-        raise ConfigError(_tagged(e.errors)) from e.__cause__
+        raise ConfigError(_tagged(e.errors, kind)) from e.__cause__
 
 
 def _build_mesh(r: dict[str, Any]) -> Setup:
-    from toporlogy.design.chain import Chain, Embed, Passive
     from toporlogy.fem.elements import D_iso, D_plane_stress
-    from toporlogy.optimization.mesh_study import MeshDomain, MeshElasticity, MeshFilterLink, MeshVolume
-    from toporlogy.optimization.study import Constraint, Study
+    from toporlogy.optimization.mesh_study import MeshDomain, MeshElasticity
 
     dom = r["domain"]
     try:
@@ -425,6 +612,18 @@ def _build_mesh(r: dict[str, Any]) -> Setup:
     m = r["material"]
     D = D_plane_stress(m["nu"]) if dim == 2 else D_iso(m["nu"])
     physics = MeshElasticity(d, D, fixed)
+    return _finish(r, d, physics, F, fixed, dim, dim, warnings, notes)
+
+
+def _finish(r: dict[str, Any], d: Any, physics: Any, F: np.ndarray, fixed: np.ndarray, per_node: int, nforce: int,
+            warnings: list[str], notes: list[str]) -> Setup:
+    """The part both branches share: chain, interpolation, objective, volume constraints, optimizer, Study, Setup.
+    ``per_node``: DOFs per node of F, ``nforce``: how many of them are force components (the resultant)."""
+    from toporlogy.design.chain import Chain, Embed, Passive
+    from toporlogy.optimization.mesh_study import MeshFilterLink, MeshVolume
+    from toporlogy.optimization.study import Constraint, Study
+
+    m = r["material"]
     links: list[Any] = []
     for i, lk in enumerate(r["chain"]):
         if lk["type"] == "embed":
@@ -459,6 +658,72 @@ def _build_mesh(r: dict[str, Any]) -> Setup:
     except ValueError as e:
         raise ConfigError(str(e), "constraints" if "constraint" in str(e) else "") from e
     study.config = r
-    cases = [{"name": "loads", "weight": 1.0, "resultant": _resultant(F[:, 0], dim),
-              "n_nodes": int(np.any(F[:, 0].reshape(-1, dim) != 0, axis=1).sum()), "combination": False}]
+    Fn = F[:, 0].reshape(-1, per_node)
+    cases = [{"name": "loads", "weight": 1.0, "resultant": _resultant(Fn[:, :nforce].ravel(), nforce),
+              "n_nodes": int(np.any(Fn != 0, axis=1).sum()), "combination": False}]
     return Setup(study, r, fixed, cases, cnames, [], warnings, None, None, {}, {"notes": notes})
+
+
+# ============================================================================================== shell (build)
+def _shell_rigid_modes(X: np.ndarray) -> np.ndarray:
+    """(6 nn, 6) rigid motions of a shell with nodes X (nn, 3): translations, then rotations ω (translation part
+    ω × (x − x̄), rotation part ω); coordinates centred and scaled to unit size."""
+    n = len(X)
+    Y = X - X.mean(axis=0)
+    Y = Y / max(float(np.abs(Y).max()), 1e-300)
+    cols = []
+    for k in range(6):
+        c = np.zeros((n, 6))
+        if k < 3:
+            c[:, k] = 1.0
+        else:
+            w = np.eye(3)[k - 3]
+            c[:, :3] = np.cross(w, Y)
+            c[:, 3:] = w
+        cols.append(c.ravel())
+    return np.column_stack(cols)
+
+
+def _build_shell(r: dict[str, Any]) -> Setup:
+    from toporlogy.fem.shell import FlatShell, cylinder_surface, flat_rectangle
+    from toporlogy.optimization.shell_study import ShellDomain, ShellPhysics
+
+    dom = r["domain"]
+    n = dom["n"]
+    if dom["surface"] == "cylinder":
+        angle = None if dom["angle"] is None else math.radians(dom["angle"])
+        mesh = cylinder_surface(dom["radius"], dom["length"], n[0], n[1], angle=angle)
+        desc = (f"cylinder R {dom['radius']:g}, " + ("closed tube" if angle is None else f"{dom['angle']:g} deg")
+                + f", L {dom['length']:g}")
+    else:
+        mesh = flat_rectangle(dom["size"][0], dom["size"][1], n[0], n[1])
+        desc = f"rectangle {dom['size'][0]:g} x {dom['size'][1]:g}"
+    d: Any = ShellDomain(mesh)
+    notes = [f"shell: {desc}, {n[0]} x {n[1]} facets, t {dom['thickness']:g}, {mesh.ne} facets, {mesh.nn} nodes"]
+    fixed_parts = []
+    for s in r["supports"]:
+        nodes = mesh.node_sets[s["set"]]
+        fixed_parts.append((6 * nodes[:, None] + np.array([_SHELL_FIX.index(c) for c in s["fix"]])).ravel())
+    fixed = np.unique(np.concatenate(fixed_parts))
+    Rm = _shell_rigid_modes(mesh.nodes)[fixed]
+    rank = int((np.linalg.svd(Rm, compute_uv=False) > 1e-8).sum()) if len(Rm) else 0
+    if rank < 6:
+        raise ConfigError(f"the supports leave {6 - rank} rigid motion(s) free; the system is singular", "supports")
+    shell = FlatShell(mesh, dom["thickness"], r["material"]["nu"], fixed, drill=r["physics"]["drill"])
+    F = np.zeros((shell.ndof, 1))
+    for j, ld in enumerate(r["loads"]):
+        if "pressure" in ld:
+            F[:, 0] += shell.pressure_load(ld["pressure"])
+            continue
+        dist = np.linalg.norm(mesh.nodes - np.asarray(ld["point"], float), axis=1)
+        k = int(np.argmin(dist))
+        F[6 * k:6 * k + 3, 0] += np.asarray(ld["force"], float)
+        notes.append(f"load {j + 1} at node {k} ({', '.join(f'{v:g}' for v in mesh.nodes[k])}), "
+                     f"{float(dist.min()):.3g} from the given point")
+    if not np.any(F):
+        raise ConfigError("load case has zero load", "loads")
+    warnings = []
+    loaded_fixed = np.intersect1d(np.flatnonzero(F[:, 0] != 0), fixed)
+    if loaded_fixed.size:
+        warnings.append(f"{loaded_fixed.size} loaded DOF(s) are also fixed; their load does no work")
+    return _finish(r, d, ShellPhysics(shell), F, fixed, 6, 3, warnings, notes)
