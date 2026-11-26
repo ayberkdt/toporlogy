@@ -426,3 +426,57 @@ Değişen ölçülen değerler (eski α = 1e-3 → yeni α = 1e-1; eşiklerin he
 KB1, KB7, KB8, KB9 (Navier hataları), KB11, KS4, KS5 ve DR0–DR3 değişmedi (α'ya bağlı değiller ya da α'yı açıkça
 veriyorlar). DR'nin "α = 1e-3 kabul edilebilir mi" sorusu bu referansla ön kayıtlı ölçüte göre yanıtlandı: hayır (t = 0,05
 radyal yükte %3,2 yumuşak, eşik %3); DR testleri olduğu gibi kalır (ölçtükleri α aralığının yayılımı).
+
+## Ek ön kayıt: kabuk alanı için YAML (SY1–SY6)
+
+Ön kayıt 2026-11-26 20:30 +0300, kod yazılmadan önce. `domain.type: shell` olan bir yapılandırma ağ yolunun modülünde
+(`configuration/mesh_build.py`) ayrı küçük bir koldan çözülür ve kurulur; ortak parçalar (üst düzey anahtar denetimi,
+`chain`, `interpolation`, `objective`, `constraints`, `optimizer`, `run`, `output`, `post` reddi) aynı fonksiyonlardır,
+ikinci ad ya da uyumluluk takma adı yok. `is_mesh_config` `type: mesh` ve `type: shell` için True döner (adı "ızgara
+dışı yol" anlamında kalır; belge satırı güncellenir); `resolve.py` / `build.py` dağıtım satırları **değişmez**,
+`resolve_mesh` / `build_mesh` alan türüne göre içeride ayrılır. Şema (köşeli parantezde varsayılan):
+
+* `domain: {type: shell, surface: cylinder, radius: R, angle: φ, length: L, n: [n_theta, n_axial], thickness: t}` →
+  `cylinder_surface(R, L, n_theta, n_axial, angle=radians(φ))`; **angle derece**, (0, 360) açık dilim, [null] kapalı
+  boru. `surface: rectangle, size: [lx, ly], n: [nx, ny], thickness: t` → `flat_rectangle(lx, ly, nx, ny)`. Yüzeye
+  ait olmayan parametre (dikdörtgende radius / angle / length, silindirde size) `ConfigError`. Sonra `ShellDomain`.
+* `material: {E0: [1.0], nu: [0.3]}` (birim modül; E0 SIMP'e gider; `plane` yok, kabuk zaten düzlem gerilme).
+* `physics: shell` ya da `{type: shell, drill: α}` [`toporlogy.fem.shell.DRILL`] → `ShellPhysics(FlatShell(mesh, t,
+  nu, fixed, drill=α))`; α > 0 ve sonlu olmalı (α = 0 düz levhada θz'yi tekil bırakır).
+* **Adlı düğüm kümeleri (eksikti, eklenir).** `ShellMesh`'e `node_sets` (ad → düğüm dizisi, varsayılan boş) alanı;
+  `flat_rectangle`: `left right bottom top` (x = 0, x = lx, y = 0, y = ly); `cylinder_surface`: `bottom top`
+  (z = 0 ve z = L halkaları), açık dilimde ek olarak `start end` (θ = 0 ve θ = φ kenarları).
+* `supports: [{set: bottom, fix: [u, v, w, rx, ry, rz] | all}]` (bileşenler global eksenlerde, DOF sırası u v w θx θy
+  θz); en az bir. Kurulumda altı rijit hareketin (3 öteleme; 3 dönme: öteleme kısmı θ × r, dönme kısmı θ) sabit
+  DOF'larda tam ranklı olması denetlenir, değilse `ConfigError`.
+* `loads:` en az bir, tek yük durumu, toplanır: `{pressure: p}` → `FlatShell.pressure_load(p)` (parça normali
+  boyunca; silindirde dışa), `{point: [x, y, z], force: [fx, fy, fz]}` → noktaya en yakın düğümün öteleme DOF'larına.
+* `chain: [{type: density_filter, rmin: <uzunluk>}]` → `Embed, MeshFilterLink, Passive`; `simp`, `compliance`,
+  `constraints: [{response: volume, upper}]` → `MeshVolume` (alanla ağırlıklı), `mma`; `run`, `output` ağ yolundaki
+  gibi.
+* Geri kalan her şey ağ yolundaki gibi "henüz desteklenmiyor" `ConfigError`'ı; iletide anahtarın yolu ve "shell".
+
+Örnek `examples/research/shell_cylinder.yaml`: KS3 kurulumu (R = 1, 90°, L = 1, 16 × 12, t = 0,05, `bottom` altı
+bileşen ankastre, serbest halkanın orta düğümünde içe radyal birim kuvvet `point: [cos 45°, sin 45°, 1]`,
+`force: [−cos 45°, −sin 45°, 0]`, rmin 0,15, hacim ≤ 0,4, mma, `max_iter` 30).
+
+Öngörüler. (U1) `test_units.py` anlık görüntüsü `examples/**`'ı topladığı için yeni örnek U1'i `--write`'a kadar
+düşürür; `--write` sonrası `baseline/resolved_configs.json`'da **yalnız bir yeni anahtar**
+(`examples/research/shell_cylinder.yaml`), var olan girdiler bayt bayt aynı. (R) `test_research_examples.py`
+`test_examples_are_found` sabit listesine `shell_cylinder` (mesh_cantilever2d ile stress_al_lbracket2d arasına) eklenir;
+örnek orada da 4 iterasyon koşar. (H2) `test_speedups.py` toplayıcısı `is_mesh_config` ile süzdüğü için kabuk örneği
+H2 parametrelerine **girmez**; H2 parametre listesi değişmez. (B) `test_baseline.py` yalnız `examples/*.yaml`'ı
+toplar, etkilenmez. (A) `test_api_surface.py` farkı yalnız `ShellMesh` girdisinde (yeni alan) olur ya da hiç olmaz.
+
+| # | Kontrol | Eşik |
+|:---|:---|:---|
+| SY1 | YAML kabuk çalışması = Python'da kurulan çalışma (`ShellDomain`, `ShellPhysics(FlatShell)`, `Chain([Embed, MeshFilterLink, Passive])`, `SIMP(E0 = 1, p = 3, E_min = 1e-9)`, `Compliance`, `Constraint(MeshVolume, 0,4)`, `MMA`), rastgele x ∈ [0,2; 0,9]'da değer, gradyan, hacim, hacim gradyanı; üç durum: (a) örnek, (b) silindir dilimi 12 × 8, t = 0,02, drill 1e-2, `bottom` all + `top` [u, v], basınç + nokta kuvveti, (c) düz dikdörtgen 8 × 6, `left` all, basınç; ayrıca varsayılan başlangıçlar eşit | ≤ 1e-12 göreli (her biri) |
+| SY2 | örnek CLI'dan: `python -m toporlogy validate …` ve `run … --out <klasör>` | `validate` çıkış 0; `run` çıkış kodu = 0 ise `status` ok, değilse 1; amaç ve hacim sonlu; son uyum < ilk uyum; hacim ≤ 0,4 (1 + 1e-3); `config.resolved.yaml` yeniden çözülünce kendisini verir ve aynı çalışmayı kurar (varsayılan başlangıçta amaç bit düzeyinde eşit) |
+| SY3 | desteklenmeyen / geçersiz anahtarlar: `load_cases`, `post`, `units`, `physics: elasticity`, `physics: modal`, bilinmeyen fizik parametresi, `drill` ≤ 0, `surface: sphere`, dikdörtgende `radius`, silindirde `size`, `angle` ∉ (0, 360), `n` uzunluğu, `thickness` ≤ 0, bilinmeyen küme (`left` silindirde; `start` kapalı boruda), bilinmeyen bileşen (`x`), bilinmeyen yük anahtarı (`set`), `point` uzunluğu 2, rijit hareket bırakan mesnet (`fix: [u]`), sıfır yük, `material.plane`, `helmholtz_filter`, `objective: volume`, `optimizer: oc`, `constraints: compliance` | `ConfigError`; o yolda ileti var ve "shell" içerir; desteklenmeyenlerde "not support"; başka tür istisna 0 |
+| SY4 | adlı kümeler: `flat_rectangle(2, 1, 4, 3)` ve `cylinder_surface(1, 1, 8, 6, angle=π/2)` ile kapalı boru `(1, 1, 8, 6)`: her küme koordinat koşuluyla (\|x − değer\| ≤ 1e-9; silindirde θ = atan2) seçilen düğümlere eşit; kapalı boruda `start` / `end` yok | eşit (tam) |
+| SY5 | ızgara ve ağ yolu davranışı | `pytest -m baseline` 8 passed bit düzeyinde; `test_mesh_yaml.py` değişmeden geçer; `test_shell.py`, `test_shell_study.py` geçer; U1, R, H2, A öngörüleri tutar |
+| SY6 | dağıtım dokunulmamış | `resolve.py`, `build.py`, `boundary/*` farkı yok |
+
+Kurallar: ilk koşuda tutmayan kontrol, ölçülen değeriyle `xfail(strict=True)` olur ve `docs/vv_kutugu.json`'a girer;
+eşik gevşetilmez; test kurulum hatası (ölçüm değil) düzeltilebilir ama burada yazılır; ilk koşudan sonra eklenen kontrol
+"post hoc" diye işaretlenir.
