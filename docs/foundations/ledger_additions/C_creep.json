@@ -1,0 +1,22 @@
+[
+  {
+    "nodeid": "tests/toporlogy/test_creep.py::test_c3g_prereg_full_relaxation_claim",
+    "kind": "pre-registered check failed",
+    "model_backend": "numpy",
+    "reason": "Preregistered claim for n = 20, q_tr = 10 sigma_ref, dt = 1 s: q_new < 1e-3 q_tr. Measured q_new/q_tr = 0.1505 (q_new = 1.505e7 Pa). The production root agrees with an independent scipy brentq root of dt A (q/sigma_ref)^n = (q_tr - q)/(3G) to 1e-10, so the claim itself was wrong (creep stops relaxing where the rate balances the elastic unloading), not the code.",
+    "risk": "low",
+    "resolution": "Hypothesis was wrong; kept as strict xfail. Replaced by the post hoc check test_c3g_post_hoc_high_stress_root_against_brentq (labelled post hoc) and the residual checks of C3f/C3g that passed.",
+    "record": "docs/foundations/prereg/C_creep.md",
+    "slow": false
+  },
+  {
+    "nodeid": "tests/toporlogy/test_creep.py::test_c6a_prereg_global_accuracy_rtol_1e4",
+    "kind": "pre-registered check failed",
+    "model_backend": "numpy",
+    "reason": "Preregistered global accuracy of the adaptive driver for the 1e-6..1e8 s relaxation with rtol = 1e-4: eps_cr relative error <= 1e-3 and |q - q_ref|/q0 <= 1e-3 at all 29 outputs. Measured max eps_cr relative error 2.10e-3 (t = 100 s) and max |q - q_ref|/q0 = 1.16e-3; 325 accepted steps (the step-count bound passed). Step doubling controls the local error only; the global error scales as ~0.2 sqrt(rtol) (2.1e-3, 6.7e-4, 2.1e-4 for rtol 1e-4, 1e-5, 1e-6).",
+    "risk": "low",
+    "resolution": "Threshold not loosened; strict xfail. Post hoc characterisation test_c6a_post_hoc_global_error_decreases_with_rtol (error at rtol 1e-5 <= half the error at 1e-4) passes. The doc states that rtol is a local tolerance.",
+    "record": "docs/foundations/prereg/C_creep.md",
+    "slow": false
+  }
+]
