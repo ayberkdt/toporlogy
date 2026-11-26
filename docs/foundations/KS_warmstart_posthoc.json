@@ -1,0 +1,16 @@
+{
+ "robust": {
+  "nominal_design": 0.00014048528517791823,
+  "robust_warm_from_nominal": 0.00014046451650425617,
+  "iterations": 26,
+  "termination": "kkt",
+  "kkt": 3.402910825764318e-05
+ },
+ "minmax": {
+  "t100_design_worst": 0.00012113517269649252,
+  "minmax_warm_from_t100": 0.00012113517269649252,
+  "iterations": 1,
+  "termination": "kkt",
+  "kkt": 5.526100010445727e-06
+ }
+}

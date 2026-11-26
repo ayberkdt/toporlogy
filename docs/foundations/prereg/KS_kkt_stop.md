@@ -39,3 +39,16 @@ nonconvex problem. The objective values of the KKT-stopped runs are almost ident
 `ledger_additions/KS_kkt_stop.json`. What remains true: the robust and min–max formulations are implemented with
 exact gradients (VR3, VU2) and give KKT-stationary designs; claims of a robust or min–max *benefit* on this problem
 are not supported by these runs.
+
+## Post hoc warm starts (not preregistered; `scripts/ks_warmstart_posthoc.py`, `KS_warmstart_posthoc.json`)
+
+* Robust objective started from the KKT-stopped nominal design: 26 iterations to KKT 3.4e-5, mean + 2 std
+  1.404645e-4 — 0.015 % **better** than the nominal design (1.404853e-4) and 0.28 % better than the cold-started
+  robust run (1.408537e-4).
+* Min–max started from the t = 100 s design: KKT-stationary at once (1 iteration, 5.5e-6), worst case unchanged
+  (1.211352e-4) — the t = 100 s optimum is also a min–max stationary point, as expected when the worst case is
+  always the last time.
+
+So the formulations are consistent: the robust objective does improve on the nominal design when it starts in its
+basin, and the cold-start gaps of KS2/KS3 are path dependence of MMA from the uniform start. The size of the
+robust gain here (0.015 %) is negligible for this material and problem; no robust-design benefit is claimed.
