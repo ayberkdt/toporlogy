@@ -19,12 +19,19 @@ Schema (minimal scope; defaults in brackets):
     load_cases:                    # *required*, >= 1; column c of F; compliance = sum_c weight_c F_c.U_c
       - name: tip                  # [case<i>]
         weight: 1.0                # [1.0]
+        supports: null             # [null] own supports of this case, as above (null = the supports above); each
+                                   # distinct set has its own physics and factorisation (PerCaseSupports) and its
+                                   # own rigid-motion check (path load_cases.<i>.supports)
         loads:                     # >= 1, summed:
           - {point: [3.0, 0.0], force: [0, -1]}     # at the node nearest the point
           - {set: right, force: [0, -1], distribute: nodes}
                                    # distribute nodes [default]: the total force split equally over the set's nodes;
                                    # traction: a uniform traction force / |facets| over the set's boundary facets
                                    # (edges in 2-D, faces in 3-D), consistent nodal forces (ElasticProblem.traction)
+    combinations:                  # [[]] extra columns of F after the cases, as on the grid path:
+      - {name: both, weight: 1.0, factors: {tip: 1.0, side: 0.5}}
+                                   # name *required* (one list with the case names); F_both = sum factor * F_case;
+                                   # the cases must share one support set; weight [1.0] enters the compliance
     chain: [{type: density_filter, rmin: 0.125}]    # *required*; rmin in LENGTH units (the grid path: elements);
                                                     # embed / passive added at the ends if absent
     interpolation: simp            # [simp] penal, emin_ratio as on the grid path
@@ -37,14 +44,14 @@ Schema (minimal scope; defaults in brackets):
                                                     # hexahedron) with cell data xphys and E, point data
                                                     # displacement_<case> (n, 3; z = 0 in 2-D)
 
-Anything else (``combinations``, per-case ``supports``, ``robust``, ``connectivity``, ``schedule``, other ``post``
-steps, ``units``, other links, responses, objectives, optimizers, physics or interpolations, ``material``
-orthotropic / strength / phases / rho / catalog, ``run.start`` / ``checkpoint_every`` / ``move_beta_ref``) is a
-:class:`ConfigError` that names the key and says the mesh path does not support it yet; a top-level ``loads`` list is
-refused with a pointer to ``load_cases`` (``docs/olcumler/ag_topoloji_onkayit.md``, AX1-AX8).
+Anything else (``robust``, ``connectivity``, ``schedule``, other ``post`` steps, ``units``, other links, responses,
+objectives, optimizers, physics or interpolations, ``material`` orthotropic / strength / phases / rho / catalog,
+``run.start`` / ``checkpoint_every`` / ``move_beta_ref``) is a :class:`ConfigError` that names the key and says the
+mesh path does not support it yet; a top-level ``loads`` list is refused with a pointer to ``load_cases``
+(``docs/olcumler/ag_topoloji_onkayit.md``, AX1-AX8; combinations and per-case supports: AC1-AC8).
 
-``domain.type: shell`` (``docs/olcumler/kabuk_onkayit.md``, SY1-SY6, SX1-SX6) takes a small parallel branch of the
-same functions: the flat-facet shell of :mod:`toporlogy.fem.shell` as a
+``domain.type: shell`` (``docs/olcumler/kabuk_onkayit.md``, SY1-SY6, SX1-SX6, SC1-SC7) takes a small parallel branch
+of the same functions: the flat-facet shell of :mod:`toporlogy.fem.shell` as a
 :class:`~toporlogy.optimization.shell_study.ShellDomain` with :class:`~toporlogy.optimization.shell_study.ShellPhysics`.
 Its own keys:
 
@@ -69,13 +76,14 @@ Its own keys:
     post: [{type: vtu}]            # facets as VTK quads; point data displacement_<case> (u, v, w) and
                                    # rotation_<case> (rx, ry, rz)
 
-``chain`` (rmin a length: the 3-D chord distance between facet centres), ``interpolation``, ``objective``,
-``constraints`` (``volume``: area weighted), ``optimizer``, ``run``, ``output`` and the refusals are those of the mesh
-path; messages name the shell path.
+Per-case ``supports`` (one ``FlatShell`` per distinct set), ``combinations``, ``chain`` (rmin a length: the 3-D chord
+distance between facet centres), ``interpolation``, ``objective``, ``constraints`` (``volume``: area weighted),
+``optimizer``, ``run``, ``output`` and the refusals are those of the mesh path; messages name the shell path.
 """
 from __future__ import annotations
 
 import math
+from collections.abc import Callable
 from typing import Any
 
 import numpy as np
@@ -83,12 +91,13 @@ import numpy as np
 from toporlogy.configuration.build import Setup, _resultant
 from toporlogy.configuration.registry import BuildContext, ConfigError, Param, REGISTRY, join, normalise_name, suggest
 from toporlogy.configuration.resolve import _list, _section
-from toporlogy.configuration.schema import _CASE, _CONSTRAINT, _OUTPUT, _RUN
+from toporlogy.configuration.schema import _CASE, _COMBINATION, _CONSTRAINT, _OUTPUT, _RUN
 
 __all__ = ["is_mesh_config", "resolve_mesh", "build_mesh", "MESH_KEYS"]
 
-MESH_KEYS = ("name", "domain", "material", "physics", "supports", "load_cases", "chain", "interpolation", "objective",
-             "constraints", "optimizer", "run", "output", "post", "provenance", "schema_version", "units")
+MESH_KEYS = ("name", "domain", "material", "physics", "supports", "load_cases", "combinations", "chain",
+             "interpolation", "objective", "constraints", "optimizer", "run", "output", "post", "provenance",
+             "schema_version", "units")
 _DISTRIBUTE = ("nodes", "traction")
 _PLANES = ("stress", "strain")
 _ELEMENTS = {"rectangle": ("Q4", "T3"), "box": ("H8", "T4")}
@@ -204,11 +213,12 @@ def _resolve_physics(raw: Any, errors: list[tuple[str, str]]) -> dict[str, Any]:
     return {"type": "elasticity"}
 
 
-def _resolve_supports(raw: Any, dim: int, errors: list[tuple[str, str]]) -> list[dict[str, Any]]:
+def _resolve_supports(raw: Any, dim: int, errors: list[tuple[str, str]],
+                     path: str = "supports") -> list[dict[str, Any]]:
     out = []
     sets = _SETS[:2 * dim]
-    for i, s in enumerate(_list(raw, "supports", errors, 1)):
-        p = join("supports", i)
+    for i, s in enumerate(_list(raw, path, errors, 1)):
+        p = join(path, i)
         if not isinstance(s, dict):
             errors.append((p, "expected a mapping {set, fix}"))
             continue
@@ -228,16 +238,15 @@ def _resolve_supports(raw: Any, dim: int, errors: list[tuple[str, str]]) -> list
     return out
 
 
-def _resolve_cases(raw: Any, errors: list[tuple[str, str]], loads: Any) -> list[dict[str, Any]]:
-    """``load_cases: [{name, weight, loads}]`` of both branches; ``loads(raw, path, errors)`` resolves one list."""
+def _resolve_cases(raw: Any, errors: list[tuple[str, str]], loads: Any, supports: Any) -> list[dict[str, Any]]:
+    """``load_cases: [{name, weight, supports, loads}]`` of both branches; ``loads(raw, path, errors)`` resolves one
+    load list, ``supports(raw, path, errors)`` one support list (a case's own; null: the top-level supports)."""
     cases = []
     for i, c in enumerate(_list(raw, "load_cases", errors, 1)):
         cp = join("load_cases", i)
         if not isinstance(c, dict):
-            errors.append((cp, "expected a mapping {name, weight, loads}"))
+            errors.append((cp, "expected a mapping {name, weight, supports, loads}"))
             continue
-        if c.get("supports") is not None:
-            _not_yet(errors, join(cp, "supports"), "per-case supports (the supports above hold for every case)")
         head = _section({k: v for k, v in c.items() if k not in ("loads", "supports")}, _CASE, cp, errors,
                         "load case")
         w = head.get("weight", 1.0)
@@ -245,13 +254,53 @@ def _resolve_cases(raw: Any, errors: list[tuple[str, str]], loads: Any) -> list[
             errors.append((join(cp, "weight"), f"must be finite, got {w}"))
         if "loads" not in c:
             errors.append((join(cp, "loads"), "required key of a load case is missing"))
-        cases.append({"name": head.get("name") or f"case{i + 1}", "weight": w,
+        own = None if c.get("supports") is None else supports(c["supports"], join(cp, "supports"), errors)
+        cases.append({"name": head.get("name") or f"case{i + 1}", "weight": w, "supports": own,
                       "loads": loads(c.get("loads"), join(cp, "loads"), errors) if "loads" in c else []})
     names = [c["name"] for c in cases]
     for i, n in enumerate(names):
         if n in names[:i]:
             errors.append((join(join("load_cases", i), "name"), f'load case name "{n}" is used twice'))
     return cases
+
+
+def _resolve_combinations(raw: Any, names: list[str], errors: list[tuple[str, str]]) -> list[dict[str, Any]]:
+    """``combinations: [{name, weight, factors: {case: factor}}]`` as on the grid path (``resolve._resolve``): an extra
+    column Σ factor · F_case after the cases, with its own weight in the compliance."""
+    out = []
+    seen = list(names)
+    for i, cb in enumerate(_list(raw, "combinations", errors)):
+        cp = join("combinations", i)
+        s = _section(cb, _COMBINATION, cp, errors, "combination")
+        f = s.get("factors")
+        if f is not None:
+            if not isinstance(f, dict) or not f:
+                errors.append((join(cp, "factors"), "expected a mapping load case name -> factor"))
+                f = {}
+            fac = {}
+            for k, v in f.items():
+                fp = join(join(cp, "factors"), str(k))
+                if k not in names:
+                    errors.append((fp, f"unknown load case{suggest(str(k), names) or ''} (load cases: "
+                                       f"{', '.join(names)})"))
+                try:
+                    fac[str(k)] = Param(str(k), None, float).coerce(v, fp)
+                except ConfigError as e:
+                    errors.extend(e.errors)
+                    continue
+                if not math.isfinite(fac[str(k)]):
+                    errors.append((fp, f"a factor must be finite, got {fac[str(k)]}"))
+            s["factors"] = fac
+        if "weight" in s and not math.isfinite(s["weight"]):
+            errors.append((join(cp, "weight"), f"must be finite, got {s['weight']}"))
+        if s.get("name") is not None:
+            s["name"] = str(s["name"])
+            if s["name"] in seen:
+                errors.append((join(cp, "name"), f'name "{s["name"]}" is used twice (load cases and combinations '
+                                                 'share one list of names)'))
+            seen.append(s["name"])
+        out.append(s)
+    return out
 
 
 def _set_load(ld: dict[str, Any], p: str, sets: tuple[str, ...], what: str,
@@ -427,7 +476,8 @@ def resolve_mesh(raw: dict[str, Any]) -> dict[str, Any]:
         r["physics"] = _resolve_shell_physics(raw.get("physics"), errors)
         sets = _shell_sets(sd)
         r["supports"] = _resolve_shell_supports(raw.get("supports"), sets, errors) if "supports" in raw else []
-        r["load_cases"] = _resolve_cases(cases, errors, lambda v, p, e: _resolve_shell_loads(v, p, sets, e)) \
+        r["load_cases"] = _resolve_cases(cases, errors, lambda v, p, e: _resolve_shell_loads(v, p, sets, e),
+                                         lambda v, p, e: _resolve_shell_supports(v, sets, e, p)) \
             if "load_cases" in raw else []
     else:
         d = _resolve_domain(raw["domain"], errors)
@@ -439,8 +489,10 @@ def resolve_mesh(raw: dict[str, Any]) -> dict[str, Any]:
                                              "isotropic 3-D elasticity"))
         r["physics"] = _resolve_physics(raw.get("physics"), errors)
         r["supports"] = _resolve_supports(raw.get("supports"), dim, errors) if "supports" in raw else []
-        r["load_cases"] = _resolve_cases(cases, errors, lambda v, p, e: _resolve_loads(v, p, dim, e)) \
+        r["load_cases"] = _resolve_cases(cases, errors, lambda v, p, e: _resolve_loads(v, p, dim, e),
+                                         lambda v, p, e: _resolve_supports(v, dim, e, p)) \
             if "load_cases" in raw else []
+    r["combinations"] = _resolve_combinations(raw.get("combinations"), [c["name"] for c in r["load_cases"]], errors)
     r["chain"] = _resolve_chain(raw.get("chain"), errors)
     r["interpolation"] = _resolve_component("interpolation", raw.get("interpolation", "simp"), "interpolation",
                                             "simp", errors)
@@ -561,10 +613,11 @@ def _resolve_shell_physics(raw: Any, errors: list[tuple[str, str]]) -> dict[str,
     return out
 
 
-def _resolve_shell_supports(raw: Any, sets: tuple[str, ...], errors: list[tuple[str, str]]) -> list[dict[str, Any]]:
+def _resolve_shell_supports(raw: Any, sets: tuple[str, ...], errors: list[tuple[str, str]],
+                            path: str = "supports") -> list[dict[str, Any]]:
     out = []
-    for i, s in enumerate(_list(raw, "supports", errors, 1)):
-        p = join("supports", i)
+    for i, s in enumerate(_list(raw, path, errors, 1)):
+        p = join(path, i)
         if not isinstance(s, dict):
             errors.append((p, "expected a mapping {set, fix}"))
             continue
@@ -642,7 +695,7 @@ def _mesh(dom: dict[str, Any]) -> Any:
     return m
 
 
-def _check_rigid(mesh: Any, fixed: np.ndarray) -> None:
+def _check_rigid(mesh: Any, fixed: np.ndarray, path: str = "supports") -> None:
     """Every rigid motion of the (connected) mesh must be stopped by the fixed DOFs."""
     from toporlogy.fem.mesh.problem import rigid_modes
     used = mesh.used_nodes()
@@ -652,7 +705,65 @@ def _check_rigid(mesh: Any, fixed: np.ndarray) -> None:
     rank = 0 if not len(Rc) else int((np.linalg.svd(Rc, compute_uv=False) > 1e-8).sum())
     if rank < R.shape[1]:
         raise ConfigError(f"the supports leave {R.shape[1] - rank} rigid motion(s) free; the system is singular",
-                          "supports")
+                          path)
+
+
+def _support_sets(r: dict[str, Any], fixed_of: Callable[[list[dict[str, Any]], str], np.ndarray],
+                  check: Callable[[np.ndarray, str], None]) -> tuple[list[np.ndarray], list[int]]:
+    """The distinct support sets (sorted fixed DOFs) and, per load case, the index of its set. A case without its own
+    ``supports`` takes the top-level ones; sets equal in content are one set (one physics, one factorisation). Each
+    set is checked once (``check``: the rigid motions) at the path of the first case that uses it, and top-level
+    supports no case uses are resolved but not checked (grid path: ``BoundaryConditions``, ``build._check_bc``)."""
+    default = fixed_of(r["supports"], "supports")
+    sets: list[np.ndarray] = []
+    case_set: list[int] = []
+    for c, case in enumerate(r["load_cases"]):
+        own = case.get("supports")
+        path = "supports" if own is None else join(join("load_cases", c), "supports")
+        fx = default if own is None else fixed_of(own, path)
+        k = next((j for j, known in enumerate(sets) if np.array_equal(known, fx)), None)
+        if k is None:
+            check(fx, path)
+            sets.append(fx)
+            k = len(sets) - 1
+        case_set.append(k)
+    return sets, case_set
+
+
+def _combine(r: dict[str, Any], F: np.ndarray, case_set: list[int]) -> tuple[np.ndarray, list[int]]:
+    """F with the combination columns after the cases (grid path ``BoundaryConditions.F("all")``: Σ factor · case
+    column) and the support set of every column; a combination must not mix support sets (superposition)."""
+    if not r.get("combinations"):
+        return F, list(case_set)
+    idx = {c["name"]: i for i, c in enumerate(r["load_cases"])}
+    cols, col_set = [F], list(case_set)
+    for i, cb in enumerate(r["combinations"]):
+        used = sorted({case_set[idx[n]] for n in cb["factors"]})
+        if len(used) > 1:
+            raise ConfigError(f'combination "{cb["name"]}" mixes load cases with different supports '
+                              f'({", ".join(cb["factors"])}); superposition holds for one support set only',
+                              join("combinations", i))
+        cols.append(np.asarray(sum(f * F[:, idx[n]] for n, f in cb["factors"].items()), float)[:, None])
+        col_set.append(used[0])
+    return np.column_stack(cols), col_set
+
+
+def _physics_of(groups: list[Any], col_set: list[int]) -> Any:
+    """One physics per support set: the physics itself for one set, else the grid path's
+    :class:`~toporlogy.boundary.constrained.PerCaseSupports` (each column group solved by its own physics)."""
+    if len(groups) == 1:
+        return groups[0]
+    from toporlogy.boundary.constrained import PerCaseSupports
+    cols = np.asarray(col_set)
+    return PerCaseSupports([(g, np.flatnonzero(cols == k)) for k, g in enumerate(groups)])
+
+
+def _sets_note(r: dict[str, Any], col_set: list[int], n_sets: int) -> list[str]:
+    if n_sets == 1:
+        return []
+    names = [c["name"] for c in r["load_cases"] + (r.get("combinations") or [])]
+    groups = "; ".join(", ".join(n for n, s in zip(names, col_set, strict=True) if s == k) for k in range(n_sets))
+    return [f"{n_sets} support sets (one physics and factorisation each): {groups}"]
 
 
 def build_mesh(r: dict[str, Any]) -> Setup:
@@ -680,22 +791,25 @@ def _build_mesh(r: dict[str, Any]) -> Setup:
                          f"{mesh.n_cells} cells, {mesh.n_nodes} nodes" + (f", perturbed by up to {dom['perturb']:g} "
                                                                           f"(seed {dom['seed']})" if dom["perturb"] > 0
                                                                           else "")]
-    fixed_parts = []
-    for i, s in enumerate(r["supports"]):
-        nodes = mesh.node_sets[s["set"]]
-        dofs = mesh.dofs(nodes, [_AXES.index(c) for c in s["fix"]])
-        if not dofs.size:
-            raise ConfigError(f'node set "{s["set"]}" is empty', join(join("supports", i), "set"))
-        fixed_parts.append(dofs)
-    fixed = np.unique(np.concatenate(fixed_parts))
-    _check_rigid(mesh, fixed)
+
+    def fixed_of(specs: list[dict[str, Any]], path: str) -> np.ndarray:
+        parts = []
+        for i, s in enumerate(specs):
+            nodes = mesh.node_sets[s["set"]]
+            dofs = mesh.dofs(nodes, [_AXES.index(c) for c in s["fix"]])
+            if not dofs.size:
+                raise ConfigError(f'node set "{s["set"]}" is empty', join(join(path, i), "set"))
+            parts.append(dofs)
+        return np.unique(np.concatenate(parts))
+
+    sets, case_set = _support_sets(r, fixed_of, lambda fx, path: _check_rigid(mesh, fx, path))
     m = r["material"]
     if dim == 3:
         D = D_iso(m["nu"])
     else:
         D = D_plane_strain(m["nu"]) if m["plane"] == "strain" else D_plane_stress(m["nu"])
-    physics = MeshElasticity(d, D, fixed)
-    prob = physics.problem
+    groups = [MeshElasticity(d, D, fx) for fx in sets]
+    prob = groups[0].problem                            # geometry and loads do not depend on the supports
     cases = r["load_cases"]
     F = np.zeros((d.ndof, len(cases)))
     for c, case in enumerate(cases):
@@ -725,20 +839,28 @@ def _build_mesh(r: dict[str, Any]) -> Setup:
                 Fc.reshape(-1, dim)[nodes] += f / len(nodes)
         F[:, c] = Fc
     _check_loads(F)
-    return _finish(r, d, physics, F, fixed, dim, dim, _loaded_fixed(F, fixed), notes)
+    F, col_set = _combine(r, F, case_set)
+    _check_loads(F, len(cases))
+    return _finish(r, d, _physics_of(groups, col_set), F, np.unique(np.concatenate(sets)), dim, dim,
+                   _loaded_fixed(F, sets, col_set), notes + _sets_note(r, col_set, len(sets)))
 
 
-def _check_loads(F: np.ndarray) -> None:
+def _check_loads(F: np.ndarray, n_cases: int | None = None) -> None:
+    """Every column finite and nonzero; columns from ``n_cases`` on are combinations."""
+    n = F.shape[1] if n_cases is None else n_cases
     for c in range(F.shape[1]):
+        what, path = ("load case", join("load_cases", c)) if c < n else ("combination", join("combinations", c - n))
         if not np.isfinite(F[:, c]).all():
-            raise ConfigError("load case has a load that is not finite (NaN or Inf)", join("load_cases", c))
+            raise ConfigError(f"{what} has a load that is not finite (NaN or Inf)", path)
         if not np.any(F[:, c]):
-            raise ConfigError("load case has zero load", join("load_cases", c))
+            raise ConfigError(f"{what} has zero load" + (" (its factors cancel)" if c >= n else ""), path)
 
 
-def _loaded_fixed(F: np.ndarray, fixed: np.ndarray) -> list[str]:
-    loaded_fixed = np.intersect1d(np.flatnonzero(np.any(F != 0, axis=1)), fixed)
-    return [f"{loaded_fixed.size} loaded DOF(s) are also fixed; their load does no work"] if loaded_fixed.size else []
+def _loaded_fixed(F: np.ndarray, sets: list[np.ndarray], col_set: list[int]) -> list[str]:
+    """Loaded DOFs that are fixed in the support set of their column."""
+    hit = np.unique(np.concatenate([np.intersect1d(np.flatnonzero(F[:, c] != 0), sets[k])
+                                    for c, k in enumerate(col_set)]))
+    return [f"{hit.size} loaded DOF(s) are also fixed; their load does no work"] if hit.size else []
 
 
 def _finish(r: dict[str, Any], d: Any, physics: Any, F: np.ndarray, fixed: np.ndarray, per_node: int, nforce: int,
@@ -762,7 +884,8 @@ def _finish(r: dict[str, Any], d: Any, physics: Any, F: np.ndarray, fixed: np.nd
             except ValueError as e:
                 raise ConfigError(f"link density_filter: {e}", join("chain", i)) from None
     chain = Chain(links)
-    weights = [float(c["weight"]) for c in r["load_cases"]]
+    columns = r["load_cases"] + (r.get("combinations") or [])   # F: the cases, then the combinations
+    weights = [float(c["weight"]) for c in columns]
     ctx = BuildContext(config=r, domain=d, material=dict(m), run=dict(r["run"]), n_cases=F.shape[1],
                        case_weights=weights, physics=physics, chain=chain, links=links, fixed=fixed)
     ctx.interp = REGISTRY.build("interpolation", r["interpolation"], ctx, "interpolation")
@@ -786,11 +909,11 @@ def _finish(r: dict[str, Any], d: Any, physics: Any, F: np.ndarray, fixed: np.nd
         raise ConfigError(str(e), "constraints" if "constraint" in str(e) else "") from e
     study.config = r
     cases = []
-    for c, case in enumerate(r["load_cases"]):
+    for c, case in enumerate(columns):
         Fn = F[:, c].reshape(-1, per_node)
         cases.append({"name": case["name"], "weight": weights[c],
                       "resultant": _resultant(Fn[:, :nforce].ravel(), nforce),
-                      "n_nodes": int(np.any(Fn != 0, axis=1).sum()), "combination": False})
+                      "n_nodes": int(np.any(Fn != 0, axis=1).sum()), "combination": c >= len(r["load_cases"])})
     post = [(p["type"], _vtu_step(p["name"])) for p in r["post"]]
     return Setup(study, r, fixed, cases, cnames, post, warnings, None, None, {}, {"notes": notes})
 
@@ -877,16 +1000,25 @@ def _build_shell(r: dict[str, Any]) -> Setup:
         desc = f"rectangle {dom['size'][0]:g} x {dom['size'][1]:g}"
     d: Any = ShellDomain(mesh)
     notes = [f"shell: {desc}, {n[0]} x {n[1]} facets, t {dom['thickness']:g}, {mesh.ne} facets, {mesh.nn} nodes"]
-    fixed_parts = []
-    for s in r["supports"]:
-        nodes = mesh.node_sets[s["set"]]
-        fixed_parts.append((6 * nodes[:, None] + np.array([_SHELL_FIX.index(c) for c in s["fix"]])).ravel())
-    fixed = np.unique(np.concatenate(fixed_parts))
-    Rm = _shell_rigid_modes(mesh.nodes)[fixed]
-    rank = int((np.linalg.svd(Rm, compute_uv=False) > 1e-8).sum()) if len(Rm) else 0
-    if rank < 6:
-        raise ConfigError(f"the supports leave {6 - rank} rigid motion(s) free; the system is singular", "supports")
-    shell = FlatShell(mesh, dom["thickness"], r["material"]["nu"], fixed, drill=r["physics"]["drill"])
+
+    def fixed_of(specs: list[dict[str, Any]], path: str) -> np.ndarray:
+        parts = []
+        for s in specs:
+            nodes = mesh.node_sets[s["set"]]
+            parts.append((6 * nodes[:, None] + np.array([_SHELL_FIX.index(c) for c in s["fix"]])).ravel())
+        return np.unique(np.concatenate(parts))
+
+    modes = _shell_rigid_modes(mesh.nodes)
+
+    def check(fixed: np.ndarray, path: str) -> None:
+        Rm = modes[fixed]
+        rank = int((np.linalg.svd(Rm, compute_uv=False) > 1e-8).sum()) if len(Rm) else 0
+        if rank < 6:
+            raise ConfigError(f"the supports leave {6 - rank} rigid motion(s) free; the system is singular", path)
+
+    sets, case_set = _support_sets(r, fixed_of, check)
+    shells = [FlatShell(mesh, dom["thickness"], r["material"]["nu"], fx, drill=r["physics"]["drill"]) for fx in sets]
+    shell = shells[0]                                   # the loads do not depend on the supports
     cases = r["load_cases"]
     F = np.zeros((shell.ndof, len(cases)))
     for c, case in enumerate(cases):
@@ -916,4 +1048,7 @@ def _build_shell(r: dict[str, Any]) -> Setup:
                              f"{float(dist.min()):.3g} from the given point")
         F[:, c] = Fc
     _check_loads(F)
-    return _finish(r, d, ShellPhysics(shell), F, fixed, 6, 3, _loaded_fixed(F, fixed), notes)
+    F, col_set = _combine(r, F, case_set)
+    _check_loads(F, len(cases))
+    return _finish(r, d, _physics_of([ShellPhysics(sh) for sh in shells], col_set), F, np.unique(np.concatenate(sets)),
+                   6, 3, _loaded_fixed(F, sets, col_set), notes + _sets_note(r, col_set, len(sets)))

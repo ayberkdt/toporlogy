@@ -248,8 +248,6 @@ def _with(path: str, value: Any) -> dict[str, Any]:
 
 
 UNSUPPORTED: dict[str, tuple[str, Any, str]] = {
-    "combinations": ("combinations", [{"name": "c", "factors": {"radial": 1.0}}], "combinations"),
-    "case_supports": ("load_cases.0.supports", [{"set": "bottom", "fix": "all"}], "load_cases.0.supports"),
     "post_export": ("post", [{"type": "export"}], "post.0"),
 }
 INVALID: dict[str, tuple[str, Any, str]] = {

@@ -313,8 +313,6 @@ def _with(path: str, value: Any, base: dict[str, Any] | None = None) -> dict[str
 TIP = {"point": [3.0, 0.0], "force": [0, -1]}
 BOX = _cfg(H8, [{"set": "left", "fix": "all"}], [{"loads": [{"set": "right", "force": [0, 0, -1]}]}])
 UNSUPPORTED: dict[str, tuple[str, Any, str, Any]] = {
-    "combinations": ("combinations", [{"name": "c", "factors": {"tip": 1.0}}], "combinations", None),
-    "case_supports": ("load_cases.0.supports", [{"set": "left", "fix": "all"}], "load_cases.0.supports", None),
     "post_export": ("post", [{"type": "export"}], "post.0", None),
     "post_finalize": ("post", [{"type": "finalize"}], "post.0", None),
     "vtu_param": ("post", [{"type": "vtu", "fields": ["xphys"]}], "post.0.fields", None),

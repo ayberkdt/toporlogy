@@ -612,3 +612,21 @@ RADIAL0 = {point [c, c, 0], force [−c, −c, 0]}. Göreli farklar AC bölümü
 | SC7 | dokunulmamışlık: AC7'deki kabuk çapaları (örnek, SX1 örnek iki durum) bit düzeyinde; SY1–SY4, SX1–SX6 geçer (SX5'ten `combinations` ve `case_supports` satırları çıkar, SX1 dikdörtgen strict xfail kalır); `test_shell.py`, `test_shell_study.py` geçer | aynen |
 
 Kurallar AX bölümündeki gibi. Testler: `tests/toporlogy/test_shell_yaml_comb.py`.
+
+### SC1–SC7 sonucu (ilk ölçüm, 2026-11-26)
+
+Kod ve koşular `ag_topoloji_onkayit.md` AC1–AC8 sonucunda. Testler `tests/toporlogy/test_shell_yaml_comb.py`
+(21 test); değerler `-s` çıktısından. **İlk koşu 21 passed**, ölçüt ya da kurulum düzeltmesi gerekmedi.
+
+| # | Durum | Ölçülen |
+|:---|:---|:---|
+| SC1 | PASS | dilim: F sütunu 0,00e+00, değer 0,00e+00 (c = 6,042086e4), gradyan 0,00e+00; dikdörtgen: 0,00e+00, 0,00e+00 (c = 9,909309e6), 0,00e+00; `Setup.cases` [(a, 0,7, false), (b, 1,3, false), (c, 0,8, true)] |
+| SC2 | PASS | (i) 0,5 / 2: dilim değer 0,00e+00, gradyan 1,56e-16; dikdörtgen 0,00e+00, 2,71e-16. (ii) 0,7 / 1,3: dilim 0,00e+00, 1,39e-13 (sınır 2,11e-10); dikdörtgen 0,00e+00, **8,26e-12** — 1e-12'nin üstünde, ön kayıtlı yuvarlama ölçütü max(1e-12, eps · cond(K_ff)) = 9,96e-10'un altında (SX1'in mekanizması; bu yüzden (i) ikinin kuvvetiyle kuruldu, orada 2,71e-16) |
+| SC3 | PASS | gruplar [[0, 2], [1]]; yeni x'te bir `evaluate` (değer + gradyan) sırasında `splu` çağrısı 2 |
+| SC4 | PASS | yönlü türev 1,452923e4, dördüncü mertebe farka göre 3,11e-10 (≤ 1e-6) |
+| SC5 | PASS | b'nin `top` w mesnedi: `load_cases.1.supports` "the supports leave 3 rigid motion(s) free"; kullanılmayan aynı üst düzey küme: kuruldu (2 grup); mesnetsiz durum onu kullanınca: `supports` |
+| SC6 | PASS | 12 girdinin hepsinde `ConfigError`, ileti o yolda ve "shell" içeriyor; `mixed_supports`'ta "different supports", `zero_combination`'da "zero load" |
+| SC7 | PASS | kabuk çapaları (AC7: örnek, SX1 örnek iki durum) bit düzeyinde; SY1–SY4, SX1–SX6 (SX5'ten `combinations` ve `case_supports` satırları ön kayıtta yazıldığı gibi çıktı; SX1 dikdörtgen strict xfail), `test_shell.py`, `test_shell_study.py` geçti (koşu AC sonucunda) |
+
+Her mesnet kümesi kendi `FlatShell`'ini kurar (eleman matrisleri küme başına yeniden hesaplanır). Kalan: nokta
+momenti, jeodezik filtre mesafesi, VTU'da gerilme / kabuk kesit kuvvetleri.

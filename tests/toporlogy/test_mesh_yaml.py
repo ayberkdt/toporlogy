@@ -183,7 +183,6 @@ def _with(path: str, value: Any) -> dict[str, Any]:
 
 
 UNSUPPORTED: dict[str, tuple[str, Any, str]] = {      # id -> (config key to set, value, path named in the error)
-    "combinations": ("combinations", [{"name": "c", "factors": {"a": 1.0}}], "combinations"),
     "robust": ("robust", {"eta_e": 0.7}, "robust"),
     "connectivity": ("connectivity", {}, "connectivity"),
     "schedule": ("schedule", {"type": "beta_continuation"}, "schedule"),

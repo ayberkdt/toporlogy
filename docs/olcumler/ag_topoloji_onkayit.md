@@ -473,3 +473,35 @@ Kurallar AX bölümündeki gibi: ilk koşuda tutmayan kontrol ölçülen değeri
 `docs/vv_kutugu.json`'a girer; eşik gevşetilmez; test kurulum hatası düzeltilebilir ama burada yazılır; tutmayan fark
 öngörüsü FAIL diye yazılır; ilk koşudan sonra eklenen kontrol "post hoc". Testler:
 `tests/toporlogy/test_mesh_yaml_comb.py`.
+
+### AC1–AC8 sonucu (ilk ölçüm, 2026-11-26)
+
+Kod: `configuration/mesh_build.py` (`combinations`, durum `supports`; `_support_sets`, `_combine`, `_physics_of`),
+`boundary/constrained.py` (`PerCaseSupports.__init__` yalnız var olan öznitelikleri alır). Testler
+`tests/toporlogy/test_mesh_yaml_comb.py` (27 test). Değerler
+`python -m pytest tests/toporlogy/test_mesh_yaml_comb.py -q -p no:randomly -s` çıktısından; **ilk koşu 27 passed**,
+ölçüt ya da kurulum düzeltmesi gerekmedi.
+
+| # | Durum | Ölçülen |
+|:---|:---|:---|
+| AC1 | PASS | Q4: F sütunu 0,00e+00, değer 0,00e+00 (c = 2,121374e3), gradyan 0,00e+00; H8: 0,00e+00, 0,00e+00 (c = 1,069588e3), 0,00e+00; `Setup.cases` [(a, 0,7, false), (b, 1,3, false), (c, 0,8, true)], F üç sütun |
+| AC2 | PASS | (i) 0,5 / 2: Q4 değer 0,00e+00, gradyan 2,01e-16; H8 0,00e+00, 2,93e-16. (ii) 0,7 / 1,3: Q4 değer 0,00e+00, gradyan 3,71e-13 (sınır max(1e-12, eps · cond) = 9,64e-12); H8 0,00e+00, 3,93e-15 (sınır 1,00e-12; eps · cond = 5,12e-13); fizik `PerCaseSupports`, 2 grup |
+| AC3 | PASS | gruplar [[0, 2, 3], [1]]; bir `evaluate` (değer + gradyan) sırasında grup başına `n_solves` artışı [1, 1]; içerikçe aynı kendi mesnedi olan tek durum: `MeshElasticity` |
+| AC4 | PASS | yönlü türev 8,412541e2, dördüncü mertebe farka göre 9,50e-11 (≤ 1e-6) |
+| AC5 | PASS | b'nin `bottom` y mesnedi: `load_cases.1.supports` "the supports leave 1 rigid motion(s) free"; kullanılmayan aynı üst düzey küme: kuruldu (2 grup); mesnetsiz durum onu kullanınca: `supports` |
+| AC6 | PASS | 12 girdinin hepsinde `ConfigError`, ileti o yolda ve "mesh" içeriyor; `mixed_supports` iletisinde "different supports", `zero_combination`'da "zero load" |
+| AC7 | PASS | altı çapa bit düzeyinde: `mesh_cantilever2d` 1908.3237613774095 (`4793a979cd435212`, `a627b5d4d61a4200`), `shell_cylinder` 30131.882810400843 (`ce282cdd37f56919`, `1581708cfbc900cb`), AX1 q4 455.28516090495594, AX1 h8 204.9945594821092, SX1 örnek 11352.463637595167, ızgara per-case + kombinasyon 3124.069453307912 (df0 ve F karmaları çapadaki); AY1–AY6, AX1–AX8, SY1–SY6, SX1–SX6 testleri, `test_shell.py`, `test_shell_study.py`, `test_bc.py`, `test_registry_features.py` geçti (aşağıdaki koşu; SX1 dikdörtgen strict xfail); `pytest -m baseline` 8 passed, yedi örnekte en büyük bağıl fark 0,00e+00 |
+| AC8 | **kısmen: dört PASS, iki FAIL (D2, L2; ikisi de yazım kapsamı)** | (U2) PASS: `resolved_configs.json` +4 / −0, yalnız iki girdide `"combinations": []` ve `"supports": null`; 15 girdi aynı. (A2) PASS: `api_surface.json` ve `list.txt` farkı yok. (D2) **FAIL**: `resolve.py`, `build.py`, `schema.py`, `boundary/cases.py`, `mesh_study.py`, `shell_study.py` farkı yok, ama `boundary/constrained.py`'de `__init__` dışında `PerCaseSupports` sınıf açıklamasına da iki satır eklendi (ağ ve kabuk fiziği de olabilir); öngörü "yalnız `__init__`" diyordu. (R2) PASS: `test_research_examples.py` değişmedi ve geçti. (C2) PASS: `catalog --write docs` fark üretmedi. (L2) **FAIL**: `vv_risk_kapsam.md` farkı iki yeni dosyadan geliyor ama yalnız sayılar değil: sınıflama listesine iki satır (`test_mesh_yaml_comb.py`, `test_shell_yaml_comb.py`: AS, IC, OG) ve boş hücre listesinde IC satırından `boundary` düştü (IC × boundary hücresi artık 2/15) |
+
+Ön kayıtta yazılmayan, kodla gelen küçük ekler: birden çok mesnet kümesi varsa `Setup.info["notes"]`'a bir satır
+("N support sets (one physics and factorisation each): a, c, d; b"); sıfır toplamlı kombinasyon iletisi "combination
+has zero load (its factors cancel)"; `examples/research/README.md` satırına `combinations` ve durum `supports`. Her
+mesnet kümesi kendi `MeshElasticity`'sini kurar (eleman matrisleri küme başına yeniden hesaplanır, paylaşılmaz; bellek
+küme sayısıyla çarpılır).
+
+Kurulum değişikliği (ön kayıtta yazıldığı gibi): AY4 `combinations` ve AX6 `combinations`, `case_supports` satırları
+listelerden çıktı (artık destekli; yerlerine AC1–AC6).
+
+Koşular (`PYTHONPATH=src`, `TMP` / `--basetemp` `.claude/tmp-toporlogy/meshcomb` altında, `-p no:randomly`):
+`test_mesh_yaml_comb test_shell_yaml_comb test_mesh_yaml test_mesh_yaml_ext test_shell_yaml test_shell_yaml_ext test_mesh_topology test_shell_study test_shell test_bc test_registry_features test_api_surface test_catalog test_catalog_ledger test_units test_research_examples test_cli test_architecture` → 364 passed, 1 skipped, 4 xfailed (2 dk 10 s; atlanan: gmsh yok, `test_registry_features.py:497`; xfail'ler önceden var olan AY2, SX1 dikdörtgen, KB3, U8). `pytest -m baseline` → 8 passed (1 dk 56 s), bağıl fark 0,00e+00. ruff (değişen dosyalar) ve mypy (`mesh_build.py`, `constrained.py`, iki yeni test dosyası) temiz; mypy'nin
+`test_vtu.py`'deki (içe aktarılan) ve `test_mesh_yaml.py`'deki (satır 68 ve 118, bu işte değişmeyen satırlar) hataları bu işle gelmedi.

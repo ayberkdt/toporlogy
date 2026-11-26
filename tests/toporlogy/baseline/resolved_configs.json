@@ -1830,6 +1830,7 @@
     "type": "passive"
    }
   ],
+  "combinations": [],
   "constraints": [
    {
     "name": null,
@@ -1875,6 +1876,7 @@
      }
     ],
     "name": "tip",
+    "supports": null,
     "weight": 1.0
    }
   ],
@@ -1943,6 +1945,7 @@
     "type": "passive"
    }
   ],
+  "combinations": [],
   "constraints": [
    {
     "name": null,
@@ -1987,6 +1990,7 @@
      }
     ],
     "name": "radial",
+    "supports": null,
     "weight": 1.0
    }
   ],
