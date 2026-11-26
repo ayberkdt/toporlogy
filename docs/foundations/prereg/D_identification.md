@@ -69,3 +69,41 @@ Run: `python -m pytest tests/toporlogy/test_material_identification.py -q -p no:
 TMP/TEMP and `--basetemp` under `.claude/tmp-toporlogy/D_identification`. Resource cap: seconds, < 100 MB.
 
 First result: appended below after the first run.
+
+
+## First result (appended 2026-11-27 02:25 +0300 by the clock; the runs were made between the prereg commit 02da4c4 at 02:17 and 02:25, the run time itself was not read from the clock)
+
+Command: `python -m pytest tests/toporlogy/test_material_identification.py -q -p no:randomly -p no:cacheprovider -s`.
+Final state: 28 passed, 1 skipped (D8), 1 xfailed (strict). Measured values (a scratch script re-evaluated the fits;
+`ruff` and `mypy` clean on the module):
+
+| ID | First result | Measured |
+|---|---|---|
+| D4a | PASS | max relative error 7.8e-16 (≤ 1e-8) |
+| D4b | **set-up error on the first run, then PASS** | see "Set-up fixes"; held-out relative error 4.4e-16 (≤ 1e-8) |
+| D4c | PASS | τ 2.2e-16, amplitudes 2.2e-16, M∞ 0, held-out 3.3e-16; 3 of 3 starts agree; weighted rms 8.9e-15 |
+| D4d | PASS | condition 20.7, rank 4 of 4 (< 1e3) |
+| D4e | PASS | analytic vs central-difference Jacobian ≤ 1e-6 |
+| D5a (condition, flags, weakest combination, describe) | PASS | condition 8.0e8 (> 1e4), rank 3 of 4 at 1e-8; weakest vector (equilibrium, A_0.1, A_10, A_1000) = (−0.703, 1.1e-6, −0.007, +0.711): squared weight on the slow parameters 0.99995, \|A_1000\| 0.711, \|equilibrium\| 0.703; `describe()` names A_1000 and equilibrium (the third prereg'd component, A_10, is 0.007, below the 0.05 print threshold; the check asserted only the two dominant names) |
+| D5a (std of A_1000 above the amplitude) | **FAIL → xfail(strict)** | `std_nominal` is None: the condition 8.0e8 puts the smallest singular value below `RANK_RTOL` · s_max, so by design (as in `identify`) no covariance is returned. The prereg'd estimate "condition ≳ 1e5" was a lower bound and the prediction that a finite std exists was wrong. Post hoc (not preregistered, labelled in the test): with `rank_rtol=1e-12` the same design gives std/amplitude = 3.5e6. Ledger entry in `ledger_additions/D_identification.json` |
+| D5b | PASS | rank 2 of 3, condition 2.3e16, weakest vector (−0.0624, −1.1e-16, +0.9981) = −v of the derived v = (g, 0, −1)/√(1+g²), g = 0.0625 (match ≤ 1e-8); std None; two temperatures: rank 3, identifiable |
+| D6a | PASS | relative errors A 2.0e-14, n 7.8e-16, Q 2.2e-16 |
+| D6b | PASS | A 1.8e-15, n 2.2e-16, Q 2.2e-16 from the start (3A, n+0.7, 0.6Q); 10 evaluations |
+| D6c | PASS | seed 7: estimate (ln A, n, Q) = (−20.0317, 4.50264, 249898) vs truth (−20.0301, 4.5, 250000), std_residual (2.7e-3, 9.3e-3, 242), z = (−0.57, 0.28, −0.42); std equals the dense numpy reference to 1e-8; held-out relative prediction errors −1.3e-3 and −1.7e-3 (≤ 5 %) |
+| D6d | PASS | \|nonlinear − log-linear\| / std = (0.025, 0.013, 0.0009) (≤ 0.1) |
+| D6e | PASS | unit "1/h" refused ("convert_to_si"); converted data: A exact; mislabelled "1/s": A/A_true = 3600.0000000000327, n, Q unchanged to 1e-14 |
+| D7a–D7f | PASS | all invalid inputs raise (ValueError / ValidityBoxError); checksum equals the independent hash |
+| D8 | NOT VERIFIED | skipped test with that reason; no licensed data |
+
+### Set-up fixes (no threshold changed)
+
+* D4b/D4c held-out times: the preregistered `logspace(-2.7, 4.7, 37)` has 3 points (k = 0, 18, 36) that coincide exactly with grid points
+  (the first runs failed my own "not in the grid" assertion; removing the two end points was not enough, k = 18 is exactly
+  10 s). The held-out set became the 80 geometric midpoints of the training grid, `sqrt(t_i t_{i+1})`. The thresholds
+  (1e-8 fixed, 1e-6 free) are unchanged.
+* The module uses `R_GAS` from `core/creep.py` and writes the log of the Arrhenius law directly (so a negative noisy Q
+  can still be predicted); `ArrheniusFactor` enters as a labelled consistency cross-check in the tests, not in the fit
+  (the prereg text said the nonlinear model uses it; that was a design statement, not a check).
+* D5a `describe()` threshold: the report prints components ≥ 0.05; see the table.
+
+Follow-up (separate preregistration): D8 with licensed data; profile likelihood / bootstrap; joint creep + relaxation fits.

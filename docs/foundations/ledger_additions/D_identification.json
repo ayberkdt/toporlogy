@@ -1,0 +1,12 @@
+[
+  {
+    "nodeid": "tests/toporlogy/test_material_identification.py::test_D5a_std_of_the_weak_amplitude_exceeds_the_amplitude",
+    "kind": "pre-registered check failed",
+    "model_backend": "numpy",
+    "reason": "Preregistered prediction that the nominal linearised std of the A_1000 amplitude (relaxation data only on 1e-3..1e-1 s, tau fixed at 0.1/10/1000 s, 1 % noise) is finite and exceeds the amplitude was wrong: the measured condition number of the design is 8.0e8 (the prereg only bounded it below by ~1e5), the smallest singular value falls below RANK_RTOL=1e-8 times the largest (rank 3 of 4), so the report returns std_nominal=None by design (as identification.identify does). The ambiguity is flagged (condition > 1e4, weakest combination 0.711*A_1000 - 0.703*equilibrium); only the numeric std is undefined. Post hoc and labelled: with rank_rtol=1e-12 the std/amplitude ratio is 3.5e6.",
+    "risk": "low",
+    "resolution": "Kept as xfail(strict) with the measured values; the post hoc check test_D5a_post_hoc_std_with_a_stricter_rank_tolerance records the ratio under the stricter rank tolerance.",
+    "record": "docs/foundations/prereg/D_identification.md",
+    "slow": false
+  }
+]
