@@ -200,16 +200,20 @@ PHYSICS: tuple[Physics, ...] = (
              T + "test_modal.py::test_response_gradients"),
             "E_active scales K; mass from the density (linear or two-range)"),
     Physics("nonlinear_elasticity", "r(u; E) = f_int(u) - f = 0 (total Lagrangian, SVK or neo-Hooke; API: "
-                                    "small-strain models of core.constitutive incl. J2 plasticity, no sensitivity)",
+                                    "small-strain models of core.constitutive incl. J2 plasticity, design "
+                                    "sensitivity by the path adjoint over the load increments)",
             "consistent tangent K_T(u)", "symmetric; positive definite only on the stable branch",
             "general Newton (solvers.newton) with load steps; arc length / displacement control through "
-            "continuation_problem (API); one adjoint solve with K_T per case", ("cpu",), (2, 3), ("Q4", "H8"),
+            "continuation_problem (API); one adjoint solve with K_T per case (path-dependent: at most one per "
+            "load increment)", ("cpu",), (2, 3), ("Q4", "H8"),
             "axis-aligned fixed DOFs, one support set", "Newton residual and error contraction; "
                                                         "NonlinearConvergenceError with the history",
             "assembled K_T per Newton step", (T + "test_nonlinear.py::test_v3_consistent_tangent_finite_difference",
                                                T + "test_nonlinear.py::test_v5_large_deflection_cantilever_elastica",
                                                T + "test_nonlinear.py::test_v6_end_compliance_gradient_finite_"
-                                                   "difference"),
+                                                   "difference",
+                                               T + "test_plastic_sensitivity.py::test_ps2a_ps4_q4_linear_hardening_"
+                                                   "two_cases"),
             "E_active through an energy interpolation; general D with material svk only"),
     Physics("tensor_elasticity", "K(C) u = f (linear, small strain)",
             "K(C), linear in the element tensors C_e (Q4, H8: KE(C) = sum_a c_a KE(S_a))",
