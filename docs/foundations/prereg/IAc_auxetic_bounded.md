@@ -41,3 +41,5 @@ uniaxial stress in both directions, from the full compliance (shear free): ν12 
 values (−2.27, min eigenvalue 2.3e-3), so the response does not live in grey or void material. Together with IA and
 IAb: the stiffness-ratio objective is exploitable by shear coupling, the compliance objective with one modulus by a
 mechanism; bounding E1, E2 and G12 removes both.
+
+Figure (tiled 3 × 3, base cell outlined): `fig_iac_cell.png` / `.pdf`; `scripts/ia_design.py bounded` re-runs IC2 deterministically (same ν12 −2.3365, ν21 −0.1699; full C and S in `IAc_design.json`) and `scripts/ih_cells_figure.py iac` draws it (datawiz audit 0 errors). The cell: wavy horizontal beams joined by staggered vertical posts.

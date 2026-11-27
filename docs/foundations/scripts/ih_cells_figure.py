@@ -3,7 +3,8 @@ the filtered density of the square and the rhombic cell, each tiled 3 x 3 so tha
 
     python docs/foundations/scripts/ih_cells_figure.py            # IH post hoc cells -> fig_ih_cells
     python docs/foundations/scripts/ih_cells_figure.py ip         # IP projected cells -> fig_ip_cells
-    python docs/foundations/scripts/ih_cells_figure.py ia         # IA auxetic cell -> fig_ia_cell
+    python docs/foundations/scripts/ih_cells_figure.py ia         # IA cell -> fig_ia_cell
+    python docs/foundations/scripts/ih_cells_figure.py iac        # IAc auxetic cell -> fig_iac_cell
 
 Data: docs/foundations/data/ih_cells_x_phys.json (written from the post hoc runs); the meshes are rebuilt here
 exactly as in scripts/ih_starts_posthoc.py. Output: docs/foundations/fig_ih_cells.{pdf,png} + datawiz audit.
@@ -35,7 +36,8 @@ def meshes() -> dict[str, tuple[np.ndarray, np.ndarray, np.ndarray]]:
 def main(which: str = "ih") -> None:
     data, values, out = {"ih": ("ih_cells_x_phys.json", "IH_starts_posthoc.json", "fig_ih_cells"),
                          "ip": ("ip_cells_x_phys.json", "IP_designs.json", "fig_ip_cells"),
-                         "ia": ("ia_cell_x_phys.json", "IA_design.json", "fig_ia_cell")}[which]
+                         "ia": ("ia_cell_x_phys.json", "IA_design.json", "fig_ia_cell"),
+                         "iac": ("iac_cell_x_phys.json", "IAc_design.json", "fig_iac_cell")}[which]
     raw = json.loads((HERE / "data" / data).read_text(encoding="utf-8"))
     x = {k: np.asarray(v) for k, v in raw.items()}
     res = json.loads((HERE / values).read_text(encoding="utf-8"))
@@ -64,10 +66,13 @@ def main(which: str = "ih") -> None:
         ax.set_ylim(lo[1] - pad, hi[1] + pad)
         ax.set_aspect("equal", adjustable="datalim")         # equal boxes: the titles share one line
         ax.set_axis_off()
-        if which == "ia":
+        if which in ("ia", "iac"):
             d = res["design"]
-            ax.set_title(f"{titles[key]}: " + r"$\nu_{21}$" + f" = {d['nu21_stress_y']:.2f}, " + r"$\nu_{12}$"
-                         + f" = {d['nu12_stress_x']:.2f}", loc="left")
+            def num(v: float) -> str:
+                return f"{v:.2f}".replace("-", "−")         # typographic minus
+
+            ax.set_title(f"{titles[key]}: " + r"$\nu_{12}$" + f" = {num(d['nu12_stress_x'])}, " + r"$\nu_{21}$"
+                         + f" = {num(d['nu21_stress_y'])}", loc="left")
         else:
             r = res[key]
             ax.set_title(titles[key] + r": $\kappa/\kappa_{\mathrm{HS}}$" + f" = {r['ratio_hs']:.3f}", loc="left")

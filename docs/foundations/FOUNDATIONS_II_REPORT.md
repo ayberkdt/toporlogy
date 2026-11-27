@@ -83,7 +83,7 @@ ratios are ≈ 0); with the compliance-based ratio and only E1 bounded the optim
 E1, E2 and G12 bounded the cell is auxetic under uniaxial stress in both directions (IAc: ν12 = −2.34, ν21 = −0.17,
 the 0/1 design keeps it).
 
-Figures of the cells: `fig_ih_cells.png` (post hoc, grey edges), `fig_ip_cells.png` (projected).
+Figures of the cells: `fig_ih_cells.png` (post hoc, grey edges), `fig_ip_cells.png` (projected), `fig_iac_cell.png` (auxetic).
 
 Figure of the designs: `FIG_DESIGNS.md` (datawiz audit 0 errors).
 
