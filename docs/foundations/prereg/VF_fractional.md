@@ -103,4 +103,45 @@ value, never loosened.
 
 ## First result
 
-(appended after the first run)
+
+
+### Record written 2026-11-27 06:16 +0300 (clock). Runs by the clock: 06:04, 06:05 (first full run), 06:06 (collection error), 06:07, 06:11
+
+**First full run (06:05, SHA 884cf9e + module + test file): 52 passed, 2 failed.**
+
+* VF1 PASS: worst relative error vs mpmath over x ∈ [0, 1000], 24 points: α = 0.3 1.19e-13, α = 0.5 2.56e-14, α = 0.8
+  1.51e-13, α = 1 0 (threshold 1e-10).
+* VF2 PASS: worst 3.37e-12 over α ∈ {0.3, 0.5, 0.8}, β ∈ {α, 1.5, 1+α, 2, 2.7} (threshold 1e-9).
+* VF3 PASS: α = 0.1 2.86e-15, α = 0.95 3.25e-13, α = 0.99 2.70e-13 (threshold 1e-8).
+* VF4 PASS: (a) series vs mp.quad integral, (b) asymptotic vs integral at x = 300, both ≤ 1e-20; (c) `invertlaplace` vs
+  reference ≤ 1e-10 (all three subtests passed; the actual margins were not printed).
+* VF5 PASS: fractional Zener relaxation vs `invertlaplace`: worst relative 8.1e-16 (α = 0.3), 1.5e-16 (0.5), 1.4e-16
+  (0.8) (threshold 1e-8; measured in a separate post-run script, same inputs).
+* VF6 PASS (creep, KV, Maxwell G and J vs `invertlaplace`, threshold 1e-8; `alpha = 1` KV relaxation refused).
+* VF7 PASS: α = 1 limits to 1e-13 (regression against `core.viscoelastic`, labelled so); continuity max_t |G_α − G_1|/G1 =
+  0.537 (1−α) and max_ω |G*_α − G*_1|/G1 = 0.779 (1−α) at α = 0.99, 0.539 and 0.785 (1−α) at α = 0.999 (threshold
+  2(1−α); the estimate π/4 for the modulus was right).
+* VF8 PASS for α ∈ {0.3, 0.5, 0.8, 0.99, 1}: passivity, independent complex-power agreement, peak (G1/2) tan(πα/4) at
+  ωτ = 1, argmax, symmetry, slopes, plateau moduli, fractional Maxwell phase angle.
+* VF9: **FAIL for α = 0.3 (strict monotone decrease)**: e_t = 1.065e-1, 1.081e-2, 1.881e-4, 8.892e-5, 8.980e-5 for
+  N = 5, 9, 17, 33, 65; e_t(65) > e_t(33). α = 0.5: 1.389e-1, 2.555e-2, 5.390e-4, 1.457e-5, 1.379e-5 and α = 0.8: 2.750e-1,
+  1.168e-1, 4.982e-3, 1.909e-5, 3.504e-7: strictly decreasing, PASS. Thresholds e_t(17) ≤ 5e-2, e_t(33) ≤ 5e-3,
+  e_t(65) ≤ 5e-4 and e_ω(65) ≤ 5e-2 PASS for all three orders (for α = 0.3 asserted only in the 06:07 run, after the
+  test was split, because the first assertion of the unsplit test failed; e_ω: α = 0.3 1.249e-1 … 3.378e-4; α = 0.5 1.759e-1 …
+  4.626e-5; α = 0.8 2.742e-1 … 1.084e-6).
+  Diagnosis (one run, bounded): the maximum of the error on the fit grid is at t = 1e-4 = t_lo = the smallest branch time;
+  the weighted L2 residual of the NNLS fit decreases (2.778e-4 → 2.619e-4) while the max norm does not. The hypothesis
+  (max norm strictly decreasing) is wrong, not the code; kept as `xfail(strict)` for α = 0.3, ledger entry
+  `ledger_additions/VF_fractional.json`. Thresholds not changed.
+* VF10 PASS: error/bound = 0.972 (N = 17), 0.079 (N = 33), 0.031 (N = 65); max absolute stress error 2.03e-1, 1.07e-3,
+  3.93e-4 Pa; N = 65 relative ≤ 1e-3.
+* VF11: (b), (c), (d) PASS; (a) **test set-up error**: `math.factorial(i)` overflowed float conversion; the naive series
+  is now accumulated by the term recurrence in double precision (same hypothesis: absolute error > 1). Fixed before the
+  re-run; no threshold changed.
+
+**Re-run (06:07): 56 passed, 1 xfailed** (the xfail is VF9, α = 0.3). Test-file edits between the first run and the final
+state: the VF9 test split into a monotonicity test (α = 0.3 xfail strict) and a threshold test, the VF11(a) fix above, and
+lint-only changes (`functools.cache`, an unused variable, an f-string, removal of an unused helper); in the module only a
+docstring line was wrapped.
+
+**Final run 06:15 +0300 (clock): 56 passed, 1 xfailed in 31 s. test_viscoelastic.py was started together with it but stopped after 4 min (not needed: viscoelastic.py is unchanged); not run to completion.
