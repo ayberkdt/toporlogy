@@ -30,3 +30,9 @@ the 1500-iteration cap without reaching the KKT tolerance (residual 4.2e-2), so 
 the 28.4 % is the gain reached from that start, not the optimal gain. With creep, compliance-at-service-time
 optimisation changes the design substantially for this synthetic material (unlike the linear viscoelastic cases),
 because the creep strain depends on the local stress level and not on the stiffness.
+
+## Post hoc continuation (not preregistered; `scripts/co6_continue_posthoc.py`, `CO6_continue_posthoc.json`; recorded 2026-11-27 04:46 +0300)
+
+Restarting MMA from the capped creep design (asymptotes reset): 481 more iterations to KKT 9.8e-5, J(1000 s)
+8.59535e6 (−0.008 % vs the capped run), J(0) 3.7605e6. The converged creep design is 28.40 % better than the elastic
+design at 1000 s (8.59535e6 vs 1.20047e7); the capped run's value was already within 1e-4 of it.
