@@ -102,3 +102,11 @@ if F2-1..F2-4 hold. If a check fails, its test stays as strict xfail with the me
 
 Run: `python -m pytest tests/toporlogy/test_fem_rates_investigation.py -q -p no:randomly [-m slow]`.
 First results are appended below (each with a clock time).
+
+## Amendment A1 (2026-11-27 04:45 +0300, before any test of this file was run)
+
+F4-5 (ii): the independent collapsed Gauss-Legendre rule uses 14 points per direction, not the 12 written above: the
+collapsed t-degree of a degree-22 monomial reaches 24, beyond the exactness (23) of 12 points. Threshold unchanged (1e-9).
+F4-1 uses `ElasticProblem.errors` called with a lightweight stand-in for `self` (mesh, ref, D, k, thickness,
+element_values) so that no sparsity pattern is built for the solve-free interpolation levels; the error code is the same.
+F4-2 measures the +12 error-degree variant on both error norms; the +6 variants are in the table. No threshold changed.
