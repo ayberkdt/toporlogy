@@ -45,11 +45,26 @@ were not repeated; the record lists them.
 * **Distorted-mesh nonlinear element (N3).** There is no finite-strain element on a general Q4/T6/H8/T10 mesh; the grid
   kernel has a constant element Jacobian. Homogeneous deformation patches on distorted meshes, mesh convergence of such an
   element and "agreement with the grid path" are NOT VERIFIED. `fem/mesh` is small-strain only.
-* **R07 (exactly singular accepted point) is still present.** With model A and ds = 0.01 `arc_length` accepts the point
-  with K₁₁ = 0 exactly and the next predictor K⁻¹q fails (`ContinuationError`, `step_limit`, cause `singular_tangent`).
-  The test `test_n4b_*` asserts this measured failure; the desired behaviour stays in the strict xfails of
-  `test_bifurcation.py`. No bordered or previous-tangent predictor exists, so branch orientation at a singular point and
-  repeated-eigenvalue subspace diagnostics are NOT VERIFIED (not implemented).
+* **R07, the predictor at an exactly singular tangent, is fixed (R07_bordered); two neighbours are not.** When the
+  predictor solve K⁻¹q fails, `arc_length` now takes the direction from the null vector of the bordered system
+  [[K, −q], [Δxᵀ_prev, ψ² qᵀq Δλ_prev]] (orientation ⟨t, t_prev⟩ > 0), or from the previous increment where that matrix is
+  singular too (a bifurcation point: the null space of [K, −q] has dimension two and no unique direction exists); a start
+  without a previous increment uses the null vector of [K, −q] (oriented by `direction`; a bifurcation start without
+  `start_tangent` still fails, nothing is invented). The corrector is unchanged, K is not regularised. Model A with
+  ds = 0.01 (the N4b case) now passes the accepted point with K₁₁ = 0 exactly and stays on v = −λ/k_a to 0.0; the truss
+  started exactly at its limit point follows the closed form to 9.1e-14 (1.1e-13 upward), leaves it downward, turns at the
+  second limit point (λ_min = −0.9905 on the sampled path) and rises. The change is bitwise neutral wherever the predictor
+  solve succeeds (sha256 fingerprints of the truss, model A and model S runs equal before and after); a nearly singular
+  tangent with a tiny nonzero pivot keeps the old predictor, which is accurate there. The switch is the solver's own failure
+  (`LinearSolveFailure` or a non-finite K⁻¹q), not a condition-number threshold; the rank decision on the dense bordered
+  matrix (n + 1 ≤ 4000) uses singular values ≤ (n + 1) ε σ_max.
+  Not fixed: (1) the strict xfails `test_a1_*` / `test_a2_*` of `test_bifurcation.py` still fail, now in `locate_critical`,
+  which raises "crossing eigenvalue not bracketed" when the critical eigenvalue is exactly 0 at an accepted point; (2) the
+  corrector is unchanged: a predicted point within a few ulps of a limit point (ψ = 0) can raise an uncaught
+  `ZeroDivisionError` in the root-angle selection (2 of 6 sampled offsets); (3) `displacement_control` has the same
+  `K⁻¹q` predictor and was not changed. Repeated-eigenvalue subspace diagnostics are NOT VERIFIED (not implemented).
+  The truss test uses a test-only subclass that sets tangent entries ≤ 1e-12 ‖K‖₁ to 0.0 (the rounding of an exact zero at
+  w₁); the truss cannot be driven onto its limit point by ds alone.
 * **Finite-strain plasticity and viscoelasticity are NOT implemented.** J2 is small strain (no multiplicative split, no
   objective rate); replacing ε by a logarithmic strain is not a valid substitute and no claim is made. Viscoelastic and
   rate-dependent laws are small-strain history models outside `NonlinearElasticity` (it refuses `physical = True`).

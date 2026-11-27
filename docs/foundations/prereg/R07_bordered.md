@@ -78,3 +78,38 @@ eigenvalue subspace diagnostics, branch switching from a singular accepted point
 
 Run: `python -m pytest tests/toporlogy/test_continuation_singular.py -q -p no:randomly` (plus the directly related
 `test_nonlinear_foundations.py -k n4`, `test_bifurcation.py`, `test_nonlinear_solvers.py`). First result appended below.
+
+## First result (2026-11-27 09:10 +0300, SHA `36c020f` + the production change and `tests/toporlogy/test_continuation_singular.py`)
+
+`python -m pytest tests/toporlogy/test_continuation_singular.py -q -p no:randomly`: 12 passed on the first run; no
+threshold, input or assertion was changed after that run. (Test-set-up notes, all made before the first run: the R5 run
+list has two cases, truss ds = 0.01 and model A ds = 0.0137, not three: model S is covered by the fingerprint script
+only, below; the closed-form monotonicity of λ for the upward truss start, P′ > 0 for w < w₁, was asserted in addition to
+the registered checks.)
+
+| ID | Result | Measured |
+|---|---|---|
+| R1 | PASS | 3 points, K₁₁ at point 1 = 0.0 exactly, λ = 0, 1, 2 (error 0.0), v + λ/k_a error 0.0, u = 0.0, residual 0.0 at both corrector entries (the predicted points were already equilibria); step 2 note "predictor: previous increment", code converged, 0 rejected. The bordered matrix has a zero row (bifurcation), so the previous increment was used, as derived |
+| R2 | PASS | start K_vv = 0.0 (after the test-only zero rounding), K_uu > 1. Downward start: 22 points, curve error 9.1e-14, u 0.0, λ₁ = 0.957598076, λ_min = −0.990524 at point 12 (registered window −1 − 1e-9 … −0.97), monotone down then up, first Δv = −0.0100000000000 along the start tangent, note "bordered null vector". Upward start: 11 points, curve error 1.1e-13, Δv₁ = +0.0100000000000, λ₁ = 0.952401924, λ strictly decreasing |
+| R3 | PASS | no start tangent: direction +1: 11 points, curve 1.1e-13, Δv₁ = +0.01 (λ₁ = 0.952401924, the same path as the upward R2); direction −1: 22 points, curve 9.1e-14, Δv₁ = −0.01; note "null vector of [K, -q]" |
+| R4 | PASS | (a) k_r = 0, no start tangent: ContinuationError step_limit / singular_tangent, 1 accepted point; (b) with start tangent: 3 points, λ = 0, 1, 2, v + λ/k_a error 0.0, u 0.0 |
+| R5 | PASS | in-process: truss (26 points) and model A ds = 0.0137 (3 points) signatures equal bitwise to the switched-off run, no record carries a "predictor:" note. Independent: the three fingerprints recomputed after the change are identical to the three of `36c020f` (`01cca023…`, `42ceadb4…`, `054a2f96…`; truss 26 points / 0 rejected, model A 3 / 0, model S 3 / 0) |
+| R6 | PASS | fix disabled: model A ds = 0.01: step_limit / singular_tangent, 2 accepted points, last λ = 1 within 1e-12; truss exact start, with and without start tangent: step_limit / singular_tangent at the 1-point path |
+| R7 | NOT PROMOTED (still fails, for a different cause) | `test_a1_*` and `test_a2_*[plus|minus]` run with `--runxfail` no longer fail in the predictor: the path now passes the singular point (point 1: λ = 1, K = diag(0, k_a)). They fail in `locate_critical`: `ValueError: crossing eigenvalue not bracketed (0.000e+00 at point 1, -1.000e+00 at 2)` — the crossing eigenvalue is exactly 0 at the accepted point, so f_A · f_B < 0 is false. This is a second defect, in `locate_critical`, not in the predictor. The strict xfails stay (they still fail); neither the markers nor the ledger entries were touched. Their stated reason (predictor failure) is now outdated and needs the integrator's ledger update |
+
+Related existing tests run after the change (three whole files: `test_nonlinear_foundations.py`,
+`test_bifurcation.py`, `test_nonlinear_solvers.py`): 104 passed, 10 xfailed (all strict xfails still failing as before,
+none XPASS), 1 failed = N4b as written (it asserted the old failure; amended below). After the amendment
+`test_nonlinear_foundations.py + test_continuation_singular.py -k "n4 or r"`: 67 passed.
+
+Finding, not fixed (corrector unchanged by the task): with ψ = 0, a step whose predicted point lies within a few ulps of
+a limit point makes the corrector's first Newton solve K⁻¹ ill-conditioned; 2 of 6 sampled ulp offsets around w₁ raised an
+uncaught `ZeroDivisionError` in the root-angle selection (`cos` in `arc_length`) instead of a `ContinuationError` /
+rejected step.
+
+## Amendment: N4b test (same clock check as above)
+
+`test_n4b_*` asserted the failure as an open defect and became false with the fix. It now runs with the fix switched
+off (`monkeypatch` of `_singular_predictor`) and keeps the same asserts and thresholds; renamed
+`test_n4b_r07_exactly_singular_accepted_point_breaks_the_old_predictor`. The desired behaviour is R1 / R6a here.
+
