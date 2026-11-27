@@ -80,3 +80,37 @@ Notation: n×n unit-square meshes, E = 1 (`moduli(ν)` conventions), G = E/(2(1+
 Negative controls: X1a-neg, X2c equal-order, X2e unpreconditioned, X3 Q4, X4 reduced integration. Run (per brief rule 5):
 `python -m pytest tests/toporlogy/test_mixed_kg.py -q -p no:randomly -p no:cacheprovider` with the TMP/TEMP/basetemp of the brief.
 First result appended below.
+
+## First result (run 2026-11-27 03:06 +0300, SHA 5be9284 + prereg commit + code and tests below)
+
+`python -m pytest tests/toporlogy/test_mixed_kg.py tests/toporlogy/test_mesh_locking.py -q -p no:randomly`: 74 passed, 3 xfailed
+(2 historical in test_mesh_locking.py, 1 new: X2e plain-MINRES control). `test_mesh_assembly.py` (also uses the λ-based class): 55 passed, 3 historical xfails.
+Set-up corrections made during the first runs, no threshold changed: (1) X2d: `f[free2, 0]` indexed a 1-D load (test bug);
+(2) X2e: the helper asserted `converged` also for the plain (unpreconditioned) control, which the prereg does not require;
+the assertion now applies to the preconditioned runs only, the plain control is counted as preregistered; (3) the X2e test was
+split in two after the first run so the plain-control prediction failure is recorded as its own strict xfail.
+
+| ID | Result | Measured |
+|---|---|---|
+| X1a | PASS | u 2.6e-15 / 2.4e-15 / 2.4e-15, p 3.8e-14 / 3.2e-14 / 1.0e-14 at ν = −0.5 / 0 / 0.3 |
+| X1a-neg | PASS | T6 7.7e-2, Q9 2.5e-2 (n = 4) |
+| X1b | PASS | u-error rates (8→16) 2.99 / 3.00 (T6, Q9, ν = 0), 3.04 / 3.05 (ν = 0.3); difference rates 3.88 / 3.96 / 3.86 / 3.94; pressure rates 2.07 / 2.03 / 2.06 / 2.03 |
+| X1c | PASS | u_K vs u_λ 3.4e-15, p_K vs p_λ − 2G/3 div u_h 1.7e-14, p_K vs mean stress 1.5e-14; λ = 0 refused by the old class, accepted by MixedKG (ν = 0) |
+| X1d | PASS | old class equals the pre-change fingerprint bitwise (`np.array_equal`) at λ = 7 and λ = ∞ on this machine |
+| X2a | PASS | T6/Q9, ν = 0.4999 and 0.5, rates (16→32): u 2.93, p 1.97 (T6) / 1.98 (Q9), div (K = ∞) 1.94 / 1.95; gauge True only at ν = 0.5; weak constraint ≤ 1e-10 scale; uniformity e(0.4999)/e(0.3) = 1.04 (T6), 0.99 (Q9) at n = 16 |
+| X2b | PASS | inertia (98, 25, 0) at ν = 0.3 and 0.4999; K = ∞ clamped (98, 24, 1) without gauge, (99, 25, 0) with the gauge row; cantilever (80, 15, 0) |
+| X2c | PASS | T6: one zero mode, β 0.332 → 0.331 (n = 4 → 16); Q9: 0.453 → 0.437; control Q4–Q1 vertex: 8 zero modes at every n (β 0.19 → 0.056); Q4–P0: 2 zero modes (β 0.34 → 0.11) |
+| X2d | PASS | mean 1.3e-18, u vs `solve_with_gauge` 1.3e-14, p up to constant 2.7e-13; `check_compatible` False on net inflow; `MixedKG.solve` raises; old class does not raise, max abs(B u) = 3.1e-2 |
+| X2e | PASS (preconditioned) / FAIL (control) | preconditioned MINRES 15 → 9 iterations (n = 8 → 16); plain MINRES 120 → 148 (ratio 1.23 < 1.5), both runs stopped at residuals 3.9e-4 / 1.8e-3 without reaching rtol 1e-6 → kept as strict xfail, ledger entry |
+| X3 set-up | PASS | own cantilever R = 0.3900955258 = `cantilever_case` R |
+| X3a | PASS | Q4 d/d_pred = 1.17, 1.12, 1.10 at hx/D = 1, 2, 4; d ratios 3.82, 3.95; Q9 R = 0.99998, 0.99978, 0.99791 |
+| X3b | PASS | ny = 1, 2, 4: R_Q4 = 0.674, 0.892, 0.971; R_Q4IM = 0.99963, 0.99984, 0.99995; Q4 d/d_pred = 1.38 each (inside [0.3, 1.5], close to the upper edge) |
+| X3c | PASS | κ₁ = 2.1e7, 1.2e8, 5.7e8 (×5.9, ×4.7); d = 1.56, 0.39, 0.098 (×4.0, ×4.0); scaled-solve change 4.7e-11, refinement change 5.4e-11 |
+| X4a | PASS | full 3, SRI 3 for n = 1…4; one-point 5, 6, 6, 6 (bounds 5, 6, 5, 5); production (degree 1) equals dense in every case |
+| X4b | PASS | ‖K z‖/‖K‖ ≤ 2.3e-16 for n = 1…4 |
+
+Raw output: the `-s` prints of the test run (each test prints its measured values). Limitations: 2-D plane strain only for the
+K-based class (3-D implemented but not tested, A_dev is then singular on dilatations but the saddle matrix is not); scalar G, K;
+T6/Q9 Taylor–Hood with continuous vertex pressure; no B-bar/EAS element was implemented (X4 asks for a patch/tangent only "if
+implemented"); the X3 law constant 1.1–1.4 is a trial-field estimate, not a proof. Follow-ups (separate preregistrations): 3-D
+H8–Q1 / T10–T4 K-based tests, heterogeneous/anisotropic split, derivatives w.r.t. K and G (WP08 X03).
