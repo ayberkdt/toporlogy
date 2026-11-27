@@ -132,3 +132,15 @@ for the isotropic neo-Hooke only (the condensation uses sigma_zz alone); SVK pla
 plane-stress constants, not a condensed 3-D body (as `core/constitutive.py` states). Follow-up (separate
 preregistration): a distorted Q4/H8 finite-strain element with patch and convergence tests; a bordered predictor for
 `arc_length` and a fix of R07.
+
+## Update to N4b / N4c (2026-11-27 09:11 +0300, R07_bordered)
+
+The N4b row above is the measurement at `5be9284` and stays as measured. `prereg/R07_bordered.md` (base `36c020f`) adds
+the bordered / previous-increment predictor to `arc_length`: with it, the same run (model A, ds = 0.01) passes the point
+with K11 = 0 exactly and stays on v = -lambda/k_a (R1). `test_n4b_*` now runs with that predictor switched off (renamed
+`test_n4b_r07_exactly_singular_accepted_point_breaks_the_old_predictor`, same asserts) and keeps the old failure as a
+negative control. N4c is now partly done: the bordered / previous-increment predictor and the branch orientation at a
+singular accepted or start point are VERIFIED on model A and the truss (R1-R4 there); repeated-eigenvalue subspace
+diagnostics remain NOT VERIFIED. The strict xfails `test_a1_*` / `test_a2_*` of `test_bifurcation.py` still fail, now in
+`locate_critical` (crossing eigenvalue exactly 0 at an accepted point, "not bracketed"), not in the predictor (R7).
+

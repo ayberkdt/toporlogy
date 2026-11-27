@@ -23,6 +23,7 @@ from toporlogy.core.constitutive import (InadmissibleState, J2Plasticity, Kinema
 from toporlogy.core.domain import Domain
 from toporlogy.fem.elements import D_iso
 from toporlogy.fem.nonlinear import NonlinearElasticity
+from toporlogy.solvers import continuation
 from toporlogy.solvers.continuation import (ArcLengthSettings, ContinuationError, TangentSpectrum, arc_length,
                                             find_critical, locate_critical)
 from toporlogy.solvers.newton import LinearSolveFailure, Linearization
@@ -631,11 +632,13 @@ class _PolynomialModel:
         return out
 
 
-def test_n4b_r07_exactly_singular_accepted_point_still_breaks_the_predictor():
-    """N4b (R07 re-check, measured): model A with ds = 0.01 accepts the point (0, -0.01) at lam = 1 where K11 = 0
-    exactly; the next predictor K^-1 q fails. Asserts the measured failure (ContinuationError step_limit, cause
-    singular_tangent, last accepted lam = 1 within 1e-12): a characterisation of the open defect, not the desired
-    behaviour (that stays in the strict xfails test_a1/test_a2 of test_bifurcation.py)."""
+def test_n4b_r07_exactly_singular_accepted_point_breaks_the_old_predictor(monkeypatch):
+    """N4b (R07 re-check, measured; kept as the characterisation of the OLD behaviour after R07_bordered): model A with
+    ds = 0.01 accepts the point (0, -0.01) at lam = 1 where K11 = 0 exactly; the predictor K^-1 q fails. With the
+    bordered / previous-increment predictor switched off (``_singular_predictor`` finds nothing, the code path before
+    R07_bordered) it asserts the measured failure (ContinuationError step_limit, cause singular_tangent, last accepted
+    lam = 1 within 1e-12). The fix itself is tested in ``test_continuation_singular.py`` (R1, R6a)."""
+    monkeypatch.setattr(continuation, "_singular_predictor", lambda *a, **k: None)
     m = _PolynomialModel()
     st = ArcLengthSettings(ds=0.01, rtol=1e-12, eta_tol=0.0, max_steps=500)
     with pytest.raises(ContinuationError) as ei:
