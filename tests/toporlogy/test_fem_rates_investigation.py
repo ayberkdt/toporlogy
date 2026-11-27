@@ -82,7 +82,7 @@ def test_f2_1_curved_t10_cell_integrand_degree_and_quadrature_error():
     R = sp.Rational
     nodes = [[R(float(v)) for v in V[i]] for i in range(4)]
     for k, (i, j) in enumerate(_EDGES):
-        nodes.append([R(float((V[i, a] + V[j, a]) / 2)) + cc * R(float(h * u[k, a])) for a in range(3)])
+        nodes.append([(nodes[i][a] + nodes[j][a]) / 2 + cc * R(float(h * u[k, a])) for a in range(3)])
     x = sp.Matrix([sum(N[i] * nodes[i][a] for i in range(10)) for a in range(3)])
     J = x.jacobian(xi)
     cof = J.cofactor_matrix()
@@ -137,27 +137,21 @@ def test_f2_2_historical_patch_numbers_are_reproduced():
     assert eu3 <= 1e-12
 
 
-def _valid_seeds(curved, count=5, start=3):
-    seeds = []
-    refused = []
-    s = start
-    while len(seeds) < count:
+def test_f2_3_patch_error_against_quadrature_degree():
+    """A seed whose mesh has an inverted cell at any of the tested rule degrees (detJ is checked at the points of each
+    rule) is refused for all degrees and replaced by the next seed (test set-up event, listed in the output)."""
+    seeds, refused, rows = [], [], {}
+    s = 3
+    while len(seeds) < 5:
         try:
-            _mesh("T10", seed=s, curved=curved)
-            seeds.append(s)
+            m = _mesh("T10", seed=s, curved=0.1)
+            trial = {(s, deg): _patch(m, _D3(), degree=deg) for deg in (2, 3, 4, 6, 8)}
         except InvertedElementError:
             refused.append(s)
+        else:
+            rows.update(trial)
+            seeds.append(s)
         s += 1
-    return seeds, refused
-
-
-def test_f2_3_patch_error_against_quadrature_degree():
-    seeds, refused = _valid_seeds(0.1)
-    rows = {}
-    for s in seeds:
-        m = _mesh("T10", seed=s, curved=0.1)
-        for deg in (2, 3, 4, 6, 8):
-            rows[(s, deg)] = _patch(m, _D3(), degree=deg)
     print(f"\n  F2-3 seeds {seeds} (refused {refused})")
     for deg in (2, 3, 4, 6, 8):
         print("    degree", deg, "u", [f"{rows[(s, deg)][0]:.1e}" for s in seeds], "stress",
@@ -361,9 +355,12 @@ def _interp_errors(name, n, seed, ms):
     return ElasticProblem.errors(stub, ms.u(m.points).ravel(), ms.u, ms.grad)       # type: ignore[arg-type]
 
 
-@slow
-@pytest.mark.parametrize("name", ["T4", "T10"])
-def test_f4_1_interpolation_error_rates_without_a_solve(name):
+_INTERP_CACHE: dict = {}
+
+
+def _interp_pairs(name):
+    if name in _INTERP_CACHE:
+        return _INTERP_CACHE[name]
     psutil = pytest.importorskip("psutil")
     mu, lam = _lame()
     ms = Manufactured(3, c=1.0, lam_c=lam)
@@ -382,11 +379,32 @@ def test_f4_1_interpolation_error_rates_without_a_solve(name):
              for a, b in zip(reached[:-1], reached[1:], strict=True)}
     print(f"\n  F4-1 {name} interpolation pair rates (L2, energy): "
           f"{ {k: (round(v[0], 3), round(v[1], 3)) for k, v in pairs.items()} }")
-    key = _KEY_RATE[name]
-    idx = 0 if key == "l2" else 1
+    _INTERP_CACHE[name] = pairs
+    return pairs
+
+
+_F41_I_XFAIL = {"T4": "pre-registered F4-1 (i) failed: T4 interpolation L2 p(8, 16) = 1.918 differs from the Galerkin "
+                      "1.796 by 0.122 > 0.10 (the solved L2 error is more pre-asymptotic than the interpolation error); "
+                      "T10 energy 1.814 vs 1.788 passes (F4_RATES.md)"}
+
+
+@slow
+@pytest.mark.parametrize("name", [pytest.param("T4", marks=pytest.mark.xfail(strict=True, reason=_F41_I_XFAIL["T4"])),
+                                  "T10"])
+def test_f4_1_i_interpolation_rate_matches_galerkin_rate_at_the_historical_pair(name):
+    pairs = _interp_pairs(name)
+    idx = 0 if _KEY_RATE[name] == "l2" else 1
     first = pairs[(_INTERP[name][0], _INTERP[name][1])][idx]
     galerkin = 1.796 if name == "T4" else 1.788
-    assert abs(first - galerkin) <= 0.10                                              # (i)
+    assert abs(first - galerkin) <= 0.10
+
+
+@slow
+@pytest.mark.parametrize("name", ["T4", "T10"])
+def test_f4_1_ii_iii_interpolation_rate_reaches_the_asymptotic_window(name):
+    pairs = _interp_pairs(name)
+    idx = 0 if _KEY_RATE[name] == "l2" else 1
+    first = pairs[(_INTERP[name][0], _INTERP[name][1])][idx]
     last_pair = list(pairs)[-1]
     want = (24, 32) if name == "T4" else (16, 24)
     assert pairs[last_pair][idx] > first + 0.05                                       # (iii)
@@ -428,8 +446,14 @@ def _scatter(name, ns):
     return out
 
 
+_F43_XFAIL = ("pre-registered F4-3 failed for T10: 1 of 4 other mesh draws reach 1.8 (pair rates 1.7997, 1.7855, 1.8140, "
+              "1.7818; historical draw 1.7877; undistorted 1.825): the T10 miss is not a mesh-draw accident "
+              "(F4_RATES.md)")
+
+
 @slow
-@pytest.mark.parametrize("name,ns", [("T4", (8, 16)), ("T10", (4, 8))])
+@pytest.mark.parametrize("name,ns", [("T4", (8, 16)),
+                                     pytest.param("T10", (4, 8), marks=pytest.mark.xfail(strict=True, reason=_F43_XFAIL))])
 def test_f4_3_rate_scatter_over_mesh_draws_and_undistorted_mesh(name, ns):
     out = _scatter(name, ns)
     und = [_level(name, n, 0, undistorted=True)[None] for n in ns]
@@ -467,6 +491,15 @@ def test_f4_4_further_solved_levels(name):
         assert abs(p1 - 1.92) <= 0.01 and p1 >= 1.9
     else:
         assert abs(p1 - 1.89) <= 0.01
+
+
+@slow
+@pytest.mark.parametrize("name", ["T4", "T10"])
+def test_f4_4b_third_solved_level_when_memory_allows(name):
+    """Third level (T4 n = 32, T10 n = 16) under the memory rule of the preregistration; skipped, not guessed, otherwise."""
+    ns = _FINER[name]
+    key = _KEY_RATE[name]
+    e = {n: _level(name, n, 100 + n)[None] for n in ns[:2]}
     ok, why = _may_run(name, ns[1])
     if not ok:
         pytest.skip(f"{name} n={ns[2]} not run: {why}")

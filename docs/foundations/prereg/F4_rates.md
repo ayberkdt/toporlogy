@@ -110,3 +110,28 @@ collapsed t-degree of a degree-22 monomial reaches 24, beyond the exactness (23)
 F4-1 uses `ElasticProblem.errors` called with a lightweight stand-in for `self` (mesh, ref, D, k, thickness,
 element_values) so that no sparsity pattern is built for the solve-free interpolation levels; the error code is the same.
 F4-2 measures the +12 error-degree variant on both error norms; the +6 variants are in the table. No threshold changed.
+
+## First results
+
+Fast tests (F2-1..F2-4, F4-5): first run 2026-11-27 04:45 +0300 gave 2 failures that were test set-up errors, fixed before
+the second run (2026-11-27 04:46 +0300, 7 passed, no threshold changed): (1) F2-1 built the mid nodes from `float`
+midpoints, which put 1e-17 non-affine rounding terms into the exact rational polynomials (degree-3 terms with the wrong c
+power); the midpoints are now exact rationals. (2) F2-3: some seeds give a mesh with an inverted cell that is only detected
+at the points of some of the tested rule degrees; such seeds are refused for all degrees and replaced by the next seed
+(12 of the first 17 seeds were refused; accepted 3, 7, 13, 17, 19).
+
+* F2-1 PASS: integrand degree 3; Keast error 1.35e-5 (c = 0.05 h), 5.40e-5 (c = 0.1 h), ratio 4.0000; degree-3 rule 3.5e-18; c = 0: 1.7e-18 (scale 1.0e-2).
+* F2-2 PASS: degree 2 u 1.683e-4, stress 2.625e-3; degree 3 u 1.5e-15.
+* F2-3 PASS: degree 2 u 9.5e-5 .. 1.7e-4; degrees 3, 4, 6, 8: u <= 4.8e-15, stress <= 2.0e-13 (5 seeds).
+* F2-4 PASS: c = 0, 0.025, 0.05, 0.1: 1.2e-15, 9.95e-6, 4.08e-5, 1.68e-4; ratios 4.10, 4.12.
+* F4-5 PASS: Manufactured vs sympy 1.9e-15 / 1.7e-15 / 5.1e-15; own error integral vs `errors(degree=24)`: T4 8.4e-15, 1.9e-16; T10 3.5e-15, 2.0e-16.
+
+Slow tests: first run 2026-11-27 04:47 to 05:09 +0300.
+
+* F4-0 PASS: T4 L2 1.795927, energy 0.919555; T10 L2 2.922593, energy 1.787746; two runs bitwise equal.
+* F4-1: interpolation pair rates T4 (L2): (8,16) 1.918, (16,24) 1.978, (24,32) 1.991; T10 (energy): (4,8) 1.814, (8,12) 1.899, (12,16) 1.949, (16,24) 1.961. (i) T4 FAIL (0.122 > 0.10; strict xfail, ledger), (i) T10 PASS; (ii), (iii) PASS for both.
+* F4-2 PASS: |dp| <= 6.7e-8 (T4), 1.1e-6 (T10) for error degree +6, +12 and load degree +6; p stays 1.79593 / 1.78775.
+* F4-3: T4 base seeds 200..500: 1.8181, 1.8037, 1.8160, 1.8118 (4 of 4, PASS), undistorted 1.8602 (PASS). T10: 1.7997, 1.7855, 1.8140, 1.7818 (1 of 4, FAIL, strict xfail, ledger), undistorted 1.8250 (PASS).
+* F4-4: T4 p(16,24) = 1.9229 PASS; T10 p(8,12) = 1.8888 PASS. Third levels (T4 n = 32, T10 n = 16) skipped by the memory rule (peak working set 3.1 / 3.3 GB at 47 k DOF, 2.9 GB free): not resolvable here.
+
+The F4-1, F4-3, F4-4 tests were then split so that the two xfails do not hide other asserts, and re-run at 2026-11-27 05:25 +0300: 8 passed, 2 skipped, 2 xfailed.
