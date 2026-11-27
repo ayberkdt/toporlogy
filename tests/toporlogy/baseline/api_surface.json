@@ -5174,6 +5174,38 @@
   "mms_case": "mms_case(method,n,nu,fixed,variant,distort,seed,dim,plane)",
   "moduli": "moduli(nu,fixed)"
  },
+ "toporlogy.fem.mesh.cure_slab": {
+  "CureSlab": {
+   "attrs": [
+    "K",
+    "M",
+    "T",
+    "add_dirichlet",
+    "add_robin",
+    "advance_to",
+    "alpha",
+    "quadrature_temperature",
+    "residual_jacobian",
+    "step",
+    "t",
+    "weights"
+   ],
+   "class": "CureSlab"
+  },
+  "CureSlabStep": {
+   "attrs": [],
+   "class": "CureSlabStep"
+  },
+  "MechanicalResult": {
+   "attrs": [],
+   "class": "MechanicalResult"
+  },
+  "ThermalStepResult": {
+   "attrs": [],
+   "class": "ThermalStepResult"
+  },
+  "residual_stress": "residual_stress(slab,moduli_uncured,moduli_cured,expansion,shrinkage,constraint,tol,max_iter,keep_history,force_scale)"
+ },
  "toporlogy.fem.mesh.history": {
   "HistoryProblem": {
    "attrs": [

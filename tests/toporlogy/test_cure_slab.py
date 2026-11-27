@@ -20,7 +20,8 @@ from scipy.optimize import brentq
 
 from toporlogy.core import cure as C
 from toporlogy.core import properties as P
-from toporlogy.fem.mesh.cure_slab import CureSlab, StepRejected, residual_stress
+from toporlogy.fem.mesh.cure_slab import CureSlab, residual_stress
+from toporlogy.fem.mesh.history import StepRejected
 from toporlogy.fem.mesh.mesh import rectangle
 
 R_GAS = 8.314462618

@@ -5,11 +5,11 @@ Kaynak: `tests/toporlogy/_vv_layers.py` (dosya → katman sınıflaması elle, d
 | Katman | core | geometry | boundary | design | fem | solvers | optimization | optimizers | configuration | execution | post | references |
 |:---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
 | U unit / property | 34/525 | 3/30 | — | 12/148 | 20/262 | 5/76 | 22/285 | 5/83 | 7/86 | 3/19 | 5/68 | — |
-| MP material point | 30/441 | — | — | 9/138 | 18/214 | 2/44 | 18/226 | 6/103 | 7/97 | 1/13 | 4/55 | — |
+| MP material point | 31/454 | — | — | 9/138 | 19/227 | 2/44 | 18/226 | 6/103 | 7/97 | 1/13 | 4/55 | — |
 | EL element patch / quadrature | 12/148 | — | — | 3/32 | 17/219 | 3/53 | 6/74 | 3/36 | 3/40 | 2/23 | 3/40 | — |
-| AS assembly / BC / reactions | 8/137 | 1/23 | 7/77 | 2/59 | 13/180 | 7/98 | 4/90 | 2/59 | 3/49 | — | 1/20 | — |
-| AN analytical / MMS | 38/550 | — | — | 9/143 | 41/507 | 6/111 | 27/343 | 8/131 | 12/163 | 3/36 | 3/44 | — |
-| IS independent solver / implementation | 21/260 | — | 1/14 | 5/104 | 28/374 | 8/137 | 11/161 | 4/86 | 6/99 | 2/23 | 1/24 | — |
+| AS assembly / BC / reactions | 9/150 | 1/23 | 7/77 | 2/59 | 14/193 | 7/98 | 4/90 | 2/59 | 3/49 | — | 1/20 | — |
+| AN analytical / MMS | 39/563 | — | — | 9/143 | 42/520 | 6/111 | 27/343 | 8/131 | 12/163 | 3/36 | 3/44 | — |
+| IS independent solver / implementation | 22/273 | — | 1/14 | 5/104 | 29/387 | 8/137 | 11/161 | 4/86 | 6/99 | 2/23 | 1/24 | — |
 | OG optimization / KKT / gradient | 29/336 | — | 3/29 | 19/214 | 40/422 | 6/87 | 50/494 | 26/292 | 25/265 | 8/80 | 3/54 | — |
 | E2E end-to-end geometry | 4/56 | 5/39 | — | 2/13 | 7/85 | — | 12/108 | 1/21 | 5/51 | 2/23 | 11/91 | — |
 | IC integration / compatibility | 14/144 | 2/34 | 2/15 | 11/120 | 19/177 | — | 21/203 | 9/107 | 29/266 | 17/141 | 1/8 | 1/11 |
@@ -60,6 +60,7 @@ Katman sınıflaması (dosya → katmanlar):
 - `test_creep.py`: U, MP, AN
 - `test_creep_topology.py`: MP, AN, IS, OG
 - `test_cure.py`: U, MP, AN
+- `test_cure_slab.py`: MP, AS, AN, IS
 - `test_deriving_methods.py`: OG, IC
 - `test_element_orientation.py`: MP, EL, OG, E2E
 - `test_fault_injection.py`: IC

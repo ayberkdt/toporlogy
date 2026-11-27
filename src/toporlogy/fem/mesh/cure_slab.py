@@ -50,7 +50,7 @@ from toporlogy.fem.mesh.history import HistoryProblem, StepRejected
 from toporlogy.fem.mesh.mesh import Mesh
 from toporlogy.fem.mesh.problem import HeatProblem
 
-__all__ = ["CureSlab", "CureSlabStep", "ThermalStepResult", "MechanicalResult", "residual_stress", "StepRejected"]
+__all__ = ["CureSlab", "CureSlabStep", "ThermalStepResult", "MechanicalResult", "residual_stress"]
 
 _EPS = float(np.finfo(float).eps)
 Scalar = float | Callable[[float], float]
