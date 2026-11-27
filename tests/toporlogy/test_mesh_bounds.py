@@ -65,3 +65,24 @@ def test_mb5_refusals() -> None:
     for bc in ("kubc", "subc"):
         with pytest.raises(ValueError, match="periodic"):
             homogenize_mesh_elasticity(m, D, L, bc=bc, sensitivities=True)
+
+
+# ---------------------------------------------------------------------------------------------- MB6
+@pytest.mark.parametrize("element", ["H8", "T4"])
+def test_mb6_three_dimensional_bounds(element: str) -> None:
+    from test_mesh_homogenization import skew3
+
+    from toporlogy.fem.elements import D_iso
+    m, L = skew3(element)
+    D3 = D_iso(NU)
+    for bc in ("kubc", "subc"):
+        h = homogenize_mesh_elasticity(m, D3, L, bc=bc)
+        print(f"\n  MB6 {element} homogeneous {bc}: {rel(h.C, D3):.1e}")
+        assert rel(h.C, D3) <= 1e-10
+    E = np.random.default_rng(4).uniform(0.2, 2.0, m.n_cells)
+    C = {bc: homogenize_mesh_elasticity(m, D3, L, E, bc=bc).C for bc in ("subc", "periodic", "kubc")}
+    s = float(np.abs(C["periodic"]).max())
+    lo = float(np.linalg.eigvalsh(C["periodic"] - C["subc"]).min())
+    hi = float(np.linalg.eigvalsh(C["kubc"] - C["periodic"]).min())
+    print(f"  MB6 {element} random: PBC-SUBC {lo / s:.3e}, KUBC-PBC {hi / s:.3e}")
+    assert lo >= -1e-10 * s and hi >= -1e-10 * s

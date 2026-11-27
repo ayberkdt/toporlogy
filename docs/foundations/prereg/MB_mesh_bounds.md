@@ -40,3 +40,9 @@ Appended below after the first run.
 MB1–MB5 are 2-D only; the 3-D path (six rigid modes held by pivoted QR in SUBC) has not been run. Check MB6: the
 homogeneous 3-D skew cells of MH1 (H8, T4) give D under KUBC and SUBC (rel 1e-10), and a random 3-D H8 cell
 (E ∈ [0.2, 2], seed 4) satisfies C_SUBC ≤ C_PBC ≤ C_KUBC (min eigenvalues ≥ −1e-10 max abs C).
+
+### MB6 result (run 12:50 +0300 by the clock; recorded 2026-11-27 12:50 +0300)
+
+PASS on the first run: homogeneous 3-D skew cells — H8 KUBC 1.6e-16, SUBC 9.9e-16; T4 KUBC 4.9e-16, SUBC 1.3e-15
+(1e-10); random cells — H8 PBC − SUBC 1.6e-2, KUBC − PBC 1.7e-3; T4 1.7e-3, 3.5e-4 (min eigenvalue / max abs C,
+≥ −1e-10). No code change (the 3-D path was already written; this is its first run).
