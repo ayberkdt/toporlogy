@@ -21,3 +21,16 @@ Extends `fem.mesh.homogenization` (MH) with `bc="periodic" | "kubc" | "subc"` in
 ## First result
 
 Appended below after the first run.
+
+## First result (run 10:11 +0300 by the clock; recorded 2026-11-27 10:12 +0300)
+
+`python -m pytest tests/toporlogy/test_mesh_bounds.py tests/toporlogy/test_mesh_homogenization.py -q -p no:randomly -s`:
+21 passed on the first run (6 MB tests, 15 MH regressions); no threshold, input or assertion changed.
+
+| ID | Result | Measured (threshold) |
+|---|---|---|
+| MB1 | PASS | skew T6: KUBC 2.6e-15, SUBC 1.0e-15; square Q4: KUBC 4.0e-16, SUBC 1.0e-15 (1e-10) |
+| MB2 | PASS | min eig / max abs C — skew T6: PBC − SUBC 2.5e-2, KUBC − PBC 9.5e-3; two-phase T3: 3.3e-2, 3.1e-2 (≥ −1e-10) |
+| MB3 | PASS | KUBC − SUBC: 5.1e-2 and 7.2e-2 (≥ 1e-6) |
+| MB4 | PASS | against the regular grid: KUBC 8.4e-15, SUBC 2.1e-14 (1e-10) |
+| MB5 | PASS | refusals raised |

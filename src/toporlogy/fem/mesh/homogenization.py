@@ -13,6 +13,11 @@ with |Y| = |det[a_1 … a_d]| (× thickness in 2-D). The energy form is self-adj
 its constraints), so the derivative needs no adjoint solve. Conduction: T = g·x + w and k_ij likewise. The regular
 grid has its own implementation (:mod:`toporlogy.fem.homogenization`); the two are compared in
 ``tests/toporlogy/test_mesh_homogenization.py``. Preregistration: ``docs/foundations/prereg/MH_mesh_homogenization.md``.
+
+Bounds (``bc``, elasticity; ``docs/foundations/prereg/MB_mesh_bounds.md``): ``"kubc"`` prescribes u = H x at every
+boundary node (stiffer than periodic), ``"subc"`` applies the uniform stress σ̄ through its consistent load
+Σ_e ∫ Bᵀ σ̄ dV with the rigid motions held by the fewest DOFs, measures the mean strain (a column of the compliance)
+and returns S⁻¹ (softer): C_SUBC ≤ C_PBC ≤ C_KUBC. For these two the lattice is not used and |Y| = Σ dV.
 """
 from __future__ import annotations
 
@@ -20,13 +25,16 @@ from dataclasses import dataclass
 from typing import Any
 
 import numpy as np
+import scipy.linalg as sla
 
 from toporlogy.fem.mesh import kernels as kn
 from toporlogy.fem.mesh.constraints import LinearConstraints, periodic_lattice, solve_constrained
 from toporlogy.fem.mesh.mesh import Mesh
-from toporlogy.fem.mesh.problem import ElasticProblem, HeatProblem
+from toporlogy.fem.mesh.problem import ElasticProblem, HeatProblem, rigid_modes
 
-__all__ = ["MeshHomogenized", "homogenize_mesh_elasticity", "homogenize_mesh_conduction"]
+__all__ = ["MeshHomogenized", "homogenize_mesh_elasticity", "homogenize_mesh_conduction", "MESH_BCS"]
+
+MESH_BCS = ("periodic", "kubc", "subc")
 
 
 @dataclass
@@ -103,22 +111,57 @@ def _effective(problem: Any, Ke0: np.ndarray, cons: LinearConstraints, volume: f
 
 
 def homogenize_mesh_elasticity(mesh: Mesh, D: Any, lattice: Any, E: Any = None, thickness: float = 1.0,
-                               sensitivities: bool = False, degree: int | None = None) -> MeshHomogenized:
+                               sensitivities: bool = False, degree: int | None = None,
+                               bc: str = "periodic") -> MeshHomogenized:
     """Effective Voigt stiffness of the periodic cell ``mesh`` with lattice vectors ``lattice`` (dim, dim), one per
     row, and cell moduli ``E`` (n_cells,) times ``D`` (k, k; plane stress or strain as the caller builds it in
     2-D). ``sensitivities``: also dC/dE per cell. Raises ``ConstraintError`` when a lattice vector matches no node
-    pair, ``ValueError`` for invalid inputs."""
-    L = _lattice(mesh, lattice)
+    pair, ``ValueError`` for invalid inputs. ``bc``: "periodic" (default), "kubc" or "subc" (module notes)."""
+    L = _lattice(mesh, lattice) if bc == "periodic" else np.eye(mesh.dim)
     Ev = _factors(E, mesh.n_cells, "E")
     D0 = np.asarray(D, float)
     k = 3 if mesh.dim == 2 else 6
     if D0.shape != (k, k):
         raise ValueError(f"D must be ({k}, {k}), got {D0.shape}")
+    if bc not in MESH_BCS:
+        raise ValueError(f"bc must be one of {MESH_BCS}, got {bc!r}")
+    if sensitivities and bc != "periodic":
+        raise ValueError("sensitivities are implemented for bc='periodic' only")
     P = ElasticProblem(mesh, Ev[:, None, None] * D0, thickness=thickness, degree=degree)
+    Hs = _unit_strains(mesh.dim)
+    if bc == "subc":
+        return _static(P, mesh, k)
+    if bc == "kubc":
+        nodes = mesh.boundary_nodes()
+        dofs = (mesh.dim * nodes[:, None] + np.arange(mesh.dim)).ravel()
+        vals = np.column_stack([(mesh.points[nodes] @ H.T).ravel() for H in Hs])
+        volume = float(P.geom.dV.sum()) * (P.thickness if mesh.dim == 2 else 1.0)
+        return _effective(P, np.zeros(0), LinearConstraints.fix(P.ndof, dofs, vals), volume, False)
     Ke0 = kn.stiffness(P.geom, np.broadcast_to(D0, (mesh.n_cells, k, k)), P.thickness)
     volume = abs(float(np.linalg.det(L))) * (P.thickness if mesh.dim == 2 else 1.0)
-    cons = _periodic_cases(mesh, L, _unit_strains(mesh.dim), mesh.dim, P.ndof)
+    cons = _periodic_cases(mesh, L, Hs, mesh.dim, P.ndof)
     return _effective(P, Ke0, cons, volume, sensitivities)
+
+
+def _static(P: ElasticProblem, mesh: Mesh, k: int) -> MeshHomogenized:
+    """SUBC: unit uniform stresses, fewest DOFs against rigid motion, mean strain = compliance columns."""
+    t = P.thickness if mesh.dim == 2 else 1.0
+    B = kn.strain_matrix(P.geom.dNdx)                                # (ne, nq, k, nloc)
+    w = P.geom.dV * t
+    volume = float(w.sum())
+    fe = np.einsum("eqkj,eq->ejk", B, w)                             # ∫ Bᵀ e_k dV per cell, (ne, nloc, k)
+    F = np.zeros((P.ndof, k))
+    np.add.at(F, P.cell_dofs, fe)
+    used = mesh.used_nodes()
+    R = rigid_modes(mesh.points[used], mesh.dim)
+    udofs = (mesh.dim * used[:, None] + np.arange(mesh.dim)).ravel()
+    piv = sla.qr(R.T, pivoting=True, mode="r")[1][: R.shape[1]]      # the most independent DOFs
+    hold = LinearConstraints.fix(P.ndof, udofs[piv], np.zeros((R.shape[1], k)))
+    sol = solve_constrained(P, F, hold)
+    Ue = sol.u[P.cell_dofs]                                          # (ne, nloc, k)
+    S = np.einsum("eqkj,eq,ejl->kl", B, w, Ue) / volume              # mean strain of unit stress l
+    S = 0.5 * (S + S.T)
+    return MeshHomogenized(np.linalg.inv(S), None, sol.u, volume)
 
 
 def homogenize_mesh_conduction(mesh: Mesh, kappa: Any, lattice: Any, k: Any = None, thickness: float = 1.0,
