@@ -88,3 +88,24 @@ under `D:/Masaustu/Topology Optimization/.claude/tmp-toporlogy/NH`. Largest case
 8 Newton steps each; seconds.
 
 First result (append after run): see below.
+
+## First result (recorded 2026-11-27 08:38 +0300 by the clock)
+
+First run of `tests/toporlogy/test_nonlinear_heat.py`: 17 passed, 9 failed. Diagnoses (bounded, one pass) and what was done:
+
+| ID | First-run outcome | Diagnosis | Action |
+|---|---|---|---|
+| NH1 | PASS (Q4, T6, both forms; negative control detected) | - | final values: enthalpy Q4 3.4e-11, T6 2.5e-11; capacity Q4 3.4e-11, T6 2.5e-11; control (k' = 0) 1.59e-2 |
+| NH2 | Q4, T6 PASS. **T3 FAIL**: slope 1.740 (errors 2.548e-2, 9.162e-3, 2.662e-3, 6.909e-4). **Q9 FAIL**: slope 1.995 (1.125e-3, 5.526e-4, 7.082e-5) | the fit window includes the pre-asymptotic coarsest level; order of the finest pair: T3 1.946, Q4 1.987, T6 3.002, Q9 2.989 (n = 8 to 16) | hypothesis wrong, not the code: both kept as strict xfail, ledger entries, post hoc finest-pair test (passes) |
+| NH3 | slope in window (passed), but the **spatial floor condition FAILED** at Q9 n = 8 (floor 7.082e-5 vs 0.1 x 2.107e-4) | set-up: mesh too coarse for the stated validity condition | test set-up fixed (not the threshold): Q9 n = 16. Result: slope 0.978, errors 1.4285e-3, 7.314e-4, 3.708e-4, 1.872e-4; floor 8.92e-6 = 0.048 x 1.872e-4. PASS |
+| NH4 | (a) PASS, (b) PASS, (c) PASS | - | (a) max imbalance 2.4e-13 of the energy scale, `stored` against the independent value 3.3e-15 relative, reported energy_residual 2.3e-13 relative |
+| NH5 | PASS | - | imbalance -1.96e-2 ... -1.04e-2 of the energy scale (6 steps), agreement with the closed form -(C0 gamma/2) int w dT^2: 8.4e-10 relative at worst |
+| NH6 | **FAIL** (steady part passed; transient reference differed by 0.075 K) | set-up: the dense reference took the new Dirichlet value (310) into the old state of the Dirichlet nodes before forming the inertia term; the scheme uses T_n = 300 there | reference fixed (rhs from the old temperatures, then the Dirichlet value). PASS, window 1e-9 |
+| NH7 | **FAIL, two causes.** (1) Dirichlet case: no convergence, residual 2.5e-14 vs target 2.5e-26. (2) after the fix, the slope test fails for all three variants: errors at rounding level (<= 6.3e-13 K), Dirichlet 0.0 at nx = 4 | (1) production defect: my noise estimate used the net conduction, which is zero in a source-free steady problem, and omitted the rounding size of |K(T)||T| (the term cure_slab has as |K||T|); (2) hypothesis wrong: with exact quadrature the nodal values of a linear-element 1-D solution are exact (flux = Phi(T_{i+1}) - Phi(T_i)) | (1) production fixed: gross rounding magnitude in the noise (element contributions in absolute value, |K(T)||T|, |M/dt|(|T|+|T_n|)); (2) strict xfail x 3, ledger entries, post hoc exactness test (error <= 1e-10 K, Newton iterations 4-5 <= 10: PASS) |
+| NH8 | (a), (b), (d), (e), (f) PASS; **(c) FAIL: did not raise** for a Dirichlet value of 460 K | production gap: validity was checked at the quadrature points only, and the interior Gauss points of the cells next to the node stay below 450 K | production fixed: the validity interval is also checked at the nodal temperatures (also for T0). Test unchanged. PASS |
+| NH9 | PASS | - | 3 Newton iterations at each of the 8 steps (<= 6) |
+
+Final run after the fixes: 28 passed, 5 xfailed (NH2 T3, NH2 Q9, NH7 x 3), 0 failed, 76 s. Command:
+`python -m pytest tests/toporlogy/test_nonlinear_heat.py -q -p no:randomly`.
+Raw evidence: the test file itself (all values above are reproduced by it; the numerical diagnostics were printed by throwaway scripts in the scratchpad).
+Limitations: backward Euler only; no line search; scalar isotropic k; the NH2/NH3 temporal claims are for the smooth synthetic field above; NH6 transient reference is a regression (shared `HeatProblem.K`, `kernels.mass`).
