@@ -14,3 +14,11 @@ None = the current behaviour.
 | D3d | default (checkpoint_every=None) objective and gradient are bitwise those of the code before the change (VO1/VO2 values reproduced exactly: same function body) | the earlier response | `==` / `array_equal` |
 
 Run: `python -m pytest tests/toporlogy/test_checkpoint_adjoint.py -q -p no:randomly`.
+
+## First result (run between 04:03 and 04:05 +0300 by the clock; recorded 04:05 +0300)
+
+All pass on the first run (test_checkpoint_adjoint.py with test_viscoelastic_topology.py: 13 passed).
+D3a: checkpointed gradients (k = 1, 4, 12) equal the full gradient to 1e-12. D3b: saved-for-backward bytes during the
+forward pass 702 704 (full) vs 40 048 (k = 4), ratio 0.057. D3c: 12 vs 24 linear solves (exactly one
+recomputation). D3d: default path bitwise equal to the fingerprint `tests/toporlogy/baseline/d3_fingerprint_b7e7637.json`
+taken from the code before the change (same session, before the edit).

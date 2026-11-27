@@ -111,6 +111,7 @@ class ViscoelasticStructure:
             self._Ke[float(dt)] = np.einsum("eqki,kl,eqlj,eq->eij", self.B, C, self.B, self.dV)
             self._coef[float(dt)] = (r_s, r_k, 2.0 * sh.amplitudes * ph_s, bk.amplitudes * ph_k)
         self._fcache: dict[tuple[float, bytes], Factorization] = {}
+        self.n_solves = 0
         self._Bt = torch.as_tensor(self.B)
         self._dVt = torch.as_tensor(self.dV)
         self._cd = torch.as_tensor(self.cell_dofs, dtype=torch.long)
@@ -131,9 +132,42 @@ class ViscoelasticStructure:
         """Plane-strain Voigt [xx, yy, γxy] at the points (ne, nq, 3)."""
         return torch.einsum("eqkj,ej->eqk", self._Bt, u[self._cd])
 
-    def response(self, w: torch.Tensor, detach_history: bool = False) -> ViscoelasticResult:
+    def _step(self, n: int, w: torch.Tensor, eps: torch.Tensor, shat: torch.Tensor, phat: torch.Tensor,
+              u: torch.Tensor, detach_history: bool) -> tuple[torch.Tensor, ...]:
+        """One step n → n+1 of the march: (ε, ŝ, p̂, u, f_nᵀu_n) after the step."""
+        sh, bk = self.mat.shear, self.mat.bulk
+        dt_ = w.dtype
+        dt = self.dts[n]
+        r_s, r_k, c_s, c_k = (torch.as_tensor(v, dtype=dt_) for v in self._coef[float(dt)])
+        e_h = eps.detach() if detach_history else eps
+        s_h = shat.detach() if detach_history else shat
+        p_h = phat.detach() if detach_history else phat
+        tr = e_h[..., 0] + e_h[..., 1]
+        dev = torch.stack([e_h[..., 0] - tr / 3, e_h[..., 1] - tr / 3, -tr / 3, 0.5 * e_h[..., 2]], -1)
+        S = (2.0 * sh.inf) * dev + torch.einsum("b,eqbc->eqc", r_s, s_h)          # deviatoric stress (tensor)
+        P = bk.inf * tr + torch.einsum("b,eqb->eq", r_k, p_h)
+        sig = torch.stack([S[..., 0] + P, S[..., 1] + P, S[..., 3]], -1)           # [xx, yy, xy]
+        fe = torch.einsum("eqkj,eqk,eq->ej", self._Bt, sig, self._dVt) * w[:, None]
+        fh = torch.zeros(self.ndof, dtype=dt_).index_add(0, self._cd.reshape(-1), fe.reshape(-1))
+        rhs = torch.as_tensor(self.loads[n], dtype=dt_)[self._free_t] - fh[self._free_t]
+        du_f = _Solve.apply(w, rhs, self, float(dt))
+        self.n_solves += 1
+        du = torch.zeros(self.ndof, dtype=dt_).index_put((self._free_t,), du_f)
+        u = u + du
+        de = self._strain(du)
+        dtr = de[..., 0] + de[..., 1]
+        ddev = torch.stack([de[..., 0] - dtr / 3, de[..., 1] - dtr / 3, -dtr / 3, 0.5 * de[..., 2]], -1)
+        shat = r_s[None, None, :, None] * shat + c_s[None, None, :, None] * ddev[:, :, None, :]
+        phat = r_k[None, None, :] * phat + c_k[None, None, :] * dtr[..., None]
+        eps = eps + de
+        return eps, shat, phat, u, torch.as_tensor(self.loads[n], dtype=dt_) @ u
+
+    def response(self, w: torch.Tensor, detach_history: bool = False,
+                 checkpoint_every: int | None = None) -> ViscoelasticResult:
         """Displacements of every step for element weights ``w`` (ne,) (differentiable); ``detach_history`` cuts the
-        derivative through the stored history (the negative control VO5 only)."""
+        derivative through the stored history (the negative control VO5 only). ``checkpoint_every`` = k splits the
+        march into segments of k steps recomputed in the backward pass (``torch.utils.checkpoint``; only the segment
+        boundary states are kept; ``prereg/D3_checkpoint.md``)."""
         sh, bk = self.mat.shear, self.mat.bulk
         dt_ = w.dtype
         ns, nk = len(sh.taus), len(bk.taus)
@@ -142,30 +176,32 @@ class ViscoelasticStructure:
         phat = torch.zeros(self.ne, self.nq, nk, dtype=dt_)
         u = torch.zeros(self.ndof, dtype=dt_)
         us, cs = [], []
-        for n, dt in enumerate(self.dts):
-            r_s, r_k, c_s, c_k = (torch.as_tensor(v, dtype=dt_) for v in self._coef[float(dt)])
-            e_h = eps.detach() if detach_history else eps
-            s_h = shat.detach() if detach_history else shat
-            p_h = phat.detach() if detach_history else phat
-            tr = e_h[..., 0] + e_h[..., 1]
-            dev = torch.stack([e_h[..., 0] - tr / 3, e_h[..., 1] - tr / 3, -tr / 3, 0.5 * e_h[..., 2]], -1)
-            S = (2.0 * sh.inf) * dev + torch.einsum("b,eqbc->eqc", r_s, s_h)          # deviatoric stress (tensor)
-            P = bk.inf * tr + torch.einsum("b,eqb->eq", r_k, p_h)
-            sig = torch.stack([S[..., 0] + P, S[..., 1] + P, S[..., 3]], -1)           # [xx, yy, xy]
-            fe = torch.einsum("eqkj,eqk,eq->ej", self._Bt, sig, self._dVt) * w[:, None]
-            fh = torch.zeros(self.ndof, dtype=dt_).index_add(0, self._cd.reshape(-1), fe.reshape(-1))
-            rhs = torch.as_tensor(self.loads[n], dtype=dt_)[self._free_t] - fh[self._free_t]
-            du_f = _Solve.apply(w, rhs, self, float(dt))
-            du = torch.zeros(self.ndof, dtype=dt_).index_put((self._free_t,), du_f)
-            u = u + du
-            de = self._strain(du)
-            dtr = de[..., 0] + de[..., 1]
-            ddev = torch.stack([de[..., 0] - dtr / 3, de[..., 1] - dtr / 3, -dtr / 3, 0.5 * de[..., 2]], -1)
-            shat = r_s[None, None, :, None] * shat + c_s[None, None, :, None] * ddev[:, :, None, :]
-            phat = r_k[None, None, :] * phat + c_k[None, None, :] * dtr[..., None]
-            eps = eps + de
-            us.append(u)
-            cs.append(torch.as_tensor(self.loads[n], dtype=dt_) @ u)
+        nsteps = len(self.dts)
+        if checkpoint_every is None:
+            for n in range(nsteps):
+                eps, shat, phat, u, c = self._step(n, w, eps, shat, phat, u, detach_history)
+                us.append(u)
+                cs.append(c)
+            return ViscoelasticResult(torch.stack(us), torch.stack(cs), self.times.copy())
+        k = int(checkpoint_every)
+        if k < 1:
+            raise ValueError(f"checkpoint_every must be >= 1, got {checkpoint_every!r}")
+        from torch.utils.checkpoint import checkpoint
+
+        for a in range(0, nsteps, k):
+            b = min(a + k, nsteps)
+
+            def segment(w: torch.Tensor, eps: torch.Tensor, shat: torch.Tensor, phat: torch.Tensor,
+                        u: torch.Tensor, a: int = a, b: int = b) -> tuple[torch.Tensor, ...]:
+                seg_u, seg_c = [], []
+                for n in range(a, b):
+                    eps, shat, phat, u, c = self._step(n, w, eps, shat, phat, u, detach_history)
+                    seg_u.append(u)
+                    seg_c.append(c)
+                return eps, shat, phat, u, torch.stack(seg_u), torch.stack(seg_c)
+            eps, shat, phat, u, su, sc = checkpoint(segment, w, eps, shat, phat, u, use_reentrant=False)
+            us.extend(su.unbind(0))
+            cs.extend(sc.unbind(0))
         return ViscoelasticResult(torch.stack(us), torch.stack(cs), self.times.copy())
 
 
