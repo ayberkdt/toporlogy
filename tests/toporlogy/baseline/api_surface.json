@@ -5228,6 +5228,19 @@
   "jacobi_pcg": "jacobi_pcg(A,b,structure,rtol,maxiter)",
   "jacobi_scaled": "jacobi_scaled(A)"
  },
+ "toporlogy.fem.mesh.locate": {
+  "AMBIGUOUS": "<int>",
+  "BOUNDARY": "<int>",
+  "INSIDE": "<int>",
+  "Location": {
+   "attrs": [],
+   "class": "Location"
+  },
+  "OUTSIDE": "<int>",
+  "interpolate": "interpolate(mesh,nodal,loc)",
+  "inverse_map": "inverse_map(ref,X,p,max_iter)",
+  "locate": "locate(mesh,points,tol)"
+ },
  "toporlogy.fem.mesh.manufactured": {
   "Manufactured": {
    "attrs": [
@@ -5371,6 +5384,22 @@
   "gauss_legendre": "gauss_legendre(n)",
   "rule": "rule(cell,degree)"
  },
+ "toporlogy.fem.mesh.quality": {
+  "CellQuality": {
+   "attrs": [
+    "histogram",
+    "inverted",
+    "uncertain",
+    "worst"
+   ],
+   "class": "CellQuality"
+  },
+  "cell_quality": "cell_quality(mesh)",
+  "flag_cells": "flag_cells(quality,mean_ratio)",
+  "ideal_jacobian": "ideal_jacobian(ref)",
+  "quality_from_nodes": "quality_from_nodes(ref,X)",
+  "sampled_detj": "sampled_detj(mesh)"
+ },
  "toporlogy.fem.mesh.reference": {
   "ELEMENTS": "<dict>",
   "ReferenceElement": {
@@ -5384,6 +5413,37 @@
   },
   "get": "get(name)",
   "monomial_exponents": "monomial_exponents(element)"
+ },
+ "toporlogy.fem.mesh.topology": {
+  "MeshReport": {
+   "attrs": [
+    "ok",
+    "summary"
+   ],
+   "class": "MeshReport"
+  },
+  "MeshValidationError": {
+   "attrs": [
+    "add_note",
+    "args",
+    "code",
+    "with_traceback"
+   ],
+   "class": "MeshValidationError"
+  },
+  "Renumbering": {
+   "attrs": [
+    "to_new_cell",
+    "to_new_nodal",
+    "to_old_cell",
+    "to_old_nodal"
+   ],
+   "class": "Renumbering"
+  },
+  "hanging_nodes": "hanging_nodes(mesh,tol)",
+  "renumber": "renumber(mesh,cell_perm,node_perm)",
+  "require_valid": "require_valid(mesh,node_tol)",
+  "validate_mesh": "validate_mesh(mesh,node_tol,hanging)"
  },
  "toporlogy.fem.modal": {
   "Modal": {

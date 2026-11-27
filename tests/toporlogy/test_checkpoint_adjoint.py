@@ -73,5 +73,5 @@ def test_d3d_default_is_unchanged() -> None:
     st, x = _setup()
     J, g = _grad(st, x, None)
     ref = json.loads(FP.read_text(encoding="utf-8"))
-    assert J == ref["J"]
+    assert ref["J"] == J
     assert np.array_equal(g, np.array(ref["grad"]))
