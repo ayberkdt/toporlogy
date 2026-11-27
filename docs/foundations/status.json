@@ -1,11 +1,11 @@
 {
  "schema_version": 1,
- "head": "12c05ad",
+ "head": "796f96e",
  "branch": "foundations/round-3",
  "dirty": "dirty",
- "updated_at": "2026-11-27 10:27 +0300",
+ "updated_at": "2026-11-27 10:57 +0300",
  "environment": "Windows 11, Python 3.12.1, numpy 2.2.6, scipy 1.14.1, torch 2.5.1+cu121 (CUDA present, not exercised), mpmath 1.3.0, scikit-fem 12.0.2, meshio absent; 12 logical CPUs; 16.7 GB RAM, about 2-4 GB free; C: 5.6 GB free (temp files on D:)",
- "last_verified_checkpoint": "cb6e41e (clean-worktree fast suite 3566 passed / 67 xfailed / 0 failed; ruff and mypy clean; records check clean)",
+ "last_verified_checkpoint": "7249632 (clean-worktree fast suite, run 10:05-10:55: 3796 passed / 5 skipped / 70 xfailed / 0 failed; ruff and mypy clean; records check clean)",
  "current": "IP projection with beta continuation (IH follow-up); final clean-worktree suite",
  "units": [
   {

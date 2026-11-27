@@ -1,10 +1,10 @@
 # Foundations II — live status
 
-Actual HEAD: `12c05ad`  
+Actual HEAD: `796f96e`  
 Branch / dirty state: `foundations/round-3` / dirty  
-Updated at: 2026-11-27 10:27 +0300  
+Updated at: 2026-11-27 10:57 +0300  
 Environment / resource budget: Windows 11, Python 3.12.1, numpy 2.2.6, scipy 1.14.1, torch 2.5.1+cu121 (CUDA present, not exercised), mpmath 1.3.0, scikit-fem 12.0.2, meshio absent; 12 logical CPUs; 16.7 GB RAM, about 2-4 GB free; C: 5.6 GB free (temp files on D:)  
-Last successful integrated checkpoint: cb6e41e (clean-worktree fast suite 3566 passed / 67 xfailed / 0 failed; ruff and mypy clean; records check clean)  
+Last successful integrated checkpoint: 7249632 (clean-worktree fast suite, run 10:05-10:55: 3796 passed / 5 skipped / 70 xfailed / 0 failed; ruff and mypy clean; records check clean)  
 Current unit: IP projection with beta continuation (IH follow-up); final clean-worktree suite
 
 | ID | Priority | Dependencies | State | Evidence / SHA | Blocker / next action |
