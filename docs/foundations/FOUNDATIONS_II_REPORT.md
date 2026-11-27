@@ -71,6 +71,16 @@ time-aware, robust or min–max design depends on the problem — negligible for
 viscoelastic material, large under nonlinear creep (28 %), decisive when the critical time depends on the design
 (min–max). Design comparisons below ~0.5 % need multi-start.
 
+Material (cell) design on general periodic meshes (MH, MB, IH, IP, IA): the homogenisation and its sensitivities
+agree with the independent grid implementation to 1e-14 and the bounds order C_SUBC ≤ C_PBC ≤ C_KUBC holds.
+Bulk-modulus cells reach 0.990 (square) and 0.988 (triangular lattice) of the Hashin–Shtrikman bound with tanh
+projection, from a 0/1 start. Two failures carry the lessons: from grey starts the optimiser returns to the uniform
+grey design (IH3/IH4, a stationary and attracting point), and the stiffness-ratio Poisson objective C12/C11 is
+exploited by normal–shear coupling on an unsymmetric mesh design (IA: C12/C11 = −1.76 while the uniaxial-stress
+ratios are ≈ 0); a physical auxetic target needs the compliance-based ratio (IAb).
+
+Figures of the cells: `fig_ih_cells.png` (post hoc, grey edges), `fig_ip_cells.png` (projected).
+
 Figure of the designs: `FIG_DESIGNS.md` (datawiz audit 0 errors).
 
 ## Regression evidence
