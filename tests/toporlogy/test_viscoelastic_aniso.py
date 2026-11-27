@@ -128,14 +128,14 @@ def _iso_models(kind: str):
         K = [(1.0e9, 0.8), (0.7e9, 25.0)]
         gm = V.GeneralizedMaxwell(V.PronySeries(Ginf, np.array([g for g, _ in G]), np.array([t for _, t in G])),
                                   V.PronySeries(Kinf, np.array([k for k, _ in K]), np.array([t for _, t in K])))
-        br = [(VA.isotropic_stiffness(0.0, g), t) for g, t in G] + [(VA.isotropic_stiffness(k, 0.0), t) for k, t in K]
-        return gm, VA.AnisotropicMaxwell(VA.isotropic_stiffness(Kinf, Ginf), br)
+        br = [(VA.isotropic_branch_tensor(0.0, g), t) for g, t in G] + [(VA.isotropic_branch_tensor(k, 0.0), t) for k, t in K]
+        return gm, VA.AnisotropicMaxwell(VA.isotropic_branch_tensor(Kinf, Ginf), br)
     Ginf, Kinf = 0.4e9, 1.5e9
     B = [(1.0e9, 0.6e9, 0.5), (0.7e9, 0.5e9, 7.0), (0.3e9, 0.2e9, 90.0)]
     gm = V.GeneralizedMaxwell(V.PronySeries(Ginf, np.array([b[1] for b in B]), np.array([b[2] for b in B])),
                               V.PronySeries(Kinf, np.array([b[0] for b in B]), np.array([b[2] for b in B])))
-    br = [(VA.isotropic_stiffness(k, g), t) for k, g, t in B]
-    return gm, VA.AnisotropicMaxwell(VA.isotropic_stiffness(Kinf, Ginf), br)
+    br = [(VA.isotropic_branch_tensor(k, g), t) for k, g, t in B]
+    return gm, VA.AnisotropicMaxwell(VA.isotropic_branch_tensor(Kinf, Ginf), br)
 
 
 @pytest.mark.parametrize("kind", ["separate", "combined"])
@@ -390,7 +390,7 @@ def test_VA7_trapezoid_work_refinement():
 
 # ================================================================================================= VA8
 def _good():
-    return VA.isotropic_stiffness(2e9, 1e9), [(VA.isotropic_stiffness(1e9, 5e8), 3.0)]
+    return VA.isotropic_branch_tensor(2e9, 1e9), [(VA.isotropic_branch_tensor(1e9, 5e8), 3.0)]
 
 
 def _neg_branch(frac=-1e-3):
@@ -420,11 +420,11 @@ def test_VA8_invalid_input_refused_valid_accepted():
     with pytest.raises(ValueError):
         VA.AnisotropicMaxwell(_neg_branch(-0.2), br)                           # C_inf indefinite
     with pytest.raises(ValueError, match="allow_fluid"):
-        VA.AnisotropicMaxwell(VA.isotropic_stiffness(0.0, 1e9), br)             # singular C_inf
-    fl = VA.AnisotropicMaxwell(VA.isotropic_stiffness(0.0, 1e9), br, allow_fluid=True)
+        VA.AnisotropicMaxwell(VA.isotropic_branch_tensor(0.0, 1e9), br)             # singular C_inf
+    fl = VA.AnisotropicMaxwell(VA.isotropic_branch_tensor(0.0, 1e9), br, allow_fluid=True)
     assert fl.is_fluid and not VA.AnisotropicMaxwell(Ci, br).is_fluid
     with pytest.raises(ValueError):                                             # fluid, C0 still singular
-        VA.AnisotropicMaxwell(VA.isotropic_stiffness(0.0, 1e9), [(VA.isotropic_stiffness(0.0, 5e8), 1.0)],
+        VA.AnisotropicMaxwell(VA.isotropic_branch_tensor(0.0, 1e9), [(VA.isotropic_branch_tensor(0.0, 5e8), 1.0)],
                               allow_fluid=True)
     with pytest.raises(ValueError):
         VA.AnisotropicMaxwell(Ci, br, rotation=1.1 * np.eye(3))
@@ -504,7 +504,7 @@ def _models_dma():
     rng = np.random.default_rng(10)
     m1, _, _ = orth_model(Rotation.random(random_state=3).as_matrix(), taus=(0.01, 3.0, 400.0))
     m2 = rand_model(rng, taus=(0.02, 1.0, 50.0), ranks=(3, 1, 5))
-    m3 = VA.AnisotropicMaxwell(VA.isotropic_stiffness(2e9, 1e9), [(psd_voigt(rng, 6, 1e9), 2.0)])
+    m3 = VA.AnisotropicMaxwell(VA.isotropic_branch_tensor(2e9, 1e9), [(psd_voigt(rng, 6, 1e9), 2.0)])
     return [m1, m2, m3]
 
 
@@ -532,7 +532,7 @@ def test_VA10_dma_passivity_and_limits():
     rec("VA10 min eig(M'')/max, min eig(M'-Minf)/max", tuple(worst))
     # single branch: loss peak at omega tau = 1 with value M_i / 2
     Cb = psd_voigt(np.random.default_rng(101), 4, 1e9)
-    m = VA.AnisotropicMaxwell(VA.isotropic_stiffness(2e9, 1e9), [(Cb, 2.0)])
+    m = VA.AnisotropicMaxwell(VA.isotropic_branch_tensor(2e9, 1e9), [(Cb, 2.0)])
     w = np.logspace(-3, 3, 20001) / 2.0
     loss = m.complex_modulus(w).imag
     kmax = np.argmax(np.einsum("kij,ij->k", loss, Cb))
@@ -594,8 +594,8 @@ def test_VA11_history_contract():
 # ================================================================================================= VA12
 def test_VA12_stability_phi_vs_mpmath():
     mpmath.mp.dps = 50
-    Cinf = VA.isotropic_stiffness(2e9, 1e9)
-    C1 = VA.isotropic_stiffness(1e9, 5e8)
+    Cinf = VA.isotropic_branch_tensor(2e9, 1e9)
+    C1 = VA.isotropic_branch_tensor(1e9, 5e8)
     model = VA.AnisotropicMaxwell(Cinf, [(C1, 1.0)])
     e1 = rand_sym(np.random.default_rng(12), 1e-3)
     worst = 0.0
@@ -641,8 +641,8 @@ def test_NC1_nonpsd_branch_refused_and_dissipates_negatively():
     lam_ok = np.abs(lam)
     C_ok = ((Q * lam_ok) @ Q.T) / MM
     with pytest.raises(ValueError):
-        VA.AnisotropicMaxwell(VA.isotropic_stiffness(2e9, 1e9), [(C_bad, 0.5)])
-    VA.AnisotropicMaxwell(VA.isotropic_stiffness(2e9, 1e9), [(C_ok, 0.5)])         # the PSD control is accepted
+        VA.AnisotropicMaxwell(VA.isotropic_branch_tensor(2e9, 1e9), [(C_bad, 0.5)])
+    VA.AnisotropicMaxwell(VA.isotropic_branch_tensor(2e9, 1e9), [(C_ok, 0.5)])         # the PSD control is accepted
     om, tau = 2.0, 0.5
     x = om * tau
     e0 = 1e-3 * Q[:, 0]                                  # along the negative eigenvector (Mandel)

@@ -4,12 +4,12 @@ Kaynak: `tests/toporlogy/_vv_layers.py` (dosya → katman sınıflaması elle, d
 
 | Katman | core | geometry | boundary | design | fem | solvers | optimization | optimizers | configuration | execution | post | references |
 |:---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| U unit / property | 40/623 | 3/30 | — | 12/148 | 21/282 | 6/96 | 22/285 | 5/83 | 7/86 | 3/19 | 5/68 | — |
-| MP material point | 39/541 | — | — | 9/138 | 23/245 | 2/44 | 21/239 | 6/103 | 7/97 | 1/13 | 4/55 | — |
+| U unit / property | 41/638 | 3/30 | — | 12/148 | 21/282 | 6/96 | 22/285 | 5/83 | 7/86 | 3/19 | 5/68 | — |
+| MP material point | 40/556 | — | — | 9/138 | 23/245 | 2/44 | 21/239 | 6/103 | 7/97 | 1/13 | 4/55 | — |
 | EL element patch / quadrature | 14/182 | — | — | 3/32 | 20/255 | 3/53 | 6/74 | 3/36 | 3/40 | 2/23 | 3/40 | — |
 | AS assembly / BC / reactions | 12/177 | 1/23 | 7/77 | 2/59 | 17/220 | 7/98 | 4/90 | 2/59 | 3/49 | — | 1/20 | — |
-| AN analytical / MMS | 50/706 | — | — | 9/143 | 49/587 | 7/131 | 29/352 | 8/131 | 12/163 | 3/36 | 3/44 | — |
-| IS independent solver / implementation | 29/338 | — | 1/14 | 5/104 | 34/425 | 9/157 | 14/174 | 4/86 | 6/99 | 2/23 | 1/24 | — |
+| AN analytical / MMS | 51/721 | — | — | 9/143 | 49/587 | 7/131 | 29/352 | 8/131 | 12/163 | 3/36 | 3/44 | — |
+| IS independent solver / implementation | 30/353 | — | 1/14 | 5/104 | 34/425 | 9/157 | 14/174 | 4/86 | 6/99 | 2/23 | 1/24 | — |
 | OG optimization / KKT / gradient | 33/353 | — | 3/29 | 19/214 | 43/435 | 6/87 | 55/514 | 26/292 | 26/269 | 8/80 | 3/54 | — |
 | E2E end-to-end geometry | 4/56 | 5/39 | — | 2/13 | 7/85 | — | 12/108 | 1/21 | 5/51 | 2/23 | 11/91 | — |
 | IC integration / compatibility | 15/148 | 2/34 | 2/15 | 11/120 | 19/177 | — | 23/210 | 9/107 | 30/270 | 17/141 | 1/8 | 1/11 |
@@ -205,6 +205,7 @@ Katman sınıflaması (dosya → katmanlar):
 - `test_units.py`: U, IC
 - `test_uq.py`: U, AN, OG
 - `test_viscoelastic.py`: U, MP, AN
+- `test_viscoelastic_aniso.py`: U, MP, AN, IS
 - `test_viscoelastic_minmax_switch.py`: OG, E2E
 - `test_viscoelastic_robust.py`: OG, E2E
 - `test_viscoelastic_temperature.py`: MP, AN, IS, OG

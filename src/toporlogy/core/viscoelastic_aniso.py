@@ -40,7 +40,7 @@ from toporlogy.core.constitutive import HistoryUpdate, Kinematics, MaterialReque
 from toporlogy.core.linear_elastic import check_positive_definite
 from toporlogy.core.viscoelastic import _g3, _phi
 
-__all__ = ["PSD_RTOL", "RANGE_RTOL", "AnisotropicMaxwell", "isotropic_stiffness"]
+__all__ = ["PSD_RTOL", "RANGE_RTOL", "AnisotropicMaxwell", "isotropic_branch_tensor"]
 
 PSD_RTOL = 1e-12            # λ_min ≥ −PSD_RTOL λ_max accepted as positive semi-definite (rounding of the input)
 RANGE_RTOL = 1e-12          # λ ≤ RANGE_RTOL λ_max is the null space of a branch tensor (pseudo-inverse = 0 there)
@@ -48,12 +48,12 @@ _REQ = MaterialRequest()
 _M = np.array([1.0, 1.0, 1.0, np.sqrt(2.0), np.sqrt(2.0), np.sqrt(2.0)])
 
 
-def isotropic_stiffness(K: float, G: float) -> np.ndarray:
+def isotropic_branch_tensor(K: float, G: float) -> np.ndarray:
     """6×6 Voigt stiffness 3K P_vol + 2G P_dev of an isotropic material (K, G ≥ 0, not both 0; K = 0 or G = 0 gives a
     positive semi-definite branch tensor). Units Pa."""
     K, G = float(K), float(G)
     if not (np.isfinite(K) and np.isfinite(G) and K >= 0.0 and G >= 0.0):
-        raise ValueError(f"isotropic_stiffness: K and G must be finite and >= 0, got K={K!r}, G={G!r}")
+        raise ValueError(f"isotropic_branch_tensor: K and G must be finite and >= 0, got K={K!r}, G={G!r}")
     one = np.array([1.0, 1.0, 1.0, 0.0, 0.0, 0.0])
     ident = np.diag([1.0, 1.0, 1.0, 0.5, 0.5, 0.5])
     return K * np.outer(one, one) + 2.0 * G * (ident - np.outer(one, one) / 3.0)

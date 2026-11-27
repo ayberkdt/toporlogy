@@ -89,3 +89,9 @@ agreement is at rounding level. Lint (`ruff`) and `mypy` on the module are clean
 `.claude/tmp-toporlogy/VA/record.json`, `record2.json` (not committed).
 Limitations: see ANISOTROPIC_VISCOELASTICITY.md; follow-ups (anisotropic temperature shift, per-point orientation,
 state VJP/JVP) need separate preregistrations.
+
+## Integration note (2026-11-27 09:08 +0300)
+
+The public helper `isotropic_stiffness` of this module clashed with `core.linear_elastic.isotropic_stiffness`
+(the API surface forbids one public name in two modules); renamed `isotropic_branch_tensor` everywhere (module,
+tests, doc). No behaviour change.

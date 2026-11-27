@@ -1,6 +1,6 @@
 # Anisotropic linear viscoelasticity at the material point (WP12 V05)
 
-Module `core/viscoelastic_aniso.py` (`AnisotropicMaxwell`, `isotropic_stiffness`); preregistration
+Module `core/viscoelastic_aniso.py` (`AnisotropicMaxwell`, `isotropic_branch_tensor`); preregistration
 `docs/foundations/prereg/VA_anisotropic_ve.md`; tests `tests/toporlogy/test_viscoelastic_aniso.py`. All numbers in the
 tests are **synthetic**; nothing here is material data and no real polymer is claimed to be validated.
 

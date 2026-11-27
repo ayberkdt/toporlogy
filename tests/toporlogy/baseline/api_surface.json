@@ -3398,6 +3398,29 @@
   "sls_relaxation": "sls_relaxation(t,E_inf,E1,tau)",
   "storage_loss_tan": "storage_loss_tan(M)"
  },
+ "toporlogy.core.viscoelastic_aniso": {
+  "AnisotropicMaxwell": {
+   "attrs": [
+    "complex_modulus",
+    "conservative",
+    "evaluate",
+    "initial_state",
+    "instantaneous_tangent",
+    "kinematics",
+    "n_branches",
+    "name",
+    "physical",
+    "relaxation",
+    "state_fields",
+    "storage_loss",
+    "update"
+   ],
+   "class": "AnisotropicMaxwell"
+  },
+  "PSD_RTOL": "<float>",
+  "RANGE_RTOL": "<float>",
+  "isotropic_branch_tensor": "isotropic_branch_tensor(K,G)"
+ },
  "toporlogy.core.viscoplastic": {
   "AVOGADRO": "<float>",
   "BOLTZMANN": "<float>",
