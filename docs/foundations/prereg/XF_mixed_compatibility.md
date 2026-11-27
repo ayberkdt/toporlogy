@@ -15,3 +15,10 @@ else changes; compatible data give bitwise the same results as before.
 | XF2 | the X2d characterisation of the old class (it returned a solution) is replaced by XF1; the λ-based fingerprint (X1d) and every existing mixed test pass unchanged | bitwise / pass |
 
 Run: `python -m pytest tests/toporlogy/test_mixed_kg.py tests/toporlogy/test_mesh_locking.py tests/toporlogy/test_mesh_assembly.py -q -p no:randomly`.
+
+## First result (run 2026-11-27 03:09 +0300 by the clock)
+
+XF1 PASS: `MixedElasticity(m, G, inf).solve` on the X2d net-inflow data raises "net volume change". XF2 PASS:
+test_mixed_kg (incl. the λ-fingerprint X1d), test_mesh_locking, test_mesh_assembly: 129 passed, 6 xfailed
+(recorded). The X2d characterisation of the old behaviour is replaced by the XF1 assertion; the measured old
+violation (max|B u| = 3.1e-2) stays in `prereg/X_mixed.md`.

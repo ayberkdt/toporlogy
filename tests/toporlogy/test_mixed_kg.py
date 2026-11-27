@@ -317,11 +317,10 @@ def test_x2d_gauge_compatibility_and_the_old_class():
     with pytest.raises(ValueError, match="net volume"):
         mx.solve(f, bad)
     old = MixedElasticity(m, G, math.inf)
-    so = old.solve(f, bad)                       # characterisation: the λ-based class does not check
-    U = so.u[:, 0]
-    viol = float(np.abs(old.B @ U).max())
-    print(f"  old class on net-inflow data: no error, max|B u| = {viol:.2e}")
-    assert viol >= 1e-3
+    # XF1 (docs/foundations/prereg/XF_mixed_compatibility.md): the λ-based class now refuses the same data (it
+    # returned a solution with max|B u| = 3.1e-2 before; X2d first result)
+    with pytest.raises(ValueError, match="net volume"):
+        old.solve(f, bad)
 
 
 def _minres_its(n: int, precond: bool) -> int:

@@ -146,10 +146,22 @@ class MixedElasticity:
         return fact.A, fact, gauge
 
     def solve(self, f: np.ndarray, bc: Dirichlet | None = None) -> MixedSolution:
-        """Displacement and pressure for load(s) f (ndof_u,) or (ndof_u, n_cases)."""
+        """Displacement and pressure for load(s) f (ndof_u,) or (ndof_u, n_cases). Raises ValueError for an
+        incompressible body (λ or K = ∞) with every boundary DOF prescribed when the prescribed displacement has a net
+        volume change (∫ div u ≠ 0: no solution exists; ``docs/foundations/prereg/XF_mixed_compatibility.md``)."""
         F = np.asarray(f, float)
         F = F[:, None] if F.ndim == 1 else F
         bc = Dirichlet((), F.shape[1]) if bc is None else bc
+        _, gauge, _ = self._system(bc.dofs)
+        if gauge and len(bc.dofs):
+            Uc = np.broadcast_to(bc.values, (len(bc.dofs), F.shape[1]))
+            Bc = self.B[:, bc.dofs]
+            net = np.abs(np.ones(self.n_p) @ (Bc @ Uc))
+            scale = np.abs(np.ones(self.n_p) @ abs(Bc)) @ np.abs(Uc)
+            if (net > 1e-10 * np.maximum(scale, 1e-300)).any():
+                raise ValueError("incompressible body with every boundary DOF prescribed: the data have a net volume "
+                                 f"change (∮ u·n ≠ 0, relative {float((net / np.maximum(scale, 1e-300)).max()):.2e}); "
+                                 "no solution exists")
         c = bc.dofs
         fact, gauge, free = self._system(c)
         Uc = np.broadcast_to(bc.values, (len(c), F.shape[1]))
@@ -247,21 +259,3 @@ class MixedKG(MixedElasticity):
 
     def _block_modulus(self) -> float:
         return self._bulk
-
-    def solve(self, f: np.ndarray, bc: Dirichlet | None = None) -> MixedSolution:
-        """As :meth:`MixedElasticity.solve`; raises ValueError for K = ∞ on a fully constrained boundary when the
-        prescribed displacement has a net volume change (∫ div u ≠ 0: no incompressible solution exists)."""
-        F = np.asarray(f, float)
-        ncase = 1 if F.ndim == 1 else F.shape[1]
-        bcc = Dirichlet((), ncase) if bc is None else bc
-        _, gauge, _ = self._system(bcc.dofs)
-        if gauge and len(bcc.dofs):
-            Uc = np.broadcast_to(bcc.values, (len(bcc.dofs), ncase))
-            Bc = self.B[:, bcc.dofs]
-            net = np.abs(np.ones(self.n_p) @ (Bc @ Uc))
-            scale = np.abs(np.ones(self.n_p) @ abs(Bc)) @ np.abs(Uc)
-            if (net > 1e-10 * np.maximum(scale, 1e-300)).any():
-                raise ValueError("incompressible body with every boundary DOF prescribed: the data have a net volume "
-                                 f"change (∮ u·n ≠ 0, relative {float((net / np.maximum(scale, 1e-300)).max()):.2e}); "
-                                 "no solution exists")
-        return super().solve(f, bc)
