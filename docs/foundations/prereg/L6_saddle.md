@@ -75,3 +75,72 @@ over restarts.
 
 Run: `python -m pytest tests/toporlogy/test_saddle.py -q -p no:randomly` (TMP/TEMP and basetemp under
 `.claude/tmp-toporlogy/L6_saddle`). First results are appended below.
+
+## First result, run 1 (2026-11-27 06:59 +0300, SHA e935b1a + test file)
+
+Dense (L6a1-a7, constructor check): **PASS**. matvec 9.5e-17; schur_apply 3.9e-16 (C = 0), 3.0e-16 (C SPD); reduced rhs
+9.7e-16; (u, p) 1.3e-15; min eig S 0.221 / 0.747; inertia (14, 5, 0) both. Exact blocks: MINRES(diag, C = 0) 3 iterations
+(derived 3), GMRES(triangular) 1 iteration (derived ≤ 2) for both C; gauge dense 9 iterations, 2.7e-15 against the bordered
+system, |w₀ᵀp| 4.4e-16, the three ValueErrors raised.
+
+FE sweep, run 1 (7 passed, 6 failed):
+
+* L6b1 (combined test): ν = 0.3 and 0.5 pass (κ = 2.6 and 6.8-6.95; λ_max ≤ 0.83 and 0.75, below 3). **ν = 0.4999 FAIL**:
+  κ = 3.72e3 / 3.75e3 / 3.75e3 (n = 4, 8, 16) against the preregistered ≤ 200 (the assertion order hid the ratio check at
+  0.4999; the checks are separated below).
+* L6c1 FAIL on **status** (T6 ν = 0.3 n = 8: "max_iterations" although the explicit residual was 6.2e-10 ≤ 1e-7).
+  Cause: a **fault in the production code**: the restart loop tightened rtol by 10 per restart and `krylov_solve` judged
+  "converged" against the tightened tolerance (res ≤ 10 · rtol_k), so an iterate that met the original target was reported
+  as not converged after the last restart. Fixed in `saddle.py`: converged iff the explicit residual is ≤ 10 · the
+  original rtol. No test threshold changed.
+* L6c2 (combined test) FAIL on the absolute cap: T6 max iterations 50 > 40 (ratio 50/25 = 2.00, within 2.0). Q9: ratio 1.62,
+  max 39, both within bounds. Counts of run 1 (computed with the restart defect above): T6 28/27/25 (ν = 0.3), 47/45/44
+  (0.49), 49/48/47 (0.4999), 50/48/47 (0.5) for n = 8/16/32.
+* L6c3 PASS (plain MINRES n = 32, ν = 0.4999, 500 iterations: explicit residual 2.4e-2). **L6c4 FAIL**: 500/308 = 1.62 < 2.
+* L6c5/c6 PASS on all 24 cases (max ‖x − x_d‖₁/‖x_d‖₁ = 2.1e-9; the κ-scaled bound was ≥ 5.8e-6 in every case; gauge
+  |wᵀp| ≤ 1e-15 relative).
+* L6d PASS (GMRES, block triangular: converged in 1 iteration in every case, residual ≤ 5.6e-9).
+* L6e FAIL (n = 8: 18 iterations, status max_iterations, explicit residual 1.7e-6 > 1e-7; MINRES stopped on its estimate).
+  Cause (hypothesis fault, found afterwards): an ILU factor of an SPD matrix is not symmetric, so it is not a valid MINRES
+  preconditioner (the module's contract requires an SPD one).
+
+Actions after run 1 (thresholds untouched): the status defect fixed (above); the combined L6b1 and L6c2 tests split into
+L6b1a (λ_max ≤ 3), L6b1b (κ ≤ 200), L6b1c (κ growth ≤ 1.25) and L6c2a (ratio ≤ 2), L6c2b (cap ≤ 40) so that each
+preregistered number is judged on its own; L6e parametrised by n; post hoc tests added and labelled (constant-mode
+eigenvalue: Bᵀ1 = 0 gives S 1 = M 1/K, so 1 is an exact eigenvector of Ŝ⁻¹S with eigenvalue (1/K)/(1/G + 1/K) = G/(G+K),
+2.0e-4 at ν = 0.4999; ILU with GMRES; plain MINRES residual after a fixed 300 iterations). Run 2 follows.
+
+## Run 2 (2026-11-27 07:04 +0300, restart defect fixed, tests split; the set of numbers below is the final one)
+
+`python -m pytest tests/toporlogy/test_saddle.py -q -p no:randomly`: **30 passed, 6 xfailed** (strict), 41 s.
+Counts (Krylov iterations summed over restarts, rtol 1e-8, n = 8 / 16 / 32):
+
+| | ν = 0.3 | ν = 0.49 | ν = 0.4999 | ν = 0.5 (gauge) |
+|---|---|---|---|---|
+| T6 | 21 / 23 / 22 | 41 / 39 / 38 | 42 / 42 / 47 | 42 / 42 / 47 |
+| Q9 | 20 / 19 / 22 | 29 / 32 / 36 | 34 / 33 / 33 | 34 / 33 / 33 |
+
+| ID | Result | Measured |
+|---|---|---|
+| L6a1-a4 | PASS | matvec 9.5e-17, schur_apply ≤ 3.9e-16, reduced rhs ≤ 9.7e-16, (u,p) ≤ 1.3e-15, inertia (14, 5, 0) |
+| L6a5 | PASS | MINRES(diag, C = 0) 3 iterations, GMRES(triangular) 1 iteration (both C); residual ≤ 5.8e-16 |
+| L6a6, L6a7 | PASS | ValueErrors raised; gauge 2.7e-15 against the dense bordered system, \|w₀ᵀp\| 4.4e-16 |
+| L6b1a | PASS | λ_max(Ŝ⁻¹S) = 0.829 (ν = 0.3), 0.750 (0.4999), 0.750 (K = ∞), bound 3 |
+| L6b1b | PASS ν = 0.3 (κ = 2.6), ν = 0.5 (6.8-6.95); **FAIL (xfail) ν = 0.4999**: κ = 3.72e3 / 3.75e3 / 3.75e3 | the constant pressure is an exact eigenvector, eigenvalue G/(G+K) = 2.0e-4 (post hoc test: equal to 1e-8 for ν = 0.3, 0.49, 0.4999); the rest of the spectrum has κ' ≤ 7 |
+| L6b1c | PASS | κ(16)/κ(4) = 1.004 (0.3), 1.007 (0.4999), 0.994 (K = ∞) |
+| L6c1 | PASS 24/24 | explicit residual ≤ 9.9e-8 (target 1e-7), u-row ≤ 9.9e-8, p-row ≤ 1.6e-8; 1-3 restarts needed because MINRES stops on its preconditioned recursive estimate |
+| L6c2a | Q9 PASS (36/19 = 1.89); **T6 FAIL (xfail)** 47/21 = 2.24 | |
+| L6c2b | Q9 PASS (max 36); **T6 FAIL (xfail)** max 47 | |
+| L6c3 | PASS | plain MINRES, T6 ν = 0.4999 n = 32: 500 iterations, explicit residual 2.43e-2 |
+| L6c4 | **FAIL (xfail)** | 500/308 = 1.62 (capped count) |
+| L6c5, L6c6 | PASS 24/24 | ‖x − x_d‖₁/‖x_d‖₁ ≤ 3.3e-8 (bound 10 κ̂₁ ‖r‖₁/‖b‖₁ between 1.1e-3 and 3.7: at ν = 0.4999, n = 32, κ̂₁ ~ 1e7, it is 0.996 (T6) and 3.72 (Q9): there the check carries almost no information); gauge \|wᵀp\| ≤ 2.8e-15 rel. |
+| L6d | PASS 9/9 | GMRES, block triangular: 1 iteration in every case (A-solves 13-21 per solve), residual ≤ 5.6e-9 |
+| L6e | **FAIL (xfail)** n = 8 and 16 | 18 iterations / 1.7e-6 and 17 iterations / 1.3e-6 (non-symmetric ILU in MINRES) |
+| L6f | PASS | n_A_solves = n_S_solves ≥ iterations in all FE solves (e.g. 51 solves for 47 iterations) |
+| post hoc (labelled) | PASS | constant-mode eigenvalue; ILU + GMRES converges (2 and 1 iterations, 5.8e-10, 7.1e-9); plain MINRES residual after 300 iterations 6.2e-5 (n = 8) vs 4.1e-2 (n = 32); per-ν count ratio over n ≤ 1.24 (threshold 1.3 set after seeing the counts) |
+
+What the failures say, and their cost: the derivation in this record claimed Ŝ ≃ S on the whole pressure space; the correct
+statement is on q ⟂ constants (the constant's eigenvalue is G/(G+K), small for K ≫ G), and it was a wording error of the
+hypothesis, not of the code. The cost is bounded: one small isolated eigenvalue, counts flat in h (≤ 1.12 T6, ≤ 1.24 Q9 at
+fixed ν) and equal for ν = 0.4999 and 0.5; the ν = 0.3 → ν ≥ 0.49 step doubles the count. Ledger entries:
+`docs/foundations/ledger_additions/L6_saddle.json` (6 strict xfails).

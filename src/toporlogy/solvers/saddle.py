@@ -44,8 +44,10 @@ GAUGE_TOL = 1e-10
 
 def factorised_solver(M: Any, kind: str = "lu", drop_tol: float = 1e-4, fill_factor: float = 10.0) -> Callable:
     """Solve function v ↦ M⁻¹ v of a sparse square matrix: ``kind="lu"`` an exact sparse LU (SuperLU, COLAMD),
-    ``kind="ilu"`` an incomplete LU (``scipy.sparse.linalg.spilu`` with ``drop_tol``, ``fill_factor``): AMG-free, and
-    not mesh-independent as a preconditioner of an elasticity block (no such claim is made)."""
+    ``kind="ilu"`` an incomplete LU (``scipy.sparse.linalg.spilu`` with ``drop_tol``, ``fill_factor``): AMG-free, not
+    mesh-independent as a preconditioner of an elasticity block (no such claim is made) and **not symmetric**, so it is
+    valid as Â only with ``preconditioner="triangular"`` (GMRES), never in the MINRES ``"diagonal"`` variant
+    (preregistration L6e: that combination stopped on a wrong estimate, explicit residual 1e-6)."""
     if kind not in ("lu", "ilu"):
         raise ValueError(f"kind: lu | ilu, got {kind!r}")
     Mc = sp.csc_matrix(M, dtype=float)
@@ -197,13 +199,16 @@ def saddle_solve(op: SaddleOperator, f: np.ndarray, g: np.ndarray, preconditione
     """Solve K [u; p] = [f; g] by preconditioned MINRES (``"diagonal"``, ``"none"``) or GMRES (``"triangular"``).
 
     ``S_hat``: sparse SPD matrix or solve callable for Ŝ (required unless ``preconditioner="none"``); for a stable
-    mixed pair the scaled pressure mass matrix c M with c ≈ 1/G + 1/K_bulk (``docs/foundations/SADDLE_POINT.md``).
+    mixed pair the scaled pressure mass matrix c M with c = 1/G + 1/K_bulk (``docs/foundations/SADDLE_POINT.md``; the
+    spectrum of Ŝ⁻¹S lies in a fixed interval on pressures orthogonal to constants, the constant mode has the eigenvalue
+    G/(G + K_bulk)).
     ``A_hat``: solve callable or sparse matrix for Â (default: the operator's own A-solve, i.e. exact).
     ``rtol``: target of the explicit ‖b − K x‖₂/‖b‖₂ (converged when ≤ 10 rtol, the convention of
     :func:`toporlogy.solvers.diagnostics.krylov_solve`); a Krylov run that stops on its recursive (preconditioned)
     estimate with a larger explicit residual is restarted from its iterate (``max_restarts``, each with rtol/10).
 
-    Pressure null space: ``null_vector`` z with Bᵀz = 0 and C z = 0 (checked; K has the null vector (0, z), e.g. z = 1 for
+    Pressure null space: ``null_vector`` z with Bᵀz = 0 and C z = 0 (checked; K has the null vector (0, z),
+    e.g. z = 1 for
     C = 0 and every boundary DOF constrained). The load must be compatible, zᵀg = 0 (checked, ``ValueError`` otherwise);
     the iteration runs on g − z (zᵀg)/(zᵀz) and the returned p is projected to wᵀp = 0 with ``gauge_weights`` w
     (default z; the mixed classes use w = M 1, the discrete ∫p = 0). The reported residual is that of the original
@@ -228,7 +233,8 @@ def saddle_solve(op: SaddleOperator, f: np.ndarray, g: np.ndarray, preconditione
         scaleB = float(sp.linalg.norm(op.B)) if op.B.nnz else 1.0
         if float(np.linalg.norm(op.B.T @ z)) > GAUGE_TOL * scaleB * nz:
             raise ValueError("null_vector is not a null vector of the pressure coupling (Bᵀ z ≠ 0)")
-        if op.C is not None and float(np.linalg.norm(op.C @ z)) > GAUGE_TOL * max(float(sp.linalg.norm(op.C)), 1e-300) * nz:
+        nC = max(float(sp.linalg.norm(op.C)), 1e-300) if op.C is not None else 1.0
+        if op.C is not None and float(np.linalg.norm(op.C @ z)) > GAUGE_TOL * nC * nz:
             raise ValueError("null_vector is not a null vector of C (C z ≠ 0)")
         if abs(float(w @ z)) <= 1e-12 * float(np.linalg.norm(w)) * nz:
             raise ValueError("the gauge functional wᵀp vanishes on the null vector (wᵀz = 0)")
@@ -255,8 +261,12 @@ def saddle_solve(op: SaddleOperator, f: np.ndarray, g: np.ndarray, preconditione
         r = krylov_solve(K, b_eff, method, "symmetric_indefinite", M=P, rtol=tol, maxiter=maxiter, x0=x)
         x, its, status = r.x, its + r.iterations, r.status
         hist.extend(r.history)
-        if status in ("converged", "not_finite", "breakdown"):
+        if r.residual <= 10.0 * rtol:                # the target is the *original* rtol, not the tightened one
+            status = "converged"
             break
+        if status in ("not_finite", "breakdown"):
+            break
+        status = "max_iterations"
         if k < max_restarts:
             restarts += 1
             tol = tol / 10.0
