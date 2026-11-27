@@ -1,8 +1,8 @@
 # Foundations II — live status
 
-Actual HEAD: `36c020f`  
+Actual HEAD: `4616b50`  
 Branch / dirty state: `foundations/round-3` / dirty  
-Updated at: 2026-11-27 08:55 +0300  
+Updated at: 2026-11-27 09:39 +0300  
 Environment / resource budget: Windows 11, Python 3.12.1, numpy 2.2.6, scipy 1.14.1, torch 2.5.1+cu121 (CUDA present, not exercised), mpmath 1.3.0, scikit-fem 12.0.2, meshio absent; 12 logical CPUs; 16.7 GB RAM, about 2-4 GB free; C: 5.6 GB free (temp files on D:)  
 Last successful integrated checkpoint: cb6e41e (clean-worktree fast suite 3566 passed / 67 xfailed / 0 failed; ruff and mypy clean; records check clean)  
 Current unit: R07 bordered predictor and anisotropic viscoelasticity slices; CC continuation post hoc
@@ -10,7 +10,7 @@ Current unit: R07 bordered predictor and anisotropic viscoelasticity slices; CC 
 | ID | Priority | Dependencies | State | Evidence / SHA | Blocker / next action |
 |---|---|---|---|---|---|
 | WP01-baseline | P0 | — | VERIFIED_SCOPE | logs/collect_f1ff694.txt, logs/baseline_marker_f1ff694.txt, logs/ruff_df2ca78.txt (pass), logs/mypy_df2ca78.txt (1 error, fixed) | full fast suite at the integration checkpoint |
-| WP02-conventions | P0 | WP01-baseline | IN_PROGRESS | MATERIAL_CONTRACT.md | MATHEMATICAL_CONVENTIONS.md |
+| WP02-conventions | P0 | WP01-baseline | IN_PROGRESS | MATERIAL_CONTRACT.md, MATHEMATICAL_CONVENTIONS.md | keep current as modules are added (continuous) |
 | P01-contract | P0 | — | VERIFIED_SCOPE | prereg/P01_contract.md CT1-CT8 pass (df2ca78) | FE coupling under WP17 |
 | E04-poisson | P0 | — | VERIFIED_SCOPE | prereg/E04_poisson.md PO1-PO6 pass; E04_poisson_migration.json (df2ca78) | README label |
 | L-solver | P0 | — | VERIFIED_SCOPE | prereg/L_solver.md: L1-L5 pass except L2c (FAILED, strict xfail, ledger) (f49b623) | opt-in SPD verification; L06 saddle-point preconditioners |
@@ -19,15 +19,15 @@ Current unit: R07 bordered predictor and anisotropic viscoelasticity slices; CC 
 | C-creep | P0 | P01-contract | VERIFIED_SCOPE | prereg/C_creep.md: C2-C7 pass except C3g, C6a predictions (strict xfail, ledger) (9a02203) | creep-plasticity coupling (C8) not implemented |
 | R-rate | P0 | P01-contract | VERIFIED_SCOPE | prereg/R_rate.md R1-R7 pass except R3a at 1e-3 1/s (strict xfail) (f4018f7) | Eyring inside Perzyna; VJP |
 | T-spectral | P0 | — | VERIFIED_SCOPE | prereg/T_spectral.md TS1-TS9, MO1-MO4, E5 pass (da98d82) | second derivatives; torch path |
-| WP06-fem-kernel | P0 | — | IN_PROGRESS | F1-F3 largely covered by existing tests (test_mesh_elements, test_mesh_assembly, test_mesh_verification) | F4 reproduction of the historical T4/T10 rates |
+| WP06-fem-kernel | P0 | — | IN_PROGRESS | F1-F3 existing tests; F4 rates and curved-T10 rule: prereg/F4_rates.md | F3/F4 loads, reactions, constraint transform (subagent running) |
 | WP17-history-fem | P1 | V-viscoelastic, P01-contract | VERIFIED_SCOPE | prereg/H_history.md H0,H1,H3,H4,H5 pass; H2 FAILED (hypothesis), post hoc H2b pass (e70fa8e, f711936) | design density coupling of physical history models beyond linear viscoelasticity |
 | WP16-cure | P1/P2 | P-properties | VERIFIED_SCOPE | prereg/TS_cure.md TS1-TS6; prereg/TS7_cure_slab.md TS7a-g pass (coupled slab) | vitrification kinetics, viscoelastic relaxation during cure |
 | WP15-thermoplastics | P1/P2 | P-properties, V-viscoelastic | VERIFIED_SCOPE | prereg/TS_cure.md TP3, TP4 pass (Avrami/Nakamura only) | TP1/TP2/TP5/TP6 |
-| WP20-identification | P1/P2 | V-viscoelastic, C-creep | PLANNED | — | Prony and Norton synthetic fits D4-D6 |
+| WP20-identification | P1/P2 | V-viscoelastic, C-creep | VERIFIED_SCOPE | covered by D-identification: prereg/D_identification.md (D4-D6; D5a strict xfail) | none |
 | VO-viscoelastic-topology | P1 | V-viscoelastic, WP17-history-fem | VERIFIED_SCOPE | prereg/VO_viscoelastic_topology.md VO1-VO6 pass; post hoc: 0.2 % gain at convergence | Study/YAML integration |
 | MM-micromechanics | P2 | E04-poisson | VERIFIED_SCOPE | prereg/MM_micromechanics.md MM1-MM4, E7, MMI1-2 pass (c9f019b); Eshelby components from memory, cross-checked by coated/hollow sphere closed forms | self-consistent, ellipsoidal inclusions |
 | D-identification | P1/P2 | V-viscoelastic, C-creep | VERIFIED_SCOPE | prereg/D_identification.md D4-D7 pass except D5a covariance prediction (strict xfail); D8 NOT VERIFIED (skip) | real licensed data |
-| VR/VU/KS robust optimisation | P1 | VO-viscoelastic-topology | IN_PROGRESS | prereg/VR_viscoelastic_robust.md (VR1 FAILED), VU_viscoelastic_uncertain.md (weak pass), KS_kkt_stop.md (KS1 pass, KS2/KS3 running) | KS2/KS3 results |
+| VR/VU/KS robust optimisation | P1 | VO-viscoelastic-topology | FAILED | prereg/VR_viscoelastic_robust.md (VR1 FAILED), VU_viscoelastic_uncertain.md (5 passed), KS_kkt_stop.md (KS1, KS4 pass; KS2, KS3 FAILED: the gaps are different stationary points, not the stop rule) | none (robust/min-max benefit not supported on this problem; recorded) |
 | X-mixed | P1 | L-solver | VERIFIED_SCOPE | prereg/X_mixed.md X1-X4 pass except X2e plain-MINRES control (strict xfail); XF: lambda-based solve refuses incompatible data | 3-D MixedKG tests, B-bar/EAS |
 | N-nonlinear | P1 | T-spectral | VERIFIED_SCOPE | prereg/N_nonlinear.md N1-N5 pass; R07 measured still present | bordered predictor for exact singular points |
 | A-adaptivity | P1 | WP06-fem-kernel | VERIFIED_SCOPE | prereg/A_adaptivity.md A1-A3 pass except A2d wording (strict xfail) | elasticity, T6, 3-D |
@@ -45,19 +45,19 @@ Current unit: R07 bordered predictor and anisotropic viscoelasticity slices; CC 
 | R5-adiabatic | P1 | — | VERIFIED_SCOPE | prereg/R5_adiabatic.md | FE heat coupling |
 | H7-H8-history-fe | P1 | — | VERIFIED_SCOPE | prereg/H7_time_convergence.md, H8_more_models_fe.md | — |
 | MS-multistart | P1 | — | VERIFIED_SCOPE | prereg/MS_multistart.md | — |
-| CC-creep-constraint | P1 | — | FAILED | prereg/CC_creep_constraint.md (CC3 infeasible at the halved limit; continuation post hoc running) | continuation in the limit |
+| CC-creep-constraint | P1 | — | FAILED | prereg/CC_creep_constraint.md (CC1, CC2, CC4 pass; CC3 FAILED: halved limit infeasible); post hoc continuation feasible at 0.9/0.8/0.7 (CC_continuation_posthoc.json) | none (failure recorded as strict xfail) |
 | F4-rates/F2fix | P0 | — | VERIFIED_SCOPE | F4_RATES.md, prereg/F2fix_curved_t10_degree.md | — |
 | T2-second-derivative | P0 | — | VERIFIED_SCOPE | prereg/T2_second_derivative.md | κ > 1e4, torch |
 | L6-saddle | P0 | — | VERIFIED_SCOPE | prereg/L6_saddle.md (6 strict xfails) | 3-D, eigenproblems (L06 rest), L07 |
 | E3-conditioning | P0 | — | VERIFIED_SCOPE | prereg/E3_conditioning.md; R02 resolved | — |
 | NH-nonlinear-heat | P1 | — | VERIFIED_SCOPE | prereg/NH_nonlinear_heat.md (5 strict xfails) | share the Newton loop with cure_slab |
-| R07-bordered | P1 | — | IN_PROGRESS | subagent | — |
-| VA-anisotropic-ve | P2 | — | IN_PROGRESS | subagent | — |
+| R07-bordered | P1 | — | VERIFIED_SCOPE | prereg/R07_bordered.md (12 passed first run), prereg/R07c_locate_zero.md (R7c1-R7c3 pass; A1/A2 strict xfails promoted) | none |
+| VA-anisotropic-ve | P2 | — | VERIFIED_SCOPE | prereg/VA_anisotropic_ve.md (20 passed first run) | none |
 | WP19-shells | P1/P2 | WP06-fem-kernel | BLOCKED | — | drilling reference needs >= 3.5 GB free memory (R08) |
 
 ## Next executable units
 
-1. merge R07 and VA slices; final clean-worktree suite
+1. merge the L6e eigen and F34 assembly slices; final clean-worktree suite
 2. share the Newton loop of cure_slab and nonlinear_heat (cleanup)
 3. WP19 shell drilling reference when >= 3.5 GB RAM is free
 4. push foundations/round-3 and open a PR (needs the user's approval)
