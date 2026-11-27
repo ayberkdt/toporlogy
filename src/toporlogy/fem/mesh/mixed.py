@@ -16,6 +16,8 @@ Pressure spaces: ``"vertex"`` — continuous, degree 1 on the vertices of the di
 Taylor–Hood P2–P1 / Q2–Q1, inf-sup stable — Brezzi & Fortin 1991, not read; with Q4/T3/T4: equal order, unstable);
 ``"P0"`` — one constant per cell (with Q4: Q1–P0, which equals the mean-dilatation / B-bar element after static
 condensation and has the checkerboard pressure mode; kept as the unstable comparison).
+:class:`MixedKG` is the K/G alternative with the mean pressure ``p = −K div u`` and ``A = ∫ 2G dev ε:dev ε``; unlike
+the λ-based class it is valid at λ = 0 (ν = 0) and ν < 0 (derivation: ``docs/foundations/MIXED_FEM.md``).
 Plane stress is refused: its effective modulus λ* = 2λμ/(λ + 2μ) stays bounded, there is no volumetric constraint.
 """
 from __future__ import annotations
@@ -35,7 +37,7 @@ from toporlogy.fem.mesh.mesh import Mesh
 from toporlogy.fem.mesh.problem import Dirichlet, ElasticProblem
 from toporlogy.fem.mesh.reference import get
 
-__all__ = ["MixedElasticity", "MixedSolution", "deviatoric_D"]
+__all__ = ["MixedElasticity", "MixedKG", "MixedSolution", "deviatoric_D"]
 
 
 def deviatoric_D(dim: int, mu: float) -> np.ndarray:
@@ -74,10 +76,15 @@ class MixedElasticity:
         if lam == 0:
             raise ValueError("λ = 0 (ν = 0): the pressure p = −λ div u vanishes identically and the pressure block "
                              "−M/λ is undefined; use ElasticProblem")
+        self.lam = float(lam)
+        self._build(mesh, mu, pressure)
+
+    def _build(self, mesh: Mesh, mu: float, pressure: str) -> None:
+        """Pressure space, B, M and the displacement block A = ∫ 2μ ε:ε (shared by :class:`MixedKG`)."""
         if pressure not in ("vertex", "P0"):
             raise ValueError("pressure: vertex | P0")
         self.mesh = mesh
-        self.mu, self.lam = float(mu), float(lam)
+        self.mu = float(mu)
         self.pressure_space = pressure
         self.disp = ElasticProblem(mesh, deviatoric_D(mesh.dim, mu))
         ref = mesh.ref
@@ -107,6 +114,10 @@ class MixedElasticity:
     def nu(self) -> float:
         return 0.5 if math.isinf(self.lam) else self.lam / (2 * (self.lam + self.mu))
 
+    def _block_modulus(self) -> float:
+        """The modulus c of the pressure block −M/c: λ here (p = −λ div u), K in :class:`MixedKG`."""
+        return self.lam
+
     def _system(self, c: np.ndarray) -> tuple[Factorization, bool, np.ndarray]:
         key = c.tobytes()
         if self._fact is not None and self._fact[0] == key:
@@ -114,9 +125,10 @@ class MixedElasticity:
         self.disp._check_supports(c)
         free = np.setdiff1d(self.disp.active, c)
         A, B = self.A[free][:, free], self.B[:, free]
-        C = sp.csr_matrix((self.n_p, self.n_p)) if math.isinf(self.lam) else -self.M / self.lam
+        mod = self._block_modulus()
+        C = sp.csr_matrix((self.n_p, self.n_p)) if math.isinf(mod) else -self.M / mod
         gauge = False
-        if math.isinf(self.lam):
+        if math.isinf(mod):
             r = B.T @ np.ones(self.n_p)
             gauge = bool(np.linalg.norm(r) <= 1e-12 * sp.linalg.norm(B) * math.sqrt(self.n_p))
         if gauge:
@@ -180,3 +192,76 @@ class MixedElasticity:
         S = B @ sla.solve(A, B.T, assume_a="pos")
         w = sla.eigh(0.5 * (S + S.T), self.M.toarray(), eigvals_only=True)
         return np.sort(w)[:n_eigs] if n_eigs else np.sort(w)
+
+
+class MixedKG(MixedElasticity):
+    """Volumetric–deviatoric u-p elasticity with shear modulus G and bulk modulus K (``math.inf`` allowed).
+
+    ``σ = 2G dev ε − p I`` with the **mean pressure** ``p = −tr σ / 3 = −K div u`` (the λ-based
+    :class:`MixedElasticity` carries ``p_λ = −λ div u = p_K + (2G/3) div u`` instead). 3-D physical strain; plane
+    strain embeds ε_zz = 0, so ``dev ε = ε − (div u / 3) I₃``. Weak form, all (v, q)::
+
+        ∫ 2G dev ε(u):dev ε(v) − ∫ p div v = f(v),     −∫ q div u − ∫ q p / K = 0
+
+    The system is ``[[A_dev, Bᵀ], [B, −M/K]]`` with the same ``B``, ``M`` as the λ-based class and
+    ``A_dev = ∫ 2G ε:ε − (2G/3) ∫ div u div v``. Only K > 0 and G > 0 are required: ν = 0 (λ = 0) and ν < 0 are valid.
+    K = ∞ is the exact constraint div u = 0 (zero pressure block, gauge ``∫ p = 0`` when the constant pressure is in
+    the null space). On a fully constrained boundary with K = ∞ the boundary data must satisfy ∮ u·n = 0:
+    :meth:`solve` raises ``ValueError`` otherwise. Scalar G and K only (a heterogeneous or anisotropic material needs
+    its own volumetric split, not this scalar formula). Plane stress is refused, as in the parent class.
+
+    Parameters
+    ----------
+    mesh : Mesh
+    G, K : float
+    pressure : {"vertex", "P0"}
+    plane : {"strain", "stress"}
+    """
+
+    def __init__(self, mesh: Mesh, G: float, K: float, pressure: str = "vertex", plane: str = "strain") -> None:
+        if mesh.dim == 2 and plane != "strain":
+            raise ValueError("the mixed u-p formulation is for plane strain and 3-D; plane stress has no "
+                             "incompressibility constraint: use ElasticProblem")
+        if not (G > 0 and K > 0):
+            raise ValueError("G > 0 and K > 0 are required")
+        self._bulk = float(K)
+        self._build(mesh, G, pressure)
+        g = self.disp.geom
+        div = g.dNdx.reshape(*g.dNdx.shape[:2], -1)                          # node-major: ∂N_n/∂x_i at n·dim + i
+        Ge = np.einsum("eqi,eqj,eq->eij", div, div, g.dV)
+        self.G_div = self.disp.pattern.assemble(Ge)                          # ∫ div φ_i div φ_j
+        self.A = (self.disp.K - (2.0 * self.mu / 3.0) * self.G_div).tocsr()
+
+    @property
+    def G(self) -> float:
+        return self.mu
+
+    @property
+    def K(self) -> float:
+        return self._bulk
+
+    @property
+    def lam(self) -> float:  # type: ignore[override]
+        """Lamé λ = K − 2G/3 (derived; may be zero or negative)."""
+        return math.inf if math.isinf(self._bulk) else self._bulk - 2.0 * self.mu / 3.0
+
+    def _block_modulus(self) -> float:
+        return self._bulk
+
+    def solve(self, f: np.ndarray, bc: Dirichlet | None = None) -> MixedSolution:
+        """As :meth:`MixedElasticity.solve`; raises ValueError for K = ∞ on a fully constrained boundary when the
+        prescribed displacement has a net volume change (∫ div u ≠ 0: no incompressible solution exists)."""
+        F = np.asarray(f, float)
+        ncase = 1 if F.ndim == 1 else F.shape[1]
+        bcc = Dirichlet((), ncase) if bc is None else bc
+        _, gauge, _ = self._system(bcc.dofs)
+        if gauge and len(bcc.dofs):
+            Uc = np.broadcast_to(bcc.values, (len(bcc.dofs), ncase))
+            Bc = self.B[:, bcc.dofs]
+            net = np.abs(np.ones(self.n_p) @ (Bc @ Uc))
+            scale = np.abs(np.ones(self.n_p) @ abs(Bc)) @ np.abs(Uc)
+            if (net > 1e-10 * np.maximum(scale, 1e-300)).any():
+                raise ValueError("incompressible body with every boundary DOF prescribed: the data have a net volume "
+                                 f"change (∮ u·n ≠ 0, relative {float((net / np.maximum(scale, 1e-300)).max()):.2e}); "
+                                 "no solution exists")
+        return super().solve(f, bc)
