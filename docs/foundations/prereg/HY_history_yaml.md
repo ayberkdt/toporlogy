@@ -65,3 +65,28 @@ examples use two new isothermal synthetic cards in the same directory.
 
 Run: `python -m pytest tests/toporlogy/test_history_yaml.py tests/toporlogy/test_mesh_yaml.py -q -p no:randomly`
 (`TMP`/`TEMP` and `--basetemp` under `.claude/tmp-toporlogy/HY`). First result appended below.
+
+## First result (2026-11-27 04:23 +0300, SHA ca74b23 + the files of this commit)
+
+`python -m pytest tests/toporlogy/test_history_yaml.py -p no:randomly`: **77 passed** on the first run, 0 failed, 0
+xfail; no threshold changed, no ledger entry. Together with `test_mesh_yaml*.py`, `test_cli.py`, `test_config.py`,
+`test_architecture.py`, `test_api_surface.py`: 214 passed, 1 xfailed (the existing AY2 xfail, unchanged).
+
+| ID | Result | Measured |
+|---|---|---|
+| HY1 | PASS (single and min-max) | loads, J(t_k) at all 12 steps, dJ_12/dw (seeded random w), x, xphys, objective, f0 and volume histories bitwise equal; start J_12 = 1.811151e+01, 3-iteration objective 5.858158e+01 (single) and 5.858357e+01 (min-max over steps 6 s, 300 s), YAML and API |
+| HY2 | PASS | same for the Norton structure (6 x 3 mesh, 5 steps): J_5 = 2.004673e+04, 2-iteration objective 1.176762e+05, bitwise equal |
+| HY3 | PASS (ramp, hold, table) | all loads equal -300 N s(t_k) on the 3 right nodes within 1e-14 relative; no x-force; 3 nonzero entries at the first step |
+| HY4 | PASS | mm / kN / h config vs SI config: max relative difference of J(t_k) at w = 0.4: 0.00e+00 (threshold 1e-9); loads and times within 1e-13 |
+| HY5 | PASS | 8 grid times, events 10.0 and 250.0 exact, the others within 1e-12 of t0 (t1/t0)^(k/6) |
+| HY6 | PASS (viscoelastic and creep example, reduced to 8 x 4 cells, 2 iterations) | exit code 1 ("not converged"); design.vtu with 32 cells and cell data {xphys, x, weight}, point data displacement_step<k> (45, 3); VTU xphys == result.npz xphys exactly; summary objective == result.npz compliance[k] == history_summary.json value == recomputation, bitwise; history.jsonl 2 lines; `show` reads the folder. Both full examples `validate` (exit 0). A 3-iteration run of the full viscoelastic example (30 x 10, 9 steps) took 0.6 s of optimisation, the 2-iteration creep example (24 x 8, 8 steps) 4.4 s |
+| HY7 | PASS, 60 refusal cases + 2 | every case raises ConfigError with the expected path and a message part; every message names the history path; all problems of a bad config are listed at once; a misspelt key gets a suggestion; CLI `validate`/`run` of a bad config exit 2 and print both paths; `--sweep` exits 2 |
+| HY8 | PASS | `resolve(resolve(c)) == resolve(c)` for both examples; the rebuilt problem from the resolved config has bitwise equal compliance; the `config.resolved.yaml` of a run rebuilds the same problem |
+| HY9 | PASS | `is_history_config` false for a grid and the mesh example, both still resolve and build as before (`Setup`); a grid-path typo is reported by the grid path; 214 passed with the existing mesh YAML, CLI, config, architecture and API-surface tests |
+
+Two set-up corrections were made after writing the test file and **before** its first run (found by reading the card
+code, not by a failure): the expected message part of the HY7 case `material_bad_parameter` was written "> 0" and
+changed to ">= 0" (a Prony `inf` is non-negative, the card reader says ">= 0"), and `build_history` was wrapped so that
+build-stage errors (rigid motions, empty sets) also carry the "history" tag asserted for every refusal. Nothing was
+loosened. The HY1/HY2/HY6/HY8 comparisons of YAML against API are regression tests of two construction paths (the
+kernel is the same), HY3 and HY5 are the independent checks (closed-form literals), as labelled in the test file.

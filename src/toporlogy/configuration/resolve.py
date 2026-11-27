@@ -60,6 +60,9 @@ def read_config(path: str | Path) -> dict[str, Any]:
     if not isinstance(data, dict):
         raise ConfigError(f"{p.name}: the top level must be a mapping, got {type(data).__name__}")
     data.setdefault("name", p.stem)
+    if "analysis" in data:                             # analysis: history (history_build.py): card paths vs this file
+        from toporlogy.configuration.history_build import anchor_paths
+        anchor_paths(data, p.parent)
     return data
 
 
@@ -222,6 +225,9 @@ def resolve(raw: dict[str, Any]) -> dict[str, Any]:
     convert into it while the config is resolved (:mod:`toporlogy.configuration.units`)."""
     if not isinstance(raw, dict):
         raise ConfigError("the config must be a mapping")
+    from toporlogy.configuration.history_build import is_history_config, resolve_history
+    if is_history_config(raw):                          # top-level analysis: own path (history_build.py), own units
+        return resolve_history(raw)
     try:
         version = U.check_schema_version(raw.get("schema_version"))
         system = None if raw.get("units") is None else U.UnitSystem.from_config(raw["units"])

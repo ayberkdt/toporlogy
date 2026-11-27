@@ -20,12 +20,13 @@ from pathlib import Path
 from typing import Any
 
 from toporlogy.configuration.build import Setup, build_setup
+from toporlogy.configuration.history_build import HistorySetup, is_history_config
 from toporlogy.configuration.registry import KINDS, REGISTRY, ConfigError, suggest
 from toporlogy.configuration.resolve import (apply_overrides, combination_label, parse_sweep, read_config, resolve,
                                              sweep_combinations)
 from toporlogy.configuration.schema import STATUS_OK
 from toporlogy.core.domain import is_grid
-from toporlogy.execution.runner import run_setup
+from toporlogy.execution.runner import run_history_setup, run_setup
 from toporlogy.core.verdict import PASS, RETURNED_DESIGN, UNVERIFIED
 from toporlogy.execution.runs import read_run, write_sweep_csv
 
@@ -248,8 +249,12 @@ def cmd_run(a: argparse.Namespace) -> int:
     try:
         raw = read_config(src)
         if a.sweep:
+            if is_history_config(raw):
+                raise ConfigError("--sweep is not supported by the history path (analysis type history) yet", "--sweep")
             return _run_sweep(a, raw)
         setup = build_setup(raw, a.set)
+        if isinstance(setup, HistorySetup):       # analysis: history (configuration/history_build.py)
+            return _run_history(a, setup, src)
         setup.study.torch_threads = None          # the command set torch's threads once (_with_torch_threads)
     except ConfigError as e:
         return report_config_error(e, src, "validate")
@@ -271,6 +276,42 @@ def cmd_run(a: argparse.Namespace) -> int:
                    resume=resume)
     out(kv("RESULT", _result_line(sm)))
     out(kv("NEXT", _next_after_run(sm, folder, src)))
+    return EXIT_OK if sm["status"] == STATUS_OK else EXIT_FAIL
+
+
+def _history_problem_line(s: HistorySetup) -> str:
+    m, dm = s.mesh, s.config["domain"]
+    free = len(s.structure.free)
+    nl = len(s.loads)
+    return (f"{' x '.join(str(n) for n in dm['n'])} {m.element} | {s.structure.ne} design elements | "
+            f"{free} free DOFs | {len(s.times)} time steps | {s.kind} | {nl} load{'s' if nl != 1 else ''} | mma | "
+            f"1 constraint | max {s.options['max_iter']} it")
+
+
+def _run_history(a: argparse.Namespace, setup: HistorySetup, src: str) -> int:
+    """``run`` of an ``analysis: history`` config: the optimisation, then the files of ``run_history_setup``."""
+    folder = Path(a.out) if a.out else _default_folder(setup.config)
+    if getattr(a, "resume", False):
+        err(kv("ERROR", "--resume is not supported by the history path (analysis type history) yet"))
+        return EXIT_CONFIG
+    if _finished(folder):
+        err(kv("ERROR", f"{folder} already holds a finished run; it is not overwritten"))
+        err(kv("NEXT", f"{PROG} run {src} --out <new folder>"))
+        return EXIT_CONFIG
+    out(kv("RUN", f"{setup.config['name']} -> {folder}"))
+    out(kv("problem", _history_problem_line(setup)))
+    for w in setup.warnings:
+        out(kv("warning", w))
+    prog = None
+    if not a.quiet:
+        out(kv("note", "the iteration table is printed after the optimisation (no per-iteration callback)"))
+        prog = Progress(setup.objective_name, ["volume"])
+    sm = run_history_setup(setup, folder, progress=prog, source=str(src), overrides=a.set, post_progress=_post_line)
+    out(kv("RESULT", _result_line(sm)))
+    if "not converged" in sm["status"]:
+        out(kv("NEXT", f"{PROG} run {src} --set optimizer.max_iter={2 * int(sm.get('max_iter') or 40)}"))
+    else:
+        out(kv("NEXT", f"{PROG} show {folder}"))
     return EXIT_OK if sm["status"] == STATUS_OK else EXIT_FAIL
 
 
@@ -385,6 +426,8 @@ def cmd_validate(a: argparse.Namespace) -> int:
         s = build_setup(read_config(src), a.set)
     except ConfigError as e:
         return report_config_error(e, src, "validate")
+    if isinstance(s, HistorySetup):               # analysis: history (configuration/history_build.py)
+        return _validate_history(s, src)
     r, st = s.config, s.study
     d = st.domain
     ph = _groups(st.physics)[0]
@@ -428,6 +471,47 @@ def cmd_validate(a: argparse.Namespace) -> int:
     out(kv("run", f"max_iter {r['run']['max_iter']} | tol {fval(r['run']['tol'])} | output {r['output']['folder']}"))
     if r["post"]:
         out(kv("post", " -> ".join(p["type"] for p in r["post"])))
+    for w in s.warnings:
+        out(kv("warning", w))
+    out(kv("NEXT", f"{PROG} run {src}"))
+    return EXIT_OK
+
+
+def _validate_history(s: HistorySetup, src: str) -> int:
+    """``validate`` of an ``analysis: history`` config (no solve)."""
+    r, st, m = s.config, s.structure, s.mesh
+    dm, o = r["domain"], s.options
+    out(kv("CONFIG", f"{src}  valid"))
+    out(kv("analysis", f"history | {s.kind} | plane strain | thickness {fval(dm['thickness'])}"))
+    mat = s.card.model
+    if s.kind == "viscoelastic":
+        out(kv("material", f"{s.card.name} (generalized_maxwell, {'synthetic' if s.card.synthetic else 'measured'}) | "
+                           f"{len(mat.shear.taus)} shear + {len(mat.bulk.taus)} bulk Prony terms"))
+    else:
+        out(kv("material", f"{s.card.name} (norton, {'synthetic' if s.card.synthetic else 'measured'}) | "
+                           f"n {fval(mat.n)} | A {fval(mat.A)} 1/s | sigma_ref {fval(mat.sigma_ref)} Pa"))
+    out(kv("mesh", f"rectangle {' x '.join(str(n) for n in dm['n'])} {m.element} (2-D), size "
+                   f"{' x '.join(fval(v) for v in dm['size'])}, perturb {fval(dm['perturb'])}"))
+    out(kv("elements", f"{m.n_cells} cells | {st.ne} design | {m.n_nodes} nodes"))
+    out(kv("DOFs", f"{st.ndof} | {len(st.free)} free | {len(s.fixed)} fixed ({len(r['supports'])} "
+                   f"support{'s' if len(r['supports']) != 1 else ''})"))
+    out(kv("times", f"{len(s.times)} steps from {fval(s.times[0])} to {fval(s.times[-1])} s"))
+    out(kv("loads", str(len(s.loads))))
+    for i, ld in enumerate(s.loads, 1):
+        out(f"  {i}  {ld['label']:<18} force {vec(ld['resultant'])} N on {ld['nodes']} node"
+            f"{'s' if ld['nodes'] != 1 else ''}  time {ld['time']}")
+    steps = ", ".join(f"{fval(s.times[k])} s (step {k})" for k in s.steps)
+    out(kv("objective", f"{s.objective_name} at {steps}"))
+    out(kv("constraints", f"volume <= {fval(o['volume'])}"))
+    out(kv("chain", f"density_filter(rmin={fval(o['rmin'])})"))
+    out(kv("interp", f"simp(penal={fval(o['penal'])}, emin_ratio={fval(o['emin'])})"))
+    out(kv("optimizer", f"mma | max_iter {o['max_iter']} | tol {fval(o['tol'])} | kkt_tol {fval(o['kkt_tol'])} | "
+                        f"move {fval(o['move'])}"))
+    out(kv("run", f"output {r['output']['folder']}"))
+    if r["post"]:
+        out(kv("post", " -> ".join(p["type"] for p in r["post"])))
+    for n in s.notes:
+        out(kv("note", n))
     for w in s.warnings:
         out(kv("warning", w))
     out(kv("NEXT", f"{PROG} run {src}"))

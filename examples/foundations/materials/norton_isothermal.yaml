@@ -1,0 +1,14 @@
+# SYNTHETIC card: invented numbers, not a real material, no engineering claim.
+# Isothermal variant of norton.yaml (no Arrhenius factor): what the history path (analysis: history) accepts.
+# A is the creep rate coefficient at sigma = sigma_ref: rate = A (q / sigma_ref)^n with q the von Mises stress.
+name: synthetic_norton_creep_isothermal
+model: norton
+units: {stress: Pa, rate: 1/s}
+parameters:
+  elasticity: {E: 7.0e+10, nu: 0.33}
+  A: 1.0e-6              # 1/s at sigma_ref
+  sigma_ref: 1.0e+8       # Pa
+  n: 4.5
+provenance: {source: "synthetic example, invented numbers", synthetic: true, date: "2026-11-27", license: "CC0-1.0"}
+validity:
+  stress: [0.0, 2.0e+8]
