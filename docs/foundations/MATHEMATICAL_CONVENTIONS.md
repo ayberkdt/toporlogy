@@ -51,6 +51,23 @@ module uses a different variable, that is said explicitly.
 * Thermal strain from an instantaneous CTE: ε_th = ∫_{T_ref}^{T} α dT; a secant CTE is converted explicitly
   [`core/properties.ThermalExpansion`].
 
+## Homogenisation, eigenproblems and constraints
+
+* Periodic cell: lattice vectors a_1 … a_d as the rows of ``lattice``; the macro strain enters as u = H x + w with H
+  the symmetric strain tensor of the Voigt vector (H_xy = γ_xy / 2, engineering shear) and w periodic; C_ij =
+  u_iᵀ K u_j / |Y| with |Y| = |det lattice| (× thickness in 2-D) [`fem/mesh/homogenization.py`, `fem/homogenization.py`
+  on the grid]. KUBC / SUBC use |Y| = Σ dV and bound the periodic value: C_SUBC ≤ C_PBC ≤ C_KUBC (Loewner).
+* 2-D bulk modulus of a cell: κ = (C11 + C12 + C21 + C22) / 4 (energy of the hydrostatic strain (1, 1, 0) divided by
+  4); for an isotropic plane-stress solid κ = E / (2(1 − ν)), μ = E / (2(1 + ν)) [`optimization/cell_topology.py`].
+* Constraint rows C u = d, one right-hand-side column per load case; elimination u = T z + u0; reactions r = K u − f
+  over all DOFs and multipliers r = Cᵀ λ [`fem/mesh/constraints.py`].
+* Generalised eigenproblem K φ = λ M φ with M-orthonormal modes; MAC_ij = (a_iᵀ M b_j)² / ((a_iᵀ M a_i)(b_jᵀ M b_j)),
+  one implementation [`solvers/eigen.mac`, used by `optimization/mode_tracking`]. Buckling: (K + λ K_G) φ = 0 with K_G
+  of the reference load, tension positive; solved as (−K_G) φ = μ K φ, load factor 1/μ for μ > 0, μ < 0 the reversed
+  load [`solvers/eigen.buckling_load_factors`, `EIGEN_RELIABILITY.md`].
+* Projection of a filtered density: x̂ = (tanh(βη) + tanh(β(x̄ − η))) / (tanh(βη) + tanh(β(1 − η)))
+  [`design/chain.HeavisideProjection`; numpy form in `optimization/cell_topology`].
+
 ## Symbols with two meanings
 
 | symbol | meaning A | meaning B | how the code separates them |
