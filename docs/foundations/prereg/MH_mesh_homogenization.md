@@ -57,3 +57,12 @@ no threshold, input or assertion changed.
 Scope: linear elasticity and conduction, small strain, one periodic cell given as a conforming mesh whose opposite
 faces have matching nodes. Not done: a Study response on the general mesh (the grid has
 `optimization.homogenization_responses`), KUBC/SUBC bounds on the mesh.
+
+## Robustness addition MH9 (preregistered 2026-11-27 12:31 +0300, base `3a57914`, before the code change)
+
+A lattice that is a sub-period of the mesh (e.g. half the true vectors on a structured mesh) still matches node pairs,
+so `periodic_lattice` accepts it, imposes a stronger periodicity and |Y| = |det lattice| is wrong: a silent wrong
+answer. A periodic cell tiles the plane (space) with exactly its own measure, so |det lattice| must equal the measure
+of the mesh, Σ dV. Change (periodic bc, elasticity and conduction): refuse with ValueError when
+| |det L| − Σ dV | > 1e-9 Σ dV. Check MH9: (a) the MH2 rectangle 12 × 10 with lattice diag(6, 10) (half period in x,
+nodes match) → ValueError naming both measures; (b) every MH1–MH8 test unchanged; (c) the cell tests (fast) unchanged.
