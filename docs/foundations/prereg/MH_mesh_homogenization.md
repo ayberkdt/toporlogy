@@ -82,3 +82,9 @@ negative effective conductivity, and a non-symmetric κ = [[1, 0.5], [0, 1]] is 
 Change: κ must be symmetric (|κ − κᵀ| ≤ 1e-12 |κ|) and positive definite (Cholesky), else ValueError. Check MH10:
 both probes refused ("symmetric", "positive definite"); κ scalar 2.5 and an SPD anisotropic κ accepted (the
 homogeneous cell returns κ, rel 1e-10); MH1–MH9 unchanged.
+
+### MH10 result (run 12:39 +0300 by the clock; recorded 2026-11-27 12:39 +0300)
+
+PASS on the first run: diag(1, −1) refused ("positive definite"), [[1, 0.5], [0, 1]] refused ("symmetric"); the SPD
+anisotropic κ and the scalar 2.5 are returned by the homogeneous skew cell to ≤ 1e-10. MH and MB files: 23 passed.
+The conduction path is not used by the cell optimisation, so the slow results are unaffected.

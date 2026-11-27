@@ -221,3 +221,15 @@ def test_mh9_sub_period_lattice_is_refused() -> None:
         homogenize_mesh_elasticity(m, D_plane_stress(NU), [[6.0, 0.0], [0.0, 10.0]])
     with pytest.raises(ValueError, match="mesh measure"):
         homogenize_mesh_conduction(m, 1.0, [[6.0, 0.0], [0.0, 10.0]])
+
+
+# ---------------------------------------------------------------------------------------------- MH10
+def test_mh10_conductivity_must_be_symmetric_positive_definite() -> None:
+    m, L = skew2("Q4")
+    with pytest.raises(ValueError, match="positive definite"):
+        homogenize_mesh_conduction(m, np.diag([1.0, -1.0]), L)
+    with pytest.raises(ValueError, match="symmetric"):
+        homogenize_mesh_conduction(m, np.array([[1.0, 0.5], [0.0, 1.0]]), L)
+    k = np.array([[2.0, 0.3], [0.3, 1.0]])
+    assert rel(homogenize_mesh_conduction(m, k, L).C, k) <= 1e-10
+    assert rel(homogenize_mesh_conduction(m, 2.5, L).C, 2.5 * np.eye(2)) <= 1e-10

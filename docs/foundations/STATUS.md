@@ -1,10 +1,10 @@
 # Foundations II — live status
 
-Actual HEAD: `31ca703`  
+Actual HEAD: `944f382`  
 Branch / dirty state: `foundations/round-3` / dirty  
-Updated at: 2026-11-27 12:38 +0300  
+Updated at: 2026-11-27 12:42 +0300  
 Environment / resource budget: Windows 11, Python 3.12.1, numpy 2.2.6, scipy 1.14.1, torch 2.5.1+cu121 (CUDA present, not exercised), mpmath 1.3.0, scikit-fem 12.0.2, meshio absent; 12 logical CPUs; 16.7 GB RAM, about 2-4 GB free; C: 5.6 GB free (temp files on D:)  
-Last successful integrated checkpoint: 8e39c7c (clean-worktree fast suite, run 11:21-12:25: 3813 passed / 5 skipped / 70 xfailed / 0 failed, exit 0, logs/fast_suite_clean_8e39c7c.txt; slow cell tests at the final code: IH 4 passed + 2 strict xfails, IP 4, IA 3, IAb 3, IAc 3 passed; ruff and mypy clean; records check clean); after it, IH6 (filter radius refusal), MH9 (lattice measure refusal) and IH7 (x0 box, degenerate filter lattice) verified by targeted runs (fast cell, MH, MB tests)  
+Last successful integrated checkpoint: 8e39c7c (clean-worktree fast suite, run 11:21-12:25: 3813 passed / 5 skipped / 70 xfailed / 0 failed, exit 0, logs/fast_suite_clean_8e39c7c.txt; slow cell tests at the final code: IH 4 passed + 2 strict xfails, IP 4, IA 3, IAb 3, IAc 3 passed; ruff and mypy clean; records check clean); after it, IH6 (filter radius refusal), MH9 (lattice measure refusal) IH7 (x0 box, degenerate filter lattice) and MH10 (conductivity SPD) verified by targeted runs (fast cell, MH, MB tests)  
 Current unit: round closed; push/PR awaits the user's approval
 
 | ID | Priority | Dependencies | State | Evidence / SHA | Blocker / next action |

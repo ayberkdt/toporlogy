@@ -186,6 +186,12 @@ def homogenize_mesh_conduction(mesh: Mesh, kappa: Any, lattice: Any, k: Any = No
     kt = kap * np.eye(dim) if kap.ndim == 0 else kap
     if kt.shape != (dim, dim):
         raise ValueError(f"kappa must be a scalar or ({dim}, {dim}), got {kap.shape}")
+    if not np.isfinite(kt).all() or np.abs(kt - kt.T).max() > 1e-12 * np.abs(kt).max():
+        raise ValueError("kappa must be finite and symmetric (MH10)")
+    try:
+        np.linalg.cholesky(kt)
+    except np.linalg.LinAlgError:
+        raise ValueError("kappa must be positive definite (MH10)") from None
     P = HeatProblem(mesh, kv[:, None, None] * kt, thickness=thickness, degree=degree)
     Ke0 = kn.conduction(P.geom, np.broadcast_to(kt, (mesh.n_cells, dim, dim)), P.thickness)
     _same_measure(L, P)
