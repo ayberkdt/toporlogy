@@ -59,5 +59,33 @@ Run: `TMP/TEMP=D:/Masaustu/Topology Optimization/.claude/tmp-toporlogy/VA`, `pyt
 tests/toporlogy/test_viscoelastic_aniso.py -q -p no:randomly -p no:cacheprovider --basetemp=<TMP>/bt`. Resource cap:
 one process, < 200 MB.
 
-## First result
-(appended after the first run)
+## First result (2026-11-27 09:07 +0300, clock output; run at 09:04 +0300 on base 36c020f + production module)
+
+All 20 collected tests PASS on the first run (`python -m pytest tests/toporlogy/test_viscoelastic_aniso.py -q -p no:randomly`).
+No threshold changed and no test-set-up fix was needed. Measured values (worst over the parametrisation):
+
+| ID | Measured | Threshold |
+|---|---|---|
+| VA1 (6 cases: separate/combined x seeds 0-2) | stress 3.12e-16, tangent 3.31e-16, psi 7.68e-16, D 4.17e-16 (relative to peak) | 1e-13, 1e-13, 1e-12, 1e-11 |
+| VA2 | 3.64e-16 | 1e-12 |
+| VA3 | stress 4.61e-16, tangent 1.63e-15, psi 3.62e-16, D 7.57e-16; isotropic 6.31e-16 | 1e-12 |
+| VA4 | 5.32e-12 | 1e-9 |
+| VA5 | FD 7.11e-14; continuum 0.00e+00 | 1e-8; 1e-14 |
+| VA6 | psi, D positive in all 300 steps (smallest min/max ratios 1.19e-02, 1.36e-05, from the re-run with the recording fixed); D vs GL 5.28e-14 | >= -1e-12, >= -1e-11; 1e-10 |
+| VA7(i) | 7.34e-16 | 1e-10 |
+| VA7(ii) | residuals N=40/80/160: -68.731, -17.222, -4.308; ratios 3.991, 3.998; abs(R160)/W 2.22e-04 | ratios >= 3.2; <= 1e-3 |
+| VA8 | all refusals/acceptances as registered; negative branch lambda_min/lambda_max = -1.000e-03 | exact |
+| VA9 | restart, rollback, drive_material_point restart bitwise equal | exact |
+| VA10 | passivity: smallest eig(M'')/max 2.52e-04, eig(M'-Minf)/max 8.91e-14 (both >= 0); cycle dissipation rel err 1.44e-06 | >= -1e-12; 1e-4 |
+| VA11 | contract holds | exact |
+| VA12 | 1.35e-16 | 1e-13 |
+| NC1 | W_bad = -314.1592654 (formula -314.1592654), W_ok = 314.1592654 (formula 314.1592654) | sign exact; 1e-6 |
+
+Notes. The first run recorded VA6 and VA10 minima through `min(0, ...)`, which printed 0.0; the recording was changed
+(test instrumentation only, no assertion or threshold) and the suite re-run (also 20 passed) to obtain the true
+minima shown above. VA2 drives the six unit Voigt strain directions (engineering shear component 1e-3), not unit
+Mandel vectors; both span the same six directions. VA1 passed at ~1e-16, far inside 1e-13, so the cross-implementation
+agreement is at rounding level. Lint (`ruff`) and `mypy` on the module are clean. Raw record:
+`.claude/tmp-toporlogy/VA/record.json`, `record2.json` (not committed).
+Limitations: see ANISOTROPIC_VISCOELASTICITY.md; follow-ups (anisotropic temperature shift, per-point orientation,
+state VJP/JVP) need separate preregistrations.

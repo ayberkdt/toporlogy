@@ -189,7 +189,7 @@ class AnisotropicMaxwell:
         return C * np.outer(_M, _M) if form == "mandel" else C
 
     def storage_loss(self, omega: Any) -> tuple[np.ndarray, np.ndarray]:
-        """(C'(ω), C''(ω)): storage and loss tensors [Pa], Voigt (real and imaginary part of :meth:`complex_modulus`)."""
+        """(C'(ω), C''(ω)): storage and loss tensors [Pa], Voigt (real, imaginary part of :meth:`complex_modulus`)."""
         Cs = self.complex_modulus(omega)
         return Cs.real, Cs.imag
 
