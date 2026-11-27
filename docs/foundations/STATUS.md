@@ -1,11 +1,11 @@
 # Foundations II — live status
 
-Actual HEAD: `11a4828`  
+Actual HEAD: `12c05ad`  
 Branch / dirty state: `foundations/round-3` / dirty  
-Updated at: 2026-11-27 10:05 +0300  
+Updated at: 2026-11-27 10:27 +0300  
 Environment / resource budget: Windows 11, Python 3.12.1, numpy 2.2.6, scipy 1.14.1, torch 2.5.1+cu121 (CUDA present, not exercised), mpmath 1.3.0, scikit-fem 12.0.2, meshio absent; 12 logical CPUs; 16.7 GB RAM, about 2-4 GB free; C: 5.6 GB free (temp files on D:)  
 Last successful integrated checkpoint: cb6e41e (clean-worktree fast suite 3566 passed / 67 xfailed / 0 failed; ruff and mypy clean; records check clean)  
-Current unit: R07 bordered predictor and anisotropic viscoelasticity slices; CC continuation post hoc
+Current unit: IP projection with beta continuation (IH follow-up); final clean-worktree suite
 
 | ID | Priority | Dependencies | State | Evidence / SHA | Blocker / next action |
 |---|---|---|---|---|---|
@@ -57,6 +57,8 @@ Current unit: R07 bordered predictor and anisotropic viscoelasticity slices; CC 
 | L6e-eigen | P0 | L-solver | VERIFIED_SCOPE | prereg/L6e_eigen.md (E0-E5, 19 passed first run); EIGEN_RELIABILITY.md | non-symmetric and quadratic eigenproblems |
 | NS-newton-shared | P1 | — | VERIFIED_SCOPE | prereg/NS_newton_shared.md (NS1-NS4 pass; bitwise neutral vs 1f898bf) | none |
 | MH-mesh-homogenization | P1 | WP06-fem-kernel | VERIFIED_SCOPE | prereg/MH_mesh_homogenization.md (MH1-MH8, 15 passed first run) | Study response on the general mesh; KUBC/SUBC on the mesh |
+| MB-mesh-bounds | P1 | MH-mesh-homogenization | VERIFIED_SCOPE | prereg/MB_mesh_bounds.md (MB1-MB5 pass first run; C_SUBC <= C_PBC <= C_KUBC) | none |
+| IH-inverse-homogenization | P1 | MH-mesh-homogenization | FAILED | prereg/IH_inverse_homogenization.md (IH1, IH2, IH3/4 a-b, IH5 pass; IH3(c), IH4(c) FAILED: uniform grey stationary point); post hoc 0/1 start 0.841/0.837 of HS | IP projection (running) |
 
 ## Next executable units
 
