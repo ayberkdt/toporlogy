@@ -30,7 +30,7 @@ from toporlogy.fem.mesh.linear import Factorization
 from toporlogy.fem.mesh.mesh import Mesh
 from toporlogy.fem.mesh.quadrature import rule
 
-__all__ = ["CreepStructure", "CreepResult", "norton_update_torch"]
+__all__ = ["CreepStructure", "CreepResult", "norton_update_torch", "pnorm_creep_strain"]
 
 _EYE = torch.eye(3, dtype=torch.float64)
 _ONE6 = np.array([1.0, 1.0, 1.0, 0.0, 0.0, 0.0])
@@ -139,6 +139,8 @@ class CreepResult:
     u: torch.Tensor                  # (n_steps, ndof)
     compliance: torch.Tensor         # f_nᵀ u_n (n_steps,)
     times: np.ndarray
+    p_cr: torch.Tensor | None = None  # accumulated equivalent creep strain at the last step (n_points,)
+    point_volume: np.ndarray | None = None   # (n_points,)
 
 
 class CreepStructure:
@@ -239,12 +241,23 @@ class CreepStructure:
         ecr = torch.zeros(self.ne * self.nq, 3, 3, dtype=w.dtype)
         u = torch.zeros(self.ndof, dtype=w.dtype)
         us, cs = [], []
+        p_tot = torch.zeros(self.ne * self.nq, dtype=w.dtype)
         for k in range(len(self.times)):
             e_prev = ecr.detach() if detach_history else ecr
             u = _Step.apply(w, e_prev, u, self, k)
             K, G = self._moduli(w)
-            _s, ecr, _dp = norton_update_torch(self._eps(u), e_prev, K, G, float(self.dteff[k]), self.A, self.sref,
-                                               self.n)
+            _s, ecr, dp = norton_update_torch(self._eps(u), e_prev, K, G, float(self.dteff[k]), self.A, self.sref,
+                                              self.n)
+            p_tot = p_tot + dp
             us.append(u)
             cs.append(torch.as_tensor(self.loads[k]) @ u)
-        return CreepResult(torch.stack(us), torch.stack(cs), self.times.copy())
+        return CreepResult(torch.stack(us), torch.stack(cs), self.times.copy(), p_tot, self.dV.reshape(-1).copy())
+
+
+def pnorm_creep_strain(result: CreepResult, P: float = 8.0) -> torch.Tensor:
+    """(Σ_q v_q p_cr,q^P / Σ v_q)^(1/P): a smooth aggregate of the accumulated creep strain over the points (volume
+    weighted; ``prereg/CC_creep_constraint.md``). Tends to the maximum as P grows."""
+    if result.p_cr is None or result.point_volume is None:
+        raise ValueError("pnorm_creep_strain needs a CreepResult with p_cr")
+    v = torch.as_tensor(result.point_volume / result.point_volume.sum(), dtype=result.p_cr.dtype)
+    return ((v * result.p_cr.clamp_min(0.0) ** P).sum()) ** (1.0 / P)

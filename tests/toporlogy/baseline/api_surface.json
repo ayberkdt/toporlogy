@@ -6111,7 +6111,10 @@
  },
  "toporlogy.optimization.creep_topology": {
   "CreepResult": {
-   "attrs": [],
+   "attrs": [
+    "p_cr",
+    "point_volume"
+   ],
    "class": "CreepResult"
   },
   "CreepStructure": {
@@ -6120,7 +6123,8 @@
    ],
    "class": "CreepStructure"
   },
-  "norton_update_torch": "norton_update_torch(eps,ecr_n,K,G,dt,A,sigma_ref,n,tol,max_iter)"
+  "norton_update_torch": "norton_update_torch(eps,ecr_n,K,G,dt,A,sigma_ref,n,tol,max_iter)",
+  "pnorm_creep_strain": "pnorm_creep_strain(result,P)"
  },
  "toporlogy.optimization.diagnostics": {
   "field_symmetry": "field_symmetry(domain,fields,axis,coordinate,threshold)",
@@ -7310,7 +7314,7 @@
    "class": "ViscoelasticStructure"
   },
   "multistart": "multistart(structure,starts,volume,rmin,kw)",
-  "optimize_viscoelastic": "optimize_viscoelastic(structure,volume,rmin,step_index,penal,emin,max_iter,move,x0,steps,tol,kkt_tol)",
+  "optimize_viscoelastic": "optimize_viscoelastic(structure,volume,rmin,step_index,penal,emin,max_iter,move,x0,steps,tol,kkt_tol,extra_constraints)",
   "perturbed_starts": "perturbed_starts(n,volume,n_cells,amplitude,seed)"
  },
  "toporlogy.optimizers": {

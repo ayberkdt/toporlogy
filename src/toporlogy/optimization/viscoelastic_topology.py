@@ -21,6 +21,7 @@ Isothermal, small strain, plane strain on a 2-D :class:`~toporlogy.fem.mesh.Mesh
 """
 from __future__ import annotations
 
+import math
 from collections.abc import Sequence
 from dataclasses import dataclass, field
 from typing import Any
@@ -285,7 +286,8 @@ def optimize_viscoelastic(structure: ViscoelasticStructure | RobustViscoelastic,
                           step_index: int = -1,
                           penal: float = 3.0, emin: float = 1e-9, max_iter: int = 40, move: float = 0.2,
                           x0: np.ndarray | None = None, steps: Sequence[int] | None = None,
-                          tol: float = 0.0, kkt_tol: float | None = None) -> OptimizeResult:
+                          tol: float = 0.0, kkt_tol: float | None = None,
+                          extra_constraints: Sequence[tuple[Any, float]] = ()) -> OptimizeResult:
     """Minimise the compliance f_nᵀ u_n at step ``step_index`` (−1: the last, the service time), or with ``steps``
     (several step indices) the worst of them, min max_k J_k, by the bound formulation min z s.t.
     J_k/c_ref − z ≤ 0 (z an extra variable in [0, 1], c_ref = 1.5 max_k J_k(x0); ``prereg/VR_viscoelastic_robust.md``);
@@ -303,6 +305,8 @@ def optimize_viscoelastic(structure: ViscoelasticStructure | RobustViscoelastic,
     if not ks:
         raise ValueError("steps must name at least one step")
     minmax = len(ks) > 1
+    if minmax and extra_constraints:
+        raise ValueError("extra_constraints are supported with a single objective step only (not with min-max)")
     x = np.full(structure.ne, float(volume)) if x0 is None else np.asarray(x0, float).copy()
     opt = MMA(move=move)
     hist: dict[str, list[float]] = {"f0": [], "volume": [], "change": []}
@@ -313,15 +317,32 @@ def optimize_viscoelastic(structure: ViscoelasticStructure | RobustViscoelastic,
     kkt: float | None = None
     it = 0
 
+    extras = [(fn, float(lim)) for fn, lim in extra_constraints]
+    for _fn, lim in extras:
+        if not (math.isfinite(lim) and lim > 0.0):
+            raise ValueError(f"extra constraint limits must be finite and > 0, got {lim!r}")
+    ex_vals: list[float] = []
+    ex_grads: list[np.ndarray] = []
+
     def evaluate(x: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         xp = filt(x)
         wt = torch.as_tensor(emin + xp ** penal * (1.0 - emin), dtype=torch.float64).requires_grad_(True)
-        comp = structure.response(wt).compliance
+        res = structure.response(wt)
+        comp = res.compliance
+        outs = [comp[k] for k in ks] + [fn(res) for fn, _lim in extras]
         Js, grads = [], []
-        for j, k in enumerate(ks):
-            g, = torch.autograd.grad(comp[k], wt, retain_graph=j < len(ks) - 1)
-            Js.append(float(comp[k]))
-            grads.append(filt.backward(g.numpy() * penal * xp ** (penal - 1.0) * (1.0 - emin)))
+        ex_vals.clear()
+        ex_grads.clear()
+        for j, o in enumerate(outs):
+            g, = torch.autograd.grad(o, wt, retain_graph=j < len(outs) - 1)
+            gx = filt.backward(g.numpy() * penal * xp ** (penal - 1.0) * (1.0 - emin))
+            if j < len(ks):
+                Js.append(float(o))
+                grads.append(gx)
+            else:
+                lim = extras[j - len(ks)][1]
+                ex_vals.append(float(o) / lim - 1.0)
+                ex_grads.append(gx / lim)
         return np.array(Js), np.array(grads), xp
 
     while it < int(max_iter):
@@ -334,12 +355,14 @@ def optimize_viscoelastic(structure: ViscoelasticStructure | RobustViscoelastic,
             c0 = c if c0 is None else c0
             hist["f0"].append(c)
             hist["volume"].append(v)
+            gs = np.concatenate([[v / volume - 1.0], ex_vals])
+            dgs = np.vstack([gv] + [g[None, :] for g in ex_grads]) if ex_grads else gv
             if kkt_tol is not None:
-                kkt = float(kkt_estimate(x, dJ[0] / c0, np.array([v / volume - 1.0]), gv)["residual"])
+                kkt = float(kkt_estimate(x, dJ[0] / c0, gs, dgs)["residual"])
                 if kkt <= kkt_tol:
                     converged, termination = True, "kkt"
                     break
-            xn = opt.step(x, c / c0, dJ[0] / c0, np.array([v / volume - 1.0]), gv)
+            xn = opt.step(x, c / c0, dJ[0] / c0, gs, dgs)
             change = float(np.abs(xn - x).max())
         else:
             if c0 is None:

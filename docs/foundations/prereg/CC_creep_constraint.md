@@ -16,3 +16,9 @@ the point volume only (the solid creeps; void cells have negligible stress, henc
 | CC4 | `extra_constraints=[]` reproduces the previous behaviour (KS1 fingerprint) | fingerprint | bitwise |
 
 Run: `python -m pytest tests/toporlogy/test_creep_constraint.py -q -p no:randomly -m "slow or not slow"` (CC3 slow).
+
+## First result, quick checks (run 07:27 +0300 by the clock; recorded 2026-11-27 07:28 +0300)
+
+CC1 PASS: p_cr equals the HistoryProblem + NortonCreep accumulated creep strain to 4.7e-15. CC2 PASS: best FD
+error 6.4e-11 (P = 8, 5× load). CC4 PASS: KS1 fingerprint bitwise with extra_constraints=[]; min-max with extra
+constraints refused. CC3 (slow) running; appended below when done.
