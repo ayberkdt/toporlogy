@@ -1,0 +1,18 @@
+# SYNTHETIC card: invented numbers, not a real material, no engineering claim.
+name: synthetic_curing_thermoelastic
+model: curing_thermoelastic
+units: {stress: MPa, time: min, temperature: K, rate: 1/min}
+parameters:
+  kinetics: {type: nth_order, A: 5.0e+6, Q: 6.0e+4, n: 1.5}    # A in 1/min, Q in J/mol
+  moduli_uncured: {E: 5.0, nu: 0.40}      # MPa, synthetic minimum stiffness of the uncured state
+  moduli_cured: {E: 3000.0, nu: 0.35}
+  alpha: 5.0e-5
+  T_ref: 300.0
+  beta: -0.06                              # volumetric chemical shrinkage per unit conversion
+  alpha_gel: 0.1
+  alpha0: 0.0
+  substeps: 4
+provenance: {source: "synthetic example, invented numbers", synthetic: true, date: "2026-11-27", license: "CC0-1.0"}
+validity:
+  temperature: [300.0, 450.0]
+  time: [0.0, 600.0]                       # min

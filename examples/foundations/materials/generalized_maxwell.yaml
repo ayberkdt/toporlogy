@@ -1,0 +1,12 @@
+# SYNTHETIC card: invented numbers, not a real material, no engineering claim.
+name: synthetic_generalized_maxwell
+model: generalized_maxwell
+units: {stress: MPa, time: s, temperature: K}
+parameters:
+  shear: {inf: 400.0, amplitudes: [300.0, 200.0], taus: [1.0, 100.0]}      # MPa, MPa, s
+  bulk: {inf: 3000.0, amplitudes: [500.0], taus: [10.0]}
+  shift: {type: wlf, T_ref: 300.0, C1: 17.44, C2: 51.6}                    # C2 is a temperature difference in K
+provenance: {source: "synthetic example, invented numbers", synthetic: true, date: "2026-11-27", license: "CC0-1.0"}
+validity:
+  time: [1.0e-3, 1.0e+5]
+  temperature: [280.0, 340.0]
