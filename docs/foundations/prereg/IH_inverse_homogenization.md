@@ -111,3 +111,10 @@ ValueError naming the problem. Check IH7: x0 with one entry 1.2 → ValueError "
 PASS on the first run: x0 with 1.2 and with NaN refused ("x0"), the dependent lattice refused ("linearly dependent");
 13 fast cell tests pass (IP2 bitwise included). Every start used by the slow runs lies in [0, 1] (hole 0.25/0.5, 0/1
 void hole, cos start in [0.2, 0.6], random start clipped), so their results stand.
+
+## Robustness addition IH8 (preregistered 2026-11-27 12:42 +0300, base `dc8ead9`, before the code change)
+
+Measured before this record (probe at dc8ead9, warnings as errors): min_C11 = 0 and a zero entry of min_moduli divide by
+zero; min_E1 = −1 is accepted (a constraint that can never hold); stage_iter = 0 returns the start after 0
+iterations. Change: min_C11, min_E1 and every entry of min_moduli must be finite and > 0; max_iter and stage_iter
+integers ≥ 1; ValueError otherwise. Check IH8: the four probes refused; all fast cell tests unchanged.
