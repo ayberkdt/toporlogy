@@ -846,6 +846,16 @@
    "resolution": "T10 energy rate is pre-asymptotic: interpolation energy rate 1.814, 1.899, 1.949, 1.961 for n = 4-8, 8-12, 12-16, 16-24; solved p(8, 12) = 1.889",
    "record": "docs/foundations/prereg/F4_rates.md",
    "slow": true
+  },
+  {
+   "nodeid": "tests/toporlogy/test_fractional.py::test_VF9_prony_error_strictly_decreasing[0.3]",
+   "kind": "pre-registered check failed",
+   "model_backend": "core.fractional.prony_error_budget (non-negative least squares on the fractional Zener relaxation modulus, alpha = 0.3), CPU",
+   "reason": "max-norm relative error e_t is not strictly decreasing over the nested N = 5, 9, 17, 33, 65: e_t = 1.065e-1, 1.081e-2, 1.881e-4, 8.892e-5, 8.980e-5 (N = 65 is 1 % worse than N = 33); the maximum sits at the window edge t = t_lo = 1e-4 s = the smallest branch time, while the weighted L2 residual that the fit minimises still decreases (2.78e-4 -> 2.62e-4); alpha = 0.5 and 0.8 are strictly decreasing and all thresholds e_t(17) <= 5e-2, e_t(33) <= 5e-3, e_t(65) <= 5e-4 pass for all three orders",
+   "risk": "low",
+   "resolution": "hypothesis too strong: the NNLS optimum is in a weighted L2 norm, so the max norm need not decrease monotonically; the error is an edge effect of the branch-time span (smallest tau_i = t_lo). A follow-up with the span extended below t_lo (or a minimax/weighted fit) is a separate preregistration",
+   "record": "docs/foundations/prereg/VF_fractional.md",
+   "slow": false
   }
  ],
  "skips": [

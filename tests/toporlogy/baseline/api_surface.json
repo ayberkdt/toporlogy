@@ -2778,6 +2778,26 @@
   "is_grid": "is_grid(domain)",
   "require_grid": "require_grid(domain,component,alternative)"
  },
+ "toporlogy.core.fractional": {
+  "FractionalPronyFit": {
+   "attrs": [
+    "to_generalized_maxwell"
+   ],
+   "class": "FractionalPronyFit"
+  },
+  "fit_prony_fractional_zener": "fit_prony_fractional_zener(G_inf,G1,tau,alpha,n_branches,window,tau_span)",
+  "fractional_kelvin_voigt_creep": "fractional_kelvin_voigt_creep(t,E,tau,alpha)",
+  "fractional_kelvin_voigt_modulus": "fractional_kelvin_voigt_modulus(omega,E,tau,alpha)",
+  "fractional_kelvin_voigt_relaxation": "fractional_kelvin_voigt_relaxation(t,E,tau,alpha)",
+  "fractional_maxwell_creep": "fractional_maxwell_creep(t,E,tau,alpha)",
+  "fractional_maxwell_relaxation": "fractional_maxwell_relaxation(t,E,tau,alpha)",
+  "fractional_zener_creep": "fractional_zener_creep(t,G_inf,G1,tau,alpha)",
+  "fractional_zener_modulus": "fractional_zener_modulus(omega,G_inf,G1,tau,alpha)",
+  "fractional_zener_relaxation": "fractional_zener_relaxation(t,G_inf,G1,tau,alpha)",
+  "is_passive": "is_passive(modulus,rtol)",
+  "mittag_leffler": "mittag_leffler(z,alpha,beta)",
+  "prony_error_budget": "prony_error_budget(G_inf,G1,tau,alpha,n_branches,window,tau_span,n_fit,n_eval,n_omega)"
+ },
  "toporlogy.core.laminate": {
   "Laminate": {
    "attrs": [
