@@ -82,3 +82,12 @@ Not established: whether a larger radius, a p-continuation or a projection step 
 (published bulk-modulus cells come closer to the bound; not verified here).
 
 Figure of the two post hoc cells, tiled 3 × 3 (base cell outlined): `fig_ih_cells.png` / `.pdf` (`scripts/ih_cells_figure.py`, datawiz audit 0 errors, `fig_ih_cells.denetim.txt`).
+
+## Robustness addition IH6 (preregistered 2026-11-27 12:26 +0300, base `95e4b16`, before the code change)
+
+`PeriodicDensityFilter` looks at the lattice images n·a with n ∈ {−1, 0, 1}^dim only. That set contains every
+centroid within rmin if and only if rmin does not exceed the smallest face-to-face width of the cell,
+w_min = 1 / max_i |b_i| (b_i the reciprocal vectors, rows of inv(lattice)ᵀ; a centroid pair at a ±2 image is at least
+2w − w = w apart). Change: rmin > w_min is refused with ValueError naming both. Check IH6: (a) unit square, rmin 1.01
+→ ValueError; rmin 0.99 accepted and every row sums to 1 (1e-14); (b) the 60° rhombus (w_min = √3/2): rmin 0.87
+refused, 0.86 accepted; (c) the IH1/IH2 tests unchanged (filters there use rmin ≤ 0.2).
