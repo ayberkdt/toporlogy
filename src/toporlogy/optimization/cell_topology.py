@@ -25,7 +25,7 @@ from toporlogy.fem.mesh.problem import ElasticProblem
 
 __all__ = ["PeriodicDensityFilter", "CellOptimizeResult", "cell_objective", "optimize_cell", "CELL_OBJECTIVES"]
 
-CELL_OBJECTIVES = ("bulk",)
+CELL_OBJECTIVES = ("bulk", "poisson")
 
 
 class PeriodicDensityFilter:
@@ -92,19 +92,34 @@ def _bulk(C: np.ndarray) -> tuple[float, np.ndarray]:
     return float(np.sum(w * C)), w
 
 
-def cell_objective(mesh: Mesh, lattice: Any, D: Any, x_phys: np.ndarray, penal: float, emin: float,
-                   objective: str = "bulk") -> tuple[float, np.ndarray, np.ndarray]:
-    """Objective value, its gradient with respect to x̃ and C, for the physical densities ``x_phys``."""
+def _evaluate(mesh: Mesh, lattice: Any, D: Any, x_phys: np.ndarray, penal: float, emin: float,
+              objective: str) -> tuple[float, np.ndarray, np.ndarray, np.ndarray]:
+    """Objective value and gradient with respect to x̃, C, and dC11/dx̃ (for the stiffness constraint)."""
     if objective not in CELL_OBJECTIVES:
         raise ValueError(f"objective must be one of {CELL_OBJECTIVES}, got {objective!r}")
     if mesh.dim != 2:
-        raise ValueError("the bulk objective is written for 2-D cells")
+        raise ValueError("the cell objectives are written for 2-D cells")
     E = emin + x_phys ** penal * (1.0 - emin)
     h = homogenize_mesh_elasticity(mesh, D, lattice, E, sensitivities=True)
     assert h.dC is not None
-    val, w = _bulk(h.C)
-    dE = np.einsum("ij,eij->e", w, h.dC)
-    return val, dE * penal * x_phys ** (penal - 1.0) * (1.0 - emin), h.C
+    C = h.C
+    if objective == "bulk":
+        val, w = _bulk(C)
+        dE = np.einsum("ij,eij->e", w, h.dC)
+    else:                                                     # "poisson": maximise −ν12 = −C12/C11
+        val = -C[0, 1] / C[0, 0]
+        dE = -(h.dC[:, 0, 1] / C[0, 0] - C[0, 1] * h.dC[:, 0, 0] / C[0, 0] ** 2)
+    # same operation order as before the poisson objective (bitwise bulk path, IP2 / IA4)
+    return (val, dE * penal * x_phys ** (penal - 1.0) * (1.0 - emin), C,
+            h.dC[:, 0, 0] * penal * x_phys ** (penal - 1.0) * (1.0 - emin))
+
+
+def cell_objective(mesh: Mesh, lattice: Any, D: Any, x_phys: np.ndarray, penal: float, emin: float,
+                   objective: str = "bulk") -> tuple[float, np.ndarray, np.ndarray]:
+    """Objective value (κ for "bulk", −C12/C11 for "poisson"; both maximised), its gradient with respect to x̃ and
+    C, for the physical densities ``x_phys``."""
+    val, grad, C, _ = _evaluate(mesh, lattice, D, x_phys, penal, emin, objective)
+    return val, grad, C
 
 
 def _project(xb: np.ndarray, beta: float, eta: float) -> tuple[np.ndarray, np.ndarray]:
@@ -118,12 +133,13 @@ def optimize_cell(mesh: Mesh, lattice: Any, D: Any, volume: float, rmin: float, 
                   penal: float = 3.5, emin: float = 1e-9, max_iter: int = 300, move: float = 0.2,
                   x0: np.ndarray | None = None, kkt_tol: float | None = None,
                   projection: tuple[float, Sequence[float]] | None = None,
-                  stage_iter: int = 100) -> CellOptimizeResult:
+                  stage_iter: int = 100, min_C11: float | None = None) -> CellOptimizeResult:
     """Maximise the effective ``objective`` of the periodic cell under a volume fraction (module notes).
 
     ``projection=(eta, betas)``: the filtered field is projected by the tanh step with threshold ``eta``; β runs
     through ``betas``, each stage until ``kkt_tol`` or ``stage_iter`` iterations, MMA restarted per stage, and the
-    volume is taken on the projected field (``prereg/IP_projection.md``). Without it one stage of ``max_iter``."""
+    volume is taken on the projected field (``prereg/IP_projection.md``). Without it one stage of ``max_iter``.
+    ``min_C11``: the extra constraint C11 ≥ min_C11 (with ``objective="poisson"``, ``prereg/IA_auxetic_cell.md``)."""
     from toporlogy.optimization.diagnostics import kkt_estimate
     from toporlogy.optimizers.mma import MMA
     if not 0 < volume < 1:
@@ -162,7 +178,7 @@ def optimize_cell(mesh: Mesh, lattice: Any, D: Any, volume: float, rmin: float, 
         stop = "max_iter"
         while k < cap:
             xp, dp = physical(x, beta)
-            val, dval, C = cell_objective(mesh, lattice, D, xp, penal, emin, objective)
+            val, dval, C, dc11 = _evaluate(mesh, lattice, D, xp, penal, emin, objective)
             f_ref = abs(val) if f_ref is None else f_ref
             if dp is None:
                 f0, df0 = -val / f_ref, -filt.backward(dval) / f_ref              # MMA minimises
@@ -172,6 +188,10 @@ def optimize_cell(mesh: Mesh, lattice: Any, D: Any, volume: float, rmin: float, 
                 dg = (filt.backward(vw * dp) / volume)[None, :]
             v = float(vw @ xp)
             g = np.array([v / volume - 1.0])
+            if min_C11 is not None:
+                g = np.append(g, 1.0 - C[0, 0] / min_C11)
+                dc = -dc11 / min_C11
+                dg = np.vstack([dg, filt.backward(dc if dp is None else dc * dp)[None, :]])
             hist["objective"].append(val)
             hist["volume"].append(v)
             hist["beta"].append(float("nan") if beta is None else beta)
@@ -187,5 +207,5 @@ def optimize_cell(mesh: Mesh, lattice: Any, D: Any, volume: float, rmin: float, 
             x = xn
         else:
             xp, _ = physical(x, beta)
-            val, _, C = cell_objective(mesh, lattice, D, xp, penal, emin, objective)
+            val, _, C, _ = _evaluate(mesh, lattice, D, xp, penal, emin, objective)
     return CellOptimizeResult(x, xp, val, C, float(vw @ xp), it, stop, kkt, hist)

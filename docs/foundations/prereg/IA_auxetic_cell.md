@@ -25,3 +25,22 @@ one periodic body.
 ## First result
 
 Appended below after the first run.
+
+## First result (IA1/IA4 run 10:40, IA2/IA3 run 10:40–10:45 +0300 by the clock; recorded 2026-11-27 10:46 +0300)
+
+All checks PASS on the first run; no threshold, input or assertion changed. IP1, IH1, IH2 unchanged.
+
+| ID | Result | Measured (threshold) |
+|---|---|---|
+| IA1 | PASS | ν gradient 1.8e-8, C11 gradient 7.9e-9 (1e-6) |
+| IA2 | PASS | (a) volume 0.39996392; (b) C11 0.02000 (constraint active); (c) grey 0.0109 (≤ 0.05); (d) **C12/C11 = −1.762** (≤ −0.5). 600 iterations (stage caps), KKT 2.2e-2 at β = 32; C33 7.6e-3 |
+| IA3 | PASS | thresholded design: C12/C11 = **−1.660** (≤ −0.3), min eigenvalue of C 6.6e-4 (> 0); the solid is one periodic body |
+| IA4 | PASS | the bulk path (IP2 fingerprint) bitwise unchanged |
+
+**Convention, stated explicitly (the trap of E04):** the design is not square-symmetric (C11 = 0.020, C22 = 0.095),
+so the registered quantity C12/C11 is not the physical ν12. With S = C⁻¹ of an orthotropic 2-D cell, uniaxial stress
+along y gives −ε_x/ε_y = −S12/S22 = C12/C11 = **ν21 = −1.76**, and uniaxial stress along x gives −ε_y/ε_x =
+−S12/S11 = C12/C22 = **ν12 = −0.37** (thresholded: −1.66 and −0.38). The cell is auxetic in both directions; the
+large number belongs to loading along y. |C12| < √(C11 C22) holds (positive definite), so a value below −1 is
+admissible for an anisotropic cell. The registered label "the stiffness-ratio ν12 of the square-symmetric convention"
+applies to the check as written (C12/C11 ≤ −0.5); the physical names above are the correct reading.
