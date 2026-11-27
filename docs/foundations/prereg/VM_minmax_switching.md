@@ -35,3 +35,10 @@ VM1: the min–max worst case is 4e-8 of the best single-design worst case (≤ 
 7.5e-4 (≤ 0.02). VM3: every run KKT-stopped. A design optimised for one load phase is near-singular for the other
 (void-like load path: compliances 1e3 against 1e-5); the min–max design balances the two phases. This is the
 setting where the min–max formulation is necessary, unlike the single constant load of VR1/KS3.
+
+## Reproducibility note (2026-11-27 05:37 +0300)
+
+Re-running the VM test reproduces J_A = 3.675072e-5, J_B = 3.672313e-5 exactly (deterministic). The figure script
+(`scripts/save_designs.py`) passed r_min = 0.075 instead of 1.5 · 0.05 = 0.07500000000000001 and ended at
+J_A = 3.654709e-5, J_B = 3.652199e-5 (0.6 % lower): a 1e-17 change of an input moves this nonconvex MMA run to
+another stationary point (same behaviour as KS2/KS3). VM1–VM3 hold for both.
