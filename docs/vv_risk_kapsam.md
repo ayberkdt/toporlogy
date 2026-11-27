@@ -62,6 +62,7 @@ Katman sınıflaması (dosya → katmanlar):
 - `test_fault_injection.py`: IC
 - `test_fem_mms.py`: AN
 - `test_fem_mms_extended.py`: AN
+- `test_foundations_examples.py`: IC
 - `test_frame_invariance.py`: U, MP
 - `test_fs2019_column.py`: AN, IS
 - `test_gcmma.py`: OG
