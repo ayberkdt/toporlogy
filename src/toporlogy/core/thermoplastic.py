@@ -8,9 +8,10 @@ dimensionless (small strain, tension positive). Every number in the tests is syn
 
 * :class:`LogisticTransition`: a smooth, explicitly parameterised transition of a property across a glass transition,
   p(T) = p_g + (p_r - p_g) s(T) (form "linear", e.g. CTE) or ln p = ln p_g + (ln p_r - ln p_g) s(T) (form "log",
-  e.g. a modulus that falls by decades), s(T) = 1 / (1 + exp(-(T - T_mid)/w)). **This is a synthetic phenomenological
-  form, not a universal law**: T_mid and the width w are required parameters without defaults (T_g depends on grade,
-  rate and the test that defines it), the validity interval is required and there is no extrapolation.
+  e.g. a modulus that falls by decades), s(T) = 1 / (1 + exp(-(T - T_mid)/w)). **This is a synthetic
+  phenomenological form, not a universal law**: T_mid and the width w are required parameters without defaults
+  (T_g depends on grade, rate and the test that defines it), the validity interval is required and there is no
+  extrapolation.
 * :func:`mix_isotropic` and :class:`CrystallineMixture`: K(phi), G(phi) of an amorphous/crystalline two-phase solid by
   a stated rule ("voigt", "reuss", "hill", "hs_lower", "hs_upper"), built on :mod:`toporlogy.core.micromechanics`.
 * :class:`CrystallisingThermoElasticPoint`: sigma = C(T, X) : (eps - eps_th(T) 1 - eps_cr(X) 1), the state X being the
@@ -45,8 +46,8 @@ _FORMS = ("linear", "log")
 class LogisticTransition(PropertyFunction):
     """Property across a glass transition: s(T) = 1/(1 + exp(-(T - T_mid)/w)) = expit((T - T_mid)/w), and
 
-        form "linear":  p = p_g + (p_r - p_g) s          (CTE, density, ...; value at T_mid is the arithmetic mean),
-        form "log":     p = p_g (p_r/p_g)^s              (a modulus; needs p_g, p_r > 0; value at T_mid is sqrt(p_g p_r)),
+        form "linear":  p = p_g + (p_r - p_g) s    (CTE, density, ...; value at T_mid is the arithmetic mean),
+        form "log":     p = p_g (p_r/p_g)^s        (a modulus; p_g, p_r > 0; value at T_mid is sqrt(p_g p_r)),
 
     p_g the glassy and p_r the rubbery plateau (their order is free: a modulus falls, a CTE rises), T_mid the midpoint
     and w > 0 the width (K) of the logistic; s is 1/2 at T_mid, its largest slope is 1/(4 w). The plateaus are
@@ -54,11 +55,11 @@ class LogisticTransition(PropertyFunction):
 
     This is a synthetic phenomenological form. It is not a universal law, not a WLF/Arrhenius shift (those belong to
     :mod:`toporlogy.core.viscoelastic`), it has no rate dependence and T_mid is not "the" T_g of a material (T_g depends
-    on the grade, the heating rate or frequency and the test that defines it). ``T_mid``, ``width`` and ``domain`` have
-    no defaults on purpose; the validity interval must be finite and contain T_mid; an evaluation outside it raises.
+    on the grade, the heating rate or frequency and the test that defines it). ``T_mid``, ``width`` and ``domain``
+    have no defaults on purpose; the validity interval must be finite and contain T_mid; evaluation outside raises.
     The derivative is analytic: p' = (p_r - p_g) s (1 - s)/w (linear), p ln(p_r/p_g) s (1 - s)/w (log). The integral
     (needed for the thermal strain of a CTE) is exact for the form "linear":
-    p_g (T1 - T0) + (p_r - p_g) w [softplus((T1 - T_mid)/w) - softplus((T0 - T_mid)/w)]; it is not available for "log"."""
+    p_g (T1 - T0) + (p_r - p_g) w [softplus((T1 - T_mid)/w) - softplus((T0 - T_mid)/w)]; not available for "log"."""
 
     smoothness = "C-infinity"
 
@@ -112,7 +113,8 @@ class LogisticTransition(PropertyFunction):
 
 
 # ------------------------------------------------------------------------------------------------ mixing rule
-def mix_isotropic(phi: float, amorphous: mm.IsoPhase, crystal: mm.IsoPhase, rule: str = "hs_lower") -> tuple[float, float]:
+def mix_isotropic(phi: float, amorphous: mm.IsoPhase, crystal: mm.IsoPhase,
+                  rule: str = "hs_lower") -> tuple[float, float]:
     """(K, G) of an isotropic amorphous/crystalline mixture with the crystalline volume fraction phi in [0, 1].
 
     "voigt" / "reuss": uniform strain / stress averages (bounds of every microstructure). "hill": their arithmetic
@@ -196,7 +198,7 @@ _DEFAULT_REQUEST = MaterialRequest()
 
 
 class CrystallisingThermoElasticPoint:
-    """Small-strain thermoelastic material point that crystallises at a prescribed temperature (one-way T -> X -> sigma):
+    """Small-strain thermoelastic point that crystallises at a prescribed temperature (one-way T -> X -> sigma):
 
         sigma = C(T, X) : (eps - eps_th(T) 1 - eps_cr(X) 1),    eps_cr = beta_c (X - X_ref) / 3  (per axis),
 

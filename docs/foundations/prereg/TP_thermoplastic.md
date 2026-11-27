@@ -83,3 +83,22 @@ into T), temperature-dependent crystallisation shrinkage or CTE, finite strain, 
 and the FE slice TP6.
 
 Run: `python -m pytest tests/toporlogy/test_thermoplastic.py -q -p no:randomly`. First results are appended below.
+
+## First result (2026-11-27 06:03 +0300; SHA b7fade3 + test file; the first run was at 06:01 +0300 read from the clock)
+
+`python -m pytest tests/toporlogy/test_thermoplastic.py -q -p no:randomly`: **29 passed on the first run**, no threshold
+changed, no set-up fix needed, no ledger entry. Re-run after only line-wrapping the docstrings of the module for ruff
+(E501): 29 passed; together with `test_cure.py` and `test_properties.py` 86 passed. Measured values (a separate measurement
+script that imports the test helpers, run after the first pass):
+
+* TP2a: E(T_m) relative error 1.5e-16; alpha(T_m) = 1.3e-4; TP2c: FD relative difference 2.6e-9 (E), 1.3e-9 (alpha) (threshold 1e-6).
+* TP1a: sigma_xx relative error 6.6e-16 (threshold 1e-9), lateral stress 2.6e-9 Pa (threshold 1e-6), E_max/E_min = 99.4,
+  max|sigma_xx| = 5.68e6 Pa. TP1b, TP2d-f: PASS.
+* TP1c negative control: the secant-for-instantaneous error is **25.9 %** of max|sigma| (threshold > 1 %). The preregistered
+  prediction "about 8 % near T = 360 K" was a wrong estimate of the size (hand arithmetic at one temperature); it is recorded
+  as a failed prediction of the wording; the threshold and the PASS stand.
+* MX1/MX2: all five rules inside the bounds and strictly increasing; closed-form relative errors voigt/reuss/hill 0,
+  hs_lower 2.9e-17 (K), 1.2e-16 (G), hs_upper 2.3e-16 (K), 3.7e-16 (G); endpoints within 1e-13. MX3, MX4: PASS.
+* TP5a: sum of latent heat minus L(1 - e^-9) = 1.2e-16 L; dT(dX = 0.5) = 28.846153846153847 K. TP5b: PASS (strain <= 1e-11,
+  stress <= 1e-5 Pa, X_40 in (0.3, 0.9)). TP5c: sigma_xx relative error 4.1e-16, max sigma_xx = 1.12e6 Pa (tension), lateral
+  2.3e-10 Pa. TP5d, TP5e (flipped-sign stress difference = 2 max|sigma|), TP5f, TP5g, TP5h: PASS.
