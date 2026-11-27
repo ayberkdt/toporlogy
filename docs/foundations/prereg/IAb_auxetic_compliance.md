@@ -24,3 +24,20 @@ Reported: ν21 = −S12/S22, C13/C11, C23/C22, whether the solid is one periodic
 ## First result
 
 Appended below after the first run.
+
+## First result (IB1/IB4 run 10:55, IB2/IB3 run 10:56–11:08 +0300 by the clock; recorded 2026-11-27 11:09 +0300)
+
+| ID | Result | Measured (threshold) |
+|---|---|---|
+| IB1 | PASS | ν12 gradient 1.2e-8, E1 gradient 6.4e-9 (1e-6) |
+| IB2 | PASS as registered | (a) volume 0.39894; (b) E1 0.01219; (c) grey 0.0453; (d) ν12 = −S21/S11 = −36.1 (≤ −0.3). ν21 = −0.019; C13/C11 −2.3e-4, C23/C22 2.2e-2; 600 iterations, KKT of the last iterate **1.0** (not converged) |
+| IB3 | PASS as registered | thresholded ν12 = −16.0 (≤ −0.2); min eigenvalue of C **1.08e-9** (> 0); **solid not one periodic body** |
+| IB4 | PASS | IP2 fingerprint bitwise; IA1 unchanged (ν 1.8e-8, C11 7.9e-9) |
+
+**The passes are not a valid auxetic material.** The thresholded cell's smallest stiffness eigenvalue (1.1e-9) is at
+the level of the void modulus (emin = 1e-9 E): the solid falls apart into pieces joined only by "void", a near
+mechanism, and the extreme ratios (−36, −16) come from that soft mode. The registered thresholds were too weak to
+see this: "C positive definite" is satisfied by the void material, and a ν12 bound alone rewards approaching a
+mechanism. Thresholds are not changed after the fact; the lesson is recorded: a physical auxetic design needs all
+moduli bounded below (E1, E2 and G12 from the full compliance) and the connectivity of the solid checked. Follow-up
+record: IAc.

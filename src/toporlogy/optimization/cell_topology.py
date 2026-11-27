@@ -25,7 +25,7 @@ from toporlogy.fem.mesh.problem import ElasticProblem
 
 __all__ = ["PeriodicDensityFilter", "CellOptimizeResult", "cell_objective", "optimize_cell", "CELL_OBJECTIVES"]
 
-CELL_OBJECTIVES = ("bulk", "poisson")
+CELL_OBJECTIVES = ("bulk", "poisson", "poisson_stress")
 
 
 class PeriodicDensityFilter:
@@ -106,12 +106,28 @@ def _evaluate(mesh: Mesh, lattice: Any, D: Any, x_phys: np.ndarray, penal: float
     if objective == "bulk":
         val, w = _bulk(C)
         dE = np.einsum("ij,eij->e", w, h.dC)
-    else:                                                     # "poisson": maximise −ν12 = −C12/C11
+    elif objective == "poisson":                              # maximise −C12/C11 (stiffness ratio)
         val = -C[0, 1] / C[0, 0]
         dE = -(h.dC[:, 0, 1] / C[0, 0] - C[0, 1] * h.dC[:, 0, 0] / C[0, 0] ** 2)
+    else:                                                     # "poisson_stress": maximise −ν12 = S21/S11
+        S = np.linalg.inv(C)
+        dS = -np.einsum("ik,ekl,lj->eij", S, h.dC, S, optimize=True)
+        val = S[1, 0] / S[0, 0]
+        dE = dS[:, 1, 0] / S[0, 0] - S[1, 0] * dS[:, 0, 0] / S[0, 0] ** 2
     # same operation order as before the poisson objective (bitwise bulk path, IP2 / IA4)
     return (val, dE * penal * x_phys ** (penal - 1.0) * (1.0 - emin), C,
             h.dC[:, 0, 0] * penal * x_phys ** (penal - 1.0) * (1.0 - emin))
+
+
+def _e1_gradient(mesh: Mesh, lattice: Any, D: Any, x_phys: np.ndarray, penal: float, emin: float
+                 ) -> tuple[float, np.ndarray]:
+    """E1 = 1/S11 and dE1/dx̃ (the stiffness under uniaxial stress along x, shear free)."""
+    E = emin + x_phys ** penal * (1.0 - emin)
+    h = homogenize_mesh_elasticity(mesh, D, lattice, E, sensitivities=True)
+    assert h.dC is not None
+    S = np.linalg.inv(h.C)
+    dS00 = -np.einsum("k,ekl,l->e", S[0], h.dC, S[:, 0], optimize=True)
+    return 1.0 / S[0, 0], -dS00 / S[0, 0] ** 2 * penal * x_phys ** (penal - 1.0) * (1.0 - emin)
 
 
 def cell_objective(mesh: Mesh, lattice: Any, D: Any, x_phys: np.ndarray, penal: float, emin: float,
@@ -133,13 +149,15 @@ def optimize_cell(mesh: Mesh, lattice: Any, D: Any, volume: float, rmin: float, 
                   penal: float = 3.5, emin: float = 1e-9, max_iter: int = 300, move: float = 0.2,
                   x0: np.ndarray | None = None, kkt_tol: float | None = None,
                   projection: tuple[float, Sequence[float]] | None = None,
-                  stage_iter: int = 100, min_C11: float | None = None) -> CellOptimizeResult:
+                  stage_iter: int = 100, min_C11: float | None = None,
+                  min_E1: float | None = None) -> CellOptimizeResult:
     """Maximise the effective ``objective`` of the periodic cell under a volume fraction (module notes).
 
     ``projection=(eta, betas)``: the filtered field is projected by the tanh step with threshold ``eta``; β runs
     through ``betas``, each stage until ``kkt_tol`` or ``stage_iter`` iterations, MMA restarted per stage, and the
     volume is taken on the projected field (``prereg/IP_projection.md``). Without it one stage of ``max_iter``.
-    ``min_C11``: the extra constraint C11 ≥ min_C11 (with ``objective="poisson"``, ``prereg/IA_auxetic_cell.md``)."""
+    ``min_C11``: the extra constraint C11 ≥ min_C11 (with ``objective="poisson"``, ``prereg/IA_auxetic_cell.md``);
+    ``min_E1``: E1 = 1/S11 ≥ min_E1 (with ``objective="poisson_stress"``, ``prereg/IAb_auxetic_compliance.md``)."""
     from toporlogy.optimization.diagnostics import kkt_estimate
     from toporlogy.optimizers.mma import MMA
     if not 0 < volume < 1:
@@ -192,6 +210,11 @@ def optimize_cell(mesh: Mesh, lattice: Any, D: Any, volume: float, rmin: float, 
                 g = np.append(g, 1.0 - C[0, 0] / min_C11)
                 dc = -dc11 / min_C11
                 dg = np.vstack([dg, filt.backward(dc if dp is None else dc * dp)[None, :]])
+            if min_E1 is not None:
+                e1, de1 = _e1_gradient(mesh, lattice, D, xp, penal, emin)
+                g = np.append(g, 1.0 - e1 / min_E1)
+                de = -de1 / min_E1
+                dg = np.vstack([dg, filt.backward(de if dp is None else de * dp)[None, :]])
             hist["objective"].append(val)
             hist["volume"].append(v)
             hist["beta"].append(float("nan") if beta is None else beta)

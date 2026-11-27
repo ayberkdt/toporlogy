@@ -8,9 +8,9 @@ Kaynak: `tests/toporlogy/_vv_layers.py` (dosya → katman sınıflaması elle, d
 | MP material point | 40/556 | — | — | 9/138 | 23/245 | 2/44 | 21/239 | 6/103 | 7/97 | 1/13 | 4/55 | — |
 | EL element patch / quadrature | 14/182 | — | — | 3/32 | 21/283 | 3/53 | 6/74 | 3/36 | 3/40 | 2/23 | 3/40 | — |
 | AS assembly / BC / reactions | 14/189 | 1/23 | 7/77 | 2/59 | 21/264 | 7/98 | 4/90 | 2/59 | 3/49 | — | 1/20 | — |
-| AN analytical / MMS | 52/731 | — | — | 9/143 | 56/661 | 11/166 | 32/365 | 8/131 | 12/163 | 3/36 | 3/44 | — |
+| AN analytical / MMS | 52/731 | — | — | 9/143 | 57/664 | 11/166 | 33/368 | 8/131 | 12/163 | 3/36 | 3/44 | — |
 | IS independent solver / implementation | 31/363 | — | 1/14 | 5/104 | 38/486 | 11/185 | 14/174 | 4/86 | 6/99 | 2/23 | 1/24 | — |
-| OG optimization / KKT / gradient | 34/363 | — | 3/29 | 19/214 | 47/458 | 6/87 | 58/527 | 26/292 | 26/269 | 8/80 | 3/54 | — |
+| OG optimization / KKT / gradient | 34/363 | — | 3/29 | 19/214 | 48/461 | 6/87 | 59/530 | 26/292 | 26/269 | 8/80 | 3/54 | — |
 | E2E end-to-end geometry | 4/56 | 5/39 | — | 2/13 | 7/85 | — | 12/108 | 1/21 | 5/51 | 2/23 | 11/91 | — |
 | IC integration / compatibility | 16/150 | 2/34 | 2/15 | 11/120 | 20/179 | — | 23/210 | 9/107 | 30/270 | 17/141 | 1/8 | 1/11 |
 | PF performance | — | — | 2/25 | 1/14 | 3/37 | 3/37 | 3/19 | 1/14 | 1/14 | 1/1 | — | — |
@@ -48,6 +48,7 @@ Katman sınıflaması (dosya → katmanlar):
 - `test_catalog.py`: IC
 - `test_catalog_ledger.py`: IC
 - `test_cell_auxetic.py`: OG, AN
+- `test_cell_auxetic_stress.py`: OG, AN
 - `test_cell_projection.py`: OG, AN
 - `test_cell_topology.py`: OG, AN
 - `test_checkpoint.py`: OG, IC
