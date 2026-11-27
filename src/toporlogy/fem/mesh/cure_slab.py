@@ -46,6 +46,7 @@ from toporlogy.core.constitutive import ConstitutiveFailure, TimeStep
 from toporlogy.core.cure import ChemicalShrinkage, CuringThermoElasticPoint, CureKinetics, ReactionHeat
 from toporlogy.core.properties import IsotropicModuliOfT, ThermalExpansion
 from toporlogy.fem.mesh import kernels as kn
+from toporlogy.fem.mesh._validation import Scalar, positive, time_function
 from toporlogy.fem.mesh.history import HistoryProblem, StepRejected
 from toporlogy.fem.mesh.mesh import Mesh
 from toporlogy.fem.mesh.problem import HeatProblem
@@ -53,23 +54,6 @@ from toporlogy.fem.mesh.problem import HeatProblem
 __all__ = ["CureSlab", "CureSlabStep", "ThermalStepResult", "MechanicalResult", "residual_stress"]
 
 _EPS = float(np.finfo(float).eps)
-Scalar = float | Callable[[float], float]
-
-
-def _positive(x: Any, what: str, allow_zero: bool = False) -> float:
-    v = float(x)
-    if not math.isfinite(v) or v < 0.0 or (v == 0.0 and not allow_zero):
-        raise ValueError(f"{what} must be finite and {'>= 0' if allow_zero else '> 0'}, got {x!r}")
-    return v
-
-
-def _time_function(v: Scalar, what: str) -> Callable[[float], float]:
-    if callable(v):
-        return v
-    c = float(v)
-    if not math.isfinite(c):
-        raise ValueError(f"{what} must be finite, got {v!r}")
-    return lambda t: c
 
 
 @dataclass(frozen=True)
@@ -142,10 +126,10 @@ class CureSlab:
         if not isinstance(reaction, ReactionHeat):
             raise ValueError("reaction must be a ReactionHeat")
         self.mesh, self.kinetics, self.reaction = mesh, kinetics, reaction
-        self.rho = _positive(rho, "rho")
-        self.cp = _positive(cp, "cp")
-        self.conductivity = _positive(conductivity, "conductivity", allow_zero=True)
-        self.thickness = _positive(thickness, "thickness")
+        self.rho = positive(rho, "rho")
+        self.cp = positive(cp, "cp")
+        self.conductivity = positive(conductivity, "conductivity", allow_zero=True)
+        self.thickness = positive(thickness, "thickness")
         self.heat = HeatProblem(mesh, kappa=self.conductivity, thickness=self.thickness, degree=degree)
         self.degree = self.heat.degree
         g = self.heat.geom
@@ -210,8 +194,8 @@ class CureSlab:
     def add_robin(self, facets: np.ndarray, h: float, T_inf: Scalar) -> None:
         """Convection h (T − T∞(t)) on ``facets`` ((cell, local facet) pairs), h in W/(m^2 K) > 0, T∞ in K (a number
         or a function of time evaluated at the END of each step: backward Euler)."""
-        unit = self.heat.robin(facets, _positive(h, "h"), 1.0)                 # h ∫ N dS (load for T∞ = 1)
-        self._robin.append((unit, _time_function(T_inf, "T_inf")))
+        unit = self.heat.robin(facets, positive(h, "h"), 1.0)                 # h ∫ N dS (load for T∞ = 1)
+        self._robin.append((unit, time_function(T_inf, "T_inf")))
 
     def add_dirichlet(self, nodes: np.ndarray, value: Scalar) -> None:
         """Prescribed temperature (K, a number or a function of time evaluated at the END of each step) on nodes."""
@@ -221,7 +205,7 @@ class CureSlab:
         for prev, _ in self._dirichlet:
             if np.intersect1d(prev, nodes).size:
                 raise ValueError("a node already carries a Dirichlet temperature")
-        self._dirichlet.append((nodes, _time_function(value, "value")))
+        self._dirichlet.append((nodes, time_function(value, "value")))
 
     def _dirichlet_values(self, t: float) -> tuple[np.ndarray, np.ndarray]:
         if not self._dirichlet:
@@ -268,7 +252,7 @@ class CureSlab:
         """Residual R (W, all nodes: at a Dirichlet node it is the heat supplied by the reservoir) and Jacobian
         J = dR/dT (W/K) at a trial temperature field for the step to ``t_next`` from the committed state. Nothing is
         modified."""
-        dt = _positive(dt, "dt")
+        dt = positive(dt, "dt")
         R, _, _, J = self._terms(np.asarray(T_trial, dtype=float), dt, self._load(t_next), True)
         assert J is not None
         return R, J
@@ -278,8 +262,8 @@ class CureSlab:
         """Advance to t + dt by backward Euler with the monolithic Newton iteration of the module notes. Commits on
         convergence only; raises :class:`StepRejected` (nothing changed) when the iteration does not converge or leaves
         the contract of the kinetics; ``ValueError`` (nothing changed) for invalid arguments."""
-        dt = _positive(dt, "dt")
-        rtol = _positive(rtol, "rtol")
+        dt = positive(dt, "dt")
+        rtol = positive(rtol, "rtol")
         if isinstance(max_iter, bool) or not isinstance(max_iter, (int, np.integer)) or max_iter < 1:
             raise ValueError(f"max_iter must be an integer >= 1, got {max_iter!r}")
         t1 = self._t + dt
@@ -331,7 +315,7 @@ class CureSlab:
 
     def advance_to(self, t_end: float, dt: float, rtol: float = 1e-12, max_iter: int = 25) -> list[ThermalStepResult]:
         """Uniform steps of ``dt`` up to ``t_end`` (the span must be a whole number of steps within 1e-9 dt)."""
-        dt = _positive(dt, "dt")
+        dt = positive(dt, "dt")
         span = float(t_end) - self._t
         n = int(round(span / dt))
         if n < 1 or abs(n * dt - span) > 1e-9 * dt:

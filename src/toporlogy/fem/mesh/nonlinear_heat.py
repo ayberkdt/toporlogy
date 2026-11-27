@@ -46,7 +46,7 @@ import scipy.sparse as sp
 import scipy.sparse.linalg as spla
 
 from toporlogy.core.properties import PropertyFunction
-from toporlogy.fem.mesh.cure_slab import _positive, _time_function
+from toporlogy.fem.mesh._validation import positive, time_function
 from toporlogy.fem.mesh.history import StepRejected
 from toporlogy.fem.mesh.mesh import Mesh
 from toporlogy.fem.mesh.problem import HeatProblem
@@ -130,7 +130,7 @@ class NonlinearHeat:
             raise ValueError(f"form must be 'enthalpy' or 'capacity', got {form!r}")
         self.form = form
         self.mesh = mesh
-        self.thickness = _positive(thickness, "thickness")
+        self.thickness = positive(thickness, "thickness")
         deg = 2 * mesh.ref.degree + 2 if degree is None else int(degree)
         # the conduction of this HeatProblem is zero (kappa = 0): it supplies the geometry, the facet kernels and
         # the (linear) Robin matrix, which is K of this object
@@ -200,16 +200,16 @@ class NonlinearHeat:
         for prev, _ in self._dirichlet:
             if np.intersect1d(prev, nodes).size:
                 raise ValueError("a node already carries a Dirichlet temperature")
-        self._dirichlet.append((nodes, _time_function(value, "value")))
+        self._dirichlet.append((nodes, time_function(value, "value")))
 
     def add_robin(self, facets: np.ndarray, h: float, T_inf: Scalar) -> None:
         """Convection ``h (T − T∞(t))`` on facets, h in W/(m^2 K) > 0, T∞ in K (a number or a function of time)."""
-        unit = self.heat.robin(facets, _positive(h, "h"), 1.0)           # h ∫ N dS (the load for T∞ = 1)
-        self._robin.append((unit, _time_function(T_inf, "T_inf")))
+        unit = self.heat.robin(facets, positive(h, "h"), 1.0)           # h ∫ N dS (the load for T∞ = 1)
+        self._robin.append((unit, time_function(T_inf, "T_inf")))
 
     def add_flux(self, facets: np.ndarray, q: Scalar) -> None:
         """Inward heat flux q (W/m^2, positive into the body; a number or a function of time) on facets."""
-        self._flux.append((self.heat.flux(facets, 1.0), _time_function(q, "q")))
+        self._flux.append((self.heat.flux(facets, 1.0), time_function(q, "q")))
 
     def set_source(self, Q: Any) -> None:
         """Volumetric heat source Q (W/m^3): a number, or ``Q(x, t)`` with x of shape (n, dim) returning (n,)."""
@@ -327,7 +327,7 @@ class NonlinearHeat:
     def residual_jacobian(self, T_trial: np.ndarray, dt: float, t_next: float) -> tuple[np.ndarray, sp.csr_matrix]:
         """Residual R (W, all nodes; at a Dirichlet node the heat supplied by the reservoir) and Jacobian J = dR/dT
         (W/K) at a trial temperature field for the step to ``t_next`` from the committed state. Nothing is modified."""
-        dt = _positive(dt, "dt")
+        dt = positive(dt, "dt")
         ld = self._loads(t_next)
         loads = ld["robin"] + ld["flux"] + ld["source"]
         R, _, J = self._terms(np.asarray(T_trial, dtype=float), self._T, dt, loads, True)
@@ -363,7 +363,7 @@ class NonlinearHeat:
 
     @staticmethod
     def _check_args(rtol: float, max_iter: Any) -> tuple[float, int]:
-        rtol = _positive(rtol, "rtol")
+        rtol = positive(rtol, "rtol")
         if isinstance(max_iter, bool) or not isinstance(max_iter, (int, np.integer)) or max_iter < 1:
             raise ValueError(f"max_iter must be an integer >= 1, got {max_iter!r}")
         return rtol, int(max_iter)
@@ -373,7 +373,7 @@ class NonlinearHeat:
         """Advance to t + dt by backward Euler with the Newton iteration of the module notes. Commits on convergence
         only; raises :class:`StepRejected` (nothing changed) when the iteration does not converge or a property is
         invalid; ``ValueError`` (nothing changed) for invalid arguments or boundary data."""
-        dt = _positive(dt, "dt")
+        dt = positive(dt, "dt")
         rtol, max_iter = self._check_args(rtol, max_iter)
         t1 = self._t + dt
         ld = self._loads(t1)
@@ -406,7 +406,7 @@ class NonlinearHeat:
 
     def advance_to(self, t_end: float, dt: float, rtol: float = 1e-12, max_iter: int = 25) -> list[HeatStepResult]:
         """Uniform steps of ``dt`` up to ``t_end`` (the span must be a whole number of steps within 1e-9 dt)."""
-        dt = _positive(dt, "dt")
+        dt = positive(dt, "dt")
         span = float(t_end) - self._t
         n = int(round(span / dt))
         if n < 1 or abs(n * dt - span) > 1e-9 * dt:
