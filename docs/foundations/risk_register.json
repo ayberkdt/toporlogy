@@ -1,23 +1,157 @@
 {
  "schema_version": 1,
- "updated_at": "2026-11-27 01:38 +0300",
+ "updated_at": "2026-11-27 08:32 +0300",
  "note": "Initial register from 01_BASELINE_AUDIT.md A02, each entry re-checked against the code at f1ff694 or marked 'not re-checked'.",
  "risks": [
-  {"id": "R01", "severity": "critical", "impact": "effective_poisson objective returned C12/C11 labelled nu12; it is nu21 of an uncoupled cell and no Poisson ratio with normal-shear coupling",
+  {
+   "id": "R01",
+   "severity": "critical",
+   "impact": "effective_poisson objective returned C12/C11 labelled nu12; it is nu21 of an uncoupled cell and no Poisson ratio with normal-shear coupling",
    "evidence": "read in optimization/homogenization_responses.py at f1ff694; migration docs/foundations/E04_poisson_migration.json (historical auxetic: stored -0.951 is nu21, nu12 = -0.843)",
-   "owner": "integrator", "dependencies": [], "reproduction": "python -m pytest tests/toporlogy/test_poisson_convention.py",
-   "acceptance_gate": "E04 PO1-PO6", "status": "VERIFIED_SCOPE (fixed: explicit convention, legacy kept as stiffness_ratio)"},
-  {"id": "R02", "severity": "medium", "impact": "extreme Cholesky-parameterised C reach kappa ~1e35; float64 SPD test can fail", "evidence": "historical, not re-checked", "owner": "WP04", "dependencies": ["WP03"], "reproduction": null, "acceptance_gate": "E3", "status": "PLANNED"},
-  {"id": "R03", "severity": "low", "impact": "direction extrema sampled/refined only, not certified", "evidence": "core/anisotropy.directional_extrema docstring (sampled + refined)", "owner": "WP04", "dependencies": [], "reproduction": null, "acceptance_gate": "E6", "status": "PLANNED (report as sampled)"},
-  {"id": "R04", "severity": "medium", "impact": "T4 L2 rate 1.796 and T10 energy rate 1.788 missed preregistered thresholds", "evidence": "historical ledger entries, not re-run", "owner": "WP06", "dependencies": [], "reproduction": null, "acceptance_gate": "F4", "status": "PLANNED"},
-  {"id": "R05", "severity": "medium", "impact": "curved T10 low-order quadrature insufficient for the patch test", "evidence": "historical, not re-run", "owner": "WP06", "dependencies": [], "reproduction": null, "acceptance_gate": "F2", "status": "PLANNED"},
-  {"id": "R06", "severity": "medium", "impact": "Q4/H8 locking; Taylor-Hood exists, lambda=0 rejected", "evidence": "historical, not re-checked", "owner": "WP08", "dependencies": ["WP05", "WP06"], "reproduction": null, "acceptance_gate": "X1-X4", "status": "PLANNED"},
-  {"id": "R07", "severity": "medium", "impact": "exact singular point breaks the arc-length predictor", "evidence": "historical, not re-checked", "owner": "WP10", "dependencies": [], "reproduction": null, "acceptance_gate": "N4", "status": "PLANNED"},
-  {"id": "R08", "severity": "medium", "impact": "shell drilling scale 1e-2 vs 1e-1 not separable; 64x48x2 reference needs more memory", "evidence": "docs/olcumler/kabuk_onkayit.md DL0-DL6", "owner": "WP19", "dependencies": [], "reproduction": null, "acceptance_gate": "S2", "status": "BLOCKED (memory: >= 2.7 GB free needed)"},
-  {"id": "R09", "severity": "high", "impact": "J2Plasticity yield and hardening scale with the element modulus (unit-modulus convention)", "evidence": "core/constitutive.py module notes (read at f1ff694)", "owner": "WP11/WP14", "dependencies": ["P01"], "reproduction": null, "acceptance_gate": "P2, R1", "status": "IN_PROGRESS (legacy kept; PhysicalJ2 under WP14; FE refuses physical models)"},
-  {"id": "R10", "severity": "high", "impact": "no physical time / temperature in the material contract", "evidence": "core/constitutive.py at f1ff694 had no time in MaterialRequest", "owner": "integrator", "dependencies": [], "reproduction": "python -m pytest tests/toporlogy/test_material_contract.py", "acceptance_gate": "P01 CT1-CT8", "status": "VERIFIED_SCOPE (material point; FE coupling WP17 open)"},
-  {"id": "R11", "severity": "medium", "impact": "main CI previously failed despite local success", "evidence": "not re-checked (no gh on this machine)", "owner": "integrator", "dependencies": [], "reproduction": null, "acceptance_gate": "G01", "status": "BLOCKED (CI logs not reachable from here)"},
-  {"id": "R12", "severity": "medium", "impact": "material catalog is synthetic only", "evidence": "historical; new WP11-WP14 constants are synthetic by design", "owner": "WP20", "dependencies": [], "reproduction": null, "acceptance_gate": "D8", "status": "NOT VERIFIED (no licensed measured data)"},
-  {"id": "R13", "severity": "low", "impact": "Factorization(A, 'spd') accepts a symmetric indefinite matrix without detecting it (solution residual-checked and correct)", "evidence": "docs/foundations/prereg/L_solver.md L2c (strict xfail)", "owner": "WP05", "dependencies": [], "reproduction": "python -m pytest tests/toporlogy/test_solver_diagnostics.py -k l2c", "acceptance_gate": "L2", "status": "FAILED (recorded)"}
+   "owner": "integrator",
+   "dependencies": [],
+   "reproduction": "python -m pytest tests/toporlogy/test_poisson_convention.py",
+   "acceptance_gate": "E04 PO1-PO6",
+   "status": "VERIFIED_SCOPE (fixed: explicit convention, legacy kept as stiffness_ratio)"
+  },
+  {
+   "id": "R02",
+   "severity": "medium",
+   "impact": "extreme Cholesky-parameterised C reach kappa ~1e35; float64 SPD test can fail",
+   "evidence": "docs/foundations/ELASTIC_CONDITIONING.md, prereg/E3_conditioning.md: errors <= 0.20 kappa u up to kappa 1e10 vs mpmath; the historical Cholesky case (kappa 5.5e34) is SPD in mpmath but undecidable in float64; check_positive_definite refuses kappa above ~7e13 (no false acceptance in 340 matrices)",
+   "owner": "WP04",
+   "dependencies": [
+    "WP03"
+   ],
+   "reproduction": null,
+   "acceptance_gate": "E3",
+   "status": "VERIFIED_SCOPE (accuracy regime documented; forward_accuracy_established helper; float64 SPD decision limited to kappa < ~1e11)"
+  },
+  {
+   "id": "R03",
+   "severity": "low",
+   "impact": "direction extrema sampled/refined only, not certified",
+   "evidence": "core/anisotropy.directional_extrema docstring (sampled + refined)",
+   "owner": "WP04",
+   "dependencies": [],
+   "reproduction": null,
+   "acceptance_gate": "E6",
+   "status": "PLANNED (report as sampled)"
+  },
+  {
+   "id": "R04",
+   "severity": "medium",
+   "impact": "T4 L2 rate 1.796 and T10 energy rate 1.788 missed preregistered thresholds",
+   "evidence": "docs/foundations/F4_RATES.md: T4 miss a mesh-draw accident (other draws 1.80-1.82), T10 pre-asymptotic; no defect",
+   "owner": "WP06",
+   "dependencies": [],
+   "reproduction": null,
+   "acceptance_gate": "F4",
+   "status": "VERIFIED_SCOPE (explained; historical xfails kept)"
+  },
+  {
+   "id": "R05",
+   "severity": "medium",
+   "impact": "curved T10 low-order quadrature insufficient for the patch test",
+   "evidence": "docs/foundations/F4_RATES.md: curved T10 patch integrand has degree 3",
+   "owner": "WP06",
+   "dependencies": [],
+   "reproduction": null,
+   "acceptance_gate": "F2",
+   "status": "VERIFIED_SCOPE (fixed: degree-3 default for curved T10, prereg/F2fix_curved_t10_degree.md)"
+  },
+  {
+   "id": "R06",
+   "severity": "medium",
+   "impact": "Q4/H8 locking; Taylor-Hood exists, lambda=0 rejected",
+   "evidence": "prereg/X_mixed.md: K-based MixedKG valid at nu = 0, locking and inf-sup checks; XF: incompatible data refused",
+   "owner": "WP08",
+   "dependencies": [
+    "WP05",
+    "WP06"
+   ],
+   "reproduction": null,
+   "acceptance_gate": "X1-X4",
+   "status": "VERIFIED_SCOPE (2-D)"
+  },
+  {
+   "id": "R07",
+   "severity": "medium",
+   "impact": "exact singular point breaks the arc-length predictor",
+   "evidence": "prereg/N_nonlinear.md N4b: arc_length still fails at an exactly singular accepted point (measured)",
+   "owner": "WP10",
+   "dependencies": [],
+   "reproduction": null,
+   "acceptance_gate": "N4",
+   "status": "FAILED (still present; bordered predictor not implemented)"
+  },
+  {
+   "id": "R08",
+   "severity": "medium",
+   "impact": "shell drilling scale 1e-2 vs 1e-1 not separable; 64x48x2 reference needs more memory",
+   "evidence": "docs/olcumler/kabuk_onkayit.md DL0-DL6",
+   "owner": "WP19",
+   "dependencies": [],
+   "reproduction": null,
+   "acceptance_gate": "S2",
+   "status": "BLOCKED (memory: >= 2.7 GB free needed)"
+  },
+  {
+   "id": "R09",
+   "severity": "high",
+   "impact": "J2Plasticity yield and hardening scale with the element modulus (unit-modulus convention)",
+   "evidence": "core/constitutive.py module notes (read at f1ff694)",
+   "owner": "WP11/WP14",
+   "dependencies": [
+    "P01"
+   ],
+   "reproduction": null,
+   "acceptance_gate": "P2, R1",
+   "status": "IN_PROGRESS (legacy kept; PhysicalJ2 under WP14; FE refuses physical models)"
+  },
+  {
+   "id": "R10",
+   "severity": "high",
+   "impact": "no physical time / temperature in the material contract",
+   "evidence": "core/constitutive.py at f1ff694 had no time in MaterialRequest",
+   "owner": "integrator",
+   "dependencies": [],
+   "reproduction": "python -m pytest tests/toporlogy/test_material_contract.py",
+   "acceptance_gate": "P01 CT1-CT8",
+   "status": "VERIFIED_SCOPE (material point; FE coupling WP17 open)"
+  },
+  {
+   "id": "R11",
+   "severity": "medium",
+   "impact": "main CI previously failed despite local success",
+   "evidence": "not re-checked (no gh on this machine)",
+   "owner": "integrator",
+   "dependencies": [],
+   "reproduction": null,
+   "acceptance_gate": "G01",
+   "status": "BLOCKED (CI logs not reachable from here)"
+  },
+  {
+   "id": "R12",
+   "severity": "medium",
+   "impact": "material catalog is synthetic only",
+   "evidence": "historical; new WP11-WP14 constants are synthetic by design",
+   "owner": "WP20",
+   "dependencies": [],
+   "reproduction": null,
+   "acceptance_gate": "D8",
+   "status": "NOT VERIFIED (no licensed measured data)"
+  },
+  {
+   "id": "R13",
+   "severity": "low",
+   "impact": "Factorization(A, 'spd') accepts a symmetric indefinite matrix without detecting it (solution residual-checked and correct)",
+   "evidence": "docs/foundations/prereg/L_solver.md L2c (strict xfail)",
+   "owner": "WP05",
+   "dependencies": [],
+   "reproduction": "python -m pytest tests/toporlogy/test_solver_diagnostics.py -k l2c",
+   "acceptance_gate": "L2",
+   "status": "FAILED (recorded)"
+  }
  ]
 }
