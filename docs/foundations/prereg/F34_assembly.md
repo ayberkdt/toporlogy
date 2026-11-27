@@ -103,3 +103,41 @@ Q9 4, H8 2; curved T10 3) the FA5 hypotheses are replaced by:
 FA5c's inexact prediction for T3 / T4 (centroid rule, exact to degree 1) and H8 (2 x 2 x 2 Gauss, exact to degree 3
 per direction against (4,4,4)) means the default load rule under-integrates non-constant body forces; whether that is
 a defect is reported, not changed here.
+
+## First result (2026-11-27 09:47 +0300)
+
+`python -m pytest tests/toporlogy/test_fem_assembly_constraints.py -p no:randomly`: 94 passed, 8 skipped (the
+"curved" variants of the five elements that cannot be curved, by design). 55 passed, 3 xfailed in the existing
+`test_mesh_assembly.py` (unchanged xfails G4 x2, G5). Every prediction below held; no threshold was changed and no
+ledger entry is needed.
+
+One test set-up correction before the first completed run: the curved meshes were first built with the higher-order
+nodes moved by 0.15 h (as written in the prereg), which inverted one T6 cell (`InvertedElementError`, cell 19, min
+detJ/s_e = -0.17) before any assertion; the set-up was changed to 0.1 h, the value of the existing G2b test. The
+"curved" amplitude in the Checks paragraph above is therefore 0.1 h.
+
+| ID | Result | Measured (max over cases) |
+|---|---|---|
+| FA1 | PASS, 7 elements | block sums, per-cell rho, HRZ total, positivity within 1e-12 |
+| FA2 | PASS | distorted exact (all 7); curved T6 1.6e-16, Q9 4.9e-16 (exact, as predicted); curved T10 6.4e-8 (inexact, as predicted) |
+| FA3 | PASS, 7 elements | `HeatProblem.capacity` constant and per-cell, lumped, symmetric |
+| FA4 | PASS, 7 elements, distorted and curved | `‖K T − f‖/‖f‖` ≤ 8.0e-14; per-side totals q·area ≤ 1e-12 (the derived sign q_in = κ g·n_out was right first time) |
+| FA5a | PASS | force ≤ 1.0e-15, moment ≤ 7.6e-16 |
+| FA5b | PASS | force ≤ 7.3e-16; moment default: T6 1.4e-4 (inexact), Q9 7.6e-16 (exact), T10 2.4e-6 (inexact); degree 8: ≤ 7.5e-16 |
+| FA5c | PASS | force ≤ 4.7e-16 (default); moment default: T3 4.8e-2, T4 7.2e-3, H8 7.3e-9 (inexact as predicted), Q4 4.0e-16, Q9 5.3e-16, T6 1.2e-15, T10 2.6e-16; degree 8: ≤ 1.2e-15 |
+| FA5d | PASS | force and moment ≤ 1.6e-16 at degree 10 |
+| FA6a | PASS | force ≤ 6.8e-16, moment ≤ 8.0e-16 |
+| FA6b | PASS | curved pressure facet, default rule: force 0, moment 1.8e-16 |
+| FA6c | PASS | constant traction, degree 40: force 1.4e-16, moment 1.7e-16 |
+| FA7 | PASS | u ≤ 1.5e-14, ΣR ≤ 3.4e-14, moment ≤ 1.8e-14 (two supports on one problem; two columns in one call, one factorisation) |
+| CT1 | PASS (regression) | `u` and reactions bitwise equal; general product path within 1e-14 |
+| CT2 | PASS | u 9.8e-15, λ + μ 8.3e-15, multiplier residual 6.8e-15 against the dense KKT solve |
+| CT3 | PASS | skew 2-D cell Q4, T6, Q9, T3: u ≤ 1.9e-15, average stress ≤ 2.6e-15, lattice builder same; 3-D H8, T4: u 4.1e-16, stress 2.9e-16 |
+| CT4, CT5 | PASS | contradictory, duplicate, cyclic (rank deficient), inconsistent cycle, acyclic chain, `drop` gives the same solution bitwise |
+| CT6 | PASS | force balance 2.1e-15, moment balance 1.3e-15, `Cᵀλ = K u − f` 7.6e-15; periodic cell with load 2.2e-15 / 1.2e-15 |
+| CT7 | PASS | Lagrange u 4.6e-15, μ + λ 5.2e-15; penalty error 5.97e-5 (α = 1e3) → 5.97e-7 (1e5), ratio 100.0; cond₁: elimination 2.09e3, saddle 2.11e3, penalty 1.42e6 → 1.42e8 (ratio 99.9) |
+| CT8 | PASS | heat problem with a tie |
+| CN1 | PASS | wrong sign 2.00, no jump 1.00 (relative error of u against H x) |
+| CN2 | PASS | `MechanismError`, 2 free rigid motions |
+| CN3 | PASS | omitting K u0: 0.03 relative |
+| CN4 | PASS | inactive DOF, no partner, ambiguous, different sizes, rhs shape, out of range, lattice |
