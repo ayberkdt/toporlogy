@@ -63,7 +63,8 @@ from toporlogy.configuration.resolve import _UniqueKeyLoader, _list
 
 __all__ = ["HISTORY_KEYS", "HistorySetup", "is_history_config", "anchor_paths", "resolve_history", "build_history"]
 
-HISTORY_KEYS = ("name", "analysis", "units", "domain", "material", "supports", "loads", "times", "objective",
+HISTORY_KEYS = ("name", "analysis", "units", "domain", "material", "supports", "loads", "times", "temperature",
+                "objective",
                 "constraints", "optimizer", "interpolation", "chain", "post", "output", "provenance")
 _SI = {"length": "m", "force": "N", "time": "s"}
 _DOMAIN_KEYS = ("type", "generator", "n", "size", "element", "perturb", "seed", "thickness")
@@ -263,8 +264,10 @@ def _read_card(raw: Any, errors: _Errors) -> dict[str, Any] | None:
     return data
 
 
-def _resolve_material(raw: Any, errors: _Errors) -> tuple[dict[str, Any] | None, Any]:
-    """(the card as a mapping in its own units, the loaded :class:`MaterialCard`)."""
+def _resolve_material(raw: Any, errors: _Errors, thermal: bool = False) -> tuple[dict[str, Any] | None, Any]:
+    """(the card as a mapping in its own units, the loaded :class:`MaterialCard`). ``thermal``: the config has a
+    temperature schedule; a shifted / Arrhenius card is accepted only then
+    (``prereg/HT_history_yaml_temperature.md``)."""
     from toporlogy.optimization.material_cards import load_material_card
     card = _read_card(raw, errors)
     if card is None:
@@ -280,15 +283,55 @@ def _resolve_material(raw: Any, errors: _Errors) -> tuple[dict[str, Any] | None,
         errors.append(("material.model", f"{mc.kind!r} is not supported by the history path (generalized_maxwell: "
                                          "linear viscoelastic; norton: Norton creep)"))
         return None, None
-    if mc.kind == "generalized_maxwell" and mc.model.shift is not None:
-        errors.append(("material.parameters.shift", "a temperature shift is not supported by the history path "
-                                                    "(isothermal); use a card without shift"))
+    has_t = ((mc.kind == "generalized_maxwell" and mc.model.shift is not None)
+             or (mc.kind == "norton" and mc.model.arrhenius is not None))
+    if has_t and not thermal:
+        key = "shift" if mc.kind == "generalized_maxwell" else "arrhenius"
+        errors.append((f"material.parameters.{key}", f"without a temperature schedule the history path is "
+                                                     f"isothermal; a temperature-dependent card ({key}) needs "
+                                                     "temperature: {table: [[t, T], ...]} (kelvin)"))
         return None, None
-    if mc.kind == "norton" and mc.model.arrhenius is not None:
-        errors.append(("material.parameters.arrhenius", "an Arrhenius factor is not supported by the history path "
-                                                        "(isothermal); use a card without arrhenius"))
+    if thermal and not has_t:
+        errors.append(("temperature", "a temperature schedule needs a card with a temperature dependence "
+                                      "(generalized_maxwell with shift, or norton with arrhenius)"))
         return None, None
     return mc.to_dict(), mc
+
+
+def _resolve_temperature(raw: Any, grid: np.ndarray | None, tf: float, errors: _Errors) -> dict[str, Any] | None:
+    """{table: [[t (s), T (K)], ...]}: first point at t = 0, strictly increasing t, covering the last step time; T > 0.
+    No extrapolation (piecewise linear between the points)."""
+    if not isinstance(raw, dict) or set(raw) != {"table"}:
+        errors.append(("temperature", f"expected {{table: [[t, T], ...]}} (t in the time unit, T in kelvin), got "
+                                      f"{raw!r}"))
+        return None
+    tab = raw["table"]
+    if not isinstance(tab, list) or len(tab) < 2:
+        errors.append(("temperature.table", "expected at least two [t, T] points"))
+        return None
+    ts, Ts = [], []
+    for i, row in enumerate(tab):
+        if not (isinstance(row, list) and len(row) == 2):
+            errors.append((join("temperature.table", i), f"expected [t, T], got {row!r}"))
+            return None
+        t = _num(row[0], join(join("temperature.table", i), 0), errors, "a time", nonneg=True)
+        T = _num(row[1], join(join("temperature.table", i), 1), errors, "an absolute temperature (K)",
+                 positive=True)
+        if t is None or T is None:
+            return None
+        ts.append(t * tf)
+        Ts.append(T)
+    if ts[0] != 0.0:
+        errors.append(("temperature.table.0.0", f"the schedule must start at t = 0, got {ts[0]:g}"))
+        return None
+    if any(b <= a for a, b in zip(ts[:-1], ts[1:], strict=True)):
+        errors.append(("temperature.table", "the times must be strictly increasing"))
+        return None
+    if grid is not None and grid.size and ts[-1] < float(grid[-1]) * (1.0 - _GRID_TOL):
+        errors.append(("temperature.table", f"the schedule ends at {ts[-1]:g} s, before the last step time "
+                                            f"{float(grid[-1]):g} s (no extrapolation)"))
+        return None
+    return {"table": [[t, T] for t, T in zip(ts, Ts, strict=True)]}
 
 
 def _resolve_times(raw: Any, tf: float, errors: _Errors) -> np.ndarray | None:
@@ -645,12 +688,22 @@ def resolve_history(raw: dict[str, Any]) -> dict[str, Any]:
     f = _resolve_units(raw.get("units"), errors)
     r["units"] = dict(_SI)
     r["domain"] = _resolve_domain(raw.get("domain"), f["length"][1], errors)
-    r["material"], card = _resolve_material(raw.get("material"), errors)
+    r["material"], card = _resolve_material(raw.get("material"), errors, thermal="temperature" in raw)
     if "supports" not in raw:
         errors.append(("supports", "required key is missing"))
     r["supports"] = _resolve_supports(raw.get("supports"), 2, errors) if "supports" in raw else []
     grid = _resolve_times(raw.get("times"), f["time"][1], errors)
     r["times"] = [] if grid is None else [float(t) for t in grid]
+    if "temperature" in raw:
+        tsch = _resolve_temperature(raw.get("temperature"), grid, f["time"][1], errors)
+        if tsch is not None:
+            r["temperature"] = tsch
+            if card is not None and "temperature" in card.validity.ranges and grid is not None:
+                tab = np.array(tsch["table"])
+                try:
+                    card.check(temperature=np.concatenate([tab[:, 1], np.interp(grid, tab[:, 0], tab[:, 1])]))
+                except ValueError as e:
+                    errors.append(("temperature", f"outside the validity of the material card: {e}"))
     if "loads" not in raw:
         errors.append(("loads", "required key is missing"))
     r["loads"] = _resolve_loads(raw.get("loads"), grid, f, errors)
@@ -815,14 +868,21 @@ def _build_history(r: dict[str, Any]) -> HistorySetup:
         raise ConfigError(str(e), "material") from None
     thick = float(dom["thickness"])
     try:
+        tkw: dict[str, Any] = {}
+        if "temperature" in r:
+            tab = np.asarray(r["temperature"]["table"], float)
+            tkw = {"temperatures": np.interp(times, tab[:, 0], tab[:, 1]).tolist(), "temperature0": float(tab[0, 1])}
         if mc.kind == "generalized_maxwell":
             kind = "viscoelastic"
-            structure: Any = ViscoelasticStructure(mesh, mc.model, times.tolist(), loads, fixed, thickness=thick)
+            structure: Any = ViscoelasticStructure(mesh, mc.model, times.tolist(), loads, fixed, thickness=thick,
+                                                   **tkw)
         else:
             kind = "creep"
             m = mc.model
+            if tkw:
+                tkw["arrhenius"] = m.arrhenius
             structure = CreepStructure(mesh, m.K, m.G, m.A, m.sigma_ref, m.n, times.tolist(), loads, fixed,
-                                       thickness=thick)
+                                       thickness=thick, **tkw)
     except ValueError as e:
         raise ConfigError(str(e), "times" if "times" in str(e) else "material") from None
     grid_idx = {float(t): i for i, t in enumerate(times)}

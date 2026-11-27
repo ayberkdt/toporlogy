@@ -17,3 +17,12 @@ checked. Isothermal configs are unchanged.
 | HT4 | resolve is idempotent with a temperature block; every existing HY test passes unchanged | equal / pass |
 
 Run: `python -m pytest tests/toporlogy/test_history_yaml_temperature.py tests/toporlogy/test_history_yaml.py -q -p no:randomly`.
+
+## First result (run 06:52 +0300 by the clock; recorded 2026-11-27 06:53 +0300)
+
+HT1, HT2 (bitwise objective and gradient vs the API), HT3 (8 refusal cases with their paths) and the HT4
+idempotence check passed on the first run. **HT4's "every existing HY test passes unchanged" FAILED on the first
+run**: two HY7 refusal cases (shifted / Arrhenius card) still refused at the same key path but expected the word
+"isothermal" in the message, which the new wording had dropped. The production message was reworded to keep it
+("without a temperature schedule the history path is isothermal; …"); no test changed. Rerun: 88 passed
+(test_history_yaml_temperature + test_history_yaml).
