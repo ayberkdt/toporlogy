@@ -184,6 +184,7 @@ def _taylor_second(x: np.ndarray, f: str, p: float | None) -> np.ndarray:
         if p is None:
             raise ValueError(f"spectral function {f!r}: unknown, or power without an exponent")
         c = 0.5 * p * (p - 1.0) * m ** (p - 2.0)
+    pv = 0.0 if p is None else float(p)
     h1 = np.ones_like(m)
     h2 = np.ones_like(m)
     h3 = np.ones_like(m)
@@ -195,7 +196,7 @@ def _taylor_second(x: np.ndarray, f: str, p: float | None) -> np.ndarray:
         elif f == "log":
             c = -c * j / ((j + 1) * m)
         else:
-            c = c * (p - j) / ((j + 1) * m)
+            c = c * (pv - j) / ((j + 1) * m)
         h1 = h1 * d[..., 0]
         h2 = d[..., 1] * h2 + h1
         h3 = d[..., 2] * h3 + h2
