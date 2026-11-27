@@ -1,12 +1,12 @@
 {
  "schema_version": 1,
- "head": "c13480c",
+ "head": "7d304e1",
  "branch": "foundations/round-3",
  "dirty": "dirty",
- "updated_at": "2026-11-27 03:48 +0300",
+ "updated_at": "2026-11-27 04:36 +0300",
  "environment": "Windows 11, Python 3.12.1, numpy 2.2.6, scipy 1.14.1, torch 2.5.1+cu121 (CUDA present, not exercised), mpmath 1.3.0, scikit-fem 12.0.2, meshio absent; 12 logical CPUs; 16.7 GB RAM, about 2-4 GB free; C: 5.6 GB free (temp files on D:)",
  "last_verified_checkpoint": "c5c87d4 (clean-worktree fast suite 2960 passed / 58 xfailed / 0 failed; ruff and mypy clean)",
- "current": "VO record; integration fast suite",
+ "current": "WP06 F4 / WP16 TS7 slices; CO6 post hoc continuation",
  "units": [
   {
    "id": "WP01-baseline",
@@ -102,9 +102,9 @@
    "id": "WP06-fem-kernel",
    "priority": "P0",
    "depends_on": [],
-   "state": "PLANNED",
-   "evidence": null,
-   "next_action": "F1 reference-element contract tests; F4 reproduce T4/T10 historical rates"
+   "state": "IN_PROGRESS",
+   "evidence": "F1-F3 largely covered by existing tests (test_mesh_elements, test_mesh_assembly, test_mesh_verification)",
+   "next_action": "F4 reproduction of the historical T4/T10 rates"
   },
   {
    "id": "WP17-history-fem",
@@ -192,14 +192,93 @@
    "next_action": "KS2/KS3 results"
   },
   {
-   "id": "WP07-WP10, WP19",
+   "id": "X-mixed",
+   "priority": "P1",
+   "depends_on": [
+    "L-solver"
+   ],
+   "state": "VERIFIED_SCOPE",
+   "evidence": "prereg/X_mixed.md X1-X4 pass except X2e plain-MINRES control (strict xfail); XF: lambda-based solve refuses incompatible data",
+   "next_action": "3-D MixedKG tests, B-bar/EAS"
+  },
+  {
+   "id": "N-nonlinear",
+   "priority": "P1",
+   "depends_on": [
+    "T-spectral"
+   ],
+   "state": "VERIFIED_SCOPE",
+   "evidence": "prereg/N_nonlinear.md N1-N5 pass; R07 measured still present",
+   "next_action": "bordered predictor for exact singular points"
+  },
+  {
+   "id": "A-adaptivity",
+   "priority": "P1",
+   "depends_on": [
+    "WP06-fem-kernel"
+   ],
+   "state": "VERIFIED_SCOPE",
+   "evidence": "prereg/A_adaptivity.md A1-A3 pass except A2d wording (strict xfail)",
+   "next_action": "elasticity, T6, 3-D"
+  },
+  {
+   "id": "M-mesh",
+   "priority": "P1",
+   "depends_on": [],
+   "state": "VERIFIED_SCOPE",
+   "evidence": "prereg/M_mesh.md M1, M2, M4, M5 refusal, M3a VTU pass; M3b gmsh NOT VERIFIED",
+   "next_action": "mixed-cell meshes, periodic M6"
+  },
+  {
+   "id": "P05-material-cards",
+   "priority": "P0",
+   "depends_on": [
+    "P-properties"
+   ],
+   "state": "VERIFIED_SCOPE",
+   "evidence": "prereg/P05_material_cards.md MC1-MC8 pass",
+   "next_action": "grade/test-method/uncertainty fields"
+  },
+  {
+   "id": "HY-history-yaml",
+   "priority": "P1",
+   "depends_on": [
+    "VO-viscoelastic-topology",
+    "CO-creep-topology"
+   ],
+   "state": "VERIFIED_SCOPE",
+   "evidence": "prereg/HY_history_yaml.md HY1-HY9 pass",
+   "next_action": "robust set, traction loads, --resume"
+  },
+  {
+   "id": "CO-creep-topology",
+   "priority": "P1",
+   "depends_on": [
+    "C-creep"
+   ],
+   "state": "VERIFIED_SCOPE",
+   "evidence": "prereg/CO_creep_topology.md CO1-CO3 pass, CO4 FAILED (strict xfail), CO6 pass: 28.4 % service gain (run at the iteration cap)",
+   "next_action": "converged creep optimum (post hoc continuation running)"
+  },
+  {
+   "id": "D3-checkpoint",
+   "priority": "P1",
+   "depends_on": [
+    "VO-viscoelastic-topology"
+   ],
+   "state": "VERIFIED_SCOPE",
+   "evidence": "prereg/D3_checkpoint.md D3a-D3d pass (17.5x less saved memory, 2x solves)",
+   "next_action": "checkpointing for the creep march"
+  },
+  {
+   "id": "WP19-shells",
    "priority": "P1/P2",
    "depends_on": [
     "WP06-fem-kernel"
    ],
-   "state": "DEFERRED",
+   "state": "BLOCKED",
    "evidence": null,
-   "next_action": "after the P0 gates"
+   "next_action": "drilling reference needs >= 3.5 GB free memory (R08)"
   }
  ],
  "next": [
@@ -236,7 +315,8 @@
   "ledger/api/architecture/catalog meta tests after merges: 35 passed 1 xfailed (after the diagnostics layer fix)",
   "ruff check src tests: clean after fixes; mypy: clean after fixes (166 files)",
   "fast suite (-m 'not slow') started at 79623a7: 2747 passed, 4 skipped, 55 xfailed, 2 FAILED, exit 1, 32 min (logs/fast_suite_79623a7.txt). The 2 failures (api_surface signature of optimize_viscoelastic, vv_risk_kapsam render) are artefacts of regenerating snapshots in the working tree while the suite ran; both pass on the regenerated state (meta tests 102 passed). Lesson: the release suite runs in a separate clean worktree of the commit.",
-  "CLEAN-WORKTREE fast suite (-m 'not slow') at c5c87d4: 2960 passed, 5 skipped, 137 deselected, 58 xfailed, 0 failed, exit 0, 36:51 (logs/fast_suite_clean_c5c87d4.txt)"
+  "CLEAN-WORKTREE fast suite (-m 'not slow') at c5c87d4: 2960 passed, 5 skipped, 137 deselected, 58 xfailed, 0 failed, exit 0, 36:51 (logs/fast_suite_clean_c5c87d4.txt)",
+  "benchmarks at f12a243: docs/foundations/BENCHMARKS.md (measurements only)"
  ],
  "blockers": [
   "CI logs (R11): no gh CLI on this machine",

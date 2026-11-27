@@ -1,11 +1,11 @@
 # Foundations II — live status
 
-Actual HEAD: `c13480c`  
+Actual HEAD: `7d304e1`  
 Branch / dirty state: `foundations/round-3` / dirty  
-Updated at: 2026-11-27 03:48 +0300  
+Updated at: 2026-11-27 04:36 +0300  
 Environment / resource budget: Windows 11, Python 3.12.1, numpy 2.2.6, scipy 1.14.1, torch 2.5.1+cu121 (CUDA present, not exercised), mpmath 1.3.0, scikit-fem 12.0.2, meshio absent; 12 logical CPUs; 16.7 GB RAM, about 2-4 GB free; C: 5.6 GB free (temp files on D:)  
 Last successful integrated checkpoint: c5c87d4 (clean-worktree fast suite 2960 passed / 58 xfailed / 0 failed; ruff and mypy clean)  
-Current unit: VO record; integration fast suite
+Current unit: WP06 F4 / WP16 TS7 slices; CO6 post hoc continuation
 
 | ID | Priority | Dependencies | State | Evidence / SHA | Blocker / next action |
 |---|---|---|---|---|---|
@@ -19,7 +19,7 @@ Current unit: VO record; integration fast suite
 | C-creep | P0 | P01-contract | VERIFIED_SCOPE | prereg/C_creep.md: C2-C7 pass except C3g, C6a predictions (strict xfail, ledger) (9a02203) | creep-plasticity coupling (C8) not implemented |
 | R-rate | P0 | P01-contract | VERIFIED_SCOPE | prereg/R_rate.md R1-R7 pass except R3a at 1e-3 1/s (strict xfail) (f4018f7) | Eyring inside Perzyna; VJP |
 | T-spectral | P0 | — | VERIFIED_SCOPE | prereg/T_spectral.md TS1-TS9, MO1-MO4, E5 pass (da98d82) | second derivatives; torch path |
-| WP06-fem-kernel | P0 | — | PLANNED | — | F1 reference-element contract tests; F4 reproduce T4/T10 historical rates |
+| WP06-fem-kernel | P0 | — | IN_PROGRESS | F1-F3 largely covered by existing tests (test_mesh_elements, test_mesh_assembly, test_mesh_verification) | F4 reproduction of the historical T4/T10 rates |
 | WP17-history-fem | P1 | V-viscoelastic, P01-contract | VERIFIED_SCOPE | prereg/H_history.md H0,H1,H3,H4,H5 pass; H2 FAILED (hypothesis), post hoc H2b pass (e70fa8e, f711936) | design density coupling of physical history models beyond linear viscoelasticity |
 | WP16-cure | P1/P2 | P-properties | VERIFIED_SCOPE | prereg/TS_cure.md TS1-TS6 pass (9532240) | FE residual-stress coupling |
 | WP15-thermoplastics | P1/P2 | P-properties, V-viscoelastic | VERIFIED_SCOPE | prereg/TS_cure.md TP3, TP4 pass (Avrami/Nakamura only) | TP1/TP2/TP5/TP6 |
@@ -28,7 +28,15 @@ Current unit: VO record; integration fast suite
 | MM-micromechanics | P2 | E04-poisson | VERIFIED_SCOPE | prereg/MM_micromechanics.md MM1-MM4, E7, MMI1-2 pass (c9f019b); Eshelby components from memory, cross-checked by coated/hollow sphere closed forms | self-consistent, ellipsoidal inclusions |
 | D-identification | P1/P2 | V-viscoelastic, C-creep | VERIFIED_SCOPE | prereg/D_identification.md D4-D7 pass except D5a covariance prediction (strict xfail); D8 NOT VERIFIED (skip) | real licensed data |
 | VR/VU/KS robust optimisation | P1 | VO-viscoelastic-topology | IN_PROGRESS | prereg/VR_viscoelastic_robust.md (VR1 FAILED), VU_viscoelastic_uncertain.md (weak pass), KS_kkt_stop.md (KS1 pass, KS2/KS3 running) | KS2/KS3 results |
-| WP07-WP10, WP19 | P1/P2 | WP06-fem-kernel | DEFERRED | — | after the P0 gates |
+| X-mixed | P1 | L-solver | VERIFIED_SCOPE | prereg/X_mixed.md X1-X4 pass except X2e plain-MINRES control (strict xfail); XF: lambda-based solve refuses incompatible data | 3-D MixedKG tests, B-bar/EAS |
+| N-nonlinear | P1 | T-spectral | VERIFIED_SCOPE | prereg/N_nonlinear.md N1-N5 pass; R07 measured still present | bordered predictor for exact singular points |
+| A-adaptivity | P1 | WP06-fem-kernel | VERIFIED_SCOPE | prereg/A_adaptivity.md A1-A3 pass except A2d wording (strict xfail) | elasticity, T6, 3-D |
+| M-mesh | P1 | — | VERIFIED_SCOPE | prereg/M_mesh.md M1, M2, M4, M5 refusal, M3a VTU pass; M3b gmsh NOT VERIFIED | mixed-cell meshes, periodic M6 |
+| P05-material-cards | P0 | P-properties | VERIFIED_SCOPE | prereg/P05_material_cards.md MC1-MC8 pass | grade/test-method/uncertainty fields |
+| HY-history-yaml | P1 | VO-viscoelastic-topology, CO-creep-topology | VERIFIED_SCOPE | prereg/HY_history_yaml.md HY1-HY9 pass | robust set, traction loads, --resume |
+| CO-creep-topology | P1 | C-creep | VERIFIED_SCOPE | prereg/CO_creep_topology.md CO1-CO3 pass, CO4 FAILED (strict xfail), CO6 pass: 28.4 % service gain (run at the iteration cap) | converged creep optimum (post hoc continuation running) |
+| D3-checkpoint | P1 | VO-viscoelastic-topology | VERIFIED_SCOPE | prereg/D3_checkpoint.md D3a-D3d pass (17.5x less saved memory, 2x solves) | checkpointing for the creep march |
+| WP19-shells | P1/P2 | WP06-fem-kernel | BLOCKED | — | drilling reference needs >= 3.5 GB free memory (R08) |
 
 ## Next executable units
 
@@ -69,6 +77,7 @@ Current unit: VO record; integration fast suite
 - ruff check src tests: clean after fixes; mypy: clean after fixes (166 files)
 - fast suite (-m 'not slow') started at 79623a7: 2747 passed, 4 skipped, 55 xfailed, 2 FAILED, exit 1, 32 min (logs/fast_suite_79623a7.txt). The 2 failures (api_surface signature of optimize_viscoelastic, vv_risk_kapsam render) are artefacts of regenerating snapshots in the working tree while the suite ran; both pass on the regenerated state (meta tests 102 passed). Lesson: the release suite runs in a separate clean worktree of the commit.
 - CLEAN-WORKTREE fast suite (-m 'not slow') at c5c87d4: 2960 passed, 5 skipped, 137 deselected, 58 xfailed, 0 failed, exit 0, 36:51 (logs/fast_suite_clean_c5c87d4.txt)
+- benchmarks at f12a243: docs/foundations/BENCHMARKS.md (measurements only)
 
 ## Resource and permission blockers
 

@@ -25,6 +25,9 @@ the record is named in each row. Synthetic parameters throughout; no real materi
 | X mixed | K-based u–p (`MixedKG`, valid at ν = 0), inf–sup, locking, spurious modes | X1–X4 (`X_mixed.md`); **λ-based solve now refuses incompatible incompressible data** (`XF_mixed_compatibility.md`) | X2e plain-MINRES control |
 | A adaptivity | residual and ZZ indicators, Dörfler marking, newest-vertex bisection (T3, Poisson) | A1–A3; adaptive rate −0.504 vs uniform −0.326 on the L-shape (`A_adaptivity.md`) | A2d wording at θ = 0.5 |
 | P05 material cards | dict/YAML cards with explicit units, provenance, validity box for 8 model families | MC1–MC8 (`P05_material_cards.md`); a consistently mislabelled stress unit is undetectable (stated) | — |
+| M mesh | validation (duplicates, non-manifold, orientation by id), quality with a Bernstein Jacobian certificate, inverse map / point location, renumbering, VTU roundtrip | M1–M5 (`M_mesh.md`); gmsh import NOT VERIFIED | — |
+| HY YAML | `analysis: {type: history}` configs: material card, time schedule, service-time / min–max objectives, CLI validate/run, VTU + JSON output | HY1–HY9 (`HY_history_yaml.md`) | — |
+| D3 checkpoint | segment checkpointing of the viscoelastic adjoint | same gradient, 17.5× less saved memory, 2× solves (`D3_checkpoint.md`) | — |
 | N nonlinear | objectivity, plane stress, patches, truss, Hencky via spectral log | N1–N5 (`N_nonlinear.md`); R07 still present (measured) | — |
 
 ## Optimisation and robustness
@@ -56,7 +59,7 @@ viscoelastic material, large under nonlinear creep (28 %), decisive when the cri
 
 ## Not done / open
 
-YAML and `Study` integration of the physical history models and of the viscoelastic optimisation; FE coupling of
+`Study` integration of the physical history models (a separate YAML path exists: HY); FE coupling of
 creep / plasticity with the design density (only linear viscoelasticity is design-coupled); WP07 external mesh I/O
-(meshio absent; mesh validation in progress), WP19 shell drilling (memory-blocked), WP05 L06
+(meshio/gmsh absent), WP19 shell drilling (memory-blocked), WP05 L06
 saddle-point preconditioners and benchmarks; real material data (D8, R12). Remote push and PR need the user's approval.
