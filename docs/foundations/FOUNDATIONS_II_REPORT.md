@@ -31,6 +31,7 @@ the record is named in each row. Synthetic parameters throughout; no real materi
 | IP projection for the IH cells | tanh projection with β continuation (1 → 32), MMA restarted per stage, volume on the projected field | IP1–IP4 (`IP_projection.md`), all pass on the first run: gradient 1.1e-8, unprojected path bitwise unchanged, **κ/κ_HS = 0.9895 (square) and 0.9880 (rhombus)** with 0.1–0.4 % grey cells, bound not crossed | — |
 | IA auxetic cell | `objective="poisson"` (maximise −C12/C11) with C11 ≥ 0.02 and the IP projection on a general periodic mesh; formulation of the historical grid run | IA1–IA4 (`IA_auxetic_cell.md`), all pass on the first run: C12/C11 = −1.76 (thresholded −1.66, positive definite, one periodic body), grey 1.1 %. **Not auxetic under uniaxial stress**: the full compliance gives ν12 = +0.0004, ν21 = +0.005; the optimiser used normal–shear coupling (C13, C23 ≠ 0) to make the stiffness ratio negative (a first reading claiming ν21 = −1.76 assumed C13 = C23 = 0 and was corrected) | the registered check passed; its physical reading failed |
 | IAb compliance-based auxetic objective | `objective="poisson_stress"`: maximise −ν12 = S21/S11 from the full compliance, E1 = 1/S11 ≥ 0.01 | IB1–IB4 (`IAb_auxetic_compliance.md`) pass as registered (gradients 1.2e-8 / 6.4e-9; ν12 = −36), **but the design is a near mechanism**: thresholded min eigenvalue 1.1e-9 = void level, solid not one body, KKT 1.0 — the thresholds were too weak; all three moduli must be bounded (IAc) | registered checks passed; the physical reading failed |
+| IAc bounded auxetic cell | `min_moduli=(E1, E2, G12)` from the full compliance with the compliance-based ν12 objective; connectivity check of the solid | IC0–IC3 (`IAc_auxetic_bounded.md`), all pass on the first run: **ν12 = −2.34, ν21 = −0.17 under uniaxial stress** (full compliance), thresholded 0/1 design −2.27 with min eigenvalue 2.3e-3 and one periodic body; ν12/E1 = ν21/E2 (symmetry), ν12ν21 = 0.40 < 1 | — |
 | NS shared Newton loop (cleanup) | `fem/mesh/_newton.newton_free` used by `cure_slab` and `nonlinear_heat`; each keeps its residual, stop scale and noise model | NS1–NS4 (`NS_newton_shared.md`): six fingerprints bitwise equal to the pre-change code (1f898bf); negative control resolves one ulp | — |
 | E3 conditioning | float64 accuracy of energy, compliance, directional E and ν vs mpmath for κ = 1 … 1e14; `forward_accuracy_established` | errors ≤ 0.20 κu to κ = 1e10; R02 resolved: κ = 5.5e34 Cholesky case SPD in mpmath, undecidable in float64, correctly refused; acoustic tensor SPD bound proved (`E3_conditioning.md`) | AC2 at κ = 1 (4u slack exceeded by 2.6e-16); ν metric at κ = 1 changed after the first run (reference ν = 0; recorded) |
 | T spectral | f(A) with Fréchet derivative/JVP/VJP at repeated eigenvalues; VRH, A_U, Zener | TS1–TS9, MO1–4, E5 (`T_spectral.md`) | — |
@@ -78,7 +79,9 @@ Bulk-modulus cells reach 0.990 (square) and 0.988 (triangular lattice) of the Ha
 projection, from a 0/1 start. Two failures carry the lessons: from grey starts the optimiser returns to the uniform
 grey design (IH3/IH4, a stationary and attracting point), and the stiffness-ratio Poisson objective C12/C11 is
 exploited by normal–shear coupling on an unsymmetric mesh design (IA: C12/C11 = −1.76 while the uniaxial-stress
-ratios are ≈ 0); a physical auxetic target needs the compliance-based ratio (IAb).
+ratios are ≈ 0); with the compliance-based ratio and only E1 bounded the optimiser finds a mechanism (IAb); with
+E1, E2 and G12 bounded the cell is auxetic under uniaxial stress in both directions (IAc: ν12 = −2.34, ν21 = −0.17,
+the 0/1 design keeps it).
 
 Figures of the cells: `fig_ih_cells.png` (post hoc, grey edges), `fig_ip_cells.png` (projected).
 

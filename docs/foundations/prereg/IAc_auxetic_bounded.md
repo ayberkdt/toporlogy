@@ -22,3 +22,22 @@ d(1/S_ii) = (S dC S)_ii / S_ii². `min_E1` stays as it was (IAb).
 ## First result
 
 Appended below after the first run.
+
+## First result (IC0/IC1 run 11:11, IC2/IC3 run 11:11–11:19 +0300 by the clock; recorded 2026-11-27 11:19 +0300)
+
+All checks PASS on the first run; no threshold, input or assertion changed.
+
+| ID | Result | Measured (threshold) |
+|---|---|---|
+| IC0 | PASS | full cell one body; two stripes not one body; wrapping diagonal one body |
+| IC1 | PASS | E1 6.4e-9, E2 1.4e-8, G12 1.5e-8 (1e-6) |
+| IC2 | PASS | (a) volume 0.39999995; (b) E1 0.1375, E2 0.0100 (active), G12 0.00234 (≥ 0.01, 0.01, 0.002); (c) grey 0.0034; (d) **ν12 = −S21/S11 = −2.34** (≤ −0.2); ν21 = −0.170; 596 iterations, KKT 3.2e-4 |
+| IC3 | PASS | thresholded: (a) min eigenvalue of C **2.26e-3** (≥ 1e-4; 2 × 10⁶ × the void level); (b) ν12 = −2.27 (≤ −0.1); (c) one periodic body; moduli 0.145, 0.0105, 0.0024 |
+
+Reading: with all three moduli bounded the optimiser no longer reaches a mechanism, and the cell is auxetic under
+uniaxial stress in both directions, from the full compliance (shear free): ν12 = −2.34 (stress along x) and
+ν21 = −0.17 (stress along y). Consistency of the measured numbers: ν12/E1 = −17.0 = ν21/E2 (compliance symmetry) and
+ν12 ν21 = 0.40 < 1 (positive definiteness of the orthotropic in-plane block). The thresholded 0/1 design keeps the
+values (−2.27, min eigenvalue 2.3e-3), so the response does not live in grey or void material. Together with IA and
+IAb: the stiffness-ratio objective is exploitable by shear coupling, the compliance objective with one modulus by a
+mechanism; bounding E1, E2 and G12 removes both.

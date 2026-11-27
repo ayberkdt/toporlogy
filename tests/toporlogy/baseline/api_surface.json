@@ -6141,7 +6141,7 @@
    "class": "PeriodicDensityFilter"
   },
   "cell_objective": "cell_objective(mesh,lattice,D,x_phys,penal,emin,objective)",
-  "optimize_cell": "optimize_cell(mesh,lattice,D,volume,rmin,objective,penal,emin,max_iter,move,x0,kkt_tol,projection,stage_iter,min_C11,min_E1)"
+  "optimize_cell": "optimize_cell(mesh,lattice,D,volume,rmin,objective,penal,emin,max_iter,move,x0,kkt_tol,projection,stage_iter,min_C11,min_E1,min_moduli)"
  },
  "toporlogy.optimization.checkpoint": {
   "CHECKPOINT_VERSION": "<int>",

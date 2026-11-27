@@ -138,6 +138,20 @@ def cell_objective(mesh: Mesh, lattice: Any, D: Any, x_phys: np.ndarray, penal: 
     return val, grad, C
 
 
+def _moduli_gradients(mesh: Mesh, lattice: Any, D: Any, x_phys: np.ndarray, penal: float, emin: float
+                      ) -> tuple[np.ndarray, np.ndarray]:
+    """(E1, E2, G12) = 1/S_ii from the full compliance and their gradients (3, n_cells) with respect to x̃."""
+    E = emin + x_phys ** penal * (1.0 - emin)
+    h = homogenize_mesh_elasticity(mesh, D, lattice, E, sensitivities=True)
+    assert h.dC is not None
+    S = np.linalg.inv(h.C)
+    fac = penal * x_phys ** (penal - 1.0) * (1.0 - emin)
+    vals = 1.0 / np.diag(S)
+    grads = np.stack([np.einsum("k,ekl,l->e", S[i], h.dC, S[:, i], optimize=True) / S[i, i] ** 2 * fac
+                      for i in range(3)])
+    return vals, grads
+
+
 def _project(xb: np.ndarray, beta: float, eta: float) -> tuple[np.ndarray, np.ndarray]:
     """tanh projection (the formula of :class:`toporlogy.design.chain.HeavisideProjection`) and its derivative."""
     a, d = np.tanh(beta * eta), np.tanh(beta * (1.0 - eta))
@@ -150,14 +164,16 @@ def optimize_cell(mesh: Mesh, lattice: Any, D: Any, volume: float, rmin: float, 
                   x0: np.ndarray | None = None, kkt_tol: float | None = None,
                   projection: tuple[float, Sequence[float]] | None = None,
                   stage_iter: int = 100, min_C11: float | None = None,
-                  min_E1: float | None = None) -> CellOptimizeResult:
+                  min_E1: float | None = None,
+                  min_moduli: tuple[float, float, float] | None = None) -> CellOptimizeResult:
     """Maximise the effective ``objective`` of the periodic cell under a volume fraction (module notes).
 
     ``projection=(eta, betas)``: the filtered field is projected by the tanh step with threshold ``eta``; β runs
     through ``betas``, each stage until ``kkt_tol`` or ``stage_iter`` iterations, MMA restarted per stage, and the
     volume is taken on the projected field (``prereg/IP_projection.md``). Without it one stage of ``max_iter``.
     ``min_C11``: the extra constraint C11 ≥ min_C11 (with ``objective="poisson"``, ``prereg/IA_auxetic_cell.md``);
-    ``min_E1``: E1 = 1/S11 ≥ min_E1 (with ``objective="poisson_stress"``, ``prereg/IAb_auxetic_compliance.md``)."""
+    ``min_E1``: E1 = 1/S11 ≥ min_E1 (with ``objective="poisson_stress"``, ``prereg/IAb_auxetic_compliance.md``);
+    ``min_moduli=(E1, E2, G12)``: all three 1/S_ii bounded below (``prereg/IAc_auxetic_bounded.md``)."""
     from toporlogy.optimization.diagnostics import kkt_estimate
     from toporlogy.optimizers.mma import MMA
     if not 0 < volume < 1:
@@ -215,6 +231,12 @@ def optimize_cell(mesh: Mesh, lattice: Any, D: Any, volume: float, rmin: float, 
                 g = np.append(g, 1.0 - e1 / min_E1)
                 de = -de1 / min_E1
                 dg = np.vstack([dg, filt.backward(de if dp is None else de * dp)[None, :]])
+            if min_moduli is not None:
+                mv, mg = _moduli_gradients(mesh, lattice, D, xp, penal, emin)
+                lim = np.asarray(min_moduli, float)
+                g = np.concatenate([g, 1.0 - mv / lim])
+                rows = -mg / lim[:, None]
+                dg = np.vstack([dg] + [filt.backward(r if dp is None else r * dp)[None, :] for r in rows])
             hist["objective"].append(val)
             hist["volume"].append(v)
             hist["beta"].append(float("nan") if beta is None else beta)

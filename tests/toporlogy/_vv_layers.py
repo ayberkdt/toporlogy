@@ -169,6 +169,7 @@ FILE_LAYERS: dict[str, tuple[str, ...]] = {
     "test_cell_projection.py": ("OG", "AN"),
     "test_cell_auxetic.py": ("OG", "AN"),
     "test_cell_auxetic_stress.py": ("OG", "AN"),
+    "test_cell_auxetic_bounded.py": ("OG", "AN"),
     "test_viscoelastic_aniso.py": ("U", "MP", "AN", "IS"),
     "test_continuation_singular.py": ("AN", "IS"),
     "test_locate_zero.py": ("AN",),

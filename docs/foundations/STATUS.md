@@ -1,11 +1,11 @@
 # Foundations II — live status
 
-Actual HEAD: `040f61f`  
+Actual HEAD: `ce2b230`  
 Branch / dirty state: `foundations/round-3` / dirty  
-Updated at: 2026-11-27 11:11 +0300  
+Updated at: 2026-11-27 11:20 +0300  
 Environment / resource budget: Windows 11, Python 3.12.1, numpy 2.2.6, scipy 1.14.1, torch 2.5.1+cu121 (CUDA present, not exercised), mpmath 1.3.0, scikit-fem 12.0.2, meshio absent; 12 logical CPUs; 16.7 GB RAM, about 2-4 GB free; C: 5.6 GB free (temp files on D:)  
 Last successful integrated checkpoint: 7249632 (clean-worktree fast suite, run 10:05-10:55: 3796 passed / 5 skipped / 70 xfailed / 0 failed; ruff and mypy clean; records check clean)  
-Current unit: IAc bounded auxetic cell; final clean-worktree suite
+Current unit: final clean-worktree suite
 
 | ID | Priority | Dependencies | State | Evidence / SHA | Blocker / next action |
 |---|---|---|---|---|---|
@@ -62,6 +62,7 @@ Current unit: IAc bounded auxetic cell; final clean-worktree suite
 | IP-projection | P1 | IH-inverse-homogenization | VERIFIED_SCOPE | prereg/IP_projection.md (IP1-IP4 pass first run; kappa/HS 0.9895 square, 0.9880 rhombus, grey <= 0.4 %) | none |
 | IA-auxetic-stiffness-ratio | P2 | IP-projection | FAILED | prereg/IA_auxetic_cell.md (registered checks pass: C12/C11 -1.76; physical reading failed: uniaxial-stress ratios +0.0004/+0.005 through normal-shear coupling; an earlier reading was corrected) | compliance-based objective (IAb, IAc) |
 | IAb-auxetic-compliance | P2 | IA-auxetic-stiffness-ratio | FAILED | prereg/IAb_auxetic_compliance.md (registered checks pass; design is a near mechanism: min eig 1.1e-9, disconnected solid) | IAc (all moduli bounded) running |
+| IAc-auxetic-bounded | P2 | IAb-auxetic-compliance | VERIFIED_SCOPE | prereg/IAc_auxetic_bounded.md (IC0-IC3 pass first run; nu12 -2.34, nu21 -0.17 under uniaxial stress; thresholded keeps it, one body) | none |
 
 ## Next executable units
 
