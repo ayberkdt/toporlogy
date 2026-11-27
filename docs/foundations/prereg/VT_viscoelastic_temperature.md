@@ -15,3 +15,11 @@ design dependence and adjoint are untouched. Without a shift the coefficients ar
 | VT5 | a shifted material without temperatures, wrong length, or a temperature outside the shift's range → ValueError | — | exact |
 
 Run: `python -m pytest tests/toporlogy/test_viscoelastic_temperature.py -q -p no:randomly`.
+
+## First result (recorded 2026-11-27 05:40 +0300)
+
+All pass on the first run (with test_viscoelastic_topology and test_checkpoint_adjoint: 19 passed). VT1: 6.9e-14
+(w = 1) and 2.9e-14 (w = 0.37) against `HistoryProblem` + shifted `GeneralizedMaxwell`. VT2: best FD error 1.9e-10.
+VT3: bitwise. VT4: a_T(320 K) = 1.379e-5; displacements equal the unshifted structure on the scaled time grid
+bitwise (relative difference 0). VT5: all refusals raise. The isothermal path keeps Δξ = Δt (VO and D3 fingerprints
+unchanged).

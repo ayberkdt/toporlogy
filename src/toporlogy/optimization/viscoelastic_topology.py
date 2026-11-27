@@ -76,19 +76,35 @@ class ViscoelasticStructure:
 
     ``times`` (n,): end times of the steps (non-decreasing, from t = 0, a step of zero length is an instantaneous
     step); ``loads`` (n, ndof): the external nodal forces at those times (piecewise linear in between); ``fixed``:
-    the DOFs held at zero."""
+    the DOFs held at zero. A material with a time–temperature shift needs ``temperatures`` (n,) [K] at the step ends
+    and the initial ``temperature0``; each step then uses the reduced increment Δξ of T linear in the step
+    (``prereg/VT_viscoelastic_temperature.md``)."""
 
     def __init__(self, mesh: Mesh, material: GeneralizedMaxwell, times: Sequence[float], loads: np.ndarray,
-                 fixed: np.ndarray, thickness: float = 1.0) -> None:
+                 fixed: np.ndarray, thickness: float = 1.0, temperatures: Sequence[float] | None = None,
+                 temperature0: float | None = None) -> None:
         if mesh.dim != 2:
             raise ValueError("ViscoelasticStructure: 2-D plane strain meshes only")
-        if not isinstance(material, GeneralizedMaxwell) or material.shift is not None:
-            raise ValueError("ViscoelasticStructure: an isothermal GeneralizedMaxwell material is required")
+        if not isinstance(material, GeneralizedMaxwell):
+            raise ValueError("ViscoelasticStructure: a GeneralizedMaxwell material is required")
         self.mesh, self.mat = mesh, material
         self.times = np.asarray(times, float).reshape(-1)
         if not (np.all(np.isfinite(self.times)) and self.times[0] >= 0.0 and np.all(np.diff(self.times) >= 0.0)):
             raise ValueError("times must be finite, >= 0 and non-decreasing")
         self.dts = np.diff(np.concatenate([[0.0], self.times]))
+        if material.shift is None:
+            if temperatures is not None:
+                raise ValueError("temperatures given for a material without a time-temperature shift")
+            self.dxis = self.dts.copy()
+        else:
+            if temperatures is None or temperature0 is None:
+                raise ValueError("a shifted material needs temperatures (one per step, kelvin) and temperature0")
+            Tn = np.asarray(temperatures, float).reshape(-1)
+            if Tn.shape != self.times.shape or not np.all(np.isfinite(Tn)) or np.any(Tn <= 0.0):
+                raise ValueError(f"temperatures must be {len(self.times)} finite values > 0 K")
+            Tp = np.concatenate([[float(temperature0)], Tn[:-1]])
+            self.dxis = np.array([float(material.shift.reduced_time_increment(a, b, d))
+                                  for a, b, d in zip(Tp, Tn, self.dts, strict=True)])
         self.ndof = mesh.n_nodes * 2
         self.loads = np.asarray(loads, float).reshape(len(self.times), self.ndof)
         g = kn.geometry(mesh.ref, mesh.cell_points(), rule(mesh.ref.cell, kn.stiffness_degree(mesh.ref)))
@@ -102,7 +118,7 @@ class ViscoelasticStructure:
         sh, bk = material.shear, material.bulk
         self._Ke: dict[float, np.ndarray] = {}
         self._coef: dict[float, tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]] = {}
-        for dt in np.unique(self.dts):
+        for dt in np.unique(self.dxis):                     # reduced increments (= Δt when isothermal)
             a_s, a_k = dt / sh.taus, dt / bk.taus
             r_s, r_k, ph_s, ph_k = np.exp(-a_s), np.exp(-a_k), _phi(a_s), _phi(a_k)
             Gt, Kt = sh.inf + float(ph_s @ sh.amplitudes), bk.inf + float(ph_k @ bk.amplitudes)
@@ -137,7 +153,7 @@ class ViscoelasticStructure:
         """One step n → n+1 of the march: (ε, ŝ, p̂, u, f_nᵀu_n) after the step."""
         sh, bk = self.mat.shear, self.mat.bulk
         dt_ = w.dtype
-        dt = self.dts[n]
+        dt = self.dxis[n]
         r_s, r_k, c_s, c_k = (torch.as_tensor(v, dtype=dt_) for v in self._coef[float(dt)])
         e_h = eps.detach() if detach_history else eps
         s_h = shat.detach() if detach_history else shat
