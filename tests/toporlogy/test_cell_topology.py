@@ -109,6 +109,9 @@ def _report(tag: str, r) -> None:
 
 
 @pytest.mark.slow
+@pytest.mark.xfail(strict=True, reason="pre-registered IH3(c) FAILED on the first run: kappa / kappa_HS = 0.341 < 0.80; "
+                   "the design returned to the uniform grey field (a stationary point); IH3(a), IH3(b) passed. "
+                   "Post hoc start study in prereg/IH_inverse_homogenization.md")
 def test_ih3_square_cell_bulk_modulus() -> None:
     m, L = square(40)
     r = _run(m, L, np.array([0.5, 0.5]))
@@ -119,6 +122,8 @@ def test_ih3_square_cell_bulk_modulus() -> None:
 
 
 @pytest.mark.slow
+@pytest.mark.xfail(strict=True, reason="pre-registered IH4(c) FAILED on the first run: kappa / kappa_HS = 0.341 < 0.80; "
+                   "as IH3, a near-uniform grey field; IH4(a), IH4(b) passed")
 def test_ih4_rhombic_cell_bulk_modulus() -> None:
     m, L = rhombus(40)
     r = _run(m, L, np.array([0.75, SQRT3 / 4]))

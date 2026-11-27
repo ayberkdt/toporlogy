@@ -956,6 +956,26 @@
    "resolution": "Hypothesis was wrong; strict xfail; post hoc exactness test passes.",
    "record": "docs/foundations/prereg/NH_nonlinear_heat.md",
    "slow": false
+  },
+  {
+   "nodeid": "tests/toporlogy/test_cell_topology.py::test_ih3_square_cell_bulk_modulus",
+   "kind": "pre-registered check failed",
+   "model_backend": "optimization.cell_topology (periodic filter, SIMP p = 3.5, MMA) + fem.mesh.homogenization, 40 x 40 T3, CPU",
+   "reason": "IH3(c): kappa / kappa_HS = 0.341 < 0.80; the design returned to the uniform grey field (x~ = 0.5 everywhere, grey fraction 1.000, kappa = 0.5^3.5 kappa_solid), a stationary point of the bulk objective; 300 iterations, KKT 6.7e-4. IH3(a) volume and IH3(b) kappa <= kappa_HS passed",
+   "risk": "medium",
+   "resolution": "the registered start (a 0.25 hole in a 0.5 field) does not leave the basin of the uniform design; post hoc start study in prereg/IH_inverse_homogenization.md",
+   "record": "docs/foundations/prereg/IH_inverse_homogenization.md",
+   "slow": true
+  },
+  {
+   "nodeid": "tests/toporlogy/test_cell_topology.py::test_ih4_rhombic_cell_bulk_modulus",
+   "kind": "pre-registered check failed",
+   "model_backend": "optimization.cell_topology (periodic filter, SIMP p = 3.5, MMA) + fem.mesh.homogenization, rhombic 60 deg cell, 40 x 40 T3, CPU",
+   "reason": "IH4(c): kappa / kappa_HS = 0.341 < 0.80; as IH3, the design returned to a near-uniform grey field (grey fraction 1.000), 300 iterations, KKT 1.0e-2. IH4(a), IH4(b) passed",
+   "risk": "medium",
+   "resolution": "as IH3",
+   "record": "docs/foundations/prereg/IH_inverse_homogenization.md",
+   "slow": true
   }
  ],
  "skips": [

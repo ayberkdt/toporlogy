@@ -38,3 +38,27 @@ isotropy defect |C11 − C12 − 2 C33| / C11 of the rhombic cell.
 ## First result
 
 Appended below after the first run.
+
+## First result (IH1/IH2 run 10:09, IH3–IH5 run 10:09–10:14 +0300 by the clock; recorded 2026-11-27 10:17 +0300)
+
+Order of events: the module and the test were written after this record's commit decc95c. They were committed
+together with MB in ed3bed5 (an error of grouping, not of content), after the first IH1/IH2 run and while IH3–IH5
+were running. No threshold, input or assertion was changed after any run.
+
+| ID | Result | Measured (threshold) |
+|---|---|---|
+| reference limits | PASS | κ_HS(1) = κ, κ_HS(0) = 0, κ_HS ≤ f κ on 11 points |
+| IH1 | PASS | worst 2.0e-8 relative to max abs gradient (1e-6) |
+| IH2 | PASS | rows and constant field ≤ 1e-14; periodicity under a one-column shift 5.6e-16 (1e-12); adjoint 0 (1e-12) |
+| IH3(a), (b) | PASS | volume 0.50000000; κ 0.063135 ≤ κ_HS 0.185185 |
+| **IH3(c)** | **FAIL** | κ / κ_HS = **0.341** (≥ 0.80). 300 iterations (cap), KKT 6.7e-4; grey fraction 1.000, C11/C22 1.0000 |
+| IH4(a), (b) | PASS | volume 0.49999903; κ 0.063208 ≤ κ_HS |
+| **IH4(c)** | **FAIL** | κ / κ_HS = **0.341**; 300 iterations, KKT 1.0e-2; grey fraction 1.000; isotropy defect 2.1e-3 |
+| IH5 | PASS | penal = 1: κ = 0.357143 = 1.93 κ_HS (> 1.05 κ_HS); the bound check is informative |
+
+What happened: both optimisations returned to a uniform grey design (x̃ ≈ 0.5 in every cell; κ = 0.5^3.5 · E/(2(1−ν))
+= 0.0631, which equals the measured value). The uniform design is a stationary point of this problem: all
+sensitivities are equal and proportional to the volume gradient. The registered start, a central hole at 0.25 in a 0.5
+field, did not leave its basin: MMA filled the hole in. The hypothesis "this start leads to a near-optimal cell" is
+refuted. The machinery is unaffected: gradient (IH1), filter (IH2), bounds (a, b) and the negative control (IH5) all
+hold. Strict xfails (slow); ledger `ledger_additions/IH_inverse_homogenization.json`.
