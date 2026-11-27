@@ -33,3 +33,18 @@ differentiated exactly on the fixed time grid. Objective J = f(t_s)ᵀ u(t_s).
 
 Synthetic parameters: K0 = 3.33 GPa, G0 = 0.77 GPa, A = 1e-6 1/s, σ_ref = 10 MPa (n given per check); loads scaled
 so the solid stresses are 5–20 MPa. Run: `python -m pytest tests/toporlogy/test_creep_topology.py -q -p no:randomly`.
+
+## First result (recorded 2026-11-27 03:28 +0300 by the clock; runs between 03:25 and this time)
+
+* CO1: FAILED on the first run for a **test set-up error** — the test built K, G with `torch.full((P,), K0)`, which
+  is float32 (stress off by 9 Pa in 2e8); with float64 inputs CO1 PASS (n = 1, 3, 5) at the preregistered 1e-12.
+* CO2 PASS: 5.9e-16 (c = 1 and 0.4) against `HistoryProblem` + `NortonCreep`.
+* CO3 PASS: best FD error 7.1e-11 (h = 1e-6); errors 7e-4, 7e-6, 7e-8, 7e-10, 7e-11, 2e-9 for h = 1e-2 … 1e-7.
+* **CO4 FAILED**: detaching the history changes the gradient by only 6.3e-4 (< 1e-3): at the 2e5 tip load creep is
+  weak, so the negative control is insensitive. Strict xfail; ledger. Post hoc CO4b at 5× the load: 1.3e-2 and FD
+  error 5.8e-10 (PASS, labelled post hoc).
+* **CO5 not run as specified — the preregistered set-up is self-contradictory**: with A = 1e-6 1/s, σ_ref = 10 MPa
+  and solid stresses 5–20 MPa the uniform design's service/elastic compliance ratio is 1.0007–1.018 (measured for
+  F = 2e6, 5e6, 1e7), so the condition "≥ 20 %" cannot be met (the elastic moduli scale with w, the creep law does
+  not). A set-up calibration (A = 1e-5, 1e-4; F = 5e6, 1e7: ratios 1.045, 1.17, 1.40, 2.39) was measured before the
+  replacement preregistration CO6 (`CO6_creep_topology.md`); no CO5/CO6 optimisation was run before it.
