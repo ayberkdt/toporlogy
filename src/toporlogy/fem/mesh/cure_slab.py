@@ -356,8 +356,9 @@ def residual_stress(slab: CureSlab, moduli_uncured: IsotropicModuliOfT, moduli_c
     finite block (not an infinite plate).
 
     ``force_scale`` (N, >= 0): :class:`HistoryProblem` stops when the free-DOF residual is below ``tol`` times
-    the largest of the external force and the internal forces; for a state that is (almost) stress free those internal forces are at
-    the level of rounding and the relative test cannot be met. A reference force of this size is applied to a SUPPORTED
+    the largest of the external force and the internal forces; for a state that is (almost) stress free those
+    internal forces are at the level of rounding and the relative test cannot be met. A reference force of this size
+    is applied to a SUPPORTED
     DOF (the support carries it: no effect on the stresses) so that the criterion has a physical force scale; choose it
     of the order of the internal forces of the section (stress × cross-section). Default 0: no reference force."""
     if slab.mesh.dim != 2:
