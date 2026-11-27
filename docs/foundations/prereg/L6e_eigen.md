@@ -103,3 +103,33 @@ Closed forms for the checks (derived here, evaluated in the test with `math.sqrt
 
 Run: `python -m pytest tests/toporlogy/test_eigen.py -q -p no:randomly` (TMP/TEMP and basetemp under
 `.claude/tmp-toporlogy/L6e_eigen`). First results are appended below.
+
+## First result, run 1 (2026-11-27 09:42 +0300, base SHA 08bd80c + module and test file)
+
+All 19 tests passed (6.3 s); no threshold was changed and no check failed, so there is no ledger addition. One test-file edit before the first run:
+a hedged assertion in E1a (an "or" fallback) was replaced by the plain comparison of the report's eta with the test's own evaluation (max difference <= 1e-15).
+
+| ID | Result | Measured |
+|---|---|---|
+| E0 | PASS | no fem/torch import |
+| E1a | PASS | max eta 7.2e-16, orth 6.2e-15, max r 3.8e-16 |
+| E1b | PASS | lam rel 6.6e-15, min MAC 1 - 1e-15, max eta 5.2e-16 |
+| E1c | PASS | eta_0 2.4e-07, r_10 1.65e-07, orth(2 Phi) 16.4; passed() False for all three |
+| E2a/E2b | PASS | lam rel 4.1e-15; clusters [(0,), (1, 2), (3,), (4, 5)]; angles 6.4e-15, 4.6e-15; cluster residual 4.2e-16 |
+| E2c | PASS | individual MAC 0.638, subspace angle 4.9e-16, residual 5.1e-16 |
+| E2d | PASS | cluster_cut {k=4: False, 5: True, 6: False} |
+| E3a/E3b | PASS | sigma -1.6e-3, n_zero 3, zero residual 9.3e-17, max abs lam_0..2 3.2e-15, angle to rigid space 3.6e-14 |
+| E3c | PASS | bending rel errors 4.3e-06, 3.3e-05, 1.2e-04 (threshold 1e-3) |
+| E3d | PASS | sigma = 0 raises ShiftError; expected_zero=2 gives False; sigma=None without assume_psd raises |
+| E3e | PASS | clamped rel errors 1.1e-07, 4.2e-06, 3.3e-05; n_zero 0 |
+| E3f | PASS | sigma = 3 and 3(1+1e-12) refused; 3.003 accepted, lam [1..5] exact to 1e-9, distance bound 3.0e-3 |
+| E4a/E4b | PASS | worst MAC to Psi 1 - 1e-15; crossing [(4, 0, 1)]; index-matched MAC 4.6e-30; index lam_0 deviates 2.0 |
+| E4c | PASS | crossings [(4,0,1), (6,0,2), (9,1,2)], none ambiguous |
+| E4d | PASS | no crossing, identity order |
+| E5a | PASS | 1.360920843433 = (-4 + sqrt 148)/6 to 1e-12; reverse 2.69425418; inertia (1, 1, 0) |
+| E5b | PASS | indefinite K and asymmetric K raise; K_G = 0 returns an empty result with a note |
+| E5c | PASS | opposite convention gives 2.694254 |
+| E5d | PASS | err(2, 4, 8) = 0.1246, 0.0308, 0.00738 (< 0.01 and decreasing); spd evidence at nb = 8: lanczos_min_eigenvalue |
+| E5e | PASS | Lanczos vs dense mu rel 1.6e-09, 1.7e-10, 1.0e-11 (threshold 1e-8) |
+| E5f | PASS | regression, mu_1 equal to 1e-8 relative |
+| E6 | PASS | all invalid inputs raise ValueError / ShiftError |
