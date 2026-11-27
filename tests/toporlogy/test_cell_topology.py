@@ -152,3 +152,18 @@ def test_ih6_filter_radius_above_the_cell_width_is_refused() -> None:
     with pytest.raises(ValueError, match="smallest width"):
         PeriodicDensityFilter(mr, Lr, 0.87)
     PeriodicDensityFilter(mr, Lr, 0.86)
+
+
+# ---------------------------------------------------------------------------------------------- IH7
+def test_ih7_invalid_start_and_degenerate_lattice_are_refused() -> None:
+    m, L = square(6)
+    D = D_plane_stress(NU)
+    x = np.full(m.n_cells, 0.5)
+    x[0] = 1.2
+    with pytest.raises(ValueError, match="x0"):
+        optimize_cell(m, L, D, 0.5, 0.15, max_iter=1, x0=x)
+    x[0] = np.nan
+    with pytest.raises(ValueError, match="x0"):
+        optimize_cell(m, L, D, 0.5, 0.15, max_iter=1, x0=x)
+    with pytest.raises(ValueError, match="linearly dependent"):
+        PeriodicDensityFilter(m, [[1.0, 0.0], [2.0, 0.0]], 0.15)

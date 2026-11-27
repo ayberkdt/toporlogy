@@ -38,6 +38,9 @@ class PeriodicDensityFilter:
         L = np.atleast_2d(np.asarray(lattice, float))
         if L.shape != (mesh.dim, mesh.dim):
             raise ValueError(f"lattice must be ({mesh.dim}, {mesh.dim}), got {L.shape}")
+        det = float(np.linalg.det(L))
+        if not np.isfinite(det) or abs(det) <= 1e-12 * float(np.prod(np.linalg.norm(L, axis=1))):
+            raise ValueError(f"the lattice vectors are linearly dependent (det {det:.3e})")
         width = 1.0 / float(np.linalg.norm(np.linalg.inv(L).T, axis=1).max())   # smallest face-to-face width
         if rmin > width:
             raise ValueError(f"rmin = {rmin} exceeds the smallest width of the cell ({width:.6g}): the images "
@@ -188,6 +191,8 @@ def optimize_cell(mesh: Mesh, lattice: Any, D: Any, volume: float, rmin: float, 
     x = np.full(mesh.n_cells, float(volume)) if x0 is None else np.asarray(x0, float).copy()
     if x.shape != (mesh.n_cells,):
         raise ValueError(f"x0 must have {mesh.n_cells} entries")
+    if not (np.isfinite(x).all() and (x >= 0.0).all() and (x <= 1.0).all()):
+        raise ValueError("x0 must be finite and inside [0, 1] (the design box)")
     if projection is None:
         stages: list[float | None] = [None]
         caps = [int(max_iter)]

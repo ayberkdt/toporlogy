@@ -105,3 +105,9 @@ PASS on the first run: square rmin 1.01 refused, 0.99 accepted with rows summing
 dependent lattice vectors fails inside `numpy.linalg.inv` (LinAlgError, no context). Change: both refused with
 ValueError naming the problem. Check IH7: x0 with one entry 1.2 → ValueError "x0"; x0 with a NaN → ValueError; lattice
 [[1, 0], [2, 0]] in the filter → ValueError "linearly dependent"; all fast cell tests unchanged.
+
+### IH7 result (run 12:36 +0300 by the clock; recorded 2026-11-27 12:36 +0300)
+
+PASS on the first run: x0 with 1.2 and with NaN refused ("x0"), the dependent lattice refused ("linearly dependent");
+13 fast cell tests pass (IP2 bitwise included). Every start used by the slow runs lies in [0, 1] (hole 0.25/0.5, 0/1
+void hole, cos start in [0.2, 0.6], random start clipped), so their results stand.

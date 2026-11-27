@@ -87,7 +87,8 @@ Figures of the cells: `fig_ih_cells.png` (post hoc, grey edges), `fig_ip_cells.p
 
 Two silent-failure paths found by review and closed with refusals (preregistered, pass on the first run): a periodic
 filter radius above the smallest cell width (IH6; the ±1 lattice images would miss neighbours) and a lattice that is
-a sub-period of the mesh (MH9; it still matches node pairs and gave a wrong |Y|).
+a sub-period of the mesh (MH9; it still matches node pairs and gave a wrong |Y|); IH7 refuses a start outside
+[0, 1] and a degenerate filter lattice.
 
 Figure of the designs: `FIG_DESIGNS.md` (datawiz audit 0 errors).
 
