@@ -61,3 +61,36 @@ Relative error = max|a−b| / max|b|. tol(κ) = 1e-10 for κ ≤ 1e2, 1e-12·κ 
 
 Not claimed: torch or double backward; float32; κ > 1e4 for the second derivative; overflow of e^λ, λ^p for extreme
 eigenvalues (unguarded, as in the first derivative).
+
+## First results (2026-11-27 07:07 +0300; production code `core/spectral.py`, tests `test_spectral_second.py`)
+
+The first full run of the test file had 12 failures; all 12 were in the test set-up or in the wording of one prediction,
+none in the production formula. After the fixes below the file passes: `test_spectral_second.py` + the existing
+`test_spectral.py` = 274 passed (3 min 48 s). Measured maxima (separate script, independent random draws, same
+references; relative error against the stated reference):
+
+| ID | Result | Measured |
+|---|---|---|
+| SD1 | PASS | worst over n ∈ {2,3}, κ ∈ {1e1…1e4}: exp 5.1e-15, log 1.0e-12, sqrt 1.9e-12, inv_sqrt 6.0e-13, power 3 1.1e-15, power −1.5 1.2e-12, power 0.25 1.3e-13 (the κ = 1e4 cases carry the maxima; thresholds 1e-8) |
+| SD2 | PASS | [2,2,5] 1.9e-15, [3,3,3] 1.4e-15, [2,2+1e-10,5] 2.4e-15 (all f, threshold 1e-10) |
+| SD3 | PASS | worst over gap sweep: exp 5.2e-15, log 1.8e-13, sqrt 4.7e-16, inv_sqrt 6.3e-16, power 3 7.4e-14, −1.5 1.0e-13, 0.25 2.3e-13 (threshold 1e-11) |
+| SD4 | PASS | threshold 1e-13 |
+| SD5 | PASS | closed forms and exp word series within thresholds |
+| SD6 | PASS (after wording fix below) | min FD error: exp 3.8e-10, log 7.5e-11, sqrt 3.5e-10, inv_sqrt 1.8e-11, power −1.5 2.1e-10, 0.25 3.0e-10, power 3 7.1e-14; error ratio h = 1e-2 / 1e-3 = 100.0 (the O(h²) rate) for all but power 3 |
+| SD7 | PASS | HVP vs FD of `spectral_vjp` within 1e-7; identities 1e-12 |
+| SD8 | PASS | batch and rotation covariance within 1e-13 |
+| SD9 | PASS (after set-up fix) | all refusals raise ValueError; exp of an indefinite A matches mpmath |
+| SD10 | PASS | the naive recurrence has relative error 2.2e-6 > 1e-8 (negative control fails as intended); production F within 1e-11 |
+
+Faults found and how they were handled (rule 2 / 11):
+* **Failed prediction of the wording (SD6, power 3):** the preregistered O(h²) slope check (ratio ≥ 30) does not apply to
+  the cubic: A ↦ L_A[H] is quadratic, so the central difference has no truncation error and the errors are rounding
+  (2.0e-13 at h = 1e-2, 4.1e-12 at h = 1e-3). The check was replaced for that one f by "error ≤ 1e-9 for h ≥ 1e-3"
+  (exactness); all other f keep ratio ≥ 30. The threshold 1e-7 was not changed.
+* **Set-up (SD1, SD4, exp):** κ = 1e3, 1e4 with λmax = κ overflows e^λ; the exp cases are scaled to λmax = 5 with the
+  same κ (the overflow is documented as unguarded).
+* **Set-up (SD1, κ = 1e4, mpmath reference):** the mpmath block function returned a complex type with a ~1e-40
+  imaginary part and `float()` failed; the reference now checks the imaginary part (≤ 1e-25 relative) and drops it.
+* **Set-up (SD9):** a rotated matrix with spectrum [0, 2, 3] gets a computed eigenvalue ≈ 1e-17 > 0, so no refusal;
+  the zero-eigenvalue case now uses diag(0, 2, 3), for which `eigh` returns exactly 0.
+No threshold was loosened; no xfail and no ledger entry were needed.

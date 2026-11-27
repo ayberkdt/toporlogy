@@ -1,13 +1,15 @@
 # Tensor contract — spectral functions and aggregate moduli
 
-Scope: `toporlogy.core.spectral` (new) and the aggregate-moduli additions to `toporlogy.core.anisotropy`. Evidence:
-`docs/foundations/prereg/T_spectral.md` (preregistration, first results), `tests/toporlogy/test_spectral.py`,
+Scope: `toporlogy.core.spectral` (new; first derivative, second derivative and Hessian-vector product) and the aggregate-moduli additions to `toporlogy.core.anisotropy`. Evidence:
+`docs/foundations/prereg/T_spectral.md` and `prereg/T2_second_derivative.md` (preregistrations, first results),
+`tests/toporlogy/test_spectral.py`, `tests/toporlogy/test_spectral_second.py`,
 `tests/toporlogy/test_moduli_foundations.py`. The rest of the tensor algebra stays as documented in
 `core/tensor.py` (this file does not restate it).
 
 ## Spectral functions of symmetric tensors
 
-`spectral_function(A, f, p=None)`, `spectral_frechet(A, H, f, p=None)` (JVP), `spectral_vjp(A, G, f, p=None)`.
+`spectral_function(A, f, p=None)`, `spectral_frechet(A, H, f, p=None)` (JVP), `spectral_vjp(A, G, f, p=None)`,
+`spectral_second(A, H, K, f, p=None)`, `spectral_hvp(A, G, H, f, p=None)`.
 
 * **Input**: float64, shape `(..., n, n)`, n = 2 or 3, finite, symmetric to `tensor.SYMMETRY_RTOL` (relative). Other
   shapes (0-d, vectors, 4×4, non-square, empty) and non-symmetric input raise `ValueError`; nothing is silently
@@ -19,6 +21,14 @@ Scope: `toporlogy.core.spectral` (new) and the aggregate-moduli additions to `to
 * **Derivative**: L_A[H] = Q [D ⊙ QᵀHQ] Qᵀ with divided differences evaluated by the stable closed forms listed in the
   module docstring (sqrt 1/(√a+√b); log via `log1p`; exp via `expm1`; power via `expm1`/`log1p`); equal eigenvalues use
   the derivative limit f'(λ). No eigenvector of a degenerate subspace enters the result.
+* **Second derivative**: `spectral_second(A, H, K, f)` = d²f(A)[H, K] = ∂²/∂s∂t f(A + sH + tK), the full mixed
+  derivative (no factor ½), symmetric in H and K, for symmetric H, K. Formula (Daleckii–Krein, second order):
+  Q [Σ_k F_ijk (H̃_ik K̃_kj + K̃_ik H̃_kj)] Qᵀ with F_ijk = f[λi, λj, λk] the second divided difference. F is evaluated
+  as (D(hi,mid) − D(mid,lo))/(hi − lo) on sorted nodes, by a 12-term Taylor series about the node mean where the spread
+  is small (exp: < 1e-2; log, power: < 1e-3 of the mean), by exact closed forms for sqrt and inv_sqrt, and equals f''/2
+  for three equal nodes. No eigenvalue is perturbed and no eigenvector of a degenerate subspace enters.
+  `spectral_hvp(A, G, H, f)` is the Hessian-vector product of φ(A) = ⟨G, f(A)⟩, i.e. d/dt ∇φ(A + tH) = d²f(A)[H, G];
+  ⟨K, hvp⟩ = d²φ(A)[H, K], symmetric in (H, K). Same input, domain and batching rules as the first derivative.
 * **Perturbations**: only **symmetric** H (JVP) and symmetric cotangent G (VJP). For symmetric A the map is
   self-adjoint under the Frobenius product, so VJP = the same map. A caller holding a general cotangent passes
   `sym(G)`, which is the gradient on the symmetric subspace. Derivatives on general (non-symmetric) matrices are not
@@ -27,23 +37,31 @@ Scope: `toporlogy.core.spectral` (new) and the aggregate-moduli additions to `to
 
 ### Derivative support matrix
 
-| f | value | 1st derivative (JVP/VJP) | verified against | 2nd derivative |
+| f | value | 1st derivative (JVP/VJP) | verified against | 2nd derivative (`spectral_second`, `spectral_hvp`) |
 |---|---|---|---|---|
-| exp | yes | yes | mpmath 60-digit FD, `scipy.linalg.expm_frechet`, projector oracle | not implemented |
-| log (SPD) | yes | yes | mpmath FD, inverse of `expm_frechet(logm A, ·)`, analytic H/2 at 2I, projector oracle | not implemented |
-| sqrt (SPD) | yes | yes | mpmath FD, Sylvester equation X S + S X = H (`solve_sylvester`), analytic H/(2√2) at 2I | not implemented |
-| inv_sqrt (SPD) | yes | yes | mpmath FD, −S⁻¹XS⁻¹ with the Sylvester X | not implemented |
-| power(p) (SPD) | yes (p = 3, −1.5, 0.25 tested; p = 2, −1, 1, 0 closed forms) | yes | mpmath FD, projector oracle, HA+AH, −A⁻¹HA⁻¹ | not implemented |
+| exp | yes | yes | mpmath 60-digit FD, `scipy.linalg.expm_frechet`, projector oracle | yes |
+| log (SPD) | yes | yes | mpmath FD, inverse of `expm_frechet(logm A, ·)`, analytic H/2 at 2I, projector oracle | yes |
+| sqrt (SPD) | yes | yes | mpmath FD, Sylvester equation X S + S X = H (`solve_sylvester`), analytic H/(2√2) at 2I | yes |
+| inv_sqrt (SPD) | yes | yes | mpmath FD, −S⁻¹XS⁻¹ with the Sylvester X | yes |
+| power(p) (SPD) | yes (p = 3, −1.5, 0.25 tested; p = 2, −1, 1, 0 closed forms) | yes | mpmath FD, projector oracle, HA+AH, −A⁻¹HA⁻¹ | yes |
 
 "Verified" means the cases in the preregistration table: spectra diag(1,4,9), Q diag(2,2,5)Qᵀ, 2I, near repeat
 (δ = 1e-10), [1,1,1], [1,1,4], [1,4,4] with 40 random rotations each, scales 1e-12…1e12, condition numbers
-1, 1e2, 1e4, 1e8 (also 2×2). Second derivatives and a Hessian-vector product are **not implemented and not
-claimed**; there is no stub.
+1, 1e2, 1e4, 1e8 (also 2×2).
+
+Second derivative, verified (`prereg/T2_second_derivative.md`, SD1-SD10) for all five rows: block-matrix oracle
+`f([[A,H,0],[0,A,K],[0,0,A]])` — d²f[H,K] = (1,3) block for (H,K) plus (1,3) block for (K,H) — with `scipy.linalg`
+expm/sqrtm/logm and mpmath (40 digits) on random SPD 2×2 and 3×3 with κ ∈ {1e1…1e4} (error ≤ 1e-10 for κ ≤ 1e2,
+1e-12 κ above), repeated spectra [2,2,5], [3,3,3] and the near repeat [2, 2+1e-10, 5] with random rotations (1e-10),
+scalar second divided differences against 80-digit mpmath over gaps 0…1 (1e-11), closed forms (x², x³, x⁻¹, triple
+repeat f''/2), an exp word series, central differences of the first derivative and of `spectral_vjp` (step sweeps),
+symmetry in (H, K), batching, rotation covariance and refusals. Not claimed: κ > 1e4 for the second derivative, torch /
+double backward, float32, overflow guards for e^λ and λ^p.
 
 ### Regimes not supported or not claimed
 
 * No torch path. A torch autograd route through `eigh` differentiates eigenvectors, which are not unique at repeated
-  eigenvalues, and a double backward is not claimed. float32 and GPU are not run and not claimed.
+  eigenvalues, and a double backward is not claimed (the NumPy second derivative above is the supported route). float32 and GPU are not run and not claimed.
 * **Near singular** A: `eigh` determines small eigenvalues with absolute error of order ε λ_max. For κ near 1e12 the
   smallest eigenvalue may have no correct digits and may come out ≤ 0 (the call then refuses). The preregistered
   accuracy claim stops at κ = 1e8 (error ≤ 1e-12 + 1e-14 κ relative to the derivative norm). At κ = 1e12 one case was
