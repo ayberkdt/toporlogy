@@ -23,6 +23,8 @@ the record is named in each row. Synthetic parameters throughout; no real materi
 | D identification | Prony (NNLS, free times), Norton (log-linear, nonlinear), identifiability SVD, data records with units and validity box | D4–D7; D8 NOT VERIFIED (`D_identification.md`) | D5a covariance at κ = 8e8 |
 | H history FE | small-strain history solid on a general mesh, commit-after-convergence, rollback, reactions | H0, H1, H3–H5, H6a–e (`H_history.md`, `H6_physical_models_fe.md`) | H2 (1-D series reference wrong in 3-D) |
 | X mixed | K-based u–p (`MixedKG`, valid at ν = 0), inf–sup, locking, spurious modes | X1–X4 (`X_mixed.md`); **λ-based solve now refuses incompatible incompressible data** (`XF_mixed_compatibility.md`) | X2e plain-MINRES control |
+| A adaptivity | residual and ZZ indicators, Dörfler marking, newest-vertex bisection (T3, Poisson) | A1–A3; adaptive rate −0.504 vs uniform −0.326 on the L-shape (`A_adaptivity.md`) | A2d wording at θ = 0.5 |
+| P05 material cards | dict/YAML cards with explicit units, provenance, validity box for 8 model families | MC1–MC8 (`P05_material_cards.md`); a consistently mislabelled stress unit is undetectable (stated) | — |
 | N nonlinear | objectivity, plane stress, patches, truss, Hencky via spectral log | N1–N5 (`N_nonlinear.md`); R07 still present (measured) | — |
 
 ## Optimisation and robustness
@@ -34,11 +36,13 @@ the record is named in each row. Synthetic parameters throughout; no real materi
 | VR min–max over service times, one constant load | VR1 failed: reduces to the last time; min–max 0.28 % worse (`VR_viscoelastic_robust.md`) |
 | VU robust (mean + 2 std over 9 spectrum samples) | weak pass; the uncertainty (±8.6 %) is nearly design-independent (`VU_viscoelastic_uncertain.md`) |
 | KS KKT-residual stop | KS2/KS3 failed: KKT-stationary designs still differ by 0.26–0.33 %: different local optima, not the stop rule; warm start from the nominal design improves it by 0.015 % (`KS_kkt_stop.md`) |
+| CO creep topology optimisation (Norton, exact history adjoint via implicit step + local root correction) | forward vs history FE 5.9e-16; gradient vs FD 7.1e-11; CO4 negative control insensitive at weak creep (failed, recorded; 1.3e-2 at strong creep, post hoc); CO6: creep design **28.4 % lower** J(1000 s) than the elastic design, 54 % higher J(0); creep run stopped at the iteration cap (KKT 4.2e-2) (`CO_creep_topology.md`, `CO6_creep_topology.md`) |
 | VM min–max over a two-load history | min–max design J_A = 3.68e-5, J_B = 3.67e-5 (balanced to 0.075 %); single-phase designs reach 903 and 2008 on the other phase (`VM_minmax_switching.md`) |
 
 Conclusion for the optimisation side: the gradients and formulations are exact and verified; the benefit of
-time-aware, robust or min–max design depends on the problem — negligible for one constant load on this material,
-decisive when the critical time depends on the design. Design comparisons below ~0.5 % need multi-start.
+time-aware, robust or min–max design depends on the problem — negligible for one constant load on a linear
+viscoelastic material, large under nonlinear creep (28 %), decisive when the critical time depends on the design
+(min–max). Design comparisons below ~0.5 % need multi-start.
 
 ## Regression evidence
 
@@ -54,5 +58,5 @@ decisive when the critical time depends on the design. Design comparisons below 
 
 YAML and `Study` integration of the physical history models and of the viscoelastic optimisation; FE coupling of
 creep / plasticity with the design density (only linear viscoelasticity is design-coupled); WP07 external mesh I/O
-(meshio absent), WP09 adaptivity (in progress at the time of writing), WP19 shell drilling (memory-blocked), WP05 L06
+(meshio absent; mesh validation in progress), WP19 shell drilling (memory-blocked), WP05 L06
 saddle-point preconditioners and benchmarks; real material data (D8, R12). Remote push and PR need the user's approval.

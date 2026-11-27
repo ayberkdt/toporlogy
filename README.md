@@ -320,7 +320,11 @@ models set `physical = True` and the element-modulus FE physics refuse them.
 | `core.spectral` | functions of symmetric tensors (exp, log, sqrt, power) with Fréchet derivative, JVP, VJP at repeated eigenvalues | `prereg/T_spectral.md` |
 | `fem.mesh.history` | small-strain history solid on a general mesh (Newton, commit after convergence, rollback, reactions) | `prereg/H_history.md` |
 | `optimization.viscoelastic_topology` | compliance at a service time of a viscoelastic structure, exact discrete history adjoint, MMA | `prereg/VO_viscoelastic_topology.md` |
-| `solvers.diagnostics` | backward / forward error report, inertia, Krylov solvers with structural checks, gauge solve, refinement | `prereg/L_solver.md` |
+| `optimization.creep_topology` | compliance at a service time under Norton creep, exact history adjoint | `prereg/CO_creep_topology.md`, `CO6_creep_topology.md` |
+| `optimization.material_cards` | material cards (dict / YAML) with explicit units, provenance and validity box; synthetic examples in `examples/foundations/materials/` | `prereg/P05_material_cards.md` |
+| `fem.mesh.mixed.MixedKG` | K-based u–p mixed elasticity (valid at ν = 0 and ν → 0.5, exact incompressibility) | `prereg/X_mixed.md` |
+| `fem.mesh.adaptivity` | residual / ZZ error indicators, Dörfler marking, newest-vertex bisection of T3 meshes | `prereg/A_adaptivity.md` |
+| `solvers.diagnostics` | backward / forward error report, inertia, Krylov solvers with structural checks, gauge solve, iterative refinement | `prereg/L_solver.md` |
 
 All parameters in these tests are synthetic; no real material is claimed. Failed preregistered checks are strict
 xfails in `docs/vv_kutugu.json`; live status: `docs/foundations/STATUS.md`.
