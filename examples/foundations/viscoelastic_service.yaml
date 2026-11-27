@@ -1,0 +1,25 @@
+# Topology optimisation of a linear viscoelastic cantilever for its service-time compliance
+# (analysis: history; docs/foundations/HISTORY_YAML.md). SYNTHETIC material and loads: no engineering claim.
+#   python -m toporlogy validate examples/foundations/viscoelastic_service.yaml
+#   python -m toporlogy run examples/foundations/viscoelastic_service.yaml
+# SI units. The tip load is ramped over 10 s and held; the objective is the compliance F.u at t = 1e4 s, after the
+# material has relaxed (stiffness falls towards its long-time value, so a design for t = 0 is not the design for 1e4 s).
+name: viscoelastic_service
+analysis: {type: history, plane: strain}
+domain: {generator: rectangle, n: [30, 10], size: [3.0, 1.0], element: Q4}
+material: materials/generalized_maxwell_isothermal.yaml     # relative to this file
+supports:
+  - {set: left, fix: all}
+loads:
+  - {point: [3.0, 0.0], force: [0.0, -1.0e+6], time: {ramp: 10.0}}          # N, total force vector
+times: {logspace: [1.0, 1.0e+4, 9], events: [10.0]}                         # s; 10 s is the end of the ramp
+objective: {compliance_at: 1.0e+4}
+constraints:
+  - {response: volume, upper: 0.4}
+chain:
+  - {type: density_filter, rmin: 0.1}
+optimizer: {type: mma, max_iter: 30, tol: 0.0}
+post:
+  - {type: vtu, name: design}
+  - {type: summary, name: history_summary}
+output: {folder: runs}

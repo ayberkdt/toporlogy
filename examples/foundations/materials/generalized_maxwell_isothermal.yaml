@@ -1,0 +1,11 @@
+# SYNTHETIC card: invented numbers, not a real material, no engineering claim.
+# Isothermal variant of generalized_maxwell.yaml (no WLF shift): what the history path (analysis: history) accepts.
+name: synthetic_generalized_maxwell_isothermal
+model: generalized_maxwell
+units: {stress: MPa, time: s}
+parameters:
+  shear: {inf: 400.0, amplitudes: [300.0, 200.0], taus: [1.0, 100.0]}      # MPa, MPa, s
+  bulk: {inf: 3000.0, amplitudes: [500.0], taus: [10.0]}
+provenance: {source: "synthetic example, invented numbers", synthetic: true, date: "2026-11-27", license: "CC0-1.0"}
+validity:
+  time: [1.0e-3, 1.0e+5]
