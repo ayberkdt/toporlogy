@@ -238,7 +238,9 @@ class LinearConstraints:
         masters = np.setdiff1d(uni, slaves)
         col = np.full(n, -1, np.int64)
         col[masters] = np.arange(len(masters))
-        ri, ci, vv = [masters], [np.arange(len(masters))], [np.ones(len(masters))]
+        ri: list[np.ndarray] = [masters]
+        ci: list[np.ndarray] = [np.arange(len(masters))]
+        vv: list[np.ndarray] = [np.ones(len(masters))]
         u0 = np.zeros((n, k))
         pure = True
         for s in slaves.tolist():

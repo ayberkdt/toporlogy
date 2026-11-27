@@ -20,7 +20,7 @@ import scipy.sparse as sp
 import toporlogy as T
 from toporlogy.fem.buckling import LinearBuckling
 from toporlogy.solvers.eigen import (ShiftError, buckling_load_factors, eigen_report, mac, shift_invert_modes,
-                                     subspace_angles, track_modes)
+                                     subspace_angles, track_sweep)
 
 SRC = Path(__file__).resolve().parents[2] / "src" / "toporlogy" / "solvers" / "eigen.py"
 
@@ -255,7 +255,7 @@ def test_e4a_e4b_two_dof_crossing() -> None:
     ts = np.linspace(0.0, 2.0, 8)
     curves = [lambda t: 1 + t, lambda t: 3 - t]
     Psi, lams, Phis = _family(curves, ts, M, 7)
-    tr = track_modes(lams, Phis, M)
+    tr = track_sweep(lams, Phis, M)
     worst = min(mac(Phis[s][:, tr.order[s][t]], Psi[:, t], M)[0, 0] for s in range(8) for t in range(2))
     print(f"\n  E4a: worst MAC to Psi {worst:.15f}, min consecutive MAC {tr.mac_to_previous.min():.15f}, "
           f"crossings {[(c.step, c.track_a, c.track_b) for c in tr.crossings]}")
@@ -276,7 +276,7 @@ def test_e4c_three_dof_three_crossings() -> None:
     ts = np.linspace(0.0, 5.0, 12)
     curves = [lambda t: 1 + t, lambda t: 2.5 + 0 * t, lambda t: 4.5 - 0.5 * t]
     Psi, lams, Phis = _family(curves, ts, M, 11)
-    tr = track_modes(lams, Phis, M)
+    tr = track_sweep(lams, Phis, M)
     got = [(c.step, c.track_a, c.track_b) for c in tr.crossings]
     print(f"\n  E4c: crossings {got}, ambiguous {tr.ambiguous}")
     assert got == [(4, 0, 1), (6, 0, 2), (9, 1, 2)] and not tr.ambiguous
@@ -288,7 +288,7 @@ def test_e4d_no_crossing_family() -> None:
     M = np.array([[2.0, 0.5], [0.5, 1.0]])
     ts = np.linspace(0.0, 2.0, 6)
     _, lams, Phis = _family([lambda t: 1 + t, lambda t: 3 + t], ts, M, 7)
-    tr = track_modes(lams, Phis, M)
+    tr = track_sweep(lams, Phis, M)
     assert tr.crossings == [] and all(np.array_equal(o, [0, 1]) for o in tr.order)
 
 
@@ -408,4 +408,4 @@ def test_e6_invalid_input_rejected() -> None:
     with pytest.raises(ValueError):
         subspace_angles(Phi[:, :2], Phi[:, :3], M)
     with pytest.raises(ValueError):
-        track_modes([lam], [Phi], M)
+        track_sweep([lam], [Phi], M)

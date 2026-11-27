@@ -32,7 +32,7 @@ A wrong sign of K_G is not detectable from the matrices alone; E5c shows that it
 
 ## MAC and tracking
 
-`mac(A, B, M)` is (a_i^T M b_j)^2 / ((a_i^T M a_i)(b_j^T M b_j)). `track_modes(lams, Phis, M)` matches consecutive steps by the
+`mac(A, B, M)` is (a_i^T M b_j)^2 / ((a_i^T M a_i)(b_j^T M b_j)). `track_sweep(lams, Phis, M)` matches consecutive steps by the
 assignment maximising the sum of MAC, so a track is a physical mode, not a sorted index. It reports crossings (track pairs whose column
 order reversed, with the step), the MAC of each track with itself, and ambiguous tracks (MAC < 0.9 or within 0.2 of the second best).
 Limits: a mode entering the window from outside cannot be seen (track k + extra modes); an avoided crossing with a small gap and a coarse
@@ -66,4 +66,4 @@ the repository's element, not of the eigen solver). Square membrane doubles: sub
 
 Non-symmetric or damped (quadratic) eigenproblems; Lanczos for the reversed-load buckling modes; a proof of K positive definiteness
 for large n (Lanczos evidence only); a bound on the distance of a computed eigenvalue to the true spectrum (a residual is a backward error;
-the forward error also needs the gap); coupling of `track_modes` to the topology-optimisation loop.
+the forward error also needs the gap); coupling of `track_sweep` to the topology-optimisation loop.

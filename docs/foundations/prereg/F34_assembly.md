@@ -141,3 +141,9 @@ detJ/s_e = -0.17) before any assertion; the set-up was changed to 0.1 h, the val
 | CN2 | PASS | `MechanismError`, 2 free rigid motions |
 | CN3 | PASS | omitting K u0: 0.03 relative |
 | CN4 | PASS | inactive DOF, no partner, ambiguous, different sizes, rhs shape, out of range, lattice |
+
+## Integration note (2026-11-27 09:56 +0300, on foundations/round-3; no threshold or assertion changed)
+
+The eight `pytest.skip` cases (curved variants of elements that cannot be curved) are no longer generated: FA4 and
+FA6a are parametrised over `CASES_CURVED` (straight for all seven elements, curved for T6, Q9, T10). The ledger's
+skip list is for missing back ends only. mypy: three list annotations in `constraints.py` (no code change).

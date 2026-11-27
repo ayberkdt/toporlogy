@@ -1,8 +1,8 @@
 # Foundations II — live status
 
-Actual HEAD: `4616b50`  
+Actual HEAD: `4b1517b`  
 Branch / dirty state: `foundations/round-3` / dirty  
-Updated at: 2026-11-27 09:39 +0300  
+Updated at: 2026-11-27 10:02 +0300  
 Environment / resource budget: Windows 11, Python 3.12.1, numpy 2.2.6, scipy 1.14.1, torch 2.5.1+cu121 (CUDA present, not exercised), mpmath 1.3.0, scikit-fem 12.0.2, meshio absent; 12 logical CPUs; 16.7 GB RAM, about 2-4 GB free; C: 5.6 GB free (temp files on D:)  
 Last successful integrated checkpoint: cb6e41e (clean-worktree fast suite 3566 passed / 67 xfailed / 0 failed; ruff and mypy clean; records check clean)  
 Current unit: R07 bordered predictor and anisotropic viscoelasticity slices; CC continuation post hoc
@@ -19,7 +19,7 @@ Current unit: R07 bordered predictor and anisotropic viscoelasticity slices; CC 
 | C-creep | P0 | P01-contract | VERIFIED_SCOPE | prereg/C_creep.md: C2-C7 pass except C3g, C6a predictions (strict xfail, ledger) (9a02203) | creep-plasticity coupling (C8) not implemented |
 | R-rate | P0 | P01-contract | VERIFIED_SCOPE | prereg/R_rate.md R1-R7 pass except R3a at 1e-3 1/s (strict xfail) (f4018f7) | Eyring inside Perzyna; VJP |
 | T-spectral | P0 | — | VERIFIED_SCOPE | prereg/T_spectral.md TS1-TS9, MO1-MO4, E5 pass (da98d82) | second derivatives; torch path |
-| WP06-fem-kernel | P0 | — | IN_PROGRESS | F1-F3 existing tests; F4 rates and curved-T10 rule: prereg/F4_rates.md | F3/F4 loads, reactions, constraint transform (subagent running) |
+| WP06-fem-kernel | P0 | — | VERIFIED_SCOPE | F1-F3 existing tests; F4 rates and curved-T10 rule: prereg/F4_rates.md; F3/F4 totals, reactions, constraint transform: prereg/F34_assembly.md (FA1-FA7, CT1-CT8, CN1-CN4 pass) | oblique supports, matrix-free apply (F6), constraint transform inside Newton |
 | WP17-history-fem | P1 | V-viscoelastic, P01-contract | VERIFIED_SCOPE | prereg/H_history.md H0,H1,H3,H4,H5 pass; H2 FAILED (hypothesis), post hoc H2b pass (e70fa8e, f711936) | design density coupling of physical history models beyond linear viscoelasticity |
 | WP16-cure | P1/P2 | P-properties | VERIFIED_SCOPE | prereg/TS_cure.md TS1-TS6; prereg/TS7_cure_slab.md TS7a-g pass (coupled slab) | vitrification kinetics, viscoelastic relaxation during cure |
 | WP15-thermoplastics | P1/P2 | P-properties, V-viscoelastic | VERIFIED_SCOPE | prereg/TS_cure.md TP3, TP4 pass (Avrami/Nakamura only) | TP1/TP2/TP5/TP6 |
@@ -54,13 +54,14 @@ Current unit: R07 bordered predictor and anisotropic viscoelasticity slices; CC 
 | R07-bordered | P1 | — | VERIFIED_SCOPE | prereg/R07_bordered.md (12 passed first run), prereg/R07c_locate_zero.md (R7c1-R7c3 pass; A1/A2 strict xfails promoted) | none |
 | VA-anisotropic-ve | P2 | — | VERIFIED_SCOPE | prereg/VA_anisotropic_ve.md (20 passed first run) | none |
 | WP19-shells | P1/P2 | WP06-fem-kernel | BLOCKED | — | drilling reference needs >= 3.5 GB free memory (R08) |
+| L6e-eigen | P0 | L-solver | VERIFIED_SCOPE | prereg/L6e_eigen.md (E0-E5, 19 passed first run); EIGEN_RELIABILITY.md | non-symmetric and quadratic eigenproblems |
+| NS-newton-shared | P1 | — | VERIFIED_SCOPE | prereg/NS_newton_shared.md (NS1-NS4 pass; bitwise neutral vs 1f898bf) | none |
 
 ## Next executable units
 
-1. merge the L6e eigen and F34 assembly slices; final clean-worktree suite
-2. share the Newton loop of cure_slab and nonlinear_heat (cleanup)
-3. WP19 shell drilling reference when >= 3.5 GB RAM is free
-4. push foundations/round-3 and open a PR (needs the user's approval)
+1. MH periodic homogenisation on a general mesh with sensitivities; final clean-worktree suite
+2. WP19 shell drilling reference when >= 3.5 GB RAM is free
+3. push foundations/round-3 and open a PR (needs the user's approval)
 
 ## Historical failed hypotheses and unresolved risks
 

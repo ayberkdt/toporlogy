@@ -133,3 +133,13 @@ a hedged assertion in E1a (an "or" fallback) was replaced by the plain compariso
 | E5e | PASS | Lanczos vs dense mu rel 1.6e-09, 1.7e-10, 1.0e-11 (threshold 1e-8) |
 | E5f | PASS | regression, mu_1 equal to 1e-8 relative |
 | E6 | PASS | all invalid inputs raise ValueError / ShiftError |
+
+## Integration note (2026-11-27 09:56 +0300, on foundations/round-3; no threshold or assertion changed)
+
+* `mac` and `track_modes` were already public names of `optimization.mode_tracking` (the architecture test forbids a
+  public name defined in two modules). `solvers.eigen.mac` is now the only MAC: `mode_tracking` imports it and its own
+  copy (same formula) was removed; the refusal messages of `eigen.mac` were widened to state both contracts ("same n",
+  "positive definite"), which MT6 matches. The sweep tracker of this record is renamed `track_sweep` (it follows a
+  sequence of steps; `mode_tracking.track_modes` pairs two solutions). Every use (module, test_eigen.py,
+  EIGEN_RELIABILITY.md, SOLVER_CONTRACT.md) was updated; the text above keeps the name used at the time of the run.
+* ruff: 30 over-long lines re-wrapped and `zip(..., strict=True)` in the crossing scan (equal lengths by construction).

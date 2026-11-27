@@ -5170,6 +5170,7 @@
    "attrs": [
     "K",
     "body_force",
+    "capacity",
     "element_values",
     "facet_dofs",
     "facet_geometry",
@@ -5285,6 +5286,75 @@
   "cantilever_energy": "cantilever_energy(P,D,L,E,nu,width)",
   "mms_case": "mms_case(method,n,nu,fixed,variant,distort,seed,dim,plane)",
   "moduli": "moduli(nu,fixed)"
+ },
+ "toporlogy.fem.mesh.constraints": {
+  "AlternativeSolution": {
+   "attrs": [],
+   "class": "AlternativeSolution"
+  },
+  "ConstrainedSolution": {
+   "attrs": [
+    "constraint_forces"
+   ],
+   "class": "ConstrainedSolution"
+  },
+  "ConstraintError": {
+   "attrs": [
+    "add_note",
+    "args",
+    "code",
+    "with_traceback"
+   ],
+   "class": "ConstraintError"
+  },
+  "ContradictoryConstraints": {
+   "attrs": [
+    "add_note",
+    "args",
+    "code",
+    "with_traceback"
+   ],
+   "class": "ContradictoryConstraints"
+  },
+  "LinearConstraints": {
+   "attrs": [
+    "eliminate",
+    "empty",
+    "fix",
+    "from_dirichlet",
+    "m",
+    "mpc",
+    "n",
+    "n_cases",
+    "tie"
+   ],
+   "class": "LinearConstraints"
+  },
+  "Reduction": {
+   "attrs": [
+    "expand",
+    "multipliers",
+    "reduce_load",
+    "reduce_matrix"
+   ],
+   "class": "Reduction"
+  },
+  "RedundantConstraints": {
+   "attrs": [
+    "add_note",
+    "args",
+    "code",
+    "with_traceback"
+   ],
+   "class": "RedundantConstraints"
+  },
+  "macro_jump": "macro_jump(H,offset)",
+  "match_nodes": "match_nodes(points,minus,plus,offset,tol)",
+  "periodic": "periodic(mesh,minus,plus,offset,jump,ncomp,tol)",
+  "periodic_lattice": "periodic_lattice(mesh,lattice,H,ncomp,tol)",
+  "solve_constrained": "solve_constrained(problem,f,constraints,rtol,redundant)",
+  "solve_lagrange": "solve_lagrange(problem,f,constraints,rtol,redundant)",
+  "solve_penalty": "solve_penalty(problem,f,constraints,alpha,rtol,redundant)"
  },
  "toporlogy.fem.mesh.cure_slab": {
   "CureSlab": {
@@ -5549,6 +5619,7 @@
    "attrs": [
     "K",
     "body_force",
+    "capacity",
     "element_values",
     "facet_dofs",
     "facet_geometry",
@@ -6795,7 +6866,6 @@
    "class": "Tracking"
   },
   "clusters": "clusters(lam,cluster_tol)",
-  "mac": "mac(Phi,Psi,M)",
   "subspace_angle": "subspace_angle(A,B,M)",
   "track_modes": "track_modes(Phi_old,Phi_new,M,lam_old,cluster_tol)"
  },
@@ -8412,6 +8482,47 @@
    "class": "DirectSolver"
   },
   "METHODS": "<tuple>"
+ },
+ "toporlogy.solvers.eigen": {
+  "BucklingResult": {
+   "attrs": [],
+   "class": "BucklingResult"
+  },
+  "Crossing": {
+   "attrs": [],
+   "class": "Crossing"
+  },
+  "EigenReport": {
+   "attrs": [
+    "max_cluster_angle",
+    "max_rayleigh",
+    "max_residual",
+    "passed"
+   ],
+   "class": "EigenReport"
+  },
+  "ShiftError": {
+   "attrs": [
+    "add_note",
+    "args",
+    "with_traceback"
+   ],
+   "class": "ShiftError"
+  },
+  "ShiftInvertResult": {
+   "attrs": [],
+   "class": "ShiftInvertResult"
+  },
+  "TrackResult": {
+   "attrs": [],
+   "class": "TrackResult"
+  },
+  "buckling_load_factors": "buckling_load_factors(K,KG,k,dense_max,spd_dense_max,mu_rtol,cluster_rtol,tol,seed)",
+  "eigen_report": "eigen_report(K,M,lam,Phi,cluster_rtol,reference,norm_K,norm_M)",
+  "mac": "mac(Phi_a,Phi_b,M)",
+  "shift_invert_modes": "shift_invert_modes(K,M,k,sigma,assume_psd,expected_zero,zero_tol,refuse_rtol,cluster_rtol,tol,seed)",
+  "subspace_angles": "subspace_angles(Phi_a,Phi_b,M)",
+  "track_sweep": "track_sweep(lams,Phis,M,mac_min,margin)"
  },
  "toporlogy.solvers.gmg": {
   "GMGConvergenceError": {

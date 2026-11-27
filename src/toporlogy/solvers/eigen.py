@@ -1,19 +1,20 @@
 """Reliability checks and diagnostics for generalized symmetric eigenproblems (WP05 L06, eigen part;
 ``docs/foundations/EIGEN_RELIABILITY.md``, preregistration ``docs/foundations/prereg/L6e_eigen.md``).
 
-Problems covered: modal ``K φ = λ M φ`` (K symmetric, M SPD) and the buckling pencil ``(K + λ K_G) φ = 0`` with K SPD and
-K_G symmetric indefinite, solved as ``(−K_G) φ = μ K φ``, ``μ = 1/λ``. This module does not import ``toporlogy.fem``;
-the production solves in :mod:`toporlogy.fem.modal` and :mod:`toporlogy.fem.buckling` stay as they are and can be checked
-with :func:`eigen_report`.
+Problems covered: modal ``K φ = λ M φ`` (K symmetric, M SPD) and the buckling pencil ``(K + λ K_G) φ = 0`` with K SPD
+and K_G symmetric indefinite, solved as ``(−K_G) φ = μ K φ``, ``μ = 1/λ``. This module does not import
+``toporlogy.fem``; the production solves in :mod:`toporlogy.fem.modal` and :mod:`toporlogy.fem.buckling` stay as they
+are and can be checked with :func:`eigen_report`.
 
 * :func:`eigen_report`: per pair the backward error ``‖Kφ − λMφ‖ / ((‖K‖ + |λ|‖M‖)‖φ‖)``, the Rayleigh-quotient
   consistency, ``‖ΦᵀMΦ − I‖_F``, and a cluster-aware part: eigenvalues closer than ``cluster_rtol`` form a cluster whose
-  vectors are not unique; the cluster is judged by a basis-independent block residual and, with a reference, by principal
-  angles (:func:`subspace_angles`), never by comparing single vectors.
-* :func:`mac`, :func:`subspace_angles`, :func:`track_modes`: modal assurance criterion, principal angles in the M inner
+  vectors are not unique; the cluster is judged by a basis-independent block residual and, with a reference, by
+  principal angles (:func:`subspace_angles`), never by comparing single vectors.
+* :func:`mac`, :func:`subspace_angles`, :func:`track_sweep`: modal assurance criterion, principal angles in the M inner
   product, and identity of modes across a parameter change (the sorted index is not an identity at a crossing).
 * :func:`shift_invert_modes`: Lanczos shift-invert with an explicit shift; a shift at or numerically at an eigenvalue is
-  refused (:class:`ShiftError`); a semidefinite K (free-free) is handled by a non-zero shift and its zero modes are reported.
+  refused (:class:`ShiftError`); a semidefinite K (free-free) is handled by a non-zero shift and its zero modes are
+  reported.
 * :func:`buckling_load_factors`: the buckling pencil with its assumptions checked and the load convention stated.
 
 Units follow the matrices: λ has the unit of ``K``/``M``; the buckling load factor is dimensionless (a multiple of the
@@ -31,8 +32,8 @@ import scipy.optimize as sopt
 import scipy.sparse as sp
 import scipy.sparse.linalg as spla
 
-__all__ = ["ShiftError", "EigenReport", "eigen_report", "mac", "subspace_angles", "Crossing", "TrackResult", "track_modes",
-           "ShiftInvertResult", "shift_invert_modes", "BucklingResult", "buckling_load_factors"]
+__all__ = ["ShiftError", "EigenReport", "eigen_report", "mac", "subspace_angles", "Crossing", "TrackResult",
+           "track_sweep", "ShiftInvertResult", "shift_invert_modes", "BucklingResult", "buckling_load_factors"]
 
 SYM_TOL = 1e-12          #: ‖A − Aᵀ‖_F ≤ SYM_TOL ‖A‖_F for a matrix declared symmetric
 _DENSE_NORM_N = 400      #: matrix 2-norm computed densely up to this size
@@ -73,7 +74,8 @@ def _check_pair(K: Any, M: Any) -> tuple[Any, Any]:
 
 
 def _norm2(A: Any) -> float:
-    """Spectral norm of a symmetric matrix: dense for small n, a Lanczos estimate (never above the true value) otherwise."""
+    """Spectral norm of a symmetric matrix: dense for small n, a Lanczos estimate (never above the true value)
+    otherwise."""
     n = A.shape[0]
     if n <= _DENSE_NORM_N:
         return float(np.linalg.norm(A.toarray() if sp.issparse(A) else A, 2))
@@ -112,6 +114,8 @@ def mac(Phi_a: np.ndarray, Phi_b: np.ndarray, M: Any = None) -> np.ndarray:
     Phi_a = np.asarray(Phi_a, float)
     Phi_a = Phi_a[:, None] if Phi_a.ndim == 1 else Phi_a
     n = Phi_a.shape[0]
+    if np.asarray(Phi_b).shape[0] != n:
+        raise ValueError(f"Phi_a and Phi_b must have the same n (rows), got {Phi_a.shape} and {np.shape(Phi_b)}")
     Phi_b = _vecs(Phi_b, n, "Phi_b")
     Phi_a = _vecs(Phi_a, n, "Phi_a")
     if M is None:
@@ -124,7 +128,8 @@ def mac(Phi_a: np.ndarray, Phi_b: np.ndarray, M: Any = None) -> np.ndarray:
     cross = Phi_a.T @ Mb
     na, nb = np.einsum("ij,ij->j", Phi_a, Ma), np.einsum("ij,ij->j", Phi_b, Mb)
     if np.any(na <= 0.0) or np.any(nb <= 0.0):
-        raise ValueError("MAC needs vectors of positive M-norm (M SPD, no zero vector)")
+        raise ValueError("MAC needs vectors of positive M-norm (M positive definite on the given modes, "
+                         "no zero vector)")
     return cross ** 2 / np.outer(na, nb)
 
 
@@ -175,7 +180,7 @@ def _clusters(lam: np.ndarray, rtol: float, scale: float) -> list[tuple[int, ...
     """Index groups of sorted eigenvalues closer than rtol·max(|λ|) + 1e-12·scale (scale = ‖K‖/‖M‖)."""
     order = np.argsort(lam, kind="stable")
     groups: list[list[int]] = [[int(order[0])]] if len(lam) else []
-    for a, b in zip(order[:-1], order[1:]):
+    for a, b in zip(order[:-1], order[1:], strict=True):
         if abs(lam[b] - lam[a]) <= rtol * max(abs(lam[a]), abs(lam[b])) + 1e-12 * scale:
             groups[-1].append(int(b))
         else:
@@ -193,7 +198,8 @@ class EigenReport:
     orth_error: float                       #: ‖ΦᵀMΦ − I‖_F
     clusters: list[tuple[int, ...]]         #: index groups of (nearly) equal eigenvalues, sorted by eigenvalue
     cluster_residual: np.ndarray            #: basis-independent block residual per cluster
-    cluster_angle: np.ndarray | None        #: largest principal angle to the reference per cluster (None without reference)
+    #: largest principal angle to the reference per cluster (None without reference)
+    cluster_angle: np.ndarray | None
     norm_K: float
     norm_M: float
     notes: list[str] = field(default_factory=list)
@@ -225,13 +231,13 @@ def eigen_report(K: Any, M: Any, lam: np.ndarray, Phi: np.ndarray, *, cluster_rt
                  norm_M: float | None = None) -> EigenReport:
     """Reliability report of computed eigenpairs ``(lam (k,), Phi (n, k))`` of ``K φ = λ M φ``.
 
-    Per pair: η_i = ‖Kφ − λMφ‖ / ((‖K‖ + |λ|‖M‖)‖φ‖) (2-norms; a backward error), r_i = |φᵀKφ − λφᵀMφ| / ((‖K‖ + |λ|‖M‖)‖φ‖²)
-    (the eigenvalue agrees with the Rayleigh quotient of its vector). Overall ‖ΦᵀMΦ − I‖_F (the vectors are expected
-    M-orthonormal). Clusters (sorted eigenvalues closer than ``cluster_rtol``) get a basis-independent block residual
-    ‖KΦ_c − MΦ_c Θ‖_F / ((‖K‖ + max|λ|‖M‖)‖Φ_c‖_F), Θ = (Φ_cᵀMΦ_c)⁻¹Φ_cᵀKΦ_c. With ``reference = (lam_ref, Phi_ref)`` (the
-    same count of pairs, e.g. a dense solve or the analytic subspace) each cluster is compared with the reference columns
-    of the same sorted positions by principal angles; single vectors of a cluster are never compared. ``norm_K`` and
-    ``norm_M`` skip the norm computation."""
+    Per pair: η_i = ‖Kφ − λMφ‖ / ((‖K‖ + |λ|‖M‖)‖φ‖) (2-norms; a backward error), r_i = |φᵀKφ − λφᵀMφ| / ((‖K‖ +
+    |λ|‖M‖)‖φ‖²) (the eigenvalue agrees with the Rayleigh quotient of its vector). Overall ‖ΦᵀMΦ − I‖_F (the vectors are
+    expected M-orthonormal). Clusters (sorted eigenvalues closer than ``cluster_rtol``) get a basis-independent block
+    residual ‖KΦ_c − MΦ_c Θ‖_F / ((‖K‖ + max|λ|‖M‖)‖Φ_c‖_F), Θ = (Φ_cᵀMΦ_c)⁻¹Φ_cᵀKΦ_c. With ``reference = (lam_ref,
+    Phi_ref)`` (the same count of pairs, e.g. a dense solve or the analytic subspace) each cluster is compared with the
+    reference columns of the same sorted positions by principal angles; single vectors of a cluster are never compared.
+    ``norm_K`` and ``norm_M`` skip the norm computation."""
     K, M = _check_pair(K, M)
     n = K.shape[0]
     lam = np.asarray(lam, float).reshape(-1)
@@ -296,7 +302,7 @@ class Crossing:
 
 @dataclass
 class TrackResult:
-    """Result of :func:`track_modes`. Track t is the mode that is column t at step 0."""
+    """Result of :func:`track_sweep`. Track t is the mode that is column t at step 0."""
 
     order: list[np.ndarray]                 #: order[s][t] = column of step s that belongs to track t
     lam: np.ndarray                         #: (steps, k) eigenvalues arranged by track
@@ -306,15 +312,15 @@ class TrackResult:
     mac_matrices: list[np.ndarray]          #: (steps − 1) MAC matrices (previous columns × current columns)
 
 
-def track_modes(lams: Sequence[np.ndarray], Phis: Sequence[np.ndarray], M: Any, *, mac_min: float = 0.9,
+def track_sweep(lams: Sequence[np.ndarray], Phis: Sequence[np.ndarray], M: Any, *, mac_min: float = 0.9,
                 margin: float = 0.2) -> TrackResult:
     """Follow modes through a parameter sweep by MAC; the sorted index is not an identity.
 
-    ``lams[s]`` (k,) ascending and ``Phis[s]`` (n, k) are the solution at step s; ``M`` is one matrix or one per step (the mean
-    of the two steps' matrices is used for a pair). Consecutive steps are matched one-to-one by the assignment that maximises
-    the sum of the MAC. ``crossings`` lists track pairs whose column order reversed; ``ambiguous`` marks a track with MAC
-    below ``mac_min`` or within ``margin`` of the next best MAC in its row. Limit: a mode that enters the window from
-    outside is invisible; track k + extra modes and trust the first k."""
+    ``lams[s]`` (k,) ascending and ``Phis[s]`` (n, k) are the solution at step s; ``M`` is one matrix or one per step
+    (the mean of the two steps' matrices is used for a pair). Consecutive steps are matched one-to-one by the assignment
+    that maximises the sum of the MAC. ``crossings`` lists track pairs whose column order reversed; ``ambiguous`` marks
+    a track with MAC below ``mac_min`` or within ``margin`` of the next best MAC in its row. Limit: a mode that enters
+    the window from outside is invisible; track k + extra modes and trust the first k."""
     S = len(lams)
     if S < 2 or len(Phis) != S:
         raise ValueError("need at least two steps and one eigenvector block per step")
@@ -400,16 +406,18 @@ def _shift_factor(K: Any, M: Any, sigma: float, scale: float, refuse_rtol: float
 def shift_invert_modes(K: Any, M: Any, k: int, sigma: float | None = None, *, assume_psd: bool = False,
                        expected_zero: int | None = None, zero_tol: float = 1e-9, refuse_rtol: float = 1e-8,
                        cluster_rtol: float = 1e-6, tol: float = 0.0, seed: int = 0) -> ShiftInvertResult:
-    """The ``k`` eigenpairs of ``K φ = λ M φ`` nearest ``sigma`` by Lanczos shift-invert, with the safeguards of the module notes.
+    """The ``k`` eigenpairs of ``K φ = λ M φ`` nearest ``sigma`` by Lanczos shift-invert, with the safeguards of the
+    module notes.
 
-    * ``sigma`` is an explicit choice. ``sigma=None`` is accepted only with ``assume_psd=True`` (K positive semidefinite, e.g.
-      free-free): the shift is then ``−1e-6 s`` (s = ‖K‖₁/‖M‖₁), below the spectrum, so K − σM is SPD, the k nearest are the k
-      lowest, and the zero modes are found instead of a singular factorisation.
-    * A shift at or numerically at an eigenvalue raises :class:`ShiftError` (exactly singular LU, or the 1-norm estimate of
-      (K − σM)⁻¹M gives min|λ − σ| ≤ ``refuse_rtol``·s). ``sigma=0`` on a free-free structure is therefore refused.
-    * One extra pair is computed; ``cluster_cut`` reports that the k-th returned eigenvalue shares its cluster with it (the
-      returned subspace of that cluster is incomplete).
-    * Zero modes (|λ| ≤ ``zero_tol``·s) are reported with their null-space residual; ``expected_zero`` is compared, not enforced.
+    * ``sigma`` is an explicit choice. ``sigma=None`` is accepted only with ``assume_psd=True`` (K positive
+      semidefinite, e.g. free-free): the shift is then ``−1e-6 s`` (s = ‖K‖₁/‖M‖₁), below the spectrum, so K − σM is
+      SPD, the k nearest are the k lowest, and the zero modes are found instead of a singular factorisation.
+    * A shift at or numerically at an eigenvalue raises :class:`ShiftError` (exactly singular LU, or the 1-norm estimate
+      of (K − σM)⁻¹M gives min|λ − σ| ≤ ``refuse_rtol``·s). ``sigma=0`` on a free-free structure is therefore refused.
+    * One extra pair is computed; ``cluster_cut`` reports that the k-th returned eigenvalue shares its cluster with it
+      (the returned subspace of that cluster is incomplete).
+    * Zero modes (|λ| ≤ ``zero_tol``·s) are reported with their null-space residual; ``expected_zero`` is compared, not
+      enforced.
     * The pairs are cleaned by Rayleigh-Ritz in their span (exact M-orthonormality), sorted ascending by λ."""
     K, M = _check_pair(K, M)
     n = K.shape[0]
@@ -420,7 +428,8 @@ def shift_invert_modes(K: Any, M: Any, k: int, sigma: float | None = None, *, as
     s = _norm1(K) / max(_norm1(M), 1e-300)
     if sigma is None:
         if not assume_psd:
-            raise ValueError("choose sigma explicitly, or pass assume_psd=True (K positive semidefinite) for the default shift")
+            raise ValueError("choose sigma explicitly, or pass assume_psd=True (K positive semidefinite) "
+                             "for the default shift")
         sigma = -1e-6 * s
     sigma = float(sigma)
     if not np.isfinite(sigma):
@@ -446,8 +455,8 @@ def shift_invert_modes(K: Any, M: Any, k: int, sigma: float | None = None, *, as
     dk = np.abs(lam - sigma).max()
     cut = bool(any(close(lam_next, x) for x in lam) or abs(abs(lam_next - sigma) - dk) <= cluster_rtol * dk + 1e-12 * s)
     if cut:
-        notes.append("the extra eigenpair lies in the cluster of a returned one: the subspace of that cluster is incomplete "
-                     "(ask for more modes, or compare subspaces only for complete clusters)")
+        notes.append("the extra eigenpair lies in the cluster of a returned one: the subspace of that cluster is "
+                     "incomplete (ask for more modes, or compare subspaces only for complete clusters)")
     zero_idx = np.flatnonzero(np.abs(lam) <= zero_tol * s)
     nK = _norm2(K)
     if zero_idx.size:
@@ -459,7 +468,8 @@ def shift_invert_modes(K: Any, M: Any, k: int, sigma: float | None = None, *, as
         notes.append(f"assume_psd=True but λ_min = {lam.min():.3e} < −zero_tol·s: K has a negative eigenvalue")
     zok = None if expected_zero is None else bool(zero_idx.size == int(expected_zero))
     rep = eigen_report(K, M, lam, Phi, cluster_rtol=cluster_rtol, norm_K=nK)
-    return ShiftInvertResult(lam, Phi, sigma, s, dist, zero_idx, int(zero_idx.size), zres, zok, cut, lam_next, rep, notes)
+    return ShiftInvertResult(lam, Phi, sigma, s, dist, zero_idx, int(zero_idx.size), zres, zok, cut, lam_next, rep,
+                             notes)
 
 
 # ---------------------------------------------------------------------------------------------------- buckling
@@ -489,13 +499,14 @@ def buckling_load_factors(K: Any, KG: Any, k: int = 1, *, dense_max: int = 300, 
                           seed: int = 0) -> BucklingResult:
     """Lowest positive load factors of ``(K + λ K_G) φ = 0``, solved as ``(−K_G) φ = μ K φ``, ``μ = 1/λ``.
 
-    Assumptions (checked): K symmetric positive definite (Cholesky up to ``spd_dense_max`` unknowns, otherwise the smallest
-    eigenvalue by Lanczos shift-invert, which is evidence, not proof); K_G symmetric, in general indefinite (its inertia is
-    reported on the dense path). Convention: K_G belongs to the reference load, tension positive, so compression makes
-    K_G negative along the mode and μ > 0; the load factor is 1/μ for μ > ``mu_rtol``·max|μ|; μ < 0 is a buckling under the
-    reversed load, reported separately (dense path); μ ≈ 0 does not buckle. No positive μ gives an empty result and a note.
-    Modes are K-orthonormal, ``μ = −φᵀK_Gφ``. Up to ``dense_max`` unknowns the whole spectrum is computed densely, above
-    it the ``k`` largest μ (plus one extra for the cluster-cut flag) by Lanczos with K⁻¹ as the inverse."""
+    Assumptions (checked): K symmetric positive definite (Cholesky up to ``spd_dense_max`` unknowns, otherwise the
+    smallest eigenvalue by Lanczos shift-invert, which is evidence, not proof); K_G symmetric, in general indefinite
+    (its inertia is reported on the dense path). Convention: K_G belongs to the reference load, tension positive, so
+    compression makes K_G negative along the mode and μ > 0; the load factor is 1/μ for μ > ``mu_rtol``·max|μ|; μ < 0 is
+    a buckling under the reversed load, reported separately (dense path); μ ≈ 0 does not buckle. No positive μ gives an
+    empty result and a note. Modes are K-orthonormal, ``μ = −φᵀK_Gφ``. Up to ``dense_max`` unknowns the whole spectrum
+    is computed densely, above it the ``k`` largest μ (plus one extra for the cluster-cut flag) by Lanczos with K⁻¹ as
+    the inverse."""
     K, KG = _check_pair(K, KG)
     n = K.shape[0]
     if not 1 <= k < n:
@@ -505,7 +516,8 @@ def buckling_load_factors(K: Any, KG: Any, k: int = 1, *, dense_max: int = 300, 
         try:
             np.linalg.cholesky(K.toarray() if sp.issparse(K) else K)
         except np.linalg.LinAlgError as exc:
-            raise ValueError("K is not positive definite: the buckling solver assumes a stable unloaded structure") from exc
+            raise ValueError("K is not positive definite: the buckling solver assumes a stable unloaded "
+                             "structure") from exc
         evidence = "cholesky"
     else:
         lmin = float(spla.eigsh(sp.csc_matrix(K), k=1, sigma=0.0, which="LM", return_eigenvectors=False)[0])
@@ -526,7 +538,8 @@ def buckling_load_factors(K: Any, KG: Any, k: int = 1, *, dense_max: int = 300, 
         mu, Phi = mu_all[pos][:k], V[:, pos][:, :k]
         rev = np.sort(1.0 / np.abs(mu_all[neg]))
         kg_in = _inertia_sym(0.5 * (Ad + Ad.T), mu_rtol * max(float(np.abs(Ad).max()), 1e-300))
-        cut = bool(mu.size == k and np.count_nonzero(pos) > k and abs(mu_all[pos][k] - mu[-1]) <= cluster_rtol * abs(mu[-1]))
+        cut = bool(mu.size == k and np.count_nonzero(pos) > k
+                   and abs(mu_all[pos][k] - mu[-1]) <= cluster_rtol * abs(mu[-1]))
         path = "dense"
     else:
         Kc = sp.csc_matrix(K)
@@ -548,9 +561,11 @@ def buckling_load_factors(K: Any, KG: Any, k: int = 1, *, dense_max: int = 300, 
         cut = bool(mu_p.size > k and abs(mu_p[k] - mu[-1]) <= cluster_rtol * abs(mu[-1]))
         rev, kg_in, path = None, None, "lanczos"
     if cut:
-        notes.append("the next mode shares the cluster of the last returned one: the subspace of that cluster is incomplete")
+        notes.append("the next mode shares the cluster of the last returned one: the subspace of that cluster is "
+                     "incomplete")
     if mu.size == 0:
-        notes.append("no positive mu: the reference load does not buckle the structure (tension, or no compressive stress)")
+        notes.append("no positive mu: the reference load does not buckle the structure (tension, or no compressive "
+                     "stress)")
         return BucklingResult(np.zeros(0), mu, np.zeros((n, 0)), None, rev, kg_in, evidence, path, False, notes)
     rep = eigen_report(A, K, mu, Phi, cluster_rtol=cluster_rtol)
     lam = 1.0 / mu

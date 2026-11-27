@@ -202,12 +202,12 @@ def test_fa3_heat_capacity_totals(name):
     assert abs(C - C.T).max() <= 1e-14 * abs(C).max()
 
 
+CASES_CURVED = [(n, False) for n in SOLID] + [(n, True) for n in SOLID if n in QUAD2]
+
+
 # ---------------------------------------------------------------------------------------------- FA4
-@pytest.mark.parametrize("curved", [False, True])
-@pytest.mark.parametrize("name", SOLID)
+@pytest.mark.parametrize(("name", "curved"), CASES_CURVED)  # curved variants of the degree-2 elements only
 def test_fa4_conduction_of_a_linear_field_gives_the_exact_flux(name, curved):
-    if curved and name not in QUAD2:
-        pytest.skip("curved geometry exists for the degree-2 elements only")
     m = mesh_of(name, curved=curved)
     dim = m.dim
     rng = np.random.default_rng(5)
@@ -325,11 +325,8 @@ def _face_integral(name, f):
     return np.einsum("n,nk->k", Wt, np.asarray(f(X), float)) * thick(name)
 
 
-@pytest.mark.parametrize("curved", [False, True])
-@pytest.mark.parametrize("name", SOLID)
+@pytest.mark.parametrize(("name", "curved"), CASES_CURVED)  # curved variants of the degree-2 elements only
 def test_fa6a_traction_force_and_moment_on_a_face(name, curved):
-    if curved and name not in QUAD2:
-        pytest.skip("curved interior exists for the degree-2 elements only")
     m = mesh_of(name, curved=curved)
     dim = m.dim
     P = ElasticProblem(m, lame_D(dim), thickness=thick(name))
