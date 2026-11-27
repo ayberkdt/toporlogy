@@ -92,6 +92,7 @@ Figure of the designs: `FIG_DESIGNS.md` (datawiz audit 0 errors).
 * Baseline marker at f1ff694: 8 passed (bitwise); collection 2584 tests (`logs/`).
 * Fast suite at 79623a7: 2747 passed, 55 xfailed, 2 failed — both snapshot tests, artefacts of regenerating the
   snapshots in the working tree during the run (pass after regeneration).
+* **Final clean-worktree fast suite at 8e39c7c: 3813 passed, 5 skipped, 70 xfailed, 0 failed, exit 0** (1:03:30, `logs/fast_suite_clean_8e39c7c.txt`; pardiso and gmsh NOT VERIFIED, cuda 3 passed). Slow cell tests at the final code, run separately: IH 4 passed + 2 strict xfails (IH3/IH4), IP 4, IA 3, IAb 3 (re-run alone after a 900 s timeout on a shared CPU), IAc 3 passed.
 * **Clean-worktree fast suite at 7249632 (after the L6e/F34 merges, NS, MH): 3796 passed, 5 skipped, 70 xfailed, 0 failed, exit 0** (50:08; `-x`, last lines kept in `logs/fast_suite_clean_7249632_tail.txt`). Later commits (MB, IH, IP, IA, IAb) are covered by their own runs and the final suite below.
 * **Clean-worktree fast suite at cb6e41e: 3566 passed, 5 skipped, 67 xfailed, 0 failed, exit 0** (52:47;
   `logs/fast_suite_clean_cb6e41e.txt`). Earlier clean runs: de4dd3b (1 failure in the example snapshot, fixed),

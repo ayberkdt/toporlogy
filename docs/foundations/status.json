@@ -1,12 +1,12 @@
 {
  "schema_version": 1,
- "head": "ce2b230",
+ "head": "3ba8bd6",
  "branch": "foundations/round-3",
  "dirty": "dirty",
- "updated_at": "2026-11-27 11:20 +0300",
+ "updated_at": "2026-11-27 12:25 +0300",
  "environment": "Windows 11, Python 3.12.1, numpy 2.2.6, scipy 1.14.1, torch 2.5.1+cu121 (CUDA present, not exercised), mpmath 1.3.0, scikit-fem 12.0.2, meshio absent; 12 logical CPUs; 16.7 GB RAM, about 2-4 GB free; C: 5.6 GB free (temp files on D:)",
- "last_verified_checkpoint": "7249632 (clean-worktree fast suite, run 10:05-10:55: 3796 passed / 5 skipped / 70 xfailed / 0 failed; ruff and mypy clean; records check clean)",
- "current": "final clean-worktree suite",
+ "last_verified_checkpoint": "8e39c7c (clean-worktree fast suite, run 11:21-12:25: 3813 passed / 5 skipped / 70 xfailed / 0 failed, exit 0, logs/fast_suite_clean_8e39c7c.txt; slow cell tests at the final code: IH 4 passed + 2 strict xfails, IP 4, IA 3, IAb 3, IAc 3 passed; ruff and mypy clean; records check clean)",
+ "current": "round closed; push/PR awaits the user's approval",
  "units": [
   {
    "id": "WP01-baseline",
@@ -506,9 +506,11 @@
   }
  ],
  "next": [
-  "final clean-worktree suite",
+  "push foundations/round-3 and open a PR (needs the user's approval)",
+  "Study/YAML response for the general-mesh homogenisation and cell objectives",
+  "oblique supports, matrix-free apply (F6), constraint transform inside Newton",
   "WP19 shell drilling reference when >= 3.5 GB RAM is free",
-  "push foundations/round-3 and open a PR (needs the user's approval)"
+  "ruff errors in old docs/foundations/scripts (outside the CI scope)"
  ],
  "failed": [
   "L2c: SPD factorization path does not detect a symmetric indefinite matrix (solution residual-checked and correct)",

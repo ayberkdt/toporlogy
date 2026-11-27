@@ -1,11 +1,11 @@
 # Foundations II — live status
 
-Actual HEAD: `ce2b230`  
+Actual HEAD: `3ba8bd6`  
 Branch / dirty state: `foundations/round-3` / dirty  
-Updated at: 2026-11-27 11:20 +0300  
+Updated at: 2026-11-27 12:25 +0300  
 Environment / resource budget: Windows 11, Python 3.12.1, numpy 2.2.6, scipy 1.14.1, torch 2.5.1+cu121 (CUDA present, not exercised), mpmath 1.3.0, scikit-fem 12.0.2, meshio absent; 12 logical CPUs; 16.7 GB RAM, about 2-4 GB free; C: 5.6 GB free (temp files on D:)  
-Last successful integrated checkpoint: 7249632 (clean-worktree fast suite, run 10:05-10:55: 3796 passed / 5 skipped / 70 xfailed / 0 failed; ruff and mypy clean; records check clean)  
-Current unit: final clean-worktree suite
+Last successful integrated checkpoint: 8e39c7c (clean-worktree fast suite, run 11:21-12:25: 3813 passed / 5 skipped / 70 xfailed / 0 failed, exit 0, logs/fast_suite_clean_8e39c7c.txt; slow cell tests at the final code: IH 4 passed + 2 strict xfails, IP 4, IA 3, IAb 3, IAc 3 passed; ruff and mypy clean; records check clean)  
+Current unit: round closed; push/PR awaits the user's approval
 
 | ID | Priority | Dependencies | State | Evidence / SHA | Blocker / next action |
 |---|---|---|---|---|---|
@@ -66,9 +66,11 @@ Current unit: final clean-worktree suite
 
 ## Next executable units
 
-1. final clean-worktree suite
-2. WP19 shell drilling reference when >= 3.5 GB RAM is free
-3. push foundations/round-3 and open a PR (needs the user's approval)
+1. push foundations/round-3 and open a PR (needs the user's approval)
+2. Study/YAML response for the general-mesh homogenisation and cell objectives
+3. oblique supports, matrix-free apply (F6), constraint transform inside Newton
+4. WP19 shell drilling reference when >= 3.5 GB RAM is free
+5. ruff errors in old docs/foundations/scripts (outside the CI scope)
 
 ## Historical failed hypotheses and unresolved risks
 
