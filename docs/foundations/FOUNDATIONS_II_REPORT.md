@@ -17,6 +17,7 @@ the record is named in each row. Synthetic parameters throughout; no real materi
 | C creep | Norton, Norton–Bailey, Arrhenius, adaptive long holds | C2–C7 (`C_creep.md`) | C3g (n = 20 relaxation prediction), C6a (global error of local step control) |
 | R rate | physical J2, Perzyna, Eyring, Drucker–Prager | R1–R7 (`R_rate.md`) | R3a (1-ulp steady state) |
 | T spectral | f(A) with Fréchet derivative/JVP/VJP at repeated eigenvalues; VRH, A_U, Zener | TS1–TS9, MO1–4, E5 (`T_spectral.md`) | — |
+| F4 rates / F2fix | historical T4/T10 rate misses and curved T10 patch investigated | R05 cause: curved T10 needs degree 3 (default now 3 for curved T10, patch exact to 1.5e-15); R04: T4 a mesh-draw accident, T10 pre-asymptotic, no defect (`F4_RATES.md`, `F2fix_curved_t10_degree.md`) | F4-1 T4 interpolation gap, F4-3 T10 draws (strict xfails) |
 | TK tensor | cofactor/det derivative without inverse; rotation log near π | TK1–TK5; **fixed an O(π − θ) axis error** of the existing near-π branch (`TK_cofactor_rotation.md`) | — |
 | TS cure | n-th order/Kamal–Sourour (bounded implicit), DiBenedetto, reaction heat, shrinkage, Avrami/Nakamura | TS1–TS6, TP3–TP4 (`TS_cure.md`) | — |
 | TS7 cure slab | transient heat + cure exotherm (monolithic Newton, backward Euler), residual stress through the history solver | TS7a–g (`TS7_cure_slab.md`): time order 1.00, space order 2.03 vs an independent method-of-lines BDF reference; energy balance 3.7e-12 per step | — |
@@ -41,12 +42,15 @@ the record is named in each row. Synthetic parameters throughout; no real materi
 | VU robust (mean + 2 std over 9 spectrum samples) | weak pass; the uncertainty (±8.6 %) is nearly design-independent (`VU_viscoelastic_uncertain.md`) |
 | KS KKT-residual stop | KS2/KS3 failed: KKT-stationary designs still differ by 0.26–0.33 %: different local optima, not the stop rule; warm start from the nominal design improves it by 0.015 % (`KS_kkt_stop.md`) |
 | CO creep topology optimisation (Norton, exact history adjoint via implicit step + local root correction) | forward vs history FE 5.9e-16; gradient vs FD 7.1e-11; CO4 negative control insensitive at weak creep (failed, recorded; 1.3e-2 at strong creep, post hoc); CO6: creep design **28.4 % lower** J(1000 s) than the elastic design, 54 % higher J(0); the first run hit the iteration cap, a post hoc continuation converged (KKT 9.8e-5) at the same 28.40 % (`CO_creep_topology.md`, `CO6_creep_topology.md`) |
+| VT / CT temperature histories | viscoelastic optimisation with WLF/Arrhenius reduced time; creep optimisation with an Arrhenius factor | forward vs history FE 6.9e-14 / 4.3e-16; gradients vs FD 1.9e-10 / 6.5e-10; time–temperature superposition bitwise (`VT_viscoelastic_temperature.md`, `CT_creep_temperature.md`) |
 | VM min–max over a two-load history | min–max design J_A = 3.68e-5, J_B = 3.67e-5 (balanced to 0.075 %); single-phase designs reach 903 and 2008 on the other phase (`VM_minmax_switching.md`) |
 
 Conclusion for the optimisation side: the gradients and formulations are exact and verified; the benefit of
 time-aware, robust or min–max design depends on the problem — negligible for one constant load on a linear
 viscoelastic material, large under nonlinear creep (28 %), decisive when the critical time depends on the design
 (min–max). Design comparisons below ~0.5 % need multi-start.
+
+Figure of the designs: `FIG_DESIGNS.md` (datawiz audit 0 errors).
 
 ## Regression evidence
 
