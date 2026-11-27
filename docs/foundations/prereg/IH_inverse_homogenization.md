@@ -118,3 +118,8 @@ Measured before this record (probe at dc8ead9, warnings as errors): min_C11 = 0 
 zero; min_E1 = −1 is accepted (a constraint that can never hold); stage_iter = 0 returns the start after 0
 iterations. Change: min_C11, min_E1 and every entry of min_moduli must be finite and > 0; max_iter and stage_iter
 integers ≥ 1; ValueError otherwise. Check IH8: the four probes refused; all fast cell tests unchanged.
+
+### IH8 result (run 12:43 +0300 by the clock; recorded 2026-11-27 12:43 +0300)
+
+PASS on the first run: the four probes refused ("must be"); 17 fast cell tests pass (IP2 bitwise included). The slow
+runs use valid limits (0.02; 0.01; (0.01, 0.01, 0.002)) and caps (300; 100), so their results stand.

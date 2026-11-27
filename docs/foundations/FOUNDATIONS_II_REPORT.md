@@ -89,7 +89,8 @@ Two silent-failure paths found by review and closed with refusals (preregistered
 filter radius above the smallest cell width (IH6; the ±1 lattice images would miss neighbours) and a lattice that is
 a sub-period of the mesh (MH9; it still matches node pairs and gave a wrong |Y|); IH7 refuses a start outside
 [0, 1] and a degenerate filter lattice; MH10 refuses a non-symmetric or indefinite conductivity (it returned a
-negative effective conductivity, or was symmetrised in silence).
+negative effective conductivity, or was symmetrised in silence); IH8 refuses non-positive constraint limits and zero
+iteration caps.
 
 Figure of the designs: `FIG_DESIGNS.md` (datawiz audit 0 errors).
 

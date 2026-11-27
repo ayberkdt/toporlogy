@@ -185,6 +185,14 @@ def optimize_cell(mesh: Mesh, lattice: Any, D: Any, volume: float, rmin: float, 
     from toporlogy.optimizers.mma import MMA
     if not 0 < volume < 1:
         raise ValueError(f"volume must be in (0, 1), got {volume}")
+    for name, n in (("max_iter", max_iter), ("stage_iter", stage_iter)):
+        if isinstance(n, bool) or not isinstance(n, (int, np.integer)) or n < 1:
+            raise ValueError(f"{name} must be an integer >= 1, got {n!r}")
+    limits = [("min_C11", min_C11), ("min_E1", min_E1)] + (
+        [] if min_moduli is None else [(f"min_moduli[{i}]", v) for i, v in enumerate(min_moduli)])
+    for name, v in limits:
+        if v is not None and not (np.isfinite(v) and v > 0):
+            raise ValueError(f"{name} must be finite and > 0, got {v!r}")
     vol = ElasticProblem(mesh, np.asarray(D, float)).geom.dV.sum(axis=1)
     vw = vol / vol.sum()
     filt = PeriodicDensityFilter(mesh, lattice, rmin, vol)

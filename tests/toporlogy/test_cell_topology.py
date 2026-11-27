@@ -167,3 +167,13 @@ def test_ih7_invalid_start_and_degenerate_lattice_are_refused() -> None:
         optimize_cell(m, L, D, 0.5, 0.15, max_iter=1, x0=x)
     with pytest.raises(ValueError, match="linearly dependent"):
         PeriodicDensityFilter(m, [[1.0, 0.0], [2.0, 0.0]], 0.15)
+
+
+# ---------------------------------------------------------------------------------------------- IH8
+@pytest.mark.parametrize("kw", [dict(objective="poisson", min_C11=0.0), dict(objective="poisson_stress", min_E1=-1.0),
+                                dict(objective="poisson_stress", min_moduli=(0.01, 0.0, 0.001)),
+                                dict(stage_iter=0, projection=(0.5, (1.0,)))])
+def test_ih8_invalid_limits_and_caps_are_refused(kw: dict) -> None:
+    m, L = square(6)
+    with pytest.raises(ValueError, match="must be"):
+        optimize_cell(m, L, D_plane_stress(NU), 0.5, 0.15, max_iter=2, x0=np.full(m.n_cells, 0.5), **kw)
