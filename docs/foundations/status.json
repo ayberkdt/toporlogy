@@ -1,12 +1,12 @@
 {
  "schema_version": 1,
- "head": "cdd42fe",
+ "head": "36c020f",
  "branch": "foundations/round-3",
  "dirty": "dirty",
- "updated_at": "2026-11-27 08:17 +0300",
+ "updated_at": "2026-11-27 08:55 +0300",
  "environment": "Windows 11, Python 3.12.1, numpy 2.2.6, scipy 1.14.1, torch 2.5.1+cu121 (CUDA present, not exercised), mpmath 1.3.0, scikit-fem 12.0.2, meshio absent; 12 logical CPUs; 16.7 GB RAM, about 2-4 GB free; C: 5.6 GB free (temp files on D:)",
  "last_verified_checkpoint": "cb6e41e (clean-worktree fast suite 3566 passed / 67 xfailed / 0 failed; ruff and mypy clean; records check clean)",
- "current": "WP06 F4 / WP16 TS7 slices; CO6 post hoc continuation",
+ "current": "R07 bordered predictor and anisotropic viscoelasticity slices; CC continuation post hoc",
  "units": [
   {
    "id": "WP01-baseline",
@@ -271,6 +271,142 @@
    "next_action": "checkpointing for the creep march"
   },
   {
+   "id": "VT-CT-temperature-histories",
+   "priority": "P1",
+   "depends_on": [],
+   "state": "VERIFIED_SCOPE",
+   "evidence": "prereg/VT_viscoelastic_temperature.md, CT_creep_temperature.md: all pass",
+   "next_action": "—"
+  },
+  {
+   "id": "HT-history-yaml-temperature",
+   "priority": "P1",
+   "depends_on": [],
+   "state": "VERIFIED_SCOPE",
+   "evidence": "prereg/HT_history_yaml_temperature.md",
+   "next_action": "—"
+  },
+  {
+   "id": "VF-fractional",
+   "priority": "P2",
+   "depends_on": [],
+   "state": "VERIFIED_SCOPE",
+   "evidence": "prereg/VF_fractional.md (VF9 strict xfail)",
+   "next_action": "FE kernel wiring"
+  },
+  {
+   "id": "TP-thermoplastic",
+   "priority": "P1/P2",
+   "depends_on": [],
+   "state": "VERIFIED_SCOPE",
+   "evidence": "prereg/TP_thermoplastic.md",
+   "next_action": "TP6 FE slice"
+  },
+  {
+   "id": "TS7-cure-slab",
+   "priority": "P1/P2",
+   "depends_on": [],
+   "state": "VERIFIED_SCOPE",
+   "evidence": "prereg/TS7_cure_slab.md",
+   "next_action": "viscoelastic relaxation during cure"
+  },
+  {
+   "id": "C8-creep-plasticity",
+   "priority": "P0",
+   "depends_on": [],
+   "state": "VERIFIED_SCOPE",
+   "evidence": "prereg/C8_creep_plasticity.md",
+   "next_action": "T-dependent K, G, sigma_y"
+  },
+  {
+   "id": "R5-adiabatic",
+   "priority": "P1",
+   "depends_on": [],
+   "state": "VERIFIED_SCOPE",
+   "evidence": "prereg/R5_adiabatic.md",
+   "next_action": "FE heat coupling"
+  },
+  {
+   "id": "H7-H8-history-fe",
+   "priority": "P1",
+   "depends_on": [],
+   "state": "VERIFIED_SCOPE",
+   "evidence": "prereg/H7_time_convergence.md, H8_more_models_fe.md",
+   "next_action": "—"
+  },
+  {
+   "id": "MS-multistart",
+   "priority": "P1",
+   "depends_on": [],
+   "state": "VERIFIED_SCOPE",
+   "evidence": "prereg/MS_multistart.md",
+   "next_action": "—"
+  },
+  {
+   "id": "CC-creep-constraint",
+   "priority": "P1",
+   "depends_on": [],
+   "state": "FAILED",
+   "evidence": "prereg/CC_creep_constraint.md (CC3 infeasible at the halved limit; continuation post hoc running)",
+   "next_action": "continuation in the limit"
+  },
+  {
+   "id": "F4-rates/F2fix",
+   "priority": "P0",
+   "depends_on": [],
+   "state": "VERIFIED_SCOPE",
+   "evidence": "F4_RATES.md, prereg/F2fix_curved_t10_degree.md",
+   "next_action": "—"
+  },
+  {
+   "id": "T2-second-derivative",
+   "priority": "P0",
+   "depends_on": [],
+   "state": "VERIFIED_SCOPE",
+   "evidence": "prereg/T2_second_derivative.md",
+   "next_action": "κ > 1e4, torch"
+  },
+  {
+   "id": "L6-saddle",
+   "priority": "P0",
+   "depends_on": [],
+   "state": "VERIFIED_SCOPE",
+   "evidence": "prereg/L6_saddle.md (6 strict xfails)",
+   "next_action": "3-D, eigenproblems (L06 rest), L07"
+  },
+  {
+   "id": "E3-conditioning",
+   "priority": "P0",
+   "depends_on": [],
+   "state": "VERIFIED_SCOPE",
+   "evidence": "prereg/E3_conditioning.md; R02 resolved",
+   "next_action": "—"
+  },
+  {
+   "id": "NH-nonlinear-heat",
+   "priority": "P1",
+   "depends_on": [],
+   "state": "VERIFIED_SCOPE",
+   "evidence": "prereg/NH_nonlinear_heat.md (5 strict xfails)",
+   "next_action": "share the Newton loop with cure_slab"
+  },
+  {
+   "id": "R07-bordered",
+   "priority": "P1",
+   "depends_on": [],
+   "state": "IN_PROGRESS",
+   "evidence": "subagent",
+   "next_action": "—"
+  },
+  {
+   "id": "VA-anisotropic-ve",
+   "priority": "P2",
+   "depends_on": [],
+   "state": "IN_PROGRESS",
+   "evidence": "subagent",
+   "next_action": "—"
+  },
+  {
    "id": "WP19-shells",
    "priority": "P1/P2",
    "depends_on": [
@@ -282,9 +418,10 @@
   }
  ],
  "next": [
-  "fast suite at the integration checkpoint (one run, background)",
-  "WP20 D4-D6 synthetic Prony/Norton identification",
-  "WP06 F4 reproduction of the historical T4/T10 rates"
+  "merge R07 and VA slices; final clean-worktree suite",
+  "share the Newton loop of cure_slab and nonlinear_heat (cleanup)",
+  "WP19 shell drilling reference when >= 3.5 GB RAM is free",
+  "push foundations/round-3 and open a PR (needs the user's approval)"
  ],
  "failed": [
   "L2c: SPD factorization path does not detect a symmetric indefinite matrix (solution residual-checked and correct)",

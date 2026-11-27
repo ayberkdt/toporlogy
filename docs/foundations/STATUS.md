@@ -1,11 +1,11 @@
 # Foundations II — live status
 
-Actual HEAD: `cdd42fe`  
+Actual HEAD: `36c020f`  
 Branch / dirty state: `foundations/round-3` / dirty  
-Updated at: 2026-11-27 08:17 +0300  
+Updated at: 2026-11-27 08:55 +0300  
 Environment / resource budget: Windows 11, Python 3.12.1, numpy 2.2.6, scipy 1.14.1, torch 2.5.1+cu121 (CUDA present, not exercised), mpmath 1.3.0, scikit-fem 12.0.2, meshio absent; 12 logical CPUs; 16.7 GB RAM, about 2-4 GB free; C: 5.6 GB free (temp files on D:)  
 Last successful integrated checkpoint: cb6e41e (clean-worktree fast suite 3566 passed / 67 xfailed / 0 failed; ruff and mypy clean; records check clean)  
-Current unit: WP06 F4 / WP16 TS7 slices; CO6 post hoc continuation
+Current unit: R07 bordered predictor and anisotropic viscoelasticity slices; CC continuation post hoc
 
 | ID | Priority | Dependencies | State | Evidence / SHA | Blocker / next action |
 |---|---|---|---|---|---|
@@ -36,13 +36,31 @@ Current unit: WP06 F4 / WP16 TS7 slices; CO6 post hoc continuation
 | HY-history-yaml | P1 | VO-viscoelastic-topology, CO-creep-topology | VERIFIED_SCOPE | prereg/HY_history_yaml.md HY1-HY9 pass | robust set, traction loads, --resume |
 | CO-creep-topology | P1 | C-creep | VERIFIED_SCOPE | prereg/CO_creep_topology.md CO1-CO3 pass, CO4 FAILED (strict xfail), CO6 pass: 28.4 % service gain (run at the iteration cap) | converged creep optimum (post hoc continuation running) |
 | D3-checkpoint | P1 | VO-viscoelastic-topology | VERIFIED_SCOPE | prereg/D3_checkpoint.md D3a-D3d pass (17.5x less saved memory, 2x solves) | checkpointing for the creep march |
+| VT-CT-temperature-histories | P1 | — | VERIFIED_SCOPE | prereg/VT_viscoelastic_temperature.md, CT_creep_temperature.md: all pass | — |
+| HT-history-yaml-temperature | P1 | — | VERIFIED_SCOPE | prereg/HT_history_yaml_temperature.md | — |
+| VF-fractional | P2 | — | VERIFIED_SCOPE | prereg/VF_fractional.md (VF9 strict xfail) | FE kernel wiring |
+| TP-thermoplastic | P1/P2 | — | VERIFIED_SCOPE | prereg/TP_thermoplastic.md | TP6 FE slice |
+| TS7-cure-slab | P1/P2 | — | VERIFIED_SCOPE | prereg/TS7_cure_slab.md | viscoelastic relaxation during cure |
+| C8-creep-plasticity | P0 | — | VERIFIED_SCOPE | prereg/C8_creep_plasticity.md | T-dependent K, G, sigma_y |
+| R5-adiabatic | P1 | — | VERIFIED_SCOPE | prereg/R5_adiabatic.md | FE heat coupling |
+| H7-H8-history-fe | P1 | — | VERIFIED_SCOPE | prereg/H7_time_convergence.md, H8_more_models_fe.md | — |
+| MS-multistart | P1 | — | VERIFIED_SCOPE | prereg/MS_multistart.md | — |
+| CC-creep-constraint | P1 | — | FAILED | prereg/CC_creep_constraint.md (CC3 infeasible at the halved limit; continuation post hoc running) | continuation in the limit |
+| F4-rates/F2fix | P0 | — | VERIFIED_SCOPE | F4_RATES.md, prereg/F2fix_curved_t10_degree.md | — |
+| T2-second-derivative | P0 | — | VERIFIED_SCOPE | prereg/T2_second_derivative.md | κ > 1e4, torch |
+| L6-saddle | P0 | — | VERIFIED_SCOPE | prereg/L6_saddle.md (6 strict xfails) | 3-D, eigenproblems (L06 rest), L07 |
+| E3-conditioning | P0 | — | VERIFIED_SCOPE | prereg/E3_conditioning.md; R02 resolved | — |
+| NH-nonlinear-heat | P1 | — | VERIFIED_SCOPE | prereg/NH_nonlinear_heat.md (5 strict xfails) | share the Newton loop with cure_slab |
+| R07-bordered | P1 | — | IN_PROGRESS | subagent | — |
+| VA-anisotropic-ve | P2 | — | IN_PROGRESS | subagent | — |
 | WP19-shells | P1/P2 | WP06-fem-kernel | BLOCKED | — | drilling reference needs >= 3.5 GB free memory (R08) |
 
 ## Next executable units
 
-1. fast suite at the integration checkpoint (one run, background)
-2. WP20 D4-D6 synthetic Prony/Norton identification
-3. WP06 F4 reproduction of the historical T4/T10 rates
+1. merge R07 and VA slices; final clean-worktree suite
+2. share the Newton loop of cure_slab and nonlinear_heat (cleanup)
+3. WP19 shell drilling reference when >= 3.5 GB RAM is free
+4. push foundations/round-3 and open a PR (needs the user's approval)
 
 ## Historical failed hypotheses and unresolved risks
 
