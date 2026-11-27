@@ -62,3 +62,21 @@ sensitivities are equal and proportional to the volume gradient. The registered 
 field, did not leave its basin: MMA filled the hole in. The hypothesis "this start leads to a near-optimal cell" is
 refuted. The machinery is unaffected: gradient (IH1), filter (IH2), bounds (a, b) and the negative control (IH5) all
 hold. Strict xfails (slow); ledger `ledger_additions/IH_inverse_homogenization.json`.
+
+## Post hoc start study (not preregistered; `scripts/ih_starts_posthoc.py`, `IH_starts_posthoc.json`; runs 10:15–10:19 +0300, recorded 2026-11-27 10:20 +0300)
+
+Same settings as IH3/IH4, only the start changed:
+
+| start | κ/κ_HS of the start | κ/κ_HS final | stop | grey fraction | C11/C22, isotropy defect |
+|---|---|---|---|---|---|
+| square, 0/1 void hole of area 0.5 | 0.787 | **0.841** | KKT 9.8e-5 at 88 it | 0.157 | 1.000; C33/C11 = 0.076 (strongly anisotropic) |
+| rhombus (60°), 0/1 void hole of area 0.5 | 0.828 | **0.837** | KKT 9.2e-5 at 76 it | 0.169 | 1.000; \|C11 − C12 − 2C33\|/C11 = 7e-3 (nearly isotropic) |
+| square, random in [0, 1] scaled to mean 0.5 (seed 0) | 0.327 | 0.341 | 300 it cap, KKT 5.0e-3 | 1.000 | uniform grey again |
+
+So the start decides: from a 0/1 start MMA reaches KKT-stationary cells at 84 % of the HS bound and improves the
+start by 6.8 % (square) and 1.0 % (rhombus). From grey starts, the registered hole and a random field alike, it returns
+to the uniform grey design, which is therefore not only stationary but attracting for these settings (filter radius
+2.4 elements, p = 3.5). Both designs stay below the bound, which holds for p ≥ 3.08. The 0.80 threshold of IH3(c)/IH4(c)
+is met post hoc from the void-hole start. This is not a pass of the registered check: the start is part of the check.
+Not established: whether a larger radius, a p-continuation or a projection step would close the remaining 16 %
+(published bulk-modulus cells come closer to the bound; not verified here).
