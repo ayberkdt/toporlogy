@@ -38,6 +38,10 @@ class PeriodicDensityFilter:
         L = np.atleast_2d(np.asarray(lattice, float))
         if L.shape != (mesh.dim, mesh.dim):
             raise ValueError(f"lattice must be ({mesh.dim}, {mesh.dim}), got {L.shape}")
+        width = 1.0 / float(np.linalg.norm(np.linalg.inv(L).T, axis=1).max())   # smallest face-to-face width
+        if rmin > width:
+            raise ValueError(f"rmin = {rmin} exceeds the smallest width of the cell ({width:.6g}): the images "
+                             "n·a with n in {-1, 0, 1} would miss neighbours (prereg/IH_inverse_homogenization.md)")
         c = mesh.cell_centroids()
         n = len(c)
         vol = np.ones(n) if cell_volumes is None else np.asarray(cell_volumes, float)

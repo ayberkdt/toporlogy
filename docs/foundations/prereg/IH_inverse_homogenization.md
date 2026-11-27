@@ -91,3 +91,10 @@ w_min = 1 / max_i |b_i| (b_i the reciprocal vectors, rows of inv(lattice)ᵀ; a 
 2w − w = w apart). Change: rmin > w_min is refused with ValueError naming both. Check IH6: (a) unit square, rmin 1.01
 → ValueError; rmin 0.99 accepted and every row sums to 1 (1e-14); (b) the 60° rhombus (w_min = √3/2): rmin 0.87
 refused, 0.86 accepted; (c) the IH1/IH2 tests unchanged (filters there use rmin ≤ 0.2).
+
+### IH6 result (run 12:27 +0300 by the clock; recorded 2026-11-27 12:28 +0300)
+
+PASS on the first run: square rmin 1.01 refused, 0.99 accepted with rows summing to 1 (≤ 1e-14); rhombus 0.87 refused,
+0.86 accepted. All fast cell tests (12) pass, including the IP2 bitwise fingerprint. The change only adds the refusal
+(the filter arithmetic is untouched), so the slow results above stand. This commit postdates the final clean suite
+(8e39c7c); it is covered by the targeted run named here.

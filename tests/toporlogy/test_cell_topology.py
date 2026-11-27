@@ -139,3 +139,16 @@ def test_ih5_negative_control_unpenalised_material_exceeds_the_bound() -> None:
     r = _run(m, L, np.array([0.5, 0.5]), penal=1.0, max_iter=100)
     _report("IH5", r)
     assert r.objective > 1.05 * kappa_hs(0.5)
+
+
+# ---------------------------------------------------------------------------------------------- IH6
+def test_ih6_filter_radius_above_the_cell_width_is_refused() -> None:
+    m, L = square(12)
+    with pytest.raises(ValueError, match="smallest width"):
+        PeriodicDensityFilter(m, L, 1.01)
+    F = PeriodicDensityFilter(m, L, 0.99)
+    assert np.abs(np.asarray(F.matrix.sum(axis=1)).ravel() - 1).max() <= 1e-14
+    mr, Lr = rhombus(12)
+    with pytest.raises(ValueError, match="smallest width"):
+        PeriodicDensityFilter(mr, Lr, 0.87)
+    PeriodicDensityFilter(mr, Lr, 0.86)
