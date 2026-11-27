@@ -122,7 +122,10 @@ A_REASON = ("pre-registered A1/A2 FAILED (26 Nov 2026): with ds = 0.01 the prima
             "= 1, where K = diag(0, k_a) is singular: the next predictor solve K⁻¹q fails (LinAlgError: Singular "
             "matrix), every halving restarts from the same point, ContinuationError step_limit (cause "
             "singular_tangent) at load factor 1. A defect of arc_length (no predictor at an exactly singular "
-            "accepted point), not of the location; the post hoc tests use ds = 0.0137 (Δλ = 1.37).")
+            "accepted point), not of the location; the post hoc tests use ds = 0.0137 (Δλ = 1.37). Update 27 Nov "
+            "2026 (docs/foundations/prereg/R07_bordered.md): the predictor now passes the exactly singular point; "
+            "the test still fails, now in locate_critical (ValueError: crossing eigenvalue not bracketed, 0.000e+00 "
+            "at the accepted point): a second defect, of the critical-point bracketing.")
 A_POSTHOC_DS = 0.0137
 
 

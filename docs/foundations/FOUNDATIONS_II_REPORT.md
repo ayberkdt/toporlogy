@@ -40,7 +40,7 @@ the record is named in each row. Synthetic parameters throughout; no real materi
 | HY YAML | `analysis: {type: history}` configs: material card, time schedule, service-time / min–max objectives, CLI validate/run, VTU + JSON output | HY1–HY9 (`HY_history_yaml.md`) | — |
 | HT temperature YAML | `temperature: {table}` in the history YAML for shifted viscoelastic and Arrhenius creep | YAML = API bitwise; refusals with paths (`HT_history_yaml_temperature.md`) | HT4 first run: two HY7 messages lost the word "isothermal" (message fixed) |
 | D3 checkpoint | segment checkpointing of the viscoelastic adjoint | same gradient, 17.5× less saved memory, 2× solves (`D3_checkpoint.md`) | — |
-| N nonlinear | objectivity, plane stress, patches, truss, Hencky via spectral log | N1–N5 (`N_nonlinear.md`); R07 still present (measured) | — |
+| N nonlinear | objectivity, plane stress, patches, truss, Hencky via spectral log; bordered predictor at exactly singular points | N1–N5 (`N_nonlinear.md`); R07: predictor fixed (R1–R6, bitwise neutral elsewhere; `R07_bordered.md`), the historical A1/A2 xfails now fail later in `locate_critical` (zero crossing eigenvalue not bracketed) | A1/A2 (historical, reason updated) |
 
 ## Optimisation and robustness
 
