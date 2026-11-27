@@ -156,6 +156,7 @@ FILE_LAYERS: dict[str, tuple[str, ...]] = {
     "test_history_more_models.py": ("MP", "AS", "IS"),
     "test_history_yaml_temperature.py": ("IC", "OG"),
     "test_saddle.py": ("U", "AN", "IS"),
+    "test_spectral_second.py": ("U", "AN", "IS"),
     "test_micromechanics.py": ("U", "AN", "IS"),
 }
 
