@@ -95,6 +95,40 @@ Expected limiting behaviour / failure modes: the Dirichlet data interpolation er
 stall the adaptive rate at large N if the data term does not trigger boundary refinement (then A2b/A2c fail and are
 recorded); an unlabelled input mesh may not terminate the closure (guarded, raises).
 
-## First result
+## First result (2026-11-27, ran between 03:05 and 03:16 +0300; the clock was read at 03:16 after the final full run; base SHA 67dbf1b + the new files)
 
-(appended after the first run)
+Command: `python -m pytest tests/toporlogy/test_adaptivity.py -q -s -p no:randomly -p no:cacheprovider`.
+Final full run: 26 passed, 1 xfailed (63 s). Set-up corrections made before the first run (no threshold touched):
+three awkward expressions in the test file were tidied (walrus in A3c, a redundant boolean in A3f, a conditional
+`pytest.raises` in A3e). After the first run: the A2d failure was marked `xfail(strict=True)` and a post hoc
+measurement test was added; ruff/mypy tidy-ups of the module (an equivalent comparison form, a type alias).
+
+| ID | Result | Measured |
+|---|---|---|
+| A1a | PASS | θ_res = 5.3649, 5.5265, 5.6006, 5.6316, 5.6450 for n = 4, 8, 16, 32, 64 (model 5.657: −0.2 % at n = 64, −0.45 % at n = 32) |
+| A1b | PASS | θ_ZZ = 0.9817, 1.0177, 1.0115, 1.0055, 1.0026 (n = 4 … 64) |
+| A1c | PASS | `|e|` = 0.838548, 0.431798, 0.217536, 0.108975, 0.0545137; `|e|·64` = 3.4889 (model 3.4894); slope(32→64) = 0.9993 |
+| A1d | PASS | κ = 4 vs 1: relative θ difference ≤ 1e-9 |
+| A1e | PASS | patch test: all indicators ≤ 1e-12 |
+| A2f | PASS | quadrature sum 1.836226661875 vs analytic 1.836226661875, relative 2.2e-16; finite-difference gradient check ≤ 1e-7 |
+| A2a | PASS | uniform energy-error slope −0.3262 (N = 1473 … 48641; `e` = 6.31e-2 … 2.01e-2) |
+| A2b | PASS | adaptive slope −0.5038 over 12 iterates with N ≥ 1000 (N = 1294 … 32127, `e` = 2.34e-2 … 4.66e-3); stop reason max_dofs |
+| A2c | PASS | uniform N = 12033, e = 3.185e-2; adaptive N = 10354, e = 8.215e-3; factor 3.88 (threshold 2.5) |
+| A2d | **FAIL (prediction)** | Dörfler θ = 0.5 on uniform h = 1/16 marks 6 of 1536 cells; 4 of the 6 cells touching the origin are in M (the two cells along the Dirichlet rays, indicator share 0.033 each, are not); true error share of M = 0.479 < 0.5. Kept as `xfail(strict=True)`; ledger entry written. Post hoc (no threshold): θ = 0.8 marks 34 cells, all 6 origin cells, true share 0.853; the centroid of every marked cell lies within 0.2 of the origin. The indicator ranks the corner first (the whole marked set is in the corner patch); the wording "every origin cell and half of the error" was too strong for θ_D = 0.5 |
+| A2e | PASS | control (no jump term): e = 0.2764 at N = 7428 vs adaptive 8.215e-3 (factor 33.6); control slope −0.000 over 21 levels; origin cell diameter 0.707 vs 6.1e-5 (factor 1.2e4); control stop reason max_iterations |
+| A2g | recorded | ZZ-driven adaptive slope −0.501 over 12 levels, final e = 4.63e-3 at N = 32223; θ_res along the adaptive run rises 2.71 → 3.45 and stays there (it is not the uniform-mesh 5.66: constant indicator weights, graded mesh); θ_ZZ 1.04 → 1.00 |
+| A3a | PASS | square and L-shape: 6 random rounds, every edge in 1 or 2 cells, no hanging node, positive areas, min angle ≥ 45°, area and boundary length conserved to 1e-14 |
+| A3b | PASS | tags and the four facet and node sets equal the geometric sets in 5 rounds |
+| A3c | PASS | affine transfer ≤ 1e-14·10 after two refinements; vector transfer; children inside parents; quadratic is interpolated, not reproduced (error > 1e-4) |
+| A3d | PASS | identical arrays on repeat; 3 + 3 iterations with restart equal 6 iterations bitwise (mesh, u, indicators) |
+| A3e | PASS | stop reasons max_dofs, max_iterations, target, zero_estimator; initial mesh over the cap and unknown estimator are ValueError |
+| A3f | PASS | 200 random integer vectors, brute-force minimality and tie order |
+
+Limitations: the effectivity band holds for this smooth problem on this uniform structured mesh and for unit
+indicator weights; the adaptive θ_res (about 3.4) differs from the uniform one (5.6), so the indicator is not a
+calibrated error bound. The ±15 % band was derived with an O(h) argument and was met with 0.2 % at n = 64. The
+adaptive comparison rests on one problem (L-shape, Laplace), one marking fraction and one start mesh; the Dirichlet
+data term is part of the indicator (without it the data interpolation error on the coarse outer boundary is not seen
+by the estimator; not measured here). Wall time was not compared (cost per DOF not measured). Follow-up (separate
+prereg): elasticity (traction jump, κ→(λ, μ) weights, near-incompressible robustness), T6/Q4, goal-oriented
+estimators, curved boundaries.
