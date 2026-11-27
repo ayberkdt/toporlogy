@@ -45,3 +45,4 @@ with almost no grey (0.1–0.4 % of the cells). The hypothesis behind (d) held: 
 loss. The bound itself is not crossed (IH5 shows the check would detect it). The last stages end at the iteration cap
 with KKT 2–4e-2, typical of a steep projection; the designs are near-0/1, so the number is the value of a nearly
 discrete cell, not of a grey intermediate. The start still matters (IH): these runs begin from the 0/1 void hole.
+\nFigure of the projected cells, tiled 3 × 3: `fig_ip_cells.png` / `.pdf` (`scripts/ip_designs.py` re-runs IP3/IP4 deterministically — same κ/κ_HS 0.9895 / 0.9880 — and `scripts/ih_cells_figure.py ip`; datawiz audit 0 errors).

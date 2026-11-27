@@ -1,7 +1,8 @@
 """Figure of the post hoc IH cells (docs/foundations/prereg/IH_inverse_homogenization.md, post hoc start study):
 the filtered density of the square and the rhombic cell, each tiled 3 x 3 so that the periodic structure reads.
 
-    python docs/foundations/scripts/ih_cells_figure.py
+    python docs/foundations/scripts/ih_cells_figure.py            # IH post hoc cells -> fig_ih_cells
+    python docs/foundations/scripts/ih_cells_figure.py ip         # IP projected cells -> fig_ip_cells
 
 Data: docs/foundations/data/ih_cells_x_phys.json (written from the post hoc runs); the meshes are rebuilt here
 exactly as in scripts/ih_starts_posthoc.py. Output: docs/foundations/fig_ih_cells.{pdf,png} + datawiz audit.
@@ -9,6 +10,7 @@ exactly as in scripts/ih_starts_posthoc.py. Output: docs/foundations/fig_ih_cell
 from __future__ import annotations
 
 import json
+import sys
 from dataclasses import replace
 from pathlib import Path
 
@@ -28,10 +30,12 @@ def meshes() -> dict[str, tuple[np.ndarray, np.ndarray, np.ndarray]]:
     return {"square_void_hole": (m0.points, m0.cells, np.eye(2)), "rhombus_void_hole": (m1.points, m1.cells, A.T)}
 
 
-def main() -> None:
-    raw = json.loads((HERE / "data" / "ih_cells_x_phys.json").read_text(encoding="utf-8"))
+def main(which: str = "ih") -> None:
+    data, values, out = {"ih": ("ih_cells_x_phys.json", "IH_starts_posthoc.json", "fig_ih_cells"),
+                         "ip": ("ip_cells_x_phys.json", "IP_designs.json", "fig_ip_cells")}[which]
+    raw = json.loads((HERE / "data" / data).read_text(encoding="utf-8"))
     x = {k: np.asarray(v) for k, v in raw.items()}
-    res = json.loads((HERE / "IH_starts_posthoc.json").read_text(encoding="utf-8"))
+    res = json.loads((HERE / values).read_text(encoding="utf-8"))
     fig, axs = dw.figur("makale", hedef="genel-cift", oran=0.42, ncols=2)
     titles = {"square_void_hole": "Square lattice", "rhombus_void_hole": "Triangular lattice (60° cell)"}
     accent = dw.paletler.tema("akademik")["kategorik"][0] if hasattr(dw, "paletler") else "#0072B2"
@@ -56,11 +60,11 @@ def main() -> None:
         r = res[key]
         ax.set_title(titles[key] + r": $\kappa/\kappa_{\mathrm{HS}}$" + f" = {r['ratio_hs']:.3f}", loc="left")
     assert mappable is not None
-    dw.lejant.renk_cubugu(axs[-1], mappable, "Filtered density (–)")
+    dw.lejant.renk_cubugu(axs[-1], mappable, "Filtered density (–)" if which == "ih" else "Projected density (–)")
     dw.etiket.panel_harfleri(axs, hedef="genel-cift")
-    rep = dw.kaydet(fig, str(HERE / "fig_ih_cells"), hedef="genel-cift", cvd=True)
+    rep = dw.kaydet(fig, str(HERE / out), hedef="genel-cift", cvd=True)
     print(rep if isinstance(rep, str) else {k: v for k, v in rep.items() if k != "figur"})
 
 
 if __name__ == "__main__":
-    main()
+    main(sys.argv[1] if len(sys.argv) > 1 else "ih")
