@@ -98,3 +98,10 @@ PASS on the first run: square rmin 1.01 refused, 0.99 accepted with rows summing
 0.86 accepted. All fast cell tests (12) pass, including the IP2 bitwise fingerprint. The change only adds the refusal
 (the filter arithmetic is untouched), so the slow results above stand. This commit postdates the final clean suite
 (8e39c7c); it is covered by the targeted run named here.
+
+## Robustness addition IH7 (preregistered 2026-11-27 12:35 +0300, base `cee71f7`, before the code change)
+
+`optimize_cell` accepts an x0 outside the box [0, 1] without a word, and `PeriodicDensityFilter` with linearly
+dependent lattice vectors fails inside `numpy.linalg.inv` (LinAlgError, no context). Change: both refused with
+ValueError naming the problem. Check IH7: x0 with one entry 1.2 → ValueError "x0"; x0 with a NaN → ValueError; lattice
+[[1, 0], [2, 0]] in the filter → ValueError "linearly dependent"; all fast cell tests unchanged.
