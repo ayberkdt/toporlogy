@@ -4,15 +4,15 @@ Kaynak: `tests/toporlogy/_vv_layers.py` (dosya → katman sınıflaması elle, d
 
 | Katman | core | geometry | boundary | design | fem | solvers | optimization | optimizers | configuration | execution | post | references |
 |:---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| U unit / property | 32/493 | 3/30 | — | 12/148 | 19/245 | 5/76 | 21/270 | 5/83 | 7/86 | 3/19 | 5/68 | — |
-| MP material point | 28/420 | — | — | 9/138 | 17/208 | 2/44 | 16/205 | 6/103 | 7/97 | 1/13 | 4/55 | — |
+| U unit / property | 33/508 | 3/30 | — | 12/148 | 19/245 | 5/76 | 22/285 | 5/83 | 7/86 | 3/19 | 5/68 | — |
+| MP material point | 30/441 | — | — | 9/138 | 18/214 | 2/44 | 18/226 | 6/103 | 7/97 | 1/13 | 4/55 | — |
 | EL element patch / quadrature | 11/131 | — | — | 3/32 | 16/202 | 3/53 | 6/74 | 3/36 | 3/40 | 2/23 | 3/40 | — |
 | AS assembly / BC / reactions | 7/120 | 1/23 | 7/77 | 2/59 | 12/163 | 7/98 | 4/90 | 2/59 | 3/49 | — | 1/20 | — |
-| AN analytical / MMS | 37/544 | — | — | 9/143 | 40/501 | 6/111 | 26/337 | 8/131 | 12/163 | 3/36 | 3/44 | — |
-| IS independent solver / implementation | 19/237 | — | 1/14 | 5/104 | 26/351 | 8/137 | 10/155 | 4/86 | 6/99 | 2/23 | 1/24 | — |
-| OG optimization / KKT / gradient | 27/317 | — | 3/29 | 19/214 | 38/403 | 6/87 | 47/471 | 26/292 | 24/252 | 7/67 | 3/54 | — |
+| AN analytical / MMS | 38/550 | — | — | 9/143 | 41/507 | 6/111 | 27/343 | 8/131 | 12/163 | 3/36 | 3/44 | — |
+| IS independent solver / implementation | 20/243 | — | 1/14 | 5/104 | 27/357 | 8/137 | 11/161 | 4/86 | 6/99 | 2/23 | 1/24 | — |
+| OG optimization / KKT / gradient | 28/323 | — | 3/29 | 19/214 | 39/409 | 6/87 | 48/477 | 26/292 | 24/252 | 7/67 | 3/54 | — |
 | E2E end-to-end geometry | 3/43 | 5/39 | — | 2/13 | 6/72 | — | 11/95 | 1/21 | 4/38 | 1/10 | 11/91 | — |
-| IC integration / compatibility | 12/116 | 2/34 | 2/15 | 11/120 | 18/164 | — | 19/175 | 9/107 | 28/253 | 16/128 | 1/8 | 1/11 |
+| IC integration / compatibility | 13/131 | 2/34 | 2/15 | 11/120 | 18/164 | — | 20/190 | 9/107 | 28/253 | 16/128 | 1/8 | 1/11 |
 | PF performance | — | — | 2/25 | 1/14 | 3/37 | 3/37 | 2/15 | 1/14 | 1/14 | 1/1 | — | — |
 
 Boş hücreler (açık risk adayı; her biri bir risk değildir, örn. `references` için çoğu katman anlamsız):
@@ -57,6 +57,7 @@ Katman sınıflaması (dosya → katmanlar):
 - `test_constitutive.py`: U, MP, AN
 - `test_core.py`: U, EL, AS
 - `test_creep.py`: U, MP, AN
+- `test_creep_topology.py`: MP, AN, IS, OG
 - `test_cure.py`: U, MP, AN
 - `test_deriving_methods.py`: OG, IC
 - `test_element_orientation.py`: MP, EL, OG, E2E
@@ -91,6 +92,7 @@ Katman sınıflaması (dosya → katmanlar):
 - `test_manufacturing.py`: U, OG
 - `test_mass_properties.py`: U, AN, OG
 - `test_material.py`: MP, EL
+- `test_material_cards.py`: U, MP, IC
 - `test_material_catalog.py`: MP, IC
 - `test_material_config.py`: MP, IC
 - `test_material_contract.py`: U, MP, IC

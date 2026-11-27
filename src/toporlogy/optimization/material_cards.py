@@ -10,7 +10,8 @@ problem raises ``ValueError`` whose message starts with the dotted path of the o
 * Units are never implicit. ``units`` declares one unit per kind used (stress Pa/kPa/MPa/GPa, time s/min/h, temperature
   K, rate 1/s, 1/min, 1/h); the factors are those of
   :data:`~toporlogy.optimization.material_identification.UNIT_FACTORS` and are applied exactly once, when the model
-  is built. Celsius/Fahrenheit (as a unit, a unit key, a negative temperature or a string such as ``"25C"``) are refused:
+  is built. Celsius/Fahrenheit (as a unit, a unit key, a negative temperature or a string such as ``"25C"``) are
+  refused:
   an offset is not a factor. Fixed-unit quantities are not selectable: dimensionless numbers, activation energy J/mol,
   CTE 1/K, C2 of the WLF law K.
 * Isotropic elasticity is exactly two of E, nu, K, G. A third modulus is refused, whether it agrees with the pair or not
@@ -34,7 +35,7 @@ import math
 import re
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, NoReturn
 
 import numpy as np
 
@@ -61,7 +62,7 @@ _MODULI = ("E", "nu", "K", "G")
 _UNSET: Any = object()
 
 
-def _fail(path: str, msg: str) -> Any:
+def _fail(path: str, msg: str) -> NoReturn:
     raise ValueError(f"{path}: {msg}" if path else msg)
 
 
@@ -69,8 +70,8 @@ def _celsius(text: Any) -> bool:
     return isinstance(text, str) and text.strip().lower() in _CELSIUS
 
 
-_CELSIUS_HINT = ("Celsius and Fahrenheit are refused: temperatures are absolute kelvin (an offset is not a unit factor; "
-                 "convert yourself and say so in the provenance)")
+_CELSIUS_HINT = ("Celsius and Fahrenheit are refused: temperatures are absolute kelvin (an offset is not a unit "
+                 "factor; convert yourself and say so in the provenance)")
 
 
 def _number(path: str, v: Any, sign: str, kind: str) -> float:
@@ -259,8 +260,8 @@ def _read_pair(b: _Block, scalar: bool, tdom: tuple[float, float] | None) -> dic
             for extra in present[2:]:
                 got, want = vals[extra], implied[extra]
                 if abs(got - want) > 1e-9 * max(abs(want), 1e-300):
-                    _fail(b.path, f"redundant moduli {present}: {extra} = {got:g} is inconsistent with {first}, {second} "
-                                  f"(they imply {extra} = {want:g}); give exactly two")
+                    _fail(b.path, f"redundant moduli {present}: {extra} = {got:g} is inconsistent with {first}, "
+                                  f"{second} (they imply {extra} = {want:g}); give exactly two")
         _fail(b.path, f"redundant moduli {present}: give exactly two of E, nu, K, G (the extra one is not needed)")
     return vals
 
@@ -406,7 +407,8 @@ def _build_curing(b: _Block, tdom: tuple[float, float], info: _Info) -> Any:
         arr = _arrhenius_fields(kb)
         n = kb.number("n", "1")
         assert n is not None
-        kinetics = _wrap(kb.path, lambda: NthOrder(arr, n))
+        n_val: float = n
+        kinetics = _wrap(kb.path, lambda: NthOrder(arr, n_val))
     else:
         k1, k2 = _arrhenius_block(kb, "k1"), _arrhenius_block(kb, "k2")
         m, n = kb.number("m", "1", "nonneg"), kb.number("n", "1")
@@ -614,8 +616,9 @@ def load_material_card(card: Mapping[str, Any]) -> MaterialCard:
             for sname, s in info.strengths.items():
                 if not lo_r <= s / amp <= hi_r:
                     _fail(f"parameters.{sname}", f"{s:.6g} Pa against the stress amplitude bound {amp:.6g} Pa of "
-                                                f"validity.stress is a ratio {s / amp:.3g} outside [{lo_r:g}, {hi_r:g}]: "
-                                                "a stress unit is probably mislabelled (check U2)")
+                                                f"validity.stress is a ratio {s / amp:.3g} outside "
+                                                f"[{lo_r:g}, {hi_r:g}]: a stress unit is probably mislabelled "
+                                                "(check U2)")
     spec = {"name": name.strip(), "model": kind, "units": dict(units), "parameters": params.out,
             "provenance": prov_block.out, "validity": spec_validity}
     return MaterialCard(name.strip(), kind, model, dict(prov), ValidityBox(box), dict(units), copy.deepcopy(spec))

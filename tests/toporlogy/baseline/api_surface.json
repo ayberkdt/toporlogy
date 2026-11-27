@@ -5904,6 +5904,19 @@
   "tie_regions": "tie_regions(domain,groups,section,avoid,keep_cost)",
   "with_keep": "with_keep(domain,extra_keep)"
  },
+ "toporlogy.optimization.creep_topology": {
+  "CreepResult": {
+   "attrs": [],
+   "class": "CreepResult"
+  },
+  "CreepStructure": {
+   "attrs": [
+    "response"
+   ],
+   "class": "CreepStructure"
+  },
+  "norton_update_torch": "norton_update_torch(eps,ecr_n,K,G,dt,A,sigma_ref,n,tol,max_iter)"
+ },
  "toporlogy.optimization.diagnostics": {
   "field_symmetry": "field_symmetry(domain,fields,axis,coordinate,threshold)",
   "gradcheck": "gradcheck(fn,x,n_dirs,h,seed)",
@@ -6334,6 +6347,19 @@
    ],
    "class": "InertiaComponent"
   }
+ },
+ "toporlogy.optimization.material_cards": {
+  "MATERIAL_MODELS": "<tuple>",
+  "MaterialCard": {
+   "attrs": [
+    "check",
+    "synthetic",
+    "to_dict"
+   ],
+   "class": "MaterialCard"
+  },
+  "STRENGTH_RATIO_BOUNDS": "<tuple>",
+  "load_material_card": "load_material_card(card)"
  },
  "toporlogy.optimization.material_identification": {
   "COND_LIMIT": "<float>",

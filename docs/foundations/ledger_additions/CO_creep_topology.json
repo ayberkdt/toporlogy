@@ -1,0 +1,12 @@
+[
+ {
+  "nodeid": "tests/toporlogy/test_creep_topology.py::test_co4_detached_history_changes_gradient",
+  "kind": "pre-registered check failed",
+  "model_backend": "optimization.creep_topology Norton creep, Q4 plane strain, CPU",
+  "reason": "detaching the creep history changes the gradient by only 6.29e-4 (< 1e-3) at the 2e5 tip load: creep is weak there and the negative control is insensitive",
+  "risk": "low",
+  "resolution": "the post hoc CO4b at 5x the load gives 1.3e-2 and an FD error of 5.8e-10; the full gradient passed the FD check (CO3) in the original set-up",
+  "record": "docs/foundations/prereg/CO_creep_topology.md",
+  "slow": false
+ }
+]
