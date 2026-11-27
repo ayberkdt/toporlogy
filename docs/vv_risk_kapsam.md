@@ -6,10 +6,10 @@ Kaynak: `tests/toporlogy/_vv_layers.py` (dosya → katman sınıflaması elle, d
 |:---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
 | U unit / property | 32/493 | 3/30 | — | 12/148 | 19/245 | 5/76 | 21/270 | 5/83 | 7/86 | 3/19 | 5/68 | — |
 | MP material point | 28/420 | — | — | 9/138 | 17/208 | 2/44 | 16/205 | 6/103 | 7/97 | 1/13 | 4/55 | — |
-| EL element patch / quadrature | 11/131 | — | — | 3/32 | 15/180 | 3/53 | 6/74 | 3/36 | 3/40 | 2/23 | 3/40 | — |
+| EL element patch / quadrature | 11/131 | — | — | 3/32 | 16/202 | 3/53 | 6/74 | 3/36 | 3/40 | 2/23 | 3/40 | — |
 | AS assembly / BC / reactions | 7/120 | 1/23 | 7/77 | 2/59 | 12/163 | 7/98 | 4/90 | 2/59 | 3/49 | — | 1/20 | — |
-| AN analytical / MMS | 37/544 | — | — | 9/143 | 39/479 | 6/111 | 26/337 | 8/131 | 12/163 | 3/36 | 3/44 | — |
-| IS independent solver / implementation | 19/237 | — | 1/14 | 5/104 | 25/329 | 8/137 | 10/155 | 4/86 | 6/99 | 2/23 | 1/24 | — |
+| AN analytical / MMS | 37/544 | — | — | 9/143 | 40/501 | 6/111 | 26/337 | 8/131 | 12/163 | 3/36 | 3/44 | — |
+| IS independent solver / implementation | 19/237 | — | 1/14 | 5/104 | 26/351 | 8/137 | 10/155 | 4/86 | 6/99 | 2/23 | 1/24 | — |
 | OG optimization / KKT / gradient | 27/317 | — | 3/29 | 19/214 | 38/403 | 6/87 | 47/471 | 26/292 | 24/252 | 7/67 | 3/54 | — |
 | E2E end-to-end geometry | 3/43 | 5/39 | — | 2/13 | 6/72 | — | 11/95 | 1/21 | 4/38 | 1/10 | 11/91 | — |
 | IC integration / compatibility | 12/116 | 2/34 | 2/15 | 11/120 | 18/164 | — | 19/175 | 9/107 | 28/253 | 16/128 | 1/8 | 1/11 |
@@ -30,6 +30,7 @@ Boş hücreler (açık risk adayı; her biri bir risk değildir, örn. `referenc
 
 Katman sınıflaması (dosya → katmanlar):
 
+- `test_adaptivity.py`: EL, AN, IS
 - `test_aggregates.py`: U, OG
 - `test_anisotropy.py`: U, MP
 - `test_api_surface.py`: IC

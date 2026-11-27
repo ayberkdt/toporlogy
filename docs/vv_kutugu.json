@@ -806,6 +806,16 @@
    "resolution": "the preconditioned half (block-diagonal SPD preconditioner, 15 -> 9 iterations, converged) passes; the plain control needs a convergence criterion on the true residual and a scaled matrix before its iteration growth can be tested (separate preregistration); no production code is affected",
    "record": "docs/foundations/prereg/X_mixed.md",
    "slow": false
+  },
+  {
+   "nodeid": "tests/toporlogy/test_adaptivity.py::test_a2d_estimator_detects_the_corner",
+   "kind": "pre-registered check failed",
+   "model_backend": "fem.mesh.adaptivity.residual_indicators + dorfler_mark (T3, CPU)",
+   "reason": "pre-registered A2d: with Dorfler theta = 0.5 on the uniform h = 1/16 L-shape, 4 of the 6 cells touching the re-entrant corner are marked (the 2 cells along the Dirichlet rays are not, indicator share 0.033 each) and the marked set holds 0.479 of the true squared energy error, below the preregistered 0.5; at theta = 0.8 all 6 origin cells are marked and the share is 0.853",
+   "risk": "low",
+   "resolution": "the hypothesis wording was too strong for theta = 0.5, not the indicator: the marked set lies entirely in the corner patch (centroid distance <= 0.2 at theta 0.8) and adaptive vs uniform (A2b, A2c) and the negative control (A2e) pass; the xfail documents the failed prediction, a revised claim needs its own preregistration",
+   "record": "docs/foundations/prereg/A_adaptivity.md",
+   "slow": false
   }
  ],
  "skips": [

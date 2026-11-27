@@ -7,7 +7,7 @@ import pytest
 import scipy.sparse as sp
 
 from toporlogy.fem.mesh.linear import Factorization
-from toporlogy.solvers.diagnostics import (check_compatible, inertia, krylov_solve, refine, solve_report,
+from toporlogy.solvers.diagnostics import (check_compatible, inertia, krylov_solve, iterative_refinement, solve_report,
                                            solve_with_gauge)
 
 
@@ -160,7 +160,7 @@ def test_l5_refinement() -> None:
     A = D @ S @ D
     b = A @ rng.normal(size=n)
     x0 = np.linalg.solve(A.astype(np.float32), b.astype(np.float32)).astype(float)
-    res = refine(A, b, lambda r: np.linalg.solve(A, r), x0, max_iter=10)
+    res = iterative_refinement(A, b, lambda r: np.linalg.solve(A, r), x0, max_iter=10)
     assert res.omega[-1] <= 1e-14
     assert all(res.omega[i + 1] <= res.omega[i] for i in range(len(res.omega) - 1))
     assert res.stop in ("converged", "stagnated", "max_iter") and res.iterations <= 10

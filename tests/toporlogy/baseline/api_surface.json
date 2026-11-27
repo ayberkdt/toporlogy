@@ -5100,6 +5100,39 @@
   "rectangle": "rectangle(nx,ny,lx,ly,element,origin)",
   "straighten": "straighten(mesh)"
  },
+ "toporlogy.fem.mesh.adaptivity": {
+  "AdaptiveLevel": {
+   "attrs": [],
+   "class": "AdaptiveLevel"
+  },
+  "AdaptiveResult": {
+   "attrs": [
+    "mesh",
+    "stop_reason",
+    "u"
+   ],
+   "class": "AdaptiveResult"
+  },
+  "Refinement": {
+   "attrs": [
+    "inherit_cell",
+    "transfer_nodal"
+   ],
+   "class": "Refinement"
+  },
+  "cell_areas": "cell_areas(mesh)",
+  "cell_gradients": "cell_gradients(mesh,u)",
+  "dorfler_mark": "dorfler_mark(eta2,theta)",
+  "free_dofs": "free_dofs(mesh)",
+  "mesh_from_state": "mesh_from_state(state)",
+  "mesh_state": "mesh_state(mesh)",
+  "newest_vertex_labelling": "newest_vertex_labelling(mesh)",
+  "refine": "refine(mesh,marked)",
+  "refine_uniform": "refine_uniform(mesh,rounds)",
+  "residual_indicators": "residual_indicators(mesh,u,source,kappa,dirichlet_data,jump,degree)",
+  "solve_adaptive_poisson": "solve_adaptive_poisson(mesh,source,kappa,dirichlet_data,theta,estimator,max_dofs,max_iterations,target,load_degree,on_level)",
+  "zz_indicators": "zz_indicators(mesh,u,kappa)"
+ },
  "toporlogy.fem.mesh.assembly": {
   "Pattern": {
    "attrs": [
@@ -8065,8 +8098,8 @@
   "check_compatible": "check_compatible(A,b,N,rtol)",
   "condition_1norm_estimate": "condition_1norm_estimate(A)",
   "inertia": "inertia(A,zero_tol)",
+  "iterative_refinement": "iterative_refinement(A,b,solve,x0,max_iter)",
   "krylov_solve": "krylov_solve(A,b,method,structure,M,rtol,maxiter,x0)",
-  "refine": "refine(A,b,solve,x0,max_iter)",
   "solve_report": "solve_report(A,x,b,condition,reference)",
   "solve_with_gauge": "solve_with_gauge(A,b,N,rtol)"
  },

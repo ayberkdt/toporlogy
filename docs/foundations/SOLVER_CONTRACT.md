@@ -10,7 +10,7 @@ Preregistration and results: `prereg/L_solver.md`.
 | Krylov solve | `krylov_solve` | CG: spd; MINRES: symmetric; GMRES/BiCGSTAB: any; declared symmetry checked numerically; residual recomputed; status converged / max_iterations / breakdown / not_finite |
 | Singular, known null space | `check_compatible`, `solve_with_gauge` | incompatible loads refused; bordered gauge system, no diagonal shift |
 | Adjoint solve | `Factorization.solve_transpose` | transposed SuperLU solve for `general`; same as `solve` for symmetric structures |
-| Accuracy repair | `refine` | residual on the original A, stop at ω ≤ eps, stagnation (no halving) or the cap |
+| Accuracy repair | `iterative_refinement` (named `refine` until the WP09 merge) | residual on the original A, stop at ω ≤ eps, stagnation (no halving) or the cap |
 
 Known limit (L2c, recorded failure): the SPD factorization path accepts a symmetric indefinite matrix without
 detecting it. Its answer is still residual-checked. Use `inertia` where definiteness matters.

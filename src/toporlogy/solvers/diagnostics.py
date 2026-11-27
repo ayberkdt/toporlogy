@@ -15,7 +15,7 @@ the general-mesh and mixed paths need:
   symmetry is checked numerically), explicit residual recomputation and a status.
 * :func:`check_compatible` / :func:`solve_with_gauge`: singular systems with a known null space — compatibility of
   the load and the bordered (gauge-fixed) solve. No diagonal shift.
-* :func:`refine`: iterative refinement with the residual on the original matrix, stopping at convergence,
+* :func:`iterative_refinement`: iterative refinement with the residual on the original matrix, stopping at convergence,
   stagnation or an iteration cap.
 """
 from __future__ import annotations
@@ -31,7 +31,7 @@ import scipy.sparse.linalg as spla
 
 __all__ = ["FORWARD_TOL", "SYMMETRY_TOL", "SolveReport", "solve_report", "condition_1norm_estimate", "inertia",
            "KrylovResult", "KRYLOV", "krylov_solve", "check_compatible", "solve_with_gauge", "RefinementResult",
-           "refine"]
+           "iterative_refinement"]
 
 #: κ · η_N at or below which the forward error is reported as established (first-order bound κ η_N)
 FORWARD_TOL = 1e-8
@@ -249,7 +249,7 @@ class RefinementResult:
     iterations: int
 
 
-def refine(A: Any, b: np.ndarray, solve: Callable[[np.ndarray], np.ndarray], x0: np.ndarray,
+def iterative_refinement(A: Any, b: np.ndarray, solve: Callable[[np.ndarray], np.ndarray], x0: np.ndarray,
            max_iter: int = 10) -> RefinementResult:
     """Iterative refinement x ← x + solve(b − A x) with the residual in float64 on the original A. Stops when the
     componentwise backward error ω ≤ eps (converged), when ω is not at least halved (stagnated; the better iterate is
