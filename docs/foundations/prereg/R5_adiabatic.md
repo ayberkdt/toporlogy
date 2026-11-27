@@ -82,4 +82,47 @@ tangent; convergence is a check by itself). Negative control is AD7 (and the tan
 
 ## First results (appended after the run)
 
-(none yet)
+Run command: `pytest tests/toporlogy/test_adiabatic.py -p no:cacheprovider -p no:randomly` (TMP/TEMP and basetemp under
+`.claude/tmp-toporlogy/R5_adiabatic`), plus `tests/toporlogy/test_viscoplastic.py` (66 passed, 1 xfailed = the existing
+R3a xfail of the R_rate record, unchanged). Clock readings of the runs: first run before 06:29, second 06:29-06:32
+(3 failed, 18 passed), third 06:32-06:36 (with the three fixes below, adiabatic + viscoplastic), final run
+2026-11-27 06:38 +0300 start, 21 passed in 129.83 s, end 06:41 +0300 (raw output kept in
+`.claude/tmp-toporlogy/R5_adiabatic/final_run.txt`, not committed). Record written 2026-11-27 06:41 +0300.
+
+### Set-up fault and failed predictions of the wording (recorded, not silently rewritten)
+
+1. **AD1a input fault (test set-up, fixed before the check could run).** The first run stopped at the guard "the path was
+   plastic": alpha after the path = [0.00437, 0, 0], i.e. points 2 and 3 of my multiaxial path were elastic (strains
+   0.004 and 0.003 are below the yield strain ≈ 0.01 for σ_y(T_0) = 20 MPa, E = 2 GPa). Fixed the inputs (point 2: ε_yy =
+   0.030, γ_xy = 0.004; point 3: ε_xx = 0.020, ε_yy = −0.010, γ_xz = 0.002, γ_xy = 0.010). No threshold touched.
+2. **Roundoff in two "exact" inequalities (wording failure).** AD2d "Q_total ≤ ΣD" failed by Q − ΣD = +1.141e-8 J/m³
+   (relative 6.3e-15) and AD7 "right model: cold work ≥ 0" by cold = −1.130e-8 J/m³ at β = 1, where Q = ΣD holds only to
+   roundoff over 200 steps (derivations 2 and 4 make them equalities at β = 1). The wording ignored roundoff; the tests now
+   allow 1e-12·ΣD and 1e-9·ΣD respectively. This is a roundoff allowance, not a physical threshold; the equality
+   |Q − ΣD| ≤ 1e-9 ΣD of AD2d was in the record from the start.
+3. **AD8 symmetry (wrong claim in derivation 5 and in my first module docstring).** Derivation 5 said the coupled
+   tangent is non-symmetric. It is symmetric: ∂σ/∂T ∝ n̂_v and dT/dε_v ∝ n̂_v, so the rank-one term ∝ n̂_v ⊗ n̂_v. The
+   check "C ≠ Cᵀ" failed (C = Cᵀ within 1e-9 max|C|). Module docstring and doc corrected; the test now asserts the
+   symmetry (post hoc, labelled as such). The FD and coupling-share predictions of AD8 passed in the same run.
+
+### Results (final run; all of AD1–AD8 PASS, 21 tests)
+
+| ID | Result | Measured |
+|---|---|---|
+| AD1a | PASS (after fault 1) | bitwise identical stress, tangent, energy, dissipation, ε_p, alpha; T = T_0 exactly; cold_work increment = D (β = 0) |
+| AD1b | PASS | stress and alpha bitwise equal to β = 0 for constant σ_y; ΔT > 1e-3 K |
+| AD2a | PASS | identity residual / max W = 1.6e-14 (max \|W − Δψ − D\| = 39.9 J/m³ of max W = 1.38e4 J/m³: the mismatch is real and equal to the prediction) |
+| AD2b | PASS | β = 1: \|R\|/ΣW = 6.27e-3, 2.89e-3, 1.38e-3, 6.76e-4 (n = 25…200), ratios 2.16, 2.09, 2.05; β = 0.4: 6.70e-3, 3.11e-3, 1.50e-3, 7.32e-4, ratios 2.15, 2.08, 2.04 (first order, estimate 8e-4 at n = 200 held) |
+| AD2c | PASS | β = 1: max step residual / max βD = 3.0e-12, total 6.3e-15, ΔT = 1.50911 K; β = 0.4: 7.4e-12, 1.0e-13, ΔT = 0.60900 K; cold work = (1 − β)ΣD (β = 0.4: ratio printed 1 within the 1e-9 test); T non-decreasing, elastic steps ΔT = 0 exactly |
+| AD2d | PASS (after fault 2) | Σ plastic_work − ΣD = ½Hp_N² (ψ_h(p_N) = 1.966e5 J/m³) within 1e-9; Q − ΣD = 1.1e-8 J/m³ |
+| AD3 | PASS | β = 1: ΔT_ode = 1.508798 K; ΔT errors 1.72e-3, 8.43e-4, 4.19e-4, 2.07e-4 (rel.), stress errors 1.09e-4 … 1.31e-5 (rel. σ_y); Richardson 4.8e-6 (T), 3.4e-7 (σ). β = 0.5: ΔT_ode = 0.759933 K; errors 2.27e-3 … 2.76e-4; Richardson 4.6e-6, 1.7e-7 |
+| AD4 | PASS | σ(β=1) < σ(β=0) at every plastic step; reduction 1.38462e6 Pa vs ODE 1.38436e6 Pa (0.02 %); reduction = 0.9175 × \|σ_y'\| ΔT_end (observation: less than the full σ_y drop because the flow stress shares the loss with the overstress) |
+| AD5 | PASS | all rejections raised `ValueError`; endpoints 0 and 1 accepted; domain exit raises "validity interval" |
+| AD6 | PASS | rollback, purity, failed step: committed arrays bitwise unchanged, read-only |
+| AD7 | PASS (after fault 2) | wrong heat: Σ(Q − D) = 197091 = ψ_h(p_N) of the wrong path (identity to 1e-9), heat-check residual 0.1087 of ΣD (production 1.6e-12), cold work −197091 (production −1.1e-8); ΔT wrong 1.67198 K vs 1.50911 K: difference 0.1629 K vs ψ_h/(ρc_p) = 0.1637 K (0.5 % apart) |
+| AD8 | PASS (after fault 3) | tangent vs central FD ≤ 1e-6 of max\|C\|; the isothermal Perzyna tangent misses the FD by 2.1e-3 of max\|C\| (coupling share, control ≥ 1e-3); symmetric |
+
+Limitations: homogeneous point only (no conduction, no FE coupling); synthetic parameters; the ODE reference is a
+uniaxial specialisation of the same constitutive law, so it verifies the discretisation and the heat/energy bookkeeping,
+not the physics of the law; the thermal part of the free energy is neglected (stated in the model). Follow-up (separate
+preregistration): FE heat conduction coupling, rate/temperature-dependent β.
