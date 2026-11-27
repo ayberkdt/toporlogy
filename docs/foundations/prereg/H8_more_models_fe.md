@@ -13,3 +13,10 @@ of the same model (partially independent: same constitutive kernel, independent 
 | H8e | `CrystallisingThermoElasticPoint` (test_thermoplastic `make_point`) | as H8d with its own temperature range (within the model's validity) | as H8d | rel 1e-8 |
 
 Run: `python -m pytest tests/toporlogy/test_history_more_models.py -q -p no:randomly`.
+
+## First result (run 06:48 +0300 by the clock; recorded 2026-11-27 06:48 +0300)
+
+5 passed on the first run. Largest relative differences against the material point: H8a Drucker–Prager
+(non-associated, non-symmetric tangent factorised as general) 2.7e-15; H8b creep–plasticity 1.8e-11; H8c adiabatic
+Perzyna stress 2.7e-15, temperature rise identical; H8d curing point stress 6.9e-16, degree of cure identical; H8e
+crystallising point stress 7.7e-16, crystallinity identical.
