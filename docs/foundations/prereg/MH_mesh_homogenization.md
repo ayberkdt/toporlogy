@@ -73,3 +73,12 @@ PASS on the first run: lattice diag(6, 10) on the 12 × 10 rectangle refused for
 measure"); MH1–MH8 values unchanged to the printed digits; MB and all fast cell tests pass (34 passed). The 40 × 40
 square and rhombic cells of the slow runs pass the new check (measures 1.0 and 0.866025403784). The guard adds a
 refusal only; this commit postdates the final clean suite (8e39c7c) and is covered by the targeted run named here.
+
+## Robustness addition MH10 (preregistered 2026-11-27 12:39 +0300, base `dcef880`, before the code change)
+
+Measured before this record (probe at dcef880): `homogenize_mesh_conduction` accepts κ = diag(1, −1) and returns a
+negative effective conductivity, and a non-symmetric κ = [[1, 0.5], [0, 1]] is symmetrised in silence (result
+[[1, 0.25], [0.25, 1]]). The elasticity path refuses a non-SPD D (`ElasticProblem.set_D`), conduction does not.
+Change: κ must be symmetric (|κ − κᵀ| ≤ 1e-12 |κ|) and positive definite (Cholesky), else ValueError. Check MH10:
+both probes refused ("symmetric", "positive definite"); κ scalar 2.5 and an SPD anisotropic κ accepted (the
+homogeneous cell returns κ, rel 1e-10); MH1–MH9 unchanged.
