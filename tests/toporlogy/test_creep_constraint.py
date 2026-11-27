@@ -65,6 +65,9 @@ def test_cc4_no_extra_constraints_unchanged() -> None:
 
 
 @pytest.mark.slow
+@pytest.mark.xfail(strict=True, reason="pre-registered CC3 FAILED: with the limit 0.5 x the unconstrained p-norm the "
+                   "constrained run ended at the 1500-iteration cap infeasible (p-norm 7.17e-3 vs limit 5.64e-3, KKT 1.0); "
+                   "the max point creep strain did fall (1.96e-2 -> 1.33e-2) at +90 % J(1000 s)")
 def test_cc3_creep_strain_constraint_respected() -> None:
     nx, ny = 30, 10
     m = rectangle(nx, ny, float(nx), float(ny))

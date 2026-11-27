@@ -22,3 +22,14 @@ Run: `python -m pytest tests/toporlogy/test_creep_constraint.py -q -p no:randoml
 CC1 PASS: p_cr equals the HistoryProblem + NortonCreep accumulated creep strain to 4.7e-15. CC2 PASS: best FD
 error 6.4e-11 (P = 8, 5× load). CC4 PASS: KS1 fingerprint bitwise with extra_constraints=[]; min-max with extra
 constraints refused. CC3 (slow) running; appended below when done.
+
+## CC3 result (run 07:29–08:25 +0300 by the clock; recorded 2026-11-27 08:25 +0300)
+
+**CC3 FAILED.** Unconstrained creep design (warm start from the elastic design, 1500 iterations, cap reached):
+p-norm (P = 8) 1.1281e-2, max point creep strain 1.9593e-2, J(1000 s) 8.5960e6. Constrained run (limit 0.5 × p-norm
+= 5.6403e-3, warm start from that design): cap reached (1500 iterations), p-norm 7.1697e-3 — **27 % above the
+limit**, KKT residual 1.0 (infeasible), max creep strain 1.3293e-2 (lower, as hypothesised), J(1000 s) 1.6315e7
+(+90 %). The halving target was set without a feasibility study; MMA did not reach a feasible design from this
+start. Strict xfail; ledger `ledger_additions/CC_creep_constraint.json`. What holds: p_cr and its p-norm gradient
+are exact (CC1, CC2); the constraint drives the design toward lower creep strain at a high compliance price.
+Follow-up: continuation in the limit and a feasibility check before claiming a constrained optimum.
