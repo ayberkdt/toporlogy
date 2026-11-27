@@ -16,3 +16,16 @@ Asymptotic window: the last three levels (40, 80, 160), order p = log2(e_40/e_80
 | H7c | consistency: u_N of both models converges monotonically (e_10 > e_20 > … > e_160) | — | strict |
 
 Run: `python -m pytest tests/toporlogy/test_history_time_convergence.py -q -p no:randomly`.
+
+## First result (run 06:21–06:22 +0300 by the clock; recorded 2026-11-27 06:23 +0300)
+
+2 passed on the first run.
+
+| model | e_10 | e_20 | e_40 | e_80 | e_160 | orders (10→20 … 80→160) |
+|---|---|---|---|---|---|---|
+| Norton (backward Euler) | 5.17e-8 | 2.57e-8 | 1.27e-8 | 6.13e-9 | 2.86e-9 | 1.008, 1.022, **1.047, 1.099** |
+| generalized Maxwell | 1.95e-6 | 7.34e-7 | 2.25e-7 | 5.99e-8 | 1.51e-8 | 1.41, 1.71, **1.907, 1.991** |
+
+Both window orders inside the preregistered bands; errors decrease monotonically (H7c). The last Norton order (1.099)
+sits near the band edge, consistent with the reference error (N = 1280) inflating the finest difference; the
+generalized Maxwell order rises from 1.41 to 1.99 (pre-asymptotic start after the instantaneous load).
