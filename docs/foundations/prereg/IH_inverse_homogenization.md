@@ -80,3 +80,5 @@ to the uniform grey design, which is therefore not only stationary but attractin
 is met post hoc from the void-hole start. This is not a pass of the registered check: the start is part of the check.
 Not established: whether a larger radius, a p-continuation or a projection step would close the remaining 16 %
 (published bulk-modulus cells come closer to the bound; not verified here).
+
+Figure of the two post hoc cells, tiled 3 × 3 (base cell outlined): `fig_ih_cells.png` / `.pdf` (`scripts/ih_cells_figure.py`, datawiz audit 0 errors, `fig_ih_cells.denetim.txt`).
