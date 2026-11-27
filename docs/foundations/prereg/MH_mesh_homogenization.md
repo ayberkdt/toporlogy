@@ -96,3 +96,9 @@ singular") and thickness −1 is accepted with a positive C (negative K over a n
 `fem.mesh.problem.ElasticProblem` does not check the thickness (pre-existing; a follow-up). Change here:
 `homogenize_mesh_elasticity` and `homogenize_mesh_conduction` require a finite thickness > 0 (ValueError). Check
 MH11: thickness 0, −1 and NaN refused in both functions; MH1–MH10 unchanged.
+
+### MH11 result (run 12:46 +0300 by the clock; recorded 2026-11-27 12:47 +0300)
+
+PASS on the first run: thickness 0, −1 and NaN refused in both functions; MH, MB and the fast cell tests: 43 passed.
+The slow runs use thickness 1 (default), so their results stand. Follow-up (not done): the same check in
+`fem.mesh.problem.ElasticProblem` / `HeatProblem`, which accept a negative thickness.

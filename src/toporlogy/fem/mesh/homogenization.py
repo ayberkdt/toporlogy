@@ -58,6 +58,12 @@ def _lattice(mesh: Mesh, lattice: Any) -> np.ndarray:
     return L
 
 
+def _thickness(t: Any) -> None:
+    v = float(t)
+    if not (np.isfinite(v) and v > 0):
+        raise ValueError(f"thickness must be finite and > 0, got {t!r} (MH11)")
+
+
 def _factors(x: Any, n: int, what: str) -> np.ndarray:
     if x is None:
         return np.ones(n)
@@ -127,6 +133,7 @@ def homogenize_mesh_elasticity(mesh: Mesh, D: Any, lattice: Any, E: Any = None, 
     row, and cell moduli ``E`` (n_cells,) times ``D`` (k, k; plane stress or strain as the caller builds it in
     2-D). ``sensitivities``: also dC/dE per cell. Raises ``ConstraintError`` when a lattice vector matches no node
     pair, ``ValueError`` for invalid inputs. ``bc``: "periodic" (default), "kubc" or "subc" (module notes)."""
+    _thickness(thickness)
     L = _lattice(mesh, lattice) if bc == "periodic" else np.eye(mesh.dim)
     Ev = _factors(E, mesh.n_cells, "E")
     D0 = np.asarray(D, float)
@@ -179,6 +186,7 @@ def homogenize_mesh_conduction(mesh: Mesh, kappa: Any, lattice: Any, k: Any = No
                                sensitivities: bool = False, degree: int | None = None) -> MeshHomogenized:
     """Effective conductivity (dim, dim) of the periodic cell with cell factors ``k`` (n_cells,) times ``kappa``
     (a scalar or a (dim, dim) tensor). ``sensitivities``: also dk_eff/dk_e per cell."""
+    _thickness(thickness)
     L = _lattice(mesh, lattice)
     kv = _factors(k, mesh.n_cells, "k")
     dim = mesh.dim

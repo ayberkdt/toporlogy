@@ -233,3 +233,13 @@ def test_mh10_conductivity_must_be_symmetric_positive_definite() -> None:
     k = np.array([[2.0, 0.3], [0.3, 1.0]])
     assert rel(homogenize_mesh_conduction(m, k, L).C, k) <= 1e-10
     assert rel(homogenize_mesh_conduction(m, 2.5, L).C, 2.5 * np.eye(2)) <= 1e-10
+
+
+# ---------------------------------------------------------------------------------------------- MH11
+@pytest.mark.parametrize("t", [0.0, -1.0, float("nan")])
+def test_mh11_non_positive_thickness_is_refused(t: float) -> None:
+    m, L = skew2("Q4")
+    with pytest.raises(ValueError, match="thickness"):
+        homogenize_mesh_elasticity(m, D_plane_stress(NU), L, thickness=t)
+    with pytest.raises(ValueError, match="thickness"):
+        homogenize_mesh_conduction(m, 1.0, L, thickness=t)
