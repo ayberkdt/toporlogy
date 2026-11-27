@@ -83,3 +83,13 @@ Amendment written 2026-11-27 03:31 +0300 (clock output), before the first run: t
 does not list. **MC2c** (regression, bitwise): a `curing_thermoelastic` card with `kamal_sourour` kinetics builds the same model
 as the directly constructed `KamalSourour` one. **MC8**: `load_material_card` does not mutate its input dict (equality with a
 deep copy). No threshold or earlier prediction was changed.
+
+## First result (2026-11-27 03:34 +0300, clock output)
+
+Run on base 6c45d19 + the P05 files: `python -m pytest tests/toporlogy/test_material_cards.py -q -p no:randomly` -> **69 passed**, no check failed, no threshold changed. Breakdown: MC1 8, MC7 1, MC2 8 (bitwise equal), MC2c 1, MC2b 2 (closed forms, <= 1e-12 relative), MC3 40 refusal cases (R01-R38 with R37a/b, R38a/b; every message contained the stated path), MC3 control 1, MC4 2, MC5 1, MC6 a-d 4, MC8 1.
+
+Test set-up fix before this passing run (an earlier attempt with `-x` stopped at the first example): the example YAMLs wrote exponents without a sign (`5.0e6`), which YAML 1.1 reads as a string; the loader rejected it ("expected a number"). Fixed in the example files (`5.0e+6`) and a hint added to the error message. No threshold or prediction changed.
+
+Measured in MC6: (a) U1 refused, (b) U2 refused, (c) accepted with stress ratio within 1e-12 of 1e-6, (d) accepted: as predicted.
+Related existing tests run: `test_architecture.py`, `test_api_surface.py` (11 passed; the module adds no name to the package namespace).
+Limitations: the box is checked on request, not by the models; real material data is not covered (all synthetic); the grade/test-method/uncertainty fields of the plan are not implemented.

@@ -1,0 +1,14 @@
+# SYNTHETIC card: invented numbers, not a real material, no engineering claim.
+name: synthetic_norton_creep
+model: norton
+units: {stress: Pa, temperature: K, rate: 1/s}
+parameters:
+  elasticity: {E: 7.0e+10, nu: 0.33}
+  A: 1.0e-6              # 1/s at sigma_ref and T_ref
+  sigma_ref: 1.0e+8       # Pa
+  n: 4.5
+  arrhenius: {Q: 1.5e+5, T_ref: 600.0}     # J/mol, K
+provenance: {source: "synthetic example, invented numbers", synthetic: true, date: "2026-11-27", license: "CC0-1.0"}
+validity:
+  stress: [0.0, 2.0e+8]
+  temperature: [550.0, 650.0]

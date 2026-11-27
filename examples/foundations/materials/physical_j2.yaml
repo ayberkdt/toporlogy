@@ -1,0 +1,13 @@
+# SYNTHETIC card: invented numbers, not a real material, no engineering claim.
+name: synthetic_physical_j2
+model: physical_j2
+units: {stress: MPa}
+parameters:
+  elasticity: {E: 2000.0, nu: 0.35}       # MPa
+  yield_stress: 20.0
+  hardening: 100.0
+  saturation_stress: 30.0
+  saturation_rate: 20.0                    # per unit equivalent plastic strain
+provenance: {source: "synthetic example, invented numbers", synthetic: true, date: "2026-11-27", license: "CC0-1.0"}
+validity:
+  stress: [-30.0, 30.0]

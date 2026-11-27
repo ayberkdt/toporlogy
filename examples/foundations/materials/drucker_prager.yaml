@@ -1,0 +1,13 @@
+# SYNTHETIC card: invented numbers, not a real material, no engineering claim.
+name: synthetic_drucker_prager
+model: drucker_prager
+units: {stress: Pa}
+parameters:
+  elasticity: {K: 2.0e+9, G: 1.0e+9}
+  a: 0.6
+  b0: 2.0e+7
+  hardening: 1.0e+8
+  a_flow: 0.3
+provenance: {source: "synthetic example, invented numbers", synthetic: true, date: "2026-11-27", license: "CC0-1.0"}
+validity:
+  stress: [-4.0e+7, 4.0e+7]

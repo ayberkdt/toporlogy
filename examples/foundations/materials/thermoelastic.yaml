@@ -1,0 +1,13 @@
+# SYNTHETIC card: invented numbers, not a real material, no engineering claim.
+name: synthetic_thermoelastic_polymer
+model: thermoelastic
+units: {stress: MPa, temperature: K}
+parameters:
+  elasticity:
+    E: {T: [250.0, 300.0, 350.0, 400.0], values: [3200.0, 3000.0, 2600.0, 1800.0]}   # MPa
+    nu: 0.35
+  alpha: 6.0e-5          # 1/K, instantaneous (differential) CTE
+  T_ref: 300.0           # K, stress-free temperature
+provenance: {source: "synthetic example, invented numbers", synthetic: true, date: "2026-11-27", license: "CC0-1.0"}
+validity:
+  temperature: [250.0, 400.0]
