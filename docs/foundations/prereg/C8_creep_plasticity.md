@@ -102,4 +102,32 @@ Run: `python -m pytest tests/toporlogy/test_creep_plasticity.py -q -p no:randoml
 `--basetemp` under `.claude/tmp-toporlogy/C8_creep_plasticity`. Resource cap: single points are milliseconds; C8e
 ≤ 2 × 1750 material-point steps, C8d ≤ 2400 + 3 × ~1000 steps.
 
-First result (append after run): pending.
+
+## First result (2026-11-27 06:39 +0300, first run of `tests/toporlogy/test_creep_plasticity.py` after the commit of this file, SHA 42cb74a)
+
+Measured with the preregistered thresholds unchanged: 31 passed, 0 xfail, 20 s. One set-up fix before the first full
+pass: the independent `brentq` calls in C8i/C8l passed `rtol = 4.5e-16`, which scipy rejects (minimum 4 eps = 8.9e-16);
+changed to `rtol = 1e-15` (an input of the reference solver, no threshold touched). Measured values were then
+re-read with a one-off script (`scratchpad/c8/measure.py`, same helpers, post hoc, not a new test).
+
+| ID | Result | Measured |
+|---|---|---|
+| C8a | PASS | bitwise for `None` and `math.inf`, isothermal and Arrhenius ramp 300 to 340 K, 3 batches x dt in {0, 30} and a 40-step history (creep occurred) |
+| C8b | PASS | rel 1.7e-16 (stress), 2.8e-16 (tangent), 1.5e-16 (energy), 1.1e-16 (dissipation), 3.2e-16 (plastic strain), 1.3e-16 (alpha) for H = 2e9; H = 0: <= 5.5e-16; 36-step cyclic path <= 1.8e-15 (final alpha 1.3e-2, 2.2e-2); 37 of 50 points plastic. Bitwise equality does NOT hold (False for stress, tangent, plastic strain), as predicted in section 5 (iv) |
+| C8c | PASS | closed forms: axial 1.6e-15, lateral 1.7e-15, creep strain 5.3e-15, alpha 2.3e-15, dissipation 2.5e-15 (T_ref); 3.3e-14, 3.4e-14, 3.8e-14, 2.3e-15, 3.8e-14 (360 K); compression identical; Newton 2-7 iterations per step; ramp vs `quad` 1.6e-14 (k = 1), 2.0e-15 (k = 4). alpha0 = 2.5e-3 |
+| C8d | PASS | alpha0 = 2.1923e-3, q0 = 1.9385e7 Pa; at dt = 0.025: q rel 6.0e-5, p_cr rel 1.3e-4 (prediction ~1e-4); closed form vs ivp p_cr 7.2e-15; alpha, plastic strain bitwise constant, plastic flag 0 in all 2400 hold steps; errors 4.76e-4, 2.38e-4, 1.19e-4, orders 0.9988, 0.9994 |
+| C8e | PASS | reference: t_y = 6.304 s, alpha(30) = 2.077e-3, p_cr(30) = 1.254e-4, p_cr(60) = 2.779e-4; N = 1000: t = 30: q 9.8e-6, p_cr 8.1e-4, alpha 4.5e-5; t = 60: q 4.9e-5, p_cr 2.2e-4, alpha 4.5e-5 (threshold 2e-3); orders of q(60): 0.9993, 0.9992; alpha(60) == alpha(30) bitwise |
+| C8f | PASS | plastic-and-creeping worst best-h error 2.0e-11 (n = 3, H = 2e9), 2.1e-11 (n = 1), 1.9e-11 (H = 0); x/y ranges 0.50-0.86, 0.15, 0.37; creep-only 2.7e-11 with theta in [0.888, 0.915]; `tangent_kind="continuum"` raises |
+| C8g | PASS | doc tangent re-derived in the test vs production 1.6e-16; frozen direction error >= 0.131 (detected); creep-ignored plastic tangent error between 1.06e-2 and 2.80e-2 (predicted ~3e-2 in the mean, min above the 1e-3 threshold); production best-h error <= 1.1e-11 on the same states |
+| C8h | PASS | all increments, stress recomputation, equivalent-strain identity and q balance within 1e-12 over the two parameter sets (the test asserts >= 10 of each branch; exact counts not recorded) |
+| C8i | PASS | max r1 residual 1.6e-13 (relative to max(x, 1e-3 cap)); |q - kappa|/sigma_y <= 7.5e-16 on plastic points; active set identical to brentq on every point; brentq difference in x, y <= 1.2e-13 (relative). Note: for n = 8, dt = 30 all 20 points relax to the creep-only branch (0 plastic), the plastic branch of n = 8 is covered at dt = 0 and 0.5 |
+| C8j | PASS | D_cr >= 0, D_p >= sigma_y y (1 - 1e-9), sum and contraction identities 1e-12; cyclic path with creep (dt = 2 s) has plastic steps and creep, every D >= -1e-9 W |
+| C8k | PASS | restore bitwise, repeated step bitwise, restart at step 7 bitwise (stress, dissipation, all four state fields; mixed control, Arrhenius ramp; plastic steps >= 2 and creep occurred) |
+| C8l | PASS | (i) x_seq = 2.6457e-4, x_coupled = 8.196e-5, relative difference 2.23 (threshold 0.5); y_seq = 3.327e-4, y_coupled = 5.013e-4; sequential end state breaks r1 by 0.709 (threshold 0.5); coupled r1 5.0e-16; q_seq = 1.5665e7, q_coupled = 1.6003e7 Pa; (iii) relative differences 3.64, 0.859, 0.194, 0.0470 for dt = 8, 2, 0.5, 0.125; ratios 4.24, 4.43, 4.13 (threshold of the last pair 2) |
+| C8m | PASS | all invalid inputs raise ValueError; `None` and `math.inf` identical; dt = 0 plastic with bitwise no creep; hydrostatic strain bitwise no evolution, elastic tangent |
+
+Not verified: FE use (the model implements the history contract but is not wired into the YAML/mesh paths);
+temperature-dependent K, G, sigma_y; nonlinear hardening. Limitations: synthetic constants; the BE accuracy checks are
+first order and use fixed small steps (no adaptive driver for this model: `integrate_creep` takes any history model but
+was not run with it here); the C8e/C8d references share the rate-system reasoning of section 4 with the derivation, they
+are independent of the production code but not of the model assumptions.
