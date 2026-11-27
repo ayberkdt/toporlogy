@@ -16,6 +16,8 @@ the record is named in each row. Synthetic parameters throughout; no real materi
 | V viscoelastic | Maxwell/KV/SLS/Burgers, 3-D generalized Maxwell (independent K, G spectra), WLF/Arrhenius, DMA | V1–V10, C1 (`V_viscoelastic.md`) | — |
 | VF fractional | Mittag-Leffler E_α, E_α,β (vs mpmath ≤ 1.5e-13), fractional Maxwell/KV/Zener closed forms (vs numerical inverse Laplace ~1e-16), passivity, Prony bridge to the generalized Maxwell with an error budget | VF1–VF11 (`VF_fractional.md`) | VF9 monotone Prony error at α = 0.3 |
 | TP thermoplastics | logistic glass-transition property model, crystallinity mixing inside the bounds, crystallising thermoelastic point with latent heat and shrinkage | TP1, TP2, TP5, MX1–MX4 (`TP_thermoplastic.md`) | wording: secant-CTE control 25.9 % (predicted ~8 %) |
+| C8 creep–plasticity | coupled J2 creep + rate-independent plasticity, one local residual, active set, consistent tangent | C8a–m (`C8_creep_plasticity.md`); sequential split overestimates Δp_cr 3.2× at Δt = 20 s | — |
+| R5 adiabatic | Perzyna with σ_y(T), Taylor–Quinney heating from the dissipation (not the plastic work), coupled tangent | AD1–AD8 (`R5_adiabatic.md`); roundoff allowances added to two inequality checks after a 6e-15 failure (recorded) | — |
 | C creep | Norton, Norton–Bailey, Arrhenius, adaptive long holds | C2–C7 (`C_creep.md`) | C3g (n = 20 relaxation prediction), C6a (global error of local step control) |
 | R rate | physical J2, Perzyna, Eyring, Drucker–Prager | R1–R7 (`R_rate.md`) | R3a (1-ulp steady state) |
 | T spectral | f(A) with Fréchet derivative/JVP/VJP at repeated eigenvalues; VRH, A_U, Zener | TS1–TS9, MO1–4, E5 (`T_spectral.md`) | — |
@@ -45,6 +47,8 @@ the record is named in each row. Synthetic parameters throughout; no real materi
 | KS KKT-residual stop | KS2/KS3 failed: KKT-stationary designs still differ by 0.26–0.33 %: different local optima, not the stop rule; warm start from the nominal design improves it by 0.015 % (`KS_kkt_stop.md`) |
 | CO creep topology optimisation (Norton, exact history adjoint via implicit step + local root correction) | forward vs history FE 5.9e-16; gradient vs FD 7.1e-11; CO4 negative control insensitive at weak creep (failed, recorded; 1.3e-2 at strong creep, post hoc); CO6: creep design **28.4 % lower** J(1000 s) than the elastic design, 54 % higher J(0); the first run hit the iteration cap, a post hoc continuation converged (KKT 9.8e-5) at the same 28.40 % (`CO_creep_topology.md`, `CO6_creep_topology.md`) |
 | VT / CT temperature histories | viscoelastic optimisation with WLF/Arrhenius reduced time; creep optimisation with an Arrhenius factor | forward vs history FE 6.9e-14 / 4.3e-16; gradients vs FD 1.9e-10 / 6.5e-10; time–temperature superposition bitwise (`VT_viscoelastic_temperature.md`, `CT_creep_temperature.md`) |
+| H7 time convergence | FE history solver: backward Euler creep order 1.05–1.10, generalized Maxwell 1.91–1.99 (`H7_time_convergence.md`) |
+| MS multi-start | best of uniform / warm / perturbed starts; on the robust problem 3 of 4 starts reach the better basin, robust design 0.015 % better than nominal (`MS_multistart.md`) |
 | VM min–max over a two-load history | min–max design J_A = 3.68e-5, J_B = 3.67e-5 (balanced to 0.075 %); single-phase designs reach 903 and 2008 on the other phase (`VM_minmax_switching.md`) |
 
 Conclusion for the optimisation side: the gradients and formulations are exact and verified; the benefit of
