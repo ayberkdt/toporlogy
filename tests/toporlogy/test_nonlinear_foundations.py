@@ -549,7 +549,7 @@ def test_n3a_affine_patch_interior_equilibrium_and_face_resultant(material, dim,
     t = d.thickness if dim == 2 else 1.0
     ext = np.array(d.shape) * d.h
     area = t * float(np.prod(ext[1:]))
-    interior = np.all((X > X.min(axis=0) + 1e-9) & (X < X.max(axis=0) - 1e-9), axis=1)
+    interior = np.all((X.min(axis=0) + 1e-9 < X) & (X.max(axis=0) - 1e-9 > X), axis=1)
     assert interior.any()
     worst_int = worst_sum = worst_res = 0.0
     for F in rand_F(rng, 3, dim=dim):
