@@ -4,15 +4,15 @@ Kaynak: `tests/toporlogy/_vv_layers.py` (dosya → katman sınıflaması elle, d
 
 | Katman | core | geometry | boundary | design | fem | solvers | optimization | optimizers | configuration | execution | post | references |
 |:---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| U unit / property | 36/564 | 3/30 | — | 12/148 | 20/262 | 5/76 | 22/285 | 5/83 | 7/86 | 3/19 | 5/68 | — |
-| MP material point | 35/502 | — | — | 9/138 | 21/236 | 2/44 | 20/235 | 6/103 | 7/97 | 1/13 | 4/55 | — |
+| U unit / property | 37/579 | 3/30 | — | 12/148 | 20/262 | 5/76 | 22/285 | 5/83 | 7/86 | 3/19 | 5/68 | — |
+| MP material point | 36/517 | — | — | 9/138 | 21/236 | 2/44 | 20/235 | 6/103 | 7/97 | 1/13 | 4/55 | — |
 | EL element patch / quadrature | 13/162 | — | — | 3/32 | 19/235 | 3/53 | 6/74 | 3/36 | 3/40 | 2/23 | 3/40 | — |
 | AS assembly / BC / reactions | 10/152 | 1/23 | 7/77 | 2/59 | 15/195 | 7/98 | 4/90 | 2/59 | 3/49 | — | 1/20 | — |
-| AN analytical / MMS | 45/627 | — | — | 9/143 | 47/547 | 6/111 | 29/352 | 8/131 | 12/163 | 3/36 | 3/44 | — |
+| AN analytical / MMS | 46/642 | — | — | 9/143 | 47/547 | 6/111 | 29/352 | 8/131 | 12/163 | 3/36 | 3/44 | — |
 | IS independent solver / implementation | 25/300 | — | 1/14 | 5/104 | 31/396 | 8/137 | 13/170 | 4/86 | 6/99 | 2/23 | 1/24 | — |
-| OG optimization / KKT / gradient | 31/345 | — | 3/29 | 19/214 | 42/431 | 6/87 | 52/503 | 26/292 | 25/265 | 8/80 | 3/54 | — |
+| OG optimization / KKT / gradient | 31/345 | — | 3/29 | 19/214 | 42/431 | 6/87 | 53/506 | 26/292 | 25/265 | 8/80 | 3/54 | — |
 | E2E end-to-end geometry | 4/56 | 5/39 | — | 2/13 | 7/85 | — | 12/108 | 1/21 | 5/51 | 2/23 | 11/91 | — |
-| IC integration / compatibility | 14/144 | 2/34 | 2/15 | 11/120 | 19/177 | — | 21/203 | 9/107 | 29/266 | 17/141 | 1/8 | 1/11 |
+| IC integration / compatibility | 14/144 | 2/34 | 2/15 | 11/120 | 19/177 | — | 22/206 | 9/107 | 29/266 | 17/141 | 1/8 | 1/11 |
 | PF performance | — | — | 2/25 | 1/14 | 3/37 | 3/37 | 3/19 | 1/14 | 1/14 | 1/1 | — | — |
 
 Boş hücreler (açık risk adayı; her biri bir risk değildir, örn. `references` için çoğu katman anlamsız):
@@ -58,6 +58,7 @@ Katman sınıflaması (dosya → katmanlar):
 - `test_constitutive.py`: U, MP, AN
 - `test_core.py`: U, EL, AS
 - `test_creep.py`: U, MP, AN
+- `test_creep_plasticity.py`: U, MP, AN
 - `test_creep_temperature.py`: MP, AN, IS, OG
 - `test_creep_topology.py`: MP, AN, IS, OG
 - `test_cure.py`: U, MP, AN
@@ -126,6 +127,7 @@ Katman sınıflaması (dosya → katmanlar):
 - `test_model_epoch.py`: OG, IC
 - `test_moduli_foundations.py`: U, AN
 - `test_multi_material.py`: MP, AN, OG
+- `test_multistart.py`: OG, IC
 - `test_newmark.py`: AN, OG
 - `test_nonlinear.py`: MP, AN, OG
 - `test_nonlinear_foundations.py`: MP, EL, AN, IS

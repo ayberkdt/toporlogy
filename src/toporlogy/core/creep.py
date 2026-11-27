@@ -57,7 +57,6 @@ __all__ = ["R_GAS", "NOT_IMPLEMENTED", "ArrheniusFactor", "NortonCreep", "Norton
 R_GAS = 8.314462618                       # J/(mol K), CODATA 2018 (exact value of the 2019 SI)
 
 NOT_IMPLEMENTED = ("tertiary creep and creep damage", "creep rupture and life prediction (Larson-Miller etc.)",
-                   "creep-plasticity coupling (WP13 C8): no coupled local residual exists",
                    "Garofalo / sinh and diffusion-mechanism creep laws", "temperature-dependent K, G (constant here)",
                    "pressure-sensitive creep (J2 creep has no volumetric part)")
 

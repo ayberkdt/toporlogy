@@ -130,8 +130,11 @@ validity.
 
 ## Not implemented
 
-Tertiary creep and creep damage; creep rupture and life correlations (Larson–Miller etc.); creep–plasticity
-coupling (WP13 C8: no coupled local residual or consistent coupled tangent exists, and sequential independent
-updates are not offered); Garofalo / sinh and diffusion-mechanism laws; temperature-dependent K, G and
-temperature-dependent n, Q; pressure-sensitive creep; anisotropic creep; finite-strain creep; FE coupling and
-adjoint through the creep history (WP17/WP20). `core.creep.NOT_IMPLEMENTED` lists them.
+Tertiary creep and creep damage; creep rupture and life correlations (Larson–Miller etc.); Garofalo / sinh and
+diffusion-mechanism laws; temperature-dependent K, G and temperature-dependent n, Q; pressure-sensitive creep;
+anisotropic creep; finite-strain creep. `core.creep.NOT_IMPLEMENTED` lists them.
+
+Added later (integration notes): creep–plasticity coupling with one local residual — `core.creep_plasticity.
+CreepPlasticJ2` (`CREEP_PLASTICITY.md`, `prereg/C8_creep_plasticity.md`); FE coupling (`fem.mesh.history`,
+`prereg/H6_physical_models_fe.md`) and the adjoint through the creep history for topology optimisation
+(`optimization.creep_topology`, `prereg/CO_creep_topology.md`).

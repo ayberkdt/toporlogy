@@ -2655,6 +2655,21 @@
   "R_GAS": "<float>",
   "integrate_creep": "integrate_creep(model,control,segments,output_times,t0,temperature0,rtol,atol,dt0,dt_next,dt_max,max_steps,stress_tol,safety,store,strain0)"
  },
+ "toporlogy.core.creep_plasticity": {
+  "CreepPlasticJ2": {
+   "attrs": [
+    "conservative",
+    "evaluate",
+    "initial_state",
+    "kinematics",
+    "name",
+    "physical",
+    "state_fields",
+    "update"
+   ],
+   "class": "CreepPlasticJ2"
+  }
+ },
  "toporlogy.core.cure": {
   "Arrhenius": {
    "attrs": [
@@ -7253,6 +7268,12 @@
   "variance_estimate": "variance_estimate(y,level)"
  },
  "toporlogy.optimization.viscoelastic_topology": {
+  "MultiStartResult": {
+   "attrs": [
+    "best_index"
+   ],
+   "class": "MultiStartResult"
+  },
   "RobustViscoelastic": {
    "attrs": [
     "response",
@@ -7270,7 +7291,9 @@
    ],
    "class": "ViscoelasticStructure"
   },
-  "optimize_viscoelastic": "optimize_viscoelastic(structure,volume,rmin,step_index,penal,emin,max_iter,move,x0,steps,tol,kkt_tol)"
+  "multistart": "multistart(structure,starts,volume,rmin,kw)",
+  "optimize_viscoelastic": "optimize_viscoelastic(structure,volume,rmin,step_index,penal,emin,max_iter,move,x0,steps,tol,kkt_tol)",
+  "perturbed_starts": "perturbed_starts(n,volume,n_cells,amplitude,seed)"
  },
  "toporlogy.optimizers": {
   "BetaContinuation": {

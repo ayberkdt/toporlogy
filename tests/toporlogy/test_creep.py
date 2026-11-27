@@ -625,9 +625,12 @@ def test_c7c_restart_equals_uninterrupted_run() -> None:
 
 # ================================================================================================ C8
 def test_c8_coupling_tertiary_and_rupture_are_not_implemented() -> None:
+    # integration note: creep-plasticity coupling now exists in core/creep_plasticity.py (CreepPlasticJ2,
+    # prereg C8_creep_plasticity.md), so it left NOT_IMPLEMENTED; tertiary creep and rupture still are not
     text = " ".join(CR.NOT_IMPLEMENTED).lower()
-    for word in ("creep-plasticity", "tertiary", "rupture"):
+    for word in ("tertiary", "rupture"):
         assert word in text
+    assert "creep-plasticity" not in text
     public = [n for n in dir(CR) if not n.startswith("_")]
     assert not any(("plastic" in n.lower() or "damage" in n.lower() or "rupture" in n.lower()) for n in public
                    if n != "NOT_IMPLEMENTED")

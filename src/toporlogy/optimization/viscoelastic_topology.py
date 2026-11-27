@@ -35,7 +35,8 @@ from toporlogy.fem.mesh.linear import Factorization
 from toporlogy.fem.mesh.mesh import Mesh
 from toporlogy.fem.mesh.quadrature import rule
 
-__all__ = ["ViscoelasticStructure", "ViscoelasticResult", "RobustViscoelastic", "optimize_viscoelastic"]
+__all__ = ["ViscoelasticStructure", "ViscoelasticResult", "RobustViscoelastic", "optimize_viscoelastic", "multistart",
+           "perturbed_starts", "MultiStartResult"]
 
 _IP = [0, 1, 5]                                         # plane strain [xx, yy, xy] inside the 3-D Voigt order
 _ONE6 = np.array([1.0, 1.0, 1.0, 0.0, 0.0, 0.0])
@@ -377,3 +378,47 @@ def optimize_viscoelastic(structure: ViscoelasticStructure | RobustViscoelastic,
         res.history["z"] = [z]
         res.history["c_ref"] = [float(c0 if c0 is not None else 1.0)]
     return res
+
+
+@dataclass
+class MultiStartResult:
+    best: OptimizeResult
+    runs: list[tuple[float, float | None, str, bool]] = field(default_factory=list)   # objective, KKT, stop, feasible
+    best_index: int = -1
+
+
+def perturbed_starts(n: int, volume: float, n_cells: int, amplitude: float = 0.1, seed: int = 0) -> list[np.ndarray]:
+    """``n`` seeded random starts around the uniform design: x = V + a (r − mean r), r uniform in [−1, 1], clipped
+    to [0, 1] and re-centred so that the mean is exactly V (iterated a few times; raises if it cannot)."""
+    rng = np.random.default_rng(seed)
+    out = []
+    for _ in range(int(n)):
+        r = rng.uniform(-1.0, 1.0, n_cells)
+        x = volume + amplitude * (r - r.mean())
+        for _it in range(50):
+            x = np.clip(x, 0.0, 1.0)
+            d = volume - x.mean()
+            if abs(d) <= 1e-13:
+                break
+            x = x + d
+        if abs(x.mean() - volume) > 1e-12 or x.min() < 0.0 or x.max() > 1.0:
+            raise ValueError("perturbed_starts: could not keep the volume fraction inside [0, 1]")
+        out.append(x)
+    return out
+
+
+def multistart(structure: ViscoelasticStructure | RobustViscoelastic, starts: Sequence[np.ndarray | None],
+               volume: float, rmin: float, **kw: Any) -> MultiStartResult:
+    """Run :func:`optimize_viscoelastic` from every start (an x0 array or None = uniform) with the same arguments and
+    return the best feasible result by its returned objective (``prereg/MS_multistart.md``); the runs' objective, KKT
+    residual, termination and feasibility are listed. Deterministic for fixed inputs."""
+    if not starts:
+        raise ValueError("multistart needs at least one start")
+    results = [optimize_viscoelastic(structure, volume, rmin, x0=None if s is None else np.asarray(s, float), **kw)
+               for s in starts]
+    runs = [(r.objective, r.kkt_residual, r.termination, bool(r.volume <= volume * (1.0 + 1e-6))) for r in results]
+    feas = [i for i, rr in enumerate(runs) if rr[3]]
+    if not feas:
+        raise ValueError("multistart: no run ended feasible")
+    i_best = min(feas, key=lambda i: runs[i][0])
+    return MultiStartResult(results[i_best], runs, i_best)
