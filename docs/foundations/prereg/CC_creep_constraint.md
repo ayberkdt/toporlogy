@@ -33,3 +33,17 @@ limit**, KKT residual 1.0 (infeasible), max creep strain 1.3293e-2 (lower, as hy
 start. Strict xfail; ledger `ledger_additions/CC_creep_constraint.json`. What holds: p_cr and its p-norm gradient
 are exact (CC1, CC2); the constraint drives the design toward lower creep strain at a high compliance price.
 Follow-up: continuation in the limit and a feasibility check before claiming a constrained optimum.
+
+## Post hoc continuation in the limit (not preregistered; `scripts/cc_continuation_posthoc.py`, `CC_continuation_posthoc.json`; recorded 2026-11-27 09:36 +0300)
+
+Warm start chain from the unconstrained creep design (p-norm 1.1281e-2, max 1.959e-2, J(1000 s) 8.596e6):
+
+| limit factor | p-norm (limit) | feasible (1e-3) | max creep strain | J(1000 s) | ΔJ | iterations / KKT |
+|---|---|---|---|---|---|---|
+| 0.9 | 1.01526e-2 (1.01526e-2) | yes | 1.709e-2 | 8.637e6 | +0.5 % | 600 cap / 1.9e-3 |
+| 0.8 | 9.02451e-3 (9.02451e-3) | yes | 1.462e-2 | 8.813e6 | +2.5 % | 600 cap / 3.8e-4 |
+| 0.7 | 7.89768e-3 (7.89644e-3) | yes (+1.6e-4) | 1.303e-2 | 9.306e6 | +8.3 % | 600 cap / 2.5e-2 |
+
+With continuation the constraint is met at 0.9, 0.8 and 0.7 of the unconstrained p-norm, buying a 13–33 % lower peak
+creep strain for 0.5–8.3 % more service compliance; the direct jump to 0.5 (CC3) failed. All three runs stopped at
+the 600-iteration cap without reaching KKT 1e-4: they are feasible designs on the trade-off, not converged optima.
