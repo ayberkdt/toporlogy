@@ -88,3 +88,30 @@ node_inv[cells[cell_perm[k]]]` with `node_inv[node_perm[j]] = j`; a facet set en
 | M3b | Gmsh physical-group import | — | NOT VERIFIED, no test (no `gmsh`, no `meshio`) |
 
 Run: `python -m pytest tests/toporlogy/test_mesh_foundations.py -q -p no:randomly`. First result appended below.
+
+## First result (2026-11-27 04:05 +0300, base SHA `b993b6e` + the three new modules and the test file)
+
+`python -m pytest tests/toporlogy/test_mesh_foundations.py -q -p no:randomly`: 37 passed on the first run, no
+threshold or hypothesis changed, no test set-up correction needed (the only edits after the first run: a
+`@pytest.mark.slow` marker on M2f, which takes about 105 s, and type annotations in `locate.py` for mypy).
+
+| ID | Result | Measured |
+|---|---|---|
+| M1a | PASS (T3, Q4, T6, T4, H8) | solution max rel diff 6.2e-16, 8.7e-16, 4.5e-15, 1.8e-15, 1.1e-15; compliance 3.6e-16, 1.8e-16, 8.7e-16, 0, 2.8e-16 |
+| M1b, M1c, M1d | PASS | exact ids as predicted |
+| M1e | PASS | wrong-direction map > 1e-3 relative |
+| M2a | PASS | q, SJ, κ, edge ratio = 1 within 1e-12 (T3, T6, T4, T10, Q4, H8; all certified) |
+| M2b | PASS | closed forms within 1e-12 rel; SJ = 1 for the sliver (documented blindness confirmed) |
+| M2c | PASS | worst relative change 2.3e-15 (T3), 3.0e-15 (Q4), 6.0e-15 (T4), 4.1e-15 (H8) |
+| M2d, M2e | PASS | flags and inverted ids as predicted |
+| M2f | PASS | max(bound − dense min)/s_e = 1.3e-15; 31 524 of 200 000 random T6 certified; 2 360 cells had all samples positive, dense min < 0 and were not certified (prediction was ≥ 1) |
+| M4a | PASS | worst ξ error 1.4e-15 (Q4, H8, T3, T4, T6; affine and non-affine) |
+| M4b | PASS | boundary / outside / tie rule as predicted |
+| M4c | PASS | interpolation error 3.0e-16 (Q4), 5.0e-16 (curved T6) |
+| M4d | PASS | negative controls exceed their thresholds |
+| M5a, M5b | PASS | mixed refusal; hanging node (0, 2, 3) found, none in conforming meshes, 3-D reports None |
+| M3a | PASS | bitwise VTU roundtrip for T3, Q4, T4, H8 with the test's own reader |
+| M3b | NOT VERIFIED | no gmsh, no meshio |
+
+Not claimed: the Bernstein bound is exact for the determinant polynomial of the element's own map; it says nothing
+about boundary-curved geometry beyond the mesh; the T6 inversion count is for one seeded random family, not a rate.
