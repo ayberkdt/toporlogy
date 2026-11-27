@@ -85,3 +85,21 @@ trilinear Gauss rule).
 
 Run: `python -m pytest tests/toporlogy/test_fem_assembly_constraints.py -q -p no:randomly -p no:cacheprovider`
 with TMP/TEMP and `--basetemp` under `.claude/tmp-toporlogy/F34_assembly`. First results appended below.
+
+## Amendment 1 (2026-11-27 09:43 +0300, before any test was written or run): FA5 split by load type
+
+The FA5 row above was written for "b(x) = b0 + B x" but its curved predictions were derived (quadrature-degree
+paragraph) for a CONSTANT body force. A linear b raises the needed degree by deg(x): force needs deg(x · detJ), the
+moment deg(x · x · detJ). Re-derived with the default load rule (the stiffness degree; T3 / T4 0, T6 / T10 2, Q4 2,
+Q9 4, H8 2; curved T10 3) the FA5 hypotheses are replaced by:
+
+| ID | Hypothesis | Threshold |
+|---|---|---|
+| FA5a | constant b, distorted, all 7 elements: force and moment about p exact at the default rule | rel ≤ 1e-12 |
+| FA5b | constant b, curved (T6, Q9, T10): force exact; moment exact for Q9, NOT exact (> 1e-12) for T6 and T10 at the default rule, exact with `degree=8` | as stated |
+| FA5c | linear b, distorted: force exact for all 7 at the default rule; moment (integrand x × b, degree 2 · deg(x) + deg(detJ)) exact for T6, Q4, Q9, T10, NOT exact (> 1e-12) for T3, T4, H8 at the default rule; exact for all 7 with `degree=8` | as stated |
+| FA5d | linear b, curved (T6, Q9, T10): force and moment exact with `degree=10` | rel ≤ 1e-12 |
+
+FA5c's inexact prediction for T3 / T4 (centroid rule, exact to degree 1) and H8 (2 x 2 x 2 Gauss, exact to degree 3
+per direction against (4,4,4)) means the default load rule under-integrates non-constant body forces; whether that is
+a defect is reported, not changed here.
