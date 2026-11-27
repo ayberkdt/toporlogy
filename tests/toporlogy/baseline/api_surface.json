@@ -5408,6 +5408,14 @@
    "class": "StepResult"
   }
  },
+ "toporlogy.fem.mesh.homogenization": {
+  "MeshHomogenized": {
+   "attrs": [],
+   "class": "MeshHomogenized"
+  },
+  "homogenize_mesh_conduction": "homogenize_mesh_conduction(mesh,kappa,lattice,k,thickness,sensitivities,degree)",
+  "homogenize_mesh_elasticity": "homogenize_mesh_elasticity(mesh,D,lattice,E,thickness,sensitivities,degree)"
+ },
  "toporlogy.fem.mesh.kernels": {
   "DETJ_TOL": "<float>",
   "DegenerateElementError": {

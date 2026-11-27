@@ -7,10 +7,10 @@ Kaynak: `tests/toporlogy/_vv_layers.py` (dosya → katman sınıflaması elle, d
 | U unit / property | 41/638 | 3/30 | — | 12/148 | 21/282 | 7/102 | 22/285 | 5/83 | 7/86 | 3/19 | 5/68 | — |
 | MP material point | 40/556 | — | — | 9/138 | 23/245 | 2/44 | 21/239 | 6/103 | 7/97 | 1/13 | 4/55 | — |
 | EL element patch / quadrature | 14/182 | — | — | 3/32 | 21/283 | 3/53 | 6/74 | 3/36 | 3/40 | 2/23 | 3/40 | — |
-| AS assembly / BC / reactions | 13/179 | 1/23 | 7/77 | 2/59 | 19/250 | 7/98 | 4/90 | 2/59 | 3/49 | — | 1/20 | — |
-| AN analytical / MMS | 51/721 | — | — | 9/143 | 51/634 | 11/166 | 29/352 | 8/131 | 12/163 | 3/36 | 3/44 | — |
-| IS independent solver / implementation | 30/353 | — | 1/14 | 5/104 | 36/472 | 11/185 | 14/174 | 4/86 | 6/99 | 2/23 | 1/24 | — |
-| OG optimization / KKT / gradient | 33/353 | — | 3/29 | 19/214 | 43/435 | 6/87 | 55/514 | 26/292 | 26/269 | 8/80 | 3/54 | — |
+| AS assembly / BC / reactions | 14/189 | 1/23 | 7/77 | 2/59 | 20/260 | 7/98 | 4/90 | 2/59 | 3/49 | — | 1/20 | — |
+| AN analytical / MMS | 52/731 | — | — | 9/143 | 52/644 | 11/166 | 29/352 | 8/131 | 12/163 | 3/36 | 3/44 | — |
+| IS independent solver / implementation | 31/363 | — | 1/14 | 5/104 | 37/482 | 11/185 | 14/174 | 4/86 | 6/99 | 2/23 | 1/24 | — |
+| OG optimization / KKT / gradient | 34/363 | — | 3/29 | 19/214 | 44/445 | 6/87 | 55/514 | 26/292 | 26/269 | 8/80 | 3/54 | — |
 | E2E end-to-end geometry | 4/56 | 5/39 | — | 2/13 | 7/85 | — | 12/108 | 1/21 | 5/51 | 2/23 | 11/91 | — |
 | IC integration / compatibility | 16/150 | 2/34 | 2/15 | 11/120 | 20/179 | — | 23/210 | 9/107 | 30/270 | 17/141 | 1/8 | 1/11 |
 | PF performance | — | — | 2/25 | 1/14 | 3/37 | 3/37 | 3/19 | 1/14 | 1/14 | 1/1 | — | — |
@@ -121,6 +121,7 @@ Katman sınıflaması (dosya → katmanlar):
 - `test_mesh_assembly.py`: EL, AS
 - `test_mesh_elements.py`: U, EL
 - `test_mesh_foundations.py`: U, EL, AS, IS
+- `test_mesh_homogenization.py`: AS, AN, IS, OG
 - `test_mesh_locking.py`: AN, IS
 - `test_mesh_topology.py`: EL, OG
 - `test_mesh_verification.py`: IS, AN

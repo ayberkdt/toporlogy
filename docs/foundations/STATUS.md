@@ -1,8 +1,8 @@
 # Foundations II — live status
 
-Actual HEAD: `4b1517b`  
+Actual HEAD: `11a4828`  
 Branch / dirty state: `foundations/round-3` / dirty  
-Updated at: 2026-11-27 10:02 +0300  
+Updated at: 2026-11-27 10:05 +0300  
 Environment / resource budget: Windows 11, Python 3.12.1, numpy 2.2.6, scipy 1.14.1, torch 2.5.1+cu121 (CUDA present, not exercised), mpmath 1.3.0, scikit-fem 12.0.2, meshio absent; 12 logical CPUs; 16.7 GB RAM, about 2-4 GB free; C: 5.6 GB free (temp files on D:)  
 Last successful integrated checkpoint: cb6e41e (clean-worktree fast suite 3566 passed / 67 xfailed / 0 failed; ruff and mypy clean; records check clean)  
 Current unit: R07 bordered predictor and anisotropic viscoelasticity slices; CC continuation post hoc
@@ -56,10 +56,11 @@ Current unit: R07 bordered predictor and anisotropic viscoelasticity slices; CC 
 | WP19-shells | P1/P2 | WP06-fem-kernel | BLOCKED | — | drilling reference needs >= 3.5 GB free memory (R08) |
 | L6e-eigen | P0 | L-solver | VERIFIED_SCOPE | prereg/L6e_eigen.md (E0-E5, 19 passed first run); EIGEN_RELIABILITY.md | non-symmetric and quadratic eigenproblems |
 | NS-newton-shared | P1 | — | VERIFIED_SCOPE | prereg/NS_newton_shared.md (NS1-NS4 pass; bitwise neutral vs 1f898bf) | none |
+| MH-mesh-homogenization | P1 | WP06-fem-kernel | VERIFIED_SCOPE | prereg/MH_mesh_homogenization.md (MH1-MH8, 15 passed first run) | Study response on the general mesh; KUBC/SUBC on the mesh |
 
 ## Next executable units
 
-1. MH periodic homogenisation on a general mesh with sensitivities; final clean-worktree suite
+1. final clean-worktree suite
 2. WP19 shell drilling reference when >= 3.5 GB RAM is free
 3. push foundations/round-3 and open a PR (needs the user's approval)
 

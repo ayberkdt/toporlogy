@@ -33,3 +33,27 @@ unique: `homogenize_mesh_elasticity`, `homogenize_mesh_conduction`, `MeshHomogen
 ## First result
 
 Appended below after the first run.
+
+## First result (run 10:03 +0300 by the clock; recorded 2026-11-27 10:03 +0300)
+
+Order of events, stated plainly: the stamp line was written at 09:58; the module and the test file were drafted
+between 09:58 and 10:02 while the record waited for the integration commit 9e7ca00; the record was committed at
+10:02 (11a4828) and **no test of this file was run before that commit**. Command:
+`python -m pytest tests/toporlogy/test_mesh_homogenization.py -q -p no:randomly -s`: **15 passed on the first run**,
+no threshold, input or assertion changed.
+
+| ID | Result | Measured (threshold) |
+|---|---|---|
+| MH1 | PASS | Q4 8.1e-16, T3 8.1e-16, T6 1.6e-15, Q9 1.0e-14, H8 1.6e-16, T4 8.2e-16 (1e-10) |
+| MH2 | PASS | C 1.4e-14 (1e-10), dC 6.4e-14 (1e-9) against the regular-grid implementation |
+| MH3 | PASS | T3 3.7e-15, Q9 7.1e-15 against the layered average (1e-9) |
+| MH4a | PASS | worst 1.1e-8 relative to max abs dC over 8 cells × all ij (1e-6) |
+| MH4b | PASS | Euler identity 4.2e-15 (1e-12) |
+| MH5 | PASS | min eig (C − C_R) 0.766, (C_V − C) 0.567 (≥ −1e-10 max abs C) |
+| MH6 | PASS | homogeneous 1.2e-14, against the grid 1.8e-14 (1e-10) |
+| MH7 | PASS | C 3.9e-15, dC 1.0e-14 (1e-12) |
+| MH8 | PASS | the four refusals raised as registered |
+
+Scope: linear elasticity and conduction, small strain, one periodic cell given as a conforming mesh whose opposite
+faces have matching nodes. Not done: a Study response on the general mesh (the grid has
+`optimization.homogenization_responses`), KUBC/SUBC bounds on the mesh.
