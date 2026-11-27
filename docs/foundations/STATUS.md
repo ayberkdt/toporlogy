@@ -1,10 +1,10 @@
 # Foundations II — live status
 
-Actual HEAD: `6b2bff9`  
+Actual HEAD: `c13480c`  
 Branch / dirty state: `foundations/round-3` / dirty  
-Updated at: 2026-11-27 02:48 +0300  
+Updated at: 2026-11-27 03:48 +0300  
 Environment / resource budget: Windows 11, Python 3.12.1, numpy 2.2.6, scipy 1.14.1, torch 2.5.1+cu121 (CUDA present, not exercised), mpmath 1.3.0, scikit-fem 12.0.2, meshio absent; 12 logical CPUs; 16.7 GB RAM, about 2-4 GB free; C: 5.6 GB free (temp files on D:)  
-Last successful integrated checkpoint: f1ff694 (baseline marker 8 passed, collection 2584 tests; logs/collect_f1ff694.txt, logs/baseline_marker_f1ff694.txt)  
+Last successful integrated checkpoint: c5c87d4 (clean-worktree fast suite 2960 passed / 58 xfailed / 0 failed; ruff and mypy clean)  
 Current unit: VO record; integration fast suite
 
 | ID | Priority | Dependencies | State | Evidence / SHA | Blocker / next action |
@@ -68,6 +68,7 @@ Current unit: VO record; integration fast suite
 - ledger/api/architecture/catalog meta tests after merges: 35 passed 1 xfailed (after the diagnostics layer fix)
 - ruff check src tests: clean after fixes; mypy: clean after fixes (166 files)
 - fast suite (-m 'not slow') started at 79623a7: 2747 passed, 4 skipped, 55 xfailed, 2 FAILED, exit 1, 32 min (logs/fast_suite_79623a7.txt). The 2 failures (api_surface signature of optimize_viscoelastic, vv_risk_kapsam render) are artefacts of regenerating snapshots in the working tree while the suite ran; both pass on the regenerated state (meta tests 102 passed). Lesson: the release suite runs in a separate clean worktree of the commit.
+- CLEAN-WORKTREE fast suite (-m 'not slow') at c5c87d4: 2960 passed, 5 skipped, 137 deselected, 58 xfailed, 0 failed, exit 0, 36:51 (logs/fast_suite_clean_c5c87d4.txt)
 
 ## Resource and permission blockers
 

@@ -44,7 +44,10 @@ decisive when the critical time depends on the design. Design comparisons below 
 
 * Baseline marker at f1ff694: 8 passed (bitwise); collection 2584 tests (`logs/`).
 * Fast suite at 79623a7: 2747 passed, 55 xfailed, 2 failed — both snapshot tests, artefacts of regenerating the
-  snapshots in the working tree during the run (pass after regeneration). Final clean-worktree run: see below.
+  snapshots in the working tree during the run (pass after regeneration).
+* **Clean-worktree fast suite at c5c87d4: 2960 passed, 5 skipped, 58 xfailed, 0 failed, exit 0** (36:51;
+  `logs/fast_suite_clean_c5c87d4.txt`). Later commits (WP09 adaptivity, material cards, creep optimisation) were
+  checked with their own files and the meta tests; a final clean run covers them.
 * ruff and mypy clean at each integration commit (mypy: 170 files).
 
 ## Not done / open
