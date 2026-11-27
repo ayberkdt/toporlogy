@@ -92,3 +92,15 @@ Exit code: 0 converged and feasible, 1 not converged (also: iteration cap reache
   (the same numbers without the temperature block).
 * A Norton design is only meaningful while the small-strain assumption holds; the example's creep strain at 1e4 s is
   synthetic and not checked against it.
+
+## Temperature schedule (added later; `prereg/HT_history_yaml_temperature.md`)
+
+```yaml
+temperature:
+  table: [[0.0, 300.0], [3.5, 330.0], [300.0, 330.0]]   # [t in the config's time unit, T in K]; from t = 0, increasing
+```
+
+Piecewise linear, no extrapolation (the table must reach the last step time). Required for, and only accepted with,
+a temperature-dependent card: `generalized_maxwell` with a WLF/Arrhenius `shift` (reduced time per step) or `norton`
+with an `arrhenius` factor (step-averaged creep factor). The card's declared temperature validity is checked. The
+step temperatures are the table at the step times; T_0 = T(0).
