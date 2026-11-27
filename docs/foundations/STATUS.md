@@ -1,8 +1,8 @@
 # Foundations II — live status
 
-Actual HEAD: `7d304e1`  
+Actual HEAD: `301e586`  
 Branch / dirty state: `foundations/round-3` / dirty  
-Updated at: 2026-11-27 04:36 +0300  
+Updated at: 2026-11-27 05:08 +0300  
 Environment / resource budget: Windows 11, Python 3.12.1, numpy 2.2.6, scipy 1.14.1, torch 2.5.1+cu121 (CUDA present, not exercised), mpmath 1.3.0, scikit-fem 12.0.2, meshio absent; 12 logical CPUs; 16.7 GB RAM, about 2-4 GB free; C: 5.6 GB free (temp files on D:)  
 Last successful integrated checkpoint: c5c87d4 (clean-worktree fast suite 2960 passed / 58 xfailed / 0 failed; ruff and mypy clean)  
 Current unit: WP06 F4 / WP16 TS7 slices; CO6 post hoc continuation
@@ -21,7 +21,7 @@ Current unit: WP06 F4 / WP16 TS7 slices; CO6 post hoc continuation
 | T-spectral | P0 | — | VERIFIED_SCOPE | prereg/T_spectral.md TS1-TS9, MO1-MO4, E5 pass (da98d82) | second derivatives; torch path |
 | WP06-fem-kernel | P0 | — | IN_PROGRESS | F1-F3 largely covered by existing tests (test_mesh_elements, test_mesh_assembly, test_mesh_verification) | F4 reproduction of the historical T4/T10 rates |
 | WP17-history-fem | P1 | V-viscoelastic, P01-contract | VERIFIED_SCOPE | prereg/H_history.md H0,H1,H3,H4,H5 pass; H2 FAILED (hypothesis), post hoc H2b pass (e70fa8e, f711936) | design density coupling of physical history models beyond linear viscoelasticity |
-| WP16-cure | P1/P2 | P-properties | VERIFIED_SCOPE | prereg/TS_cure.md TS1-TS6 pass (9532240) | FE residual-stress coupling |
+| WP16-cure | P1/P2 | P-properties | VERIFIED_SCOPE | prereg/TS_cure.md TS1-TS6; prereg/TS7_cure_slab.md TS7a-g pass (coupled slab) | vitrification kinetics, viscoelastic relaxation during cure |
 | WP15-thermoplastics | P1/P2 | P-properties, V-viscoelastic | VERIFIED_SCOPE | prereg/TS_cure.md TP3, TP4 pass (Avrami/Nakamura only) | TP1/TP2/TP5/TP6 |
 | WP20-identification | P1/P2 | V-viscoelastic, C-creep | PLANNED | — | Prony and Norton synthetic fits D4-D6 |
 | VO-viscoelastic-topology | P1 | V-viscoelastic, WP17-history-fem | VERIFIED_SCOPE | prereg/VO_viscoelastic_topology.md VO1-VO6 pass; post hoc: 0.2 % gain at convergence | Study/YAML integration |

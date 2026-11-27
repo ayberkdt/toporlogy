@@ -19,6 +19,7 @@ the record is named in each row. Synthetic parameters throughout; no real materi
 | T spectral | f(A) with Fréchet derivative/JVP/VJP at repeated eigenvalues; VRH, A_U, Zener | TS1–TS9, MO1–4, E5 (`T_spectral.md`) | — |
 | TK tensor | cofactor/det derivative without inverse; rotation log near π | TK1–TK5; **fixed an O(π − θ) axis error** of the existing near-π branch (`TK_cofactor_rotation.md`) | — |
 | TS cure | n-th order/Kamal–Sourour (bounded implicit), DiBenedetto, reaction heat, shrinkage, Avrami/Nakamura | TS1–TS6, TP3–TP4 (`TS_cure.md`) | — |
+| TS7 cure slab | transient heat + cure exotherm (monolithic Newton, backward Euler), residual stress through the history solver | TS7a–g (`TS7_cure_slab.md`): time order 1.00, space order 2.03 vs an independent method-of-lines BDF reference; energy balance 3.7e-12 per step | — |
 | MM micromechanics | Voigt/Reuss, HS, Eshelby sphere (from memory, cross-checked), Mori–Tanaka, SIMP/RAMP HS admissibility | MM1–MM4, E7, MMI1–2 (`MM_micromechanics.md`) | wording: MT with a stiff matrix is the HS **upper** bound |
 | D identification | Prony (NNLS, free times), Norton (log-linear, nonlinear), identifiability SVD, data records with units and validity box | D4–D7; D8 NOT VERIFIED (`D_identification.md`) | D5a covariance at κ = 8e8 |
 | H history FE | small-strain history solid on a general mesh, commit-after-convergence, rollback, reactions | H0, H1, H3–H5, H6a–e (`H_history.md`, `H6_physical_models_fe.md`) | H2 (1-D series reference wrong in 3-D) |
