@@ -3225,6 +3225,40 @@
   "volumetric_projector": "volumetric_projector(dim)",
   "von_mises_squared": "von_mises_squared(s)"
  },
+ "toporlogy.core.thermoplastic": {
+  "CrystallineMixture": {
+   "attrs": [
+    "moduli"
+   ],
+   "class": "CrystallineMixture"
+  },
+  "CrystallisingThermoElasticPoint": {
+   "attrs": [
+    "conservative",
+    "evaluate",
+    "initial_state",
+    "kinematics",
+    "name",
+    "physical",
+    "state_fields",
+    "update"
+   ],
+   "class": "CrystallisingThermoElasticPoint"
+  },
+  "LogisticTransition": {
+   "attrs": [
+    "derivative",
+    "integral",
+    "nonsmooth",
+    "smoothness",
+    "value"
+   ],
+   "class": "LogisticTransition"
+  },
+  "MIXING_RULES": "<tuple>",
+  "adiabatic_temperature_rise": "adiabatic_temperature_rise(latent_heat,dX,rho,cp)",
+  "mix_isotropic": "mix_isotropic(phi,amorphous,crystal,rule)"
+ },
  "toporlogy.core.verdict": {
   "BINARY_DESIGN": "<str>",
   "EVALUATED": "<tuple>",
