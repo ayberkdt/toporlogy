@@ -129,7 +129,7 @@ class _Step(torch.autograd.Function):
         with torch.enable_grad():
             wr = w.clone().requires_grad_(True)
             er = ecr_prev.clone().requires_grad_(True)
-            fint = own._internal(torch.as_tensor(ctx.u), wr, er, own.dts[ctx.k])
+            fint = own._internal(torch.as_tensor(ctx.u), wr, er, own.dteff[ctx.k])
             gw, ge = torch.autograd.grad(fint, (wr, er), grad_outputs=-torch.as_tensor(lam), allow_unused=True)
         return gw, ge, None, None, None
 
@@ -148,7 +148,8 @@ class CreepStructure:
 
     def __init__(self, mesh: Mesh, K0: float, G0: float, A: float, sigma_ref: float, n: float,
                  times: Sequence[float], loads: np.ndarray, fixed: np.ndarray, thickness: float = 1.0,
-                 tol: float = 1e-10, max_iter: int = 30) -> None:
+                 tol: float = 1e-10, max_iter: int = 30, arrhenius: Any = None,
+                 temperatures: Sequence[float] | None = None, temperature0: float | None = None) -> None:
         if mesh.dim != 2:
             raise ValueError("CreepStructure: 2-D plane strain meshes only")
         for nm, v in (("K0", K0), ("G0", G0), ("sigma_ref", sigma_ref), ("n", n)):
@@ -162,6 +163,20 @@ class CreepStructure:
         if not (self.times[0] >= 0 and np.all(np.diff(self.times) >= 0) and np.all(np.isfinite(self.times))):
             raise ValueError("times must be finite, >= 0 and non-decreasing")
         self.dts = np.diff(np.concatenate([[0.0], self.times]))
+        # effective creep step Δt F_n (F_n: Arrhenius factor averaged over step n; prereg CT_creep_temperature.md)
+        if arrhenius is None:
+            if temperatures is not None:
+                raise ValueError("temperatures given without an Arrhenius factor")
+            self.dteff = self.dts * 1.0
+        else:
+            if temperatures is None or temperature0 is None:
+                raise ValueError("an Arrhenius factor needs temperatures (one per step, kelvin) and temperature0")
+            Tn = np.asarray(temperatures, float).reshape(-1)
+            if Tn.shape != self.times.shape:
+                raise ValueError(f"temperatures must be {len(self.times)} values")
+            Tp = np.concatenate([[float(temperature0)], Tn[:-1]])
+            F = np.array([float(arrhenius.step_average(a, b)) for a, b in zip(Tp, Tn, strict=True)])
+            self.dteff = self.dts * F
         self.ndof = mesh.n_nodes * 2
         self.loads = np.asarray(loads, float).reshape(len(self.times), self.ndof)
         g = kn.geometry(mesh.ref, mesh.cell_points(), rule(mesh.ref.cell, kn.stiffness_degree(mesh.ref)))
@@ -194,7 +209,7 @@ class CreepStructure:
         return torch.zeros(self.ndof, dtype=u.dtype).index_add(0, self._cd.reshape(-1), fe.reshape(-1))
 
     def _newton(self, w: torch.Tensor, ecr_prev: torch.Tensor, u: np.ndarray, k: int) -> tuple[np.ndarray, Any]:
-        dt, f = float(self.dts[k]), self.loads[k]
+        dt, f = float(self.dteff[k]), self.loads[k]
         fr = self.free
         wn = w.numpy()
         Kp, Gp = self.K0 * np.repeat(wn, self.nq), self.G0 * np.repeat(wn, self.nq)
@@ -228,7 +243,7 @@ class CreepStructure:
             e_prev = ecr.detach() if detach_history else ecr
             u = _Step.apply(w, e_prev, u, self, k)
             K, G = self._moduli(w)
-            _s, ecr, _dp = norton_update_torch(self._eps(u), e_prev, K, G, float(self.dts[k]), self.A, self.sref,
+            _s, ecr, _dp = norton_update_torch(self._eps(u), e_prev, K, G, float(self.dteff[k]), self.A, self.sref,
                                                self.n)
             us.append(u)
             cs.append(torch.as_tensor(self.loads[k]) @ u)

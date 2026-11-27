@@ -14,3 +14,10 @@ elastic moduli do not depend on T here. Without Arrhenius, Δt_eff = Δt · 1.0 
 | CT4 | arrhenius without temperatures, temperatures without arrhenius, wrong length → ValueError | — | exact |
 
 Run: `python -m pytest tests/toporlogy/test_creep_temperature.py -q -p no:randomly`.
+
+## First result (recorded 2026-11-27 05:53 +0300)
+
+An earlier invocation that also selected the slow CO6 test was stopped before its output was read (the CT tests had
+probably run in it; nothing was seen). First observed run (with test_creep_topology, slow deselected): 12 passed,
+1 xfailed (CO4). CT1: 4.3e-16 (w = 1) and 4.7e-16 (w = 0.4) against `HistoryProblem` + `NortonCreep(arrhenius)`.
+CT2: best FD error 6.5e-10. CT3: bitwise. CT4: all refusals raise.
