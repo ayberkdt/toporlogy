@@ -34,3 +34,9 @@ Appended below after the first run.
 | MB3 | PASS | KUBC − SUBC: 5.1e-2 and 7.2e-2 (≥ 1e-6) |
 | MB4 | PASS | against the regular grid: KUBC 8.4e-15, SUBC 2.1e-14 (1e-10) |
 | MB5 | PASS | refusals raised |
+
+## Addition MB6 (preregistered 2026-11-27 12:50 +0300, base `4ba100b`, before the run)
+
+MB1–MB5 are 2-D only; the 3-D path (six rigid modes held by pivoted QR in SUBC) has not been run. Check MB6: the
+homogeneous 3-D skew cells of MH1 (H8, T4) give D under KUBC and SUBC (rel 1e-10), and a random 3-D H8 cell
+(E ∈ [0.2, 2], seed 4) satisfies C_SUBC ≤ C_PBC ≤ C_KUBC (min eigenvalues ≥ −1e-10 max abs C).
