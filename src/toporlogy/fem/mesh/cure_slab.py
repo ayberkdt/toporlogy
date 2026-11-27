@@ -40,13 +40,13 @@ from typing import Any
 
 import numpy as np
 import scipy.sparse as sp
-import scipy.sparse.linalg as spla
 
 from toporlogy.core.constitutive import ConstitutiveFailure, TimeStep
 from toporlogy.core.cure import ChemicalShrinkage, CuringThermoElasticPoint, CureKinetics, ReactionHeat
 from toporlogy.core.properties import IsotropicModuliOfT, ThermalExpansion
 from toporlogy.fem.mesh import kernels as kn
-from toporlogy.fem.mesh._validation import Scalar, positive, time_function
+from toporlogy.fem.mesh._newton import newton_free
+from toporlogy.fem.mesh._validation import Scalar, max_iterations, positive, time_function
 from toporlogy.fem.mesh.history import HistoryProblem, StepRejected
 from toporlogy.fem.mesh.mesh import Mesh
 from toporlogy.fem.mesh.problem import HeatProblem
@@ -264,8 +264,7 @@ class CureSlab:
         the contract of the kinetics; ``ValueError`` (nothing changed) for invalid arguments."""
         dt = positive(dt, "dt")
         rtol = positive(rtol, "rtol")
-        if isinstance(max_iter, bool) or not isinstance(max_iter, (int, np.integer)) or max_iter < 1:
-            raise ValueError(f"max_iter must be an integer >= 1, got {max_iter!r}")
+        max_iter = max_iterations(max_iter)
         t1 = self._t + dt
         load = self._load(t1)
         D, Dv = self._dirichlet_values(t1)
@@ -274,31 +273,27 @@ class CureSlab:
         T[D] = Dv
         Tn = self._T
         absA = abs(self.K) + abs(self._M) / dt
-        rhist: list[float] = []
+
+        def evaluate(T: np.ndarray) -> tuple[np.ndarray, float, float, tuple[dict[str, np.ndarray], np.ndarray]]:
+            R, parts, a1, _ = self._terms(T, dt, load, False)
+            scale = max((float(np.abs(v[free]).max()) if len(free) else 0.0) for v in parts.values())
+            noise = 8.0 * _EPS * float(np.max((absA @ (np.abs(T) + np.abs(Tn)) + np.abs(parts["S"]))[free])
+                                       ) if len(free) else 0.0
+            return R, scale, noise, (parts, a1)
+
+        def jacobian(T: np.ndarray) -> sp.csr_matrix:
+            J = self._terms(T, dt, load, True)[3]
+            assert J is not None
+            return J
+
         try:
-            for it in range(max_iter + 1):
-                R, parts, a1, _ = self._terms(T, dt, load, False)
-                Rf = R[free]
-                scale = max((float(np.abs(v[free]).max()) if len(free) else 0.0) for v in parts.values())
-                noise = 8.0 * _EPS * float(np.max((absA @ (np.abs(T) + np.abs(Tn)) + np.abs(parts["S"]))[free])
-                                           ) if len(free) else 0.0
-                rmax = float(np.abs(Rf).max()) if len(free) else 0.0
-                rhist.append(rmax)
-                if not math.isfinite(rmax):
-                    raise StepRejected("non-finite residual")
-                if rmax <= rtol * scale + noise:
-                    break
-                if it == max_iter:
-                    raise StepRejected(f"no convergence in {max_iter} Newton iterations (residual {rmax:.3e}, "
-                                       f"target {rtol * scale + noise:.3e})")
-                _, _, _, J = self._terms(T, dt, load, True)
-                assert J is not None
-                Jff = J[free][:, free].tocsc()
-                T[free] += spla.splu(Jff).solve(-Rf)
+            r = newton_free(T, free, evaluate, jacobian, rtol, max_iter)
         except (ConstitutiveFailure, ValueError, FloatingPointError, RuntimeError) as e:
             raise StepRejected(f"step to t = {t1}: {e}") from e
         except StepRejected as e:
             raise StepRejected(f"step to t = {t1}: {e}") from e
+        T, R, (parts, a1), it, rhist = r.x, r.R, r.payload, r.iterations, r.history
+        rmax = rhist[-1]
         # accepted: energies, then commit
         stored = float(np.sum(self._M @ (T - Tn)))
         reaction = float(self.rho * self.reaction.delta_h * np.sum(self._w * (a1 - self._alpha)))

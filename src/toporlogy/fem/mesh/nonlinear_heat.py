@@ -43,10 +43,10 @@ from typing import Any
 
 import numpy as np
 import scipy.sparse as sp
-import scipy.sparse.linalg as spla
 
 from toporlogy.core.properties import PropertyFunction
-from toporlogy.fem.mesh._validation import positive, time_function
+from toporlogy.fem.mesh._newton import newton_free
+from toporlogy.fem.mesh._validation import max_iterations, positive, time_function
 from toporlogy.fem.mesh.history import StepRejected
 from toporlogy.fem.mesh.mesh import Mesh
 from toporlogy.fem.mesh.problem import HeatProblem
@@ -338,35 +338,26 @@ class NonlinearHeat:
     def _newton(self, T: np.ndarray, Tn: np.ndarray | None, dt: float | None, loads: np.ndarray, free: np.ndarray,
                 rtol: float, max_iter: int) -> tuple[np.ndarray, np.ndarray, dict[str, np.ndarray], int, list[float]]:
         absK = abs(self.heat.K)
-        rhist: list[float] = []
-        for it in range(max_iter + 1):
+
+        def evaluate(T: np.ndarray) -> tuple[np.ndarray, float, float, dict[str, np.ndarray]]:
             R, parts, _ = self._terms(T, Tn, dt, loads, False)
-            Rf = R[free]
             scale = max((float(np.abs(v[free]).max()) if len(free) else 0.0)
                         for v in (parts["inertia"], parts["cond"] + parts["robin_out"], parts["loads"]))
             mag = parts["inertia_abs"] + parts["cond_abs"] + parts["mag"] + absK @ np.abs(T) + np.abs(loads)
             noise = 8.0 * _EPS * float(np.max(mag[free])) if len(free) else 0.0
-            rmax = float(np.abs(Rf).max()) if len(free) else 0.0
-            rhist.append(rmax)
-            if not math.isfinite(rmax):
-                raise StepRejected("non-finite residual")
-            if rmax <= rtol * scale + noise:
-                return T, R, parts, it, rhist
-            if it == max_iter:
-                raise StepRejected(f"no convergence in {max_iter} Newton iterations (residual {rmax:.3e}, "
-                                   f"target {rtol * scale + noise:.3e})")
-            _, _, J = self._terms(T, Tn, dt, loads, True)
+            return R, scale, noise, parts
+
+        def jacobian(T: np.ndarray) -> sp.csr_matrix:
+            J = self._terms(T, Tn, dt, loads, True)[2]
             assert J is not None
-            T = T.copy()
-            T[free] += spla.splu(J[free][:, free].tocsc()).solve(-Rf)
-        raise AssertionError("unreachable")  # pragma: no cover
+            return J
+
+        r = newton_free(T, free, evaluate, jacobian, rtol, max_iter)
+        return r.x, r.R, r.payload, r.iterations, r.history
 
     @staticmethod
     def _check_args(rtol: float, max_iter: Any) -> tuple[float, int]:
-        rtol = positive(rtol, "rtol")
-        if isinstance(max_iter, bool) or not isinstance(max_iter, (int, np.integer)) or max_iter < 1:
-            raise ValueError(f"max_iter must be an integer >= 1, got {max_iter!r}")
-        return rtol, int(max_iter)
+        return positive(rtol, "rtol"), max_iterations(max_iter)
 
     # ------------------------------------------------------------------ the step
     def step(self, dt: float, rtol: float = 1e-12, max_iter: int = 25) -> HeatStepResult:

@@ -33,3 +33,20 @@ The first draft of the refused heat step used dt = 1 s; the Dirichlet ramp 300 +
 of the synthetic k(T) (700 K > 450 K) and the step is refused by the property, not by Newton. Changed to dt = 0.02 s,
 which is refused by Newton ("no convergence in 1 Newton iterations"). The baseline was rewritten by the unchanged code
 at 1f898bf after that edit and written twice with identical digests (determinism). No threshold changed.
+
+## First result (run 09:43–09:46 +0300 by the clock; recorded 2026-11-27 09:49 +0300)
+
+Command: `python -m pytest tests/toporlogy/test_newton_shared.py tests/toporlogy/test_cure_slab.py tests/toporlogy/test_nonlinear_heat.py -q -p no:randomly`:
+45 passed, 5 xfailed (the pre-existing NH7 strict xfails and their siblings) on the first run.
+
+* **NS1 PASS**: all six fingerprints bitwise equal to the 1f898bf baseline.
+* **NS2 PASS**: test_cure_slab.py and test_nonlinear_heat.py unchanged (`git diff` empty) and passing.
+* **NS3 PASS**: sqrt(2) to 4 eps within 6 iterations, refusal messages as registered, input not modified.
+* **NS4 PASS**: ruff and mypy clean (187 source files); API surface snapshot unchanged (`_newton` and
+  `_validation` are private modules); test_architecture passes. test_catalog_ledger's risk matrix had to be
+  re-rendered because NS3 adds one test to the counts (`_vv_layers.py --write`), not a behaviour change.
+* **Negative control — deviation from the wording above**: the baseline stores sha256 digests, not raw values, so
+  "change one entry of the baseline in the last bit" is not possible as written. Done instead: the returned
+  residual history was moved by one ulp (`np.nextafter`) inside the solvers; the four cases that return a history
+  (cure Robin, cure Dirichlet, heat Q4, heat T6) changed their digests, the two refused cases (which raise before
+  returning) did not. So the comparison resolves one ulp.

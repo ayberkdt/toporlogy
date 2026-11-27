@@ -5,6 +5,8 @@ import math
 from collections.abc import Callable
 from typing import Any
 
+import numpy as np
+
 Scalar = float | Callable[[float], float]
 
 
@@ -24,3 +26,10 @@ def time_function(v: Scalar, what: str) -> Callable[[float], float]:
     if not math.isfinite(c):
         raise ValueError(f"{what} must be finite, got {v!r}")
     return lambda t: c
+
+
+def max_iterations(n: Any) -> int:
+    """``n`` as an int >= 1 (bool refused); ValueError otherwise."""
+    if isinstance(n, bool) or not isinstance(n, (int, np.integer)) or n < 1:
+        raise ValueError(f"max_iter must be an integer >= 1, got {n!r}")
+    return int(n)

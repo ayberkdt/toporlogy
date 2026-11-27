@@ -11,6 +11,8 @@ from pathlib import Path
 from typing import Any
 
 import numpy as np
+import pytest
+import scipy.sparse as sp
 
 from toporlogy.core import cure as C
 from toporlogy.core import properties as P
@@ -112,6 +114,28 @@ def test_ns1_shared_newton_is_bitwise_neutral() -> None:
     assert sorted(got) == sorted(want)
     diff = [k for k in want if got[k] != want[k]]
     assert not diff, f"fingerprints changed: {diff}"
+
+
+def _scalar_problem(nan: bool = False):
+    def evaluate(x: np.ndarray):
+        r = np.array([x[0] ** 2 - 2.0 if not nan else float("nan")])
+        return r, 2.0, 0.0, None
+    return evaluate, lambda x: sp.csr_matrix([[2.0 * x[0]]])
+
+
+def test_ns3_helper_on_a_scalar_root() -> None:
+    from toporlogy.fem.mesh._newton import newton_free
+    ev, jac = _scalar_problem()
+    x0 = np.array([1.0])
+    r = newton_free(x0, np.array([0]), ev, jac, 1e-14, 25)
+    assert abs(r.x[0] - np.sqrt(2.0)) <= 4 * np.finfo(float).eps and r.iterations <= 6
+    assert all(b < a for a, b in zip(r.history[1:], r.history[2:]))
+    assert x0[0] == 1.0
+    with pytest.raises(StepRejected, match="no convergence in 1 Newton iterations"):
+        newton_free(np.array([1.0]), np.array([0]), ev, jac, 1e-14, 1)
+    ev, jac = _scalar_problem(nan=True)
+    with pytest.raises(StepRejected, match="non-finite residual"):
+        newton_free(np.array([1.0]), np.array([0]), ev, jac, 1e-14, 25)
 
 
 if __name__ == "__main__":
