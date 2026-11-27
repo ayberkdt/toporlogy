@@ -936,6 +936,56 @@
    "resolution": "tolerance (4 u) too tight for eigenvalue rounding where the bound is attained, not the code or the bound; kappa = 1e2, 1e6, 1e10 pass at 4 u; post-hoc test_ac2_amended_slack_16u_at_kappa_1 passes (slack chosen after the failure)",
    "record": "docs/foundations/prereg/E3_conditioning.md",
    "slow": false
+  },
+  {
+   "nodeid": "tests/toporlogy/test_nonlinear_heat.py::test_nh2_spatial_order_time_consistent_source[T3-levels0-1.85-2.2]",
+   "kind": "pre-registered check failed",
+   "model_backend": "numpy",
+   "reason": "Preregistered window [1.85, 2.2] for the least-squares slope of log error against log h over n = 2, 4, 8, 16 (T3, time-consistent manufactured source). Measured slope 1.740 (relative L2 errors 2.548e-2, 9.162e-3, 2.662e-3, 6.909e-4). The coarsest level is pre-asymptotic: the order of the finest pair (n = 8 to 16) is 1.946.",
+   "risk": "low",
+   "resolution": "Hypothesis (a fit window that includes the pre-asymptotic n = 2) was wrong, not the code; threshold not loosened, kept as strict xfail. Post hoc test test_nh2_post_hoc_order_of_the_two_finest_levels applies the same window to the two finest levels and passes.",
+   "record": "docs/foundations/prereg/NH_nonlinear_heat.md",
+   "slow": false
+  },
+  {
+   "nodeid": "tests/toporlogy/test_nonlinear_heat.py::test_nh2_spatial_order_time_consistent_source[Q9-levels3-2.8-3.3]",
+   "kind": "pre-registered check failed",
+   "model_backend": "numpy",
+   "reason": "Preregistered window [2.8, 3.3] for the least-squares slope over n = 2, 4, 8 (Q9). Measured slope 1.995 (errors 1.125e-3, 5.526e-4, 7.082e-5): n = 2 to 4 is pre-asymptotic (order 1.03), n = 4 to 8 gives 2.964, n = 8 to 16 gives 2.989 (8.919e-6 at n = 16).",
+   "risk": "low",
+   "resolution": "Hypothesis (fit window including the pre-asymptotic coarsest level) was wrong, not the code; strict xfail. Post hoc finest-pair test passes.",
+   "record": "docs/foundations/prereg/NH_nonlinear_heat.md",
+   "slow": false
+  },
+  {
+   "nodeid": "tests/toporlogy/test_nonlinear_heat.py::test_nh7_steady_one_dimensional_kirchhoff[dirichlet]",
+   "kind": "pre-registered check failed",
+   "model_backend": "numpy",
+   "reason": "Preregistered O(h^2) nodal error (slope >= 1.7 over nx = 4..32) of the steady 1-D k(T) bar against the Kirchhoff closed form. Measured max nodal error 0.0, 5.7e-14, 1.1e-13, 1.7e-13 K at nx = 4, 8, 16, 32: rounding level, no slope. With exact quadrature the linear-element flux is Phi(T_{i+1}) - Phi(T_i), so the nodal values are exact.",
+   "risk": "low",
+   "resolution": "Hypothesis was wrong (the discretisation is better than assumed), not the code; strict xfail. Post hoc test test_nh7_post_hoc_nodal_values_are_exact (error <= 1e-10 K, Newton <= 10) passes.",
+   "record": "docs/foundations/prereg/NH_nonlinear_heat.md",
+   "slow": false
+  },
+  {
+   "nodeid": "tests/toporlogy/test_nonlinear_heat.py::test_nh7_steady_one_dimensional_kirchhoff[flux]",
+   "kind": "pre-registered check failed",
+   "model_backend": "numpy",
+   "reason": "Same as the Dirichlet variant: measured max nodal error 0.0, 5.7e-14, 1.1e-13, 5.7e-14 K at nx = 4, 8, 16, 32; no O(h^2) slope because the nodal values are exact to rounding.",
+   "risk": "low",
+   "resolution": "Hypothesis was wrong; strict xfail; post hoc exactness test passes.",
+   "record": "docs/foundations/prereg/NH_nonlinear_heat.md",
+   "slow": false
+  },
+  {
+   "nodeid": "tests/toporlogy/test_nonlinear_heat.py::test_nh7_steady_one_dimensional_kirchhoff[robin]",
+   "kind": "pre-registered check failed",
+   "model_backend": "numpy",
+   "reason": "Same as the Dirichlet variant: measured max nodal error 6.3e-13, 5.7e-13, 5.7e-13, 6.3e-13 K at nx = 4, 8, 16, 32 (rounding level of the brentq closed form); slope -0.0.",
+   "risk": "low",
+   "resolution": "Hypothesis was wrong; strict xfail; post hoc exactness test passes.",
+   "record": "docs/foundations/prereg/NH_nonlinear_heat.md",
+   "slow": false
   }
  ],
  "skips": [
@@ -1105,6 +1155,13 @@
    "site": "sp = pytest.importorskip(\"sympy\")",
    "backend": "sympy (exact polynomial integrals)",
    "covers": "F2-1 exact curved T10 patch integrand degree",
+   "status_when_skipped": "NOT VERIFIED"
+  },
+  {
+   "file": "tests/toporlogy/test_nonlinear_heat.py",
+   "site": "sy = pytest.importorskip(\"sympy\")",
+   "backend": "sympy (manufactured source)",
+   "covers": "NH2/NH3 manufactured-solution convergence",
    "status_when_skipped": "NOT VERIFIED"
   }
  ]

@@ -1,5 +1,6 @@
 """Nonlinear transient and steady heat conduction with temperature-dependent conductivity and heat capacity on a
-general :class:`~toporlogy.fem.mesh.mesh.Mesh` (WP17 H04; pre-registration ``docs/foundations/prereg/NH_nonlinear_heat.md``,
+general :class:`~toporlogy.fem.mesh.mesh.Mesh` (WP17 H04;
+pre-registration ``docs/foundations/prereg/NH_nonlinear_heat.md``,
 notes ``docs/foundations/NONLINEAR_HEAT.md``)::
 
     dh(T)/dt = div(k(T) grad T) + Q,      h(T) = ∫_{T_ref}^{T} C(T') dT',      C = ρ c_p  [J/(m^3 K)].
@@ -22,7 +23,8 @@ error, never a clamp). They are evaluated, with their derivatives, at the quadra
   :class:`~toporlogy.fem.mesh.history.StepRejected`; (T, t) are committed only after convergence, so a rejected step
   changes nothing.
 * Energy (J per unit out-of-plane thickness in 2-D, per step): ``stored`` (exact enthalpy difference), ``robin_heat`` =
-  Δt(Σ f_robin − Σ K_R T), ``flux_heat``, ``source_heat``, ``dirichlet_heat`` (heat supplied by the Dirichlet reservoirs,
+  Δt(Σ f_robin − Σ K_R T), ``flux_heat``, ``source_heat``, ``dirichlet_heat`` (heat supplied by the Dirichlet
+  reservoirs,
   Δt Σ R at those nodes); ``energy_residual = stored − robin − flux − source − dirichlet = Δt Σ_free R``.
 * Boundaries: Dirichlet nodes (value or ``value(t)`` per node set), inward flux on facets (``q`` or ``q(t)``, spatially
   uniform), Robin facets (``h``, ``T_inf`` or ``T_inf(t)``) through the facet kernels of
@@ -241,14 +243,15 @@ class NonlinearHeat:
             if not math.isfinite(q):
                 raise ValueError(f"flux must be finite, got {q!r} at t = {t}")
             flux += q * unit
-        source = np.zeros(self.n_nodes)
+        source: np.ndarray = np.zeros(self.n_nodes)
         if self._source is not None:
             ne, nq, dim = self._x.shape
             Q = np.asarray(self._source(self._x.reshape(-1, dim), t), dtype=float).reshape(ne, nq)
             if not np.all(np.isfinite(Q)):
                 raise ValueError(f"source is not finite at t = {t}")
-            source = np.bincount(self.cells.ravel(), weights=np.einsum("qa,eq->ea", self._N, Q * self._w).ravel(),
-                                 minlength=self.n_nodes)
+            source = np.asarray(np.bincount(self.cells.ravel(),
+                                            weights=np.einsum("qa,eq->ea", self._N, Q * self._w).ravel(),
+                                            minlength=self.n_nodes), dtype=float)
         return {"robin": robin, "flux": flux, "source": source}
 
     # ------------------------------------------------------------------ residual and Jacobian
@@ -289,8 +292,8 @@ class NonlinearHeat:
         mag_e = np.einsum("eab,eb->ea", np.einsum("eqai,eqbi,eq->eab", absd, absd, wk), Tabs)    # |K(T)| |T|
         KR = self.heat.K
         robin_out = KR @ T
-        inertia = np.zeros(self.n_nodes)
-        inertia_abs = np.zeros(self.n_nodes)
+        inertia: np.ndarray = np.zeros(self.n_nodes)
+        inertia_abs: np.ndarray = np.zeros(self.n_nodes)
         Ceff = None
         if dt is not None:
             assert Tn is not None
@@ -305,15 +308,17 @@ class NonlinearHeat:
             mag_e = mag_e + np.einsum("eab,eb->ea", np.einsum("qa,qb,eq->eab", self._N, self._N, self._w * C / dt),
                                       Tabs + Tn_abs)                                           # |M(T)/dt| (|T| + |T_n|)
             ine = np.einsum("qa,eq->ea", self._N, self._w * dH / dt)
-            inertia = np.bincount(self.cells.ravel(), weights=ine.ravel(), minlength=self.n_nodes)
-            inertia_abs = np.bincount(self.cells.ravel(), weights=np.abs(ine).ravel(), minlength=self.n_nodes)
+            inertia = np.asarray(np.bincount(self.cells.ravel(), weights=ine.ravel(), minlength=self.n_nodes),
+                                 dtype=float)
+            inertia_abs = np.asarray(np.bincount(self.cells.ravel(), weights=np.abs(ine).ravel(),
+                                                 minlength=self.n_nodes), dtype=float)
         R = inertia + cond + robin_out - loads
         J = None
         if jac:
             Ke = np.einsum("eqai,eqbi,eq->eab", self._dNdx, self._dNdx, wk)
             Ke = Ke + np.einsum("eqaj,eqj,qb,eq->eab", self._dNdx, gradT, self._N, self._w * dk)
             if Ceff is not None:
-                Ke = Ke + np.einsum("qa,qb,eq->eab", self._N, self._N, self._w * Ceff / dt)  # type: ignore[operator]
+                Ke = Ke + np.einsum("qa,qb,eq->eab", self._N, self._N, self._w * Ceff / dt)
             J = sp.csr_matrix(self.heat.pattern.assemble(Ke) + KR)
         return R, {"inertia": inertia, "cond": cond, "robin_out": robin_out, "loads": loads, "inertia_abs": inertia_abs,
                    "cond_abs": cond_abs,

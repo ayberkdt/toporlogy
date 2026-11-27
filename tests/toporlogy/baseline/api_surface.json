@@ -5464,6 +5464,36 @@
   },
   "deviatoric_D": "deviatoric_D(dim,mu)"
  },
+ "toporlogy.fem.mesh.nonlinear_heat": {
+  "HeatStepResult": {
+   "attrs": [],
+   "class": "HeatStepResult"
+  },
+  "NonlinearHeat": {
+   "attrs": [
+    "K_robin",
+    "T",
+    "add_dirichlet",
+    "add_flux",
+    "add_robin",
+    "advance_to",
+    "enthalpy_change",
+    "points",
+    "quadrature_temperature",
+    "residual_jacobian",
+    "set_source",
+    "steady",
+    "step",
+    "t",
+    "weights"
+   ],
+   "class": "NonlinearHeat"
+  },
+  "SteadyResult": {
+   "attrs": [],
+   "class": "SteadyResult"
+  }
+ },
  "toporlogy.fem.mesh.problem": {
   "Dirichlet": {
    "attrs": [
