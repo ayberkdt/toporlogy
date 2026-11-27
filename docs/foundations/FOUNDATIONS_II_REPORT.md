@@ -85,6 +85,10 @@ the 0/1 design keeps it).
 
 Figures of the cells: `fig_ih_cells.png` (post hoc, grey edges), `fig_ip_cells.png` (projected), `fig_iac_cell.png` (auxetic).
 
+Two silent-failure paths found by review and closed with refusals (preregistered, pass on the first run): a periodic
+filter radius above the smallest cell width (IH6; the ±1 lattice images would miss neighbours) and a lattice that is
+a sub-period of the mesh (MH9; it still matches node pairs and gave a wrong |Y|).
+
 Figure of the designs: `FIG_DESIGNS.md` (datawiz audit 0 errors).
 
 ## Regression evidence
