@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import numpy as np
-import pytest
 
 from toporlogy.core.constitutive import TimeStep, drive_material_point
 from toporlogy.core.creep_plasticity import CreepPlasticJ2

@@ -149,6 +149,7 @@ class BlockPreconditioner(spla.LinearOperator):
         if self.kind == "diagonal":
             return np.concatenate([self._a(r1), self._s(r2)])
         x2 = -np.asarray(self._s(r2))                       # −Ŝ x₂ = r₂
+        assert self._B is not None                          # the triangular variant is built with B
         x1 = np.asarray(self._a(r1 - self._B.T @ x2))       # Â x₁ = r₁ − Bᵀ x₂
         return np.concatenate([x1, x2])
 

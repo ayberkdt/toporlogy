@@ -8494,6 +8494,45 @@
   "load": "load()",
   "state": "state()"
  },
+ "toporlogy.solvers.saddle": {
+  "BlockPreconditioner": {
+   "attrs": [
+    "H",
+    "T",
+    "adjoint",
+    "dot",
+    "matmat",
+    "matvec",
+    "ndim",
+    "rmatmat",
+    "rmatvec",
+    "transpose"
+   ],
+   "class": "BlockPreconditioner"
+  },
+  "SaddleOperator": {
+   "attrs": [
+    "matrix",
+    "matvec",
+    "recover_u",
+    "reduced_rhs",
+    "schur_apply",
+    "schur_operator",
+    "shape"
+   ],
+   "class": "SaddleOperator"
+  },
+  "SaddleResult": {
+   "attrs": [
+    "converged"
+   ],
+   "class": "SaddleResult"
+  },
+  "block_diagonal_preconditioner": "block_diagonal_preconditioner(A_hat,S_hat,n,m)",
+  "block_triangular_preconditioner": "block_triangular_preconditioner(A_hat,S_hat,B)",
+  "factorised_solver": "factorised_solver(M,kind,drop_tol,fill_factor)",
+  "saddle_solve": "saddle_solve(op,f,g,preconditioner,S_hat,A_hat,rtol,maxiter,max_restarts,null_vector,gauge_weights)"
+ },
  "toporlogy.solvers.supernodal": {
   "AMALGAMATE": "<int>",
   "CholeskyPivotError": {
