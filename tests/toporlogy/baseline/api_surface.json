@@ -2182,6 +2182,21 @@
   "join": "join(path,key)",
   "material_model": "material_model(ctx)"
  },
+ "toporlogy.configuration.history_build": {
+  "HISTORY_KEYS": "<tuple>",
+  "HistorySetup": {
+   "attrs": [
+    "objective_name",
+    "optimize",
+    "weights"
+   ],
+   "class": "HistorySetup"
+  },
+  "anchor_paths": "anchor_paths(raw,base)",
+  "build_history": "build_history(r)",
+  "is_history_config": "is_history_config(raw)",
+  "resolve_history": "resolve_history(raw)"
+ },
  "toporlogy.configuration.mesh_build": {
   "MESH_KEYS": "<tuple>",
   "build_mesh": "build_mesh(r)",
@@ -4660,6 +4675,14 @@
   "git_revision": "git_revision(path)"
  },
  "toporlogy.execution.runner": {
+  "HistorySetup": {
+   "attrs": [
+    "objective_name",
+    "optimize",
+    "weights"
+   ],
+   "class": "HistorySetup"
+  },
   "RETURNED_DESIGN": "<str>",
   "Setup": {
    "attrs": [
@@ -4673,6 +4696,7 @@
   "annotations": "<_Feature>",
   "constraint_entry": "constraint_entry(name,value,upper,tol,source)",
   "flags_of": "flags_of(summary)",
+  "run_history_setup": "run_history_setup(setup,folder,progress,source,overrides,post_progress)",
   "run_setup": "run_setup(setup,folder,progress,source,overrides,post_progress,resume)",
   "status_of": "status_of(summary)",
   "verdict_of": "verdict_of(summary)",

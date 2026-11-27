@@ -63,14 +63,16 @@ def test_MC1_round_trip(path: Path) -> None:
 
 
 def test_MC7_examples_cover_every_family_and_are_synthetic() -> None:
-    assert len(FILES) == len(MATERIAL_MODELS) == 8
+    # MC7 as preregistered: the example set covers exactly the 8 families (integration note: the HY slice added
+    # two isothermal variants, so files are no longer one per family; a variant's file name starts with its family)
+    assert len(MATERIAL_MODELS) == 8
     models = set()
     for p in FILES:
         card = load_material_card(yaml.safe_load(p.read_text(encoding="utf-8")))
         assert isinstance(card, MaterialCard)
         assert card.synthetic is True and card.provenance["synthetic"] is True
         assert "synthetic" in card.provenance["source"].lower()
-        assert card.kind == p.stem
+        assert p.stem == card.kind or p.stem.startswith(card.kind + "_")
         models.add(card.kind)
     assert models == set(MATERIAL_MODELS)
 

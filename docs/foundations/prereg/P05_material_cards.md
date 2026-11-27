@@ -93,3 +93,9 @@ Test set-up fix before this passing run (an earlier attempt with `-x` stopped at
 Measured in MC6: (a) U1 refused, (b) U2 refused, (c) accepted with stress ratio within 1e-12 of 1e-6, (d) accepted: as predicted.
 Related existing tests run: `test_architecture.py`, `test_api_surface.py` (11 passed; the module adds no name to the package namespace).
 Limitations: the box is checked on request, not by the models; real material data is not covered (all synthetic); the grade/test-method/uncertainty fields of the plan are not implemented.
+
+## Integration note (2026-11-27 04:35 +0300)
+
+After the HY merge the example folder holds 10 cards (two isothermal variants used by the history YAML examples).
+The MC7 test had implemented "covers exactly the 8 families" as a file count; it now checks the set of families
+(the preregistered wording) and that a variant's file name starts with its family. No threshold involved.
