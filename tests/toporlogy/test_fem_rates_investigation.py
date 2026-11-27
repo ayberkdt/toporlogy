@@ -129,7 +129,7 @@ def test_f2_1_curved_t10_cell_integrand_degree_and_quadrature_error():
 
 def test_f2_2_historical_patch_numbers_are_reproduced():
     m = _mesh("T10", curved=0.1)
-    eu2, es2 = _patch(m, _D3())
+    eu2, es2 = _patch(m, _D3(), degree=2)          # explicit since the default became 3 for curved T10 (F2fix)
     eu3, es3 = _patch(m, _D3(), degree=3)
     print(f"\n  F2-2 T10 curved 0.1 seed 3: degree 2 u {eu2:.3e} stress {es2:.3e}; degree 3 u {eu3:.2e} stress {es3:.2e}")
     assert 1.65e-4 <= eu2 < 1.75e-4
@@ -164,7 +164,7 @@ def test_f2_3_patch_error_against_quadrature_degree():
 
 
 def test_f2_4_degree_two_patch_error_scales_as_curvature_squared():
-    e = {c: _patch(_mesh("T10", seed=3, curved=c), _D3())[0] for c in (0.0, 0.025, 0.05, 0.1)}
+    e = {c: _patch(_mesh("T10", seed=3, curved=c), _D3(), degree=2)[0] for c in (0.0, 0.025, 0.05, 0.1)}
     r1, r2 = e[0.05] / e[0.025], e[0.1] / e[0.05]
     print(f"\n  F2-4 u error at degree 2: {[f'{v:.2e}' for v in e.values()]}; ratios {r1:.3f}, {r2:.3f}")
     assert e[0.0] <= 1e-10

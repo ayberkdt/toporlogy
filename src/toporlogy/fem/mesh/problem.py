@@ -127,7 +127,7 @@ class _Linear:
         self.thickness = float(thickness)
         if mesh.dim == 3 and thickness != 1.0:
             raise ValueError("thickness applies to 2-D meshes only")
-        self.degree = kn.stiffness_degree(self.ref) if degree is None else int(degree)
+        self.degree = kn.default_degree(self.ref, mesh.cell_points()) if degree is None else int(degree)
         self.geom = kn.geometry(self.ref, mesh.cell_points(), rule(self.ref.cell, self.degree))
         self.cell_dofs = mesh.cell_dofs(self.ncomp)
         self.ndof = mesh.n_nodes * self.ncomp

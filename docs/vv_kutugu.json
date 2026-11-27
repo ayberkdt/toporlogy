@@ -826,6 +826,26 @@
    "resolution": "the post hoc CO4b at 5x the load gives 1.3e-2 and an FD error of 5.8e-10; the full gradient passed the FD check (CO3) in the original set-up",
    "record": "docs/foundations/prereg/CO_creep_topology.md",
    "slow": false
+  },
+  {
+   "nodeid": "tests/toporlogy/test_fem_rates_investigation.py::test_f4_1_i_interpolation_rate_matches_galerkin_rate_at_the_historical_pair[T4]",
+   "kind": "pre-registered check failed",
+   "model_backend": "general mesh T4 3-D (CPU), interpolation error without a solve",
+   "reason": "F4-1 (i): T4 interpolation L2 pair rate p(8, 16) = 1.918 differs from the Galerkin 1.796 by 0.122 > 0.10; the solved L2 error is more pre-asymptotic than the interpolation error (T10 energy 1.814 vs 1.788 passes)",
+   "risk": "low",
+   "resolution": "none needed: the solved rate rises 1.796 -> 1.923 (16, 24); recorded in docs/foundations/F4_RATES.md",
+   "record": "docs/foundations/prereg/F4_rates.md",
+   "slow": true
+  },
+  {
+   "nodeid": "tests/toporlogy/test_fem_rates_investigation.py::test_f4_3_rate_scatter_over_mesh_draws_and_undistorted_mesh[T10-ns1]",
+   "kind": "pre-registered check failed",
+   "model_backend": "general mesh T10 3-D, SuperLU (CPU)",
+   "reason": "F4-3: only 1 of 4 other mesh draws give the T10 energy pair rate p(4, 8) >= 1.8 (1.7997, 1.7855, 1.8140, 1.7818; historical draw 1.7877; undistorted 1.825): the T10 miss is not a mesh-draw accident",
+   "risk": "low",
+   "resolution": "T10 energy rate is pre-asymptotic: interpolation energy rate 1.814, 1.899, 1.949, 1.961 for n = 4-8, 8-12, 12-16, 16-24; solved p(8, 12) = 1.889",
+   "record": "docs/foundations/prereg/F4_rates.md",
+   "slow": true
   }
  ],
  "skips": [
@@ -967,6 +987,34 @@
    "site": "@pytest.mark.skip(reason=\"D8 NOT VERIFIED: no licensed measured data is available; nothing here is real material data\")",
    "backend": "licensed measured material data (none available)",
    "covers": "WP20 D8: fitted model against a held-out real experiment",
+   "status_when_skipped": "NOT VERIFIED"
+  },
+  {
+   "file": "tests/toporlogy/test_fem_rates_investigation.py",
+   "site": "psutil = pytest.importorskip(\"psutil\")",
+   "backend": "psutil (memory rule of the slow refinement runs)",
+   "covers": "F4 memory guard of the extra refinement levels",
+   "status_when_skipped": "NOT VERIFIED"
+  },
+  {
+   "file": "tests/toporlogy/test_fem_rates_investigation.py",
+   "site": "pytest.skip(f\"{name} n={ns[2]} not run: {why}\")",
+   "backend": "memory (peak working set above the free RAM)",
+   "covers": "F4-1/F4-4 solved refinement levels beyond the memory rule",
+   "status_when_skipped": "NOT VERIFIED"
+  },
+  {
+   "file": "tests/toporlogy/test_fem_rates_investigation.py",
+   "site": "pytest.skip(f\"{name}: pair {want} not reached under the memory rule (last {last_pair})\")",
+   "backend": "memory (peak working set above the free RAM)",
+   "covers": "F4-4 rate of the finest solvable pair",
+   "status_when_skipped": "NOT VERIFIED"
+  },
+  {
+   "file": "tests/toporlogy/test_fem_rates_investigation.py",
+   "site": "sp = pytest.importorskip(\"sympy\")",
+   "backend": "sympy (exact polynomial integrals)",
+   "covers": "F2-1 exact curved T10 patch integrand degree",
    "status_when_skipped": "NOT VERIFIED"
   }
  ]

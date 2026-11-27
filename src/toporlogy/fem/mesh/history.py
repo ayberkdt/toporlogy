@@ -66,7 +66,7 @@ class HistoryProblem:
         self.k = 3 if self.dim == 2 else 6
         self.plane = "3d" if self.dim == 3 else "strain"
         self.thickness = float(thickness)
-        deg = kn.stiffness_degree(mesh.ref) if degree is None else int(degree)
+        deg = kn.default_degree(mesh.ref, mesh.cell_points()) if degree is None else int(degree)
         self.geom = kn.geometry(mesh.ref, mesh.cell_points(), rule(mesh.ref.cell, deg))
         self.B = kn.strain_matrix(self.geom.dNdx)                          # (ne, nq, k, nloc)
         self.dV = self.geom.dV * (self.thickness if self.dim == 2 else 1.0)
