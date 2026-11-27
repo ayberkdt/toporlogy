@@ -16,7 +16,7 @@ else changes; compatible data give bitwise the same results as before.
 
 Run: `python -m pytest tests/toporlogy/test_mixed_kg.py tests/toporlogy/test_mesh_locking.py tests/toporlogy/test_mesh_assembly.py -q -p no:randomly`.
 
-## First result (run 2026-11-27 03:09 +0300 by the clock)
+## First result (run 2026-11-27 between 03:07 and 03:10 +0300; the "03:09" first written here was typed, not read from the clock — corrected)
 
 XF1 PASS: `MixedElasticity(m, G, inf).solve` on the X2d net-inflow data raises "net volume change". XF2 PASS:
 test_mixed_kg (incl. the λ-fingerprint X1d), test_mesh_locking, test_mesh_assembly: 129 passed, 6 xfailed
