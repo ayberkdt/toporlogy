@@ -5409,12 +5409,13 @@
   }
  },
  "toporlogy.fem.mesh.homogenization": {
+  "MESH_BCS": "<tuple>",
   "MeshHomogenized": {
    "attrs": [],
    "class": "MeshHomogenized"
   },
   "homogenize_mesh_conduction": "homogenize_mesh_conduction(mesh,kappa,lattice,k,thickness,sensitivities,degree)",
-  "homogenize_mesh_elasticity": "homogenize_mesh_elasticity(mesh,D,lattice,E,thickness,sensitivities,degree)"
+  "homogenize_mesh_elasticity": "homogenize_mesh_elasticity(mesh,D,lattice,E,thickness,sensitivities,degree,bc)"
  },
  "toporlogy.fem.mesh.kernels": {
   "DETJ_TOL": "<float>",
@@ -6126,6 +6127,21 @@
   "first_failure_load_factor": "first_failure_load_factor(ctx,field,case,preload_case,threshold)",
   "inverse_load_factors": "inverse_load_factors(ctx,n_modes,case,penal_g,E0,preload_case,cluster_tol,density_threshold,exclude)",
   "reliability": "reliability(mu,diag,spurious_share,localized_share)"
+ },
+ "toporlogy.optimization.cell_topology": {
+  "CELL_OBJECTIVES": "<tuple>",
+  "CellOptimizeResult": {
+   "attrs": [],
+   "class": "CellOptimizeResult"
+  },
+  "PeriodicDensityFilter": {
+   "attrs": [
+    "backward"
+   ],
+   "class": "PeriodicDensityFilter"
+  },
+  "cell_objective": "cell_objective(mesh,lattice,D,x_phys,penal,emin,objective)",
+  "optimize_cell": "optimize_cell(mesh,lattice,D,volume,rmin,objective,penal,emin,max_iter,move,x0,kkt_tol)"
  },
  "toporlogy.optimization.checkpoint": {
   "CHECKPOINT_VERSION": "<int>",
