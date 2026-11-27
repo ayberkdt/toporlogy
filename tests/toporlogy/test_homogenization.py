@@ -270,7 +270,7 @@ def _cell_study(objective, constraints):
 
 def test_h15_h16_study_responses_value_and_gradient() -> None:
     from toporlogy.optimization.homogenization_responses import EffectiveStiffness
-    st = _cell_study({"type": "effective_poisson"}, [{"response": "volume", "upper": 0.6},
+    st = _cell_study({"type": "effective_poisson", "convention": "stiffness_ratio"}, [{"response": "volume", "upper": 0.6},
                      {"response": {"type": "effective_stiffness", "i": 0, "j": 0, "negate": True}, "upper": -0.02}])
     rng = np.random.default_rng(5)
     x = 0.2 + 0.6 * rng.random(st.n_var)
@@ -293,7 +293,7 @@ def test_h15_h16_study_responses_value_and_gradient() -> None:
 
 
 def test_h17_yaml_inverse_homogenisation_runs() -> None:
-    st = _cell_study({"type": "effective_poisson"}, [{"response": "volume", "upper": 0.6},
+    st = _cell_study({"type": "effective_poisson", "convention": "stiffness_ratio"}, [{"response": "volume", "upper": 0.6},
                      {"response": {"type": "effective_stiffness", "negate": True}, "upper": -0.02}])
     res = st.run(max_iter=5)
     assert np.isfinite(res.objective) and np.isfinite(res.constraint_values["effective_stiffness"])

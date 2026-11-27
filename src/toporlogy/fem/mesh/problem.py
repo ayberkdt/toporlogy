@@ -8,9 +8,10 @@ motions (2-D: 3, 3-D: 6; heat: the constant) restricted to the constrained DOFs 
 :class:`~toporlogy.fem.mechanisms.MechanismError` names the piece and the number of free rigid motions. Internal
 mechanisms that are not rigid motions of a piece are caught by the residual check of every solve.
 
-Not supported, refused with an error: multi-point constraints, periodicity and oblique (rotated) supports
-(:meth:`ElasticProblem.constrain` raises :class:`UnsupportedBoundaryCondition`; the grid physics has
-``ConstrainedElasticity`` for those), loads on interior facets, D that is not symmetric positive definite (ν = 0.5
+Not supported here, refused with an error: multi-point constraints, periodicity and oblique (rotated) supports
+(:meth:`ElasticProblem.constrain` raises :class:`UnsupportedBoundaryCondition`; the general linear constraint
+transform ``u = T z + u0`` lives in :mod:`toporlogy.fem.mesh.constraints`, the grid physics has
+``ConstrainedElasticity``), loads on interior facets, D that is not symmetric positive definite (ν = 0.5
 with a displacement-only element: use :mod:`toporlogy.fem.mesh.mixed`).
 """
 from __future__ import annotations
@@ -127,7 +128,7 @@ class _Linear:
         self.thickness = float(thickness)
         if mesh.dim == 3 and thickness != 1.0:
             raise ValueError("thickness applies to 2-D meshes only")
-        self.degree = kn.stiffness_degree(self.ref) if degree is None else int(degree)
+        self.degree = kn.default_degree(self.ref, mesh.cell_points()) if degree is None else int(degree)
         self.geom = kn.geometry(self.ref, mesh.cell_points(), rule(self.ref.cell, self.degree))
         self.cell_dofs = mesh.cell_dofs(self.ncomp)
         self.ndof = mesh.n_nodes * self.ncomp
@@ -302,8 +303,9 @@ class ElasticProblem(_Linear):
     def constrain(self, kind: str, *args: Any, **kwargs: Any) -> None:
         """Placeholder of the constraint kinds the general mesh does not implement; always raises."""
         raise UnsupportedBoundaryCondition(f"{kind!r} constraints are not implemented on the general mesh (only "
-                                           "Dirichlet DOF values); multi-point, periodic and oblique supports exist "
-                                           "on the regular grid (toporlogy.boundary ConstrainedElasticity)")
+                                           "Dirichlet DOF values); multi-point and periodic constraints: "
+                                           "toporlogy.fem.mesh.constraints; oblique supports exist on the regular "
+                                           "grid (toporlogy.boundary ConstrainedElasticity)")
 
     def mass(self, rho: float | np.ndarray = 1.0, lumped: bool = False) -> sp.csr_matrix:
         """Global consistent (or HRZ-lumped, diagonal) mass matrix."""
@@ -387,6 +389,15 @@ class HeatProblem(_Linear):
                 K = K + Pattern(dofs, (self.ndof, self.ndof)).assemble(Kf)
             self._K = sp.csr_matrix(K)
         return self._K
+
+    def capacity(self, rho_cp: float | np.ndarray = 1.0, lumped: bool = False) -> sp.csr_matrix:
+        """Global consistent (or HRZ-lumped, diagonal) heat-capacity matrix ``∫ ρ c_p N Nᵀ dV`` (ρ c_p scalar or one
+        per cell, J / (m³ K); thickness included in 2-D). ``Σ_ij C_ij = ∫ ρ c_p dV``."""
+        g = kn.geometry(self.ref, self.mesh.cell_points(), rule(self.ref.cell, 2 * self.ref.degree))
+        C = kn.mass(g, rho_cp, 1, self.thickness)
+        if lumped:
+            return sp.diags(assemble_vector(self.ndof, self.cell_dofs, kn.lumped_mass_hrz(C))).tocsr()
+        return self.pattern.assemble(C)
 
     def robin(self, facets: np.ndarray, h: float, T_inf: float) -> np.ndarray:
         """Add the convection term h ∫ T v dS on ``facets`` to K (h > 0); returns its load h T∞ ∫ v dS."""

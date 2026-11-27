@@ -181,7 +181,9 @@ is entered without a read source and licence.
 **Outputs.** `post: [{type: vtu}]` writes the fields of the design (density, modulus, displacements, solid von
 Mises stress) as `result.vtu`, an exact ASCII roundtrip that vtk reads; `post: [{type: homogenize}]` writes the
 effective stiffness of the design as a periodic cell. The responses `effective_stiffness` (C_ij, `negate: true` for a
-lower bound) and `effective_poisson` (ν12 = C12/C11, 2-D) make the cell's properties an objective or a constraint
+lower bound) and `effective_poisson` (`convention` required: `uniaxial` = ν_ij = −ε_j/ε_i under uniaxial stress,
+2-D and 3-D; `stiffness_ratio` = the legacy C12/C11, which is ν21 of an uncoupled cell) make the cell's properties an
+objective or a constraint
 (inverse homogenisation, no state solve); `density_filter: {periodic: true}` wraps the filter across the cell faces.
 
 ## Python API
@@ -300,6 +302,43 @@ thermal resultants, ply stresses, angle and thickness derivatives; first-ply fai
 Records: [`tensor_elastisite.md`](docs/olcumler/tensor_elastisite.md),
 [`malzeme_modelleri.md`](docs/olcumler/malzeme_modelleri.md), [`malzeme_tasarimi.md`](docs/olcumler/malzeme_tasarimi.md),
 [`nonlineer_cozucu.md`](docs/olcumler/nonlineer_cozucu.md), [`laminat_uq.md`](docs/olcumler/laminat_uq.md).
+
+### Physical material models (Foundations II)
+
+Material-point laws with physical parameters (Pa, s, K, J/mol) and physical time, separate from the unit-modulus laws
+above (`docs/foundations/MATERIAL_CONTRACT.md`): `MaterialRequest.step = TimeStep(t, dt, T, T_prev)` carries time and
+temperature; `drive_material_point(..., times=, temperatures=)` integrates mixed strain/stress histories; these
+models set `physical = True` and the element-modulus FE physics refuse them.
+
+| Module | Content | Evidence |
+|---|---|---|
+| `core.properties` | E(T), ν(T) / K(T), G(T) from two independent functions, piecewise-linear / PCHIP / polynomial properties with validity box (no extrapolation), ε_th = ∫α dT, enthalpy, thermoelastic point | `docs/foundations/prereg/P_properties.md` |
+| `core.viscoelastic` | Maxwell, Kelvin–Voigt, SLS, Burgers closed forms; 3-D generalized Maxwell with independent shear and bulk Prony series (exact piecewise-linear update, algorithmic tangent, energy, dissipation); WLF / Arrhenius shift; DMA complex moduli | `prereg/V_viscoelastic.md` |
+| `core.creep` | Norton and Norton–Bailey (time / strain hardening) J2 creep, Arrhenius factor, adaptive long-hold integration with rollback | `prereg/C_creep.md` |
+| `core.viscoplastic` | physical J2, Perzyna overstress, Eyring rate law, Drucker–Prager (associated and non-associated) | `prereg/R_rate.md` |
+| `core.cure` | n-th order and Kamal–Sourour cure kinetics (bounded implicit step), DiBenedetto Tg, reaction heat, chemical shrinkage, Avrami / Nakamura crystallisation | `prereg/TS_cure.md` |
+| `core.spectral` | functions of symmetric tensors (exp, log, sqrt, power) with Fréchet derivative, JVP, VJP at repeated eigenvalues | `prereg/T_spectral.md` |
+| `core.viscoelastic_aniso`, `core.fractional` | anisotropic generalized Maxwell (PSD branch tensors); fractional Maxwell/KV/Zener with Mittag-Leffler and a Prony bridge | `prereg/VA_anisotropic_ve.md`, `prereg/VF_fractional.md` |
+| `core.creep_plasticity`, `core.thermomechanics` | coupled J2 creep + plasticity (one local residual); adiabatic Perzyna with Taylor–Quinney heating | `prereg/C8_creep_plasticity.md`, `prereg/R5_adiabatic.md` |
+| `core.thermoplastic`, `core.micromechanics` | glass-transition property model, crystallinity mixing, crystallising point; Voigt/Reuss, Hashin–Shtrikman, Mori–Tanaka, SIMP/RAMP admissibility | `prereg/TP_thermoplastic.md`, `prereg/MM_micromechanics.md` |
+| `fem.mesh.history` | small-strain history solid on a general mesh (Newton, commit after convergence, rollback, reactions); every physical model above checked against its material point | `prereg/H_history.md`, `H6_physical_models_fe.md`, `H8_more_models_fe.md` |
+| `fem.mesh.cure_slab`, `fem.mesh.nonlinear_heat` | coupled thermo-chemical cure slab with residual stress; nonlinear transient heat with k(T), ρc_p(T) in enthalpy form | `prereg/TS7_cure_slab.md`, `prereg/NH_nonlinear_heat.md` |
+| `fem.mesh.topology`, `quality`, `locate` | mesh validation by id, quality with a Jacobian certificate, inverse map / point location, renumbering | `prereg/M_mesh.md` |
+| `solvers.saddle` | saddle-point block operator, Schur complement, block-diagonal (MINRES) and block-triangular (GMRES) preconditioners | `prereg/L6_saddle.md` |
+| `solvers.eigen` | eigenpair reliability report (backward error, clusters by principal angles), MAC, mode tracking through sweeps, shift-invert with refusal of a shift at an eigenvalue, buckling pencil with stated load convention | `prereg/L6e_eigen.md`, `EIGEN_RELIABILITY.md` |
+| `fem.mesh.constraints` | general linear constraints (fix, tie, MPC, periodic with macro jump) by elimination, Lagrange or penalty; contradictory/redundant sets refused; reactions and multipliers | `prereg/F34_assembly.md`, `ASSEMBLY_CONSTRAINTS.md` |
+| `fem.mesh.homogenization` | periodic homogenisation of a cell given as a general (skew) mesh, elasticity and conduction, with self-adjoint design sensitivities | `prereg/MH_mesh_homogenization.md` |
+| `optimization.cell_topology` | inverse homogenisation on a periodic mesh: periodic density filter, tanh projection with β continuation, SIMP, MMA; bulk modulus (0.99 of the Hashin–Shtrikman bound) and auxetic objectives (compliance-based ν12 with E1, E2, G12 bounded: ν12 = −2.34) | `prereg/IH_inverse_homogenization.md`, `IP_projection.md`, `IA_auxetic_cell.md`, `IAb_auxetic_compliance.md`, `IAc_auxetic_bounded.md` |
+| `optimization.material_identification` | Prony / Norton identification, identifiability SVD, data records with units and validity box | `prereg/D_identification.md` |
+| `optimization.viscoelastic_topology` | compliance at service times of a viscoelastic structure (temperature history via WLF/Arrhenius), min–max over times, robust over material samples, exact discrete history adjoint with optional checkpointing, KKT stop; YAML via `analysis: {type: history}` | `prereg/VO_viscoelastic_topology.md` |
+| `optimization.creep_topology` | compliance at a service time under Norton creep (optionally with an Arrhenius temperature history), exact history adjoint | `prereg/CO_creep_topology.md`, `CO6_creep_topology.md` |
+| `optimization.material_cards` | material cards (dict / YAML) with explicit units, provenance and validity box; synthetic examples in `examples/foundations/materials/` | `prereg/P05_material_cards.md` |
+| `fem.mesh.mixed.MixedKG` | K-based u–p mixed elasticity (valid at ν = 0 and ν → 0.5, exact incompressibility) | `prereg/X_mixed.md` |
+| `fem.mesh.adaptivity` | residual / ZZ error indicators, Dörfler marking, newest-vertex bisection of T3 meshes | `prereg/A_adaptivity.md` |
+| `solvers.diagnostics` | backward / forward error report, inertia, Krylov solvers with structural checks, gauge solve, iterative refinement | `prereg/L_solver.md` |
+
+All parameters in these tests are synthetic; no real material is claimed. Failed preregistered checks are strict
+xfails in `docs/vv_kutugu.json`; live status: `docs/foundations/STATUS.md`.
 
 ## Physics
 

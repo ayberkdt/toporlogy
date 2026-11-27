@@ -406,6 +406,11 @@ class NonlinearElasticity:
             Du, self.d_index = unique_matrices(self.D)
             self.model: Any = SaintVenantKirchhoff(Du)
         elif not named:
+            if getattr(material, "physical", False):
+                raise ValueError(f"{getattr(material, 'name', material)!r} takes physical parameters (yield stress, "
+                                 "viscosity, relaxation times in physical units); NonlinearElasticity scales every "
+                                 "law by the element modulus and would scale them too. FE coupling of physical "
+                                 "history models: docs/foundations/MATERIAL_CONTRACT.md (not implemented here)")
             self.model = material
         elif material == "svk":
             self.model = SaintVenantKirchhoff(self.D)

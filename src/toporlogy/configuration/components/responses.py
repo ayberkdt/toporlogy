@@ -292,10 +292,17 @@ def register_responses() -> None:
         from toporlogy.optimization.homogenization_responses import EffectiveStiffness
         return EffectiveStiffness(i, j, float(ctx.material["nu"]), negate)
 
-    def effective_poisson(ctx: BuildContext) -> Any:
-        """Effective Poisson ratio nu12 = C12 / C11 of a 2-D periodic cell (fem.homogenization). No state solve."""
-        from toporlogy.optimization.homogenization_responses import EffectivePoisson
-        return EffectivePoisson(float(ctx.material["nu"]))
+    def effective_poisson(ctx: BuildContext, convention: str | None = None, load: int = 0,
+                          transverse: int = 1) -> Any:
+        """Effective Poisson ratio of the periodic cell (fem.homogenization). No state solve. convention (required):
+        uniaxial = -eps_transverse/eps_load under uniaxial stress along load (2-D and 3-D); stiffness_ratio = the
+        legacy C[transverse, load]/C[load, load] (C12/C11; 2-D)."""
+        from toporlogy.optimization.homogenization_responses import POISSON_CONVENTIONS, EffectivePoisson
+        if convention is None:
+            raise ValueError("effective_poisson needs 'convention': uniaxial (-eps_transverse/eps_load under uniaxial "
+                             "stress) or stiffness_ratio (the legacy C12/C11, which is nu21 of an uncoupled cell); "
+                             f"choose one of {' | '.join(POISSON_CONVENTIONS)}")
+        return EffectivePoisson(convention, float(ctx.material["nu"]), load=load, transverse=transverse)
 
     register("response", "effective_stiffness", effective_stiffness)
     register("response", "effective_poisson", effective_poisson)

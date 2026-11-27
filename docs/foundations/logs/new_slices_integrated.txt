@@ -1,0 +1,23 @@
+..........................x........x.................................... [ 20%]
+.............x.......................................................... [ 41%]
+........................................................................ [ 61%]
+..........................................x.......................x..... [ 82%]
+...............................................................          [100%]
+============================== warnings summary ===============================
+tests/toporlogy/test_constitutive.py: 40 warnings
+  D:\Masaustu\Topology Optimization\.claude\worktrees\loving-williams-d5be4a\tests\toporlogy\test_constitutive.py:282: DeprecationWarning: Conversion of an array with ndim > 0 to a scalar is deprecated, and will error in future. Ensure you extract a single element from your array before performing this operation. (Deprecated NumPy 1.25.)
+    f_tr = math.sqrt(1.5) * np.linalg.norm(s_tr) - float(m.kappa(st["alpha"]))
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+----------------------------- verification status -----------------------------
+pardiso  NOT VERIFIED  no test of this backend was selected
+gmsh     NOT VERIFIED  no test of this backend was selected
+cuda     NOT VERIFIED  no test of this backend was selected
+=========================== short test summary info ===========================
+XFAIL tests/toporlogy/test_solver_diagnostics.py::test_l2c_spd_path_does_not_return_silently_on_indefinite - pre-registered L2c FAILED on the first run: Factorization(A, 'spd') (direct-splu) solved the indefinite 6x6 block matrix without an error (relative residual 9.3e-17, the solution correct to 2.2e-16); the SPD path does not detect indefiniteness
+XFAIL tests/toporlogy/test_history_fem.py::test_h2_series_bar_two_materials - pre-registered H2 FAILED on the first run: end displacement 2.777e-3 vs the sum of uniaxial-stress material points 4.200e-3 at F = 1.1e-3; the hypothesis is wrong for a 3-D bar: the two cells contract laterally differently and the shared interface nodes constrain it, so the stress is not uniaxial
+XFAIL tests/toporlogy/test_viscoplastic.py::test_R3a_time_convergence_against_ode[0.001] - preregistered hypothesis wrong at this rate: after the yield transient (exponential, linearised rate estimate ~13 1/s) the response sits on the steady state where backward Euler is exact; the end-stress errors are 1.9e-8, 3.7e-8, 3.7e-8, 1.5e-8 Pa (1 ulp of 2.2e7 Pa) for n = 25, 50, 100, 200, i.e. the floor, not a first-order series
+XFAIL tests/toporlogy/test_creep.py::test_c3g_prereg_full_relaxation_claim - preregistered claim wrong: for n = 20, q_tr = 10 sigma_ref, dt = 1 s the update does not relax below 1e-3 q_tr; measured q_new = 1.505e7 Pa = 0.15 q_tr (the stress at which the creep rate balances the elastic unloading, see the post hoc check)
+XFAIL tests/toporlogy/test_creep.py::test_c6a_prereg_global_accuracy_rtol_1e4 - preregistered global accuracy not met: with rtol = 1e-4 the measured maximum relative error of eps_cr over the outputs is 2.10e-3 (at t = 100 s) and max |q - q_ref|/q0 = 1.16e-3, against the preregistered 1e-3 each; step doubling controls the local error only
+346 passed, 5 xfailed, 40 warnings in 330.67s (0:05:30)
+exit=0

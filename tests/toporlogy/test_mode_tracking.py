@@ -7,7 +7,8 @@ import scipy.sparse as sp
 
 from toporlogy.core.domain import Domain
 from toporlogy.fem.modal import Modal
-from toporlogy.optimization.mode_tracking import clusters, mac, subspace_angle, track_modes
+from toporlogy.optimization.mode_tracking import clusters, subspace_angle, track_modes
+from toporlogy.solvers.eigen import mac
 
 RNG = np.random.default_rng(0)
 

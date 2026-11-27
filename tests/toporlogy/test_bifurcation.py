@@ -122,7 +122,10 @@ A_REASON = ("pre-registered A1/A2 FAILED (26 Nov 2026): with ds = 0.01 the prima
             "= 1, where K = diag(0, k_a) is singular: the next predictor solve K⁻¹q fails (LinAlgError: Singular "
             "matrix), every halving restarts from the same point, ContinuationError step_limit (cause "
             "singular_tangent) at load factor 1. A defect of arc_length (no predictor at an exactly singular "
-            "accepted point), not of the location; the post hoc tests use ds = 0.0137 (Δλ = 1.37).")
+            "accepted point), not of the location; the post hoc tests use ds = 0.0137 (Δλ = 1.37). Update 27 Nov "
+            "2026 (docs/foundations/prereg/R07_bordered.md): the predictor now passes the exactly singular point; "
+            "the test still fails, now in locate_critical (ValueError: crossing eigenvalue not bracketed, 0.000e+00 "
+            "at the accepted point): a second defect, of the critical-point bracketing.")
 A_POSTHOC_DS = 0.0137
 
 
@@ -186,7 +189,6 @@ def test_s3_symmetric_branch_switch():
     assert e_lam <= 1e-9
 
 
-@pytest.mark.xfail(strict=True, reason=A_REASON)
 def test_a1_asymmetric_bifurcation_located_and_classified():
     """A1 (as pre-registered, ds = 0.01): |λ − 1| ≤ 1e-8; bifurcation, |φᵀq|/‖q‖ ≤ 1e-8."""
     _a1(CF.ds)
@@ -208,7 +210,6 @@ def _a1(ds):
     assert cp.kind == "bifurcation" and abs(cp.load_test) <= 1e-8
 
 
-@pytest.mark.xfail(strict=True, reason=A_REASON)
 @pytest.mark.parametrize("sign", [1.0, -1.0], ids=["plus", "minus"])
 def test_a2_asymmetric_branch_switch(sign):
     """A2 (as pre-registered, ds = 0.01): ξ = ±0.02 to |u| ≥ 0.2: (a) criterion at every point; (b) |u| ≥ 0.5|ξ|,

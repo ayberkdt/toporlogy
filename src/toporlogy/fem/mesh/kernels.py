@@ -22,7 +22,7 @@ from toporlogy.fem.mesh.reference import ReferenceElement, get
 __all__ = ["InvertedElementError", "DegenerateElementError", "DETJ_TOL", "Geometry", "geometry", "check_jacobian",
            "element_scale", "strain_matrix", "stiffness", "mass", "lumped_mass_hrz", "conduction", "body_load",
            "FacetGeometry", "facet_geometry", "facet_load", "facet_mass", "facet_reference", "gradients",
-           "stiffness_degree"]
+           "stiffness_degree", "is_curved", "default_degree"]
 
 DETJ_TOL = 1e-12
 """detJ < −DETJ_TOL · s_e is an inverted cell, |detJ| ≤ DETJ_TOL · s_e a degenerate one; s_e = (longest edge)^dim."""
@@ -121,6 +121,27 @@ def geometry(ref: ReferenceElement, X: np.ndarray, q: QuadratureRule, cells: np.
 def stiffness_degree(ref: ReferenceElement) -> int:
     """Quadrature degree that integrates Bᵀ D B exactly on affine simplices / parallelograms."""
     return 2 * ref.degree if ref.kind == "Q" else 2 * (ref.degree - 1)
+
+
+def is_curved(ref: ReferenceElement, X: np.ndarray, rtol: float = 1e-12) -> bool:
+    """Whether any cell's higher-order nodes lie off the straight-sided (vertex-interpolated) position by more than
+    ``rtol`` of the cell scale. X: (ne, n_nodes, dim) cell node coordinates."""
+    if ref.degree == 1:
+        return False
+    W = ref.vertex_weights()
+    Xn = np.einsum("nv,evi->eni", W, X[:, :ref.n_vertices])
+    dev = np.abs(X - Xn).max(axis=(1, 2))
+    return bool(np.any(dev > rtol * element_scale(ref, X)))
+
+
+def default_degree(ref: ReferenceElement, X: np.ndarray) -> int:
+    """Default quadrature degree: :func:`stiffness_degree`, plus 1 for a curved quadratic tetrahedron (T10), whose
+    affine patch integrand cof(J)·∇N has degree 3 (``docs/foundations/F4_RATES.md``, R05; ``prereg/
+    F2fix_curved_t10_degree.md``). Affine T10 and every other element keep :func:`stiffness_degree`."""
+    d = stiffness_degree(ref)
+    if ref.name == "T10" and is_curved(ref, X):
+        d += 1
+    return d
 
 
 def strain_matrix(dNdx: np.ndarray) -> np.ndarray:

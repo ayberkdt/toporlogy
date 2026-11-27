@@ -1,0 +1,15 @@
+........                                                                 [100%]
+----------------------------- verification status -----------------------------
+pardiso  NOT VERIFIED  no test of this backend was selected
+gmsh     NOT VERIFIED  no test of this backend was selected
+cuda     NOT VERIFIED  no test of this backend was selected
+baseline bitwise       reference environment: x, xphys and geometry files compared bit for bit
+  split_connectivity2d   max relative difference 0.00e+00
+  cantilever3d           max relative difference 0.00e+00
+  lbracket_bore3d        max relative difference 0.00e+00
+  eigenfrequency2d       max relative difference 0.00e+00
+  symmetric_am3d         max relative difference 0.00e+00
+  multiload3d            max relative difference 0.00e+00
+  mbb2d                  max relative difference 0.00e+00
+8 passed, 2576 deselected in 131.80s (0:02:11)
+exit=0

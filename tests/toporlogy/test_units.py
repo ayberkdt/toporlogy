@@ -26,7 +26,10 @@ def _mbb() -> dict:
 
 
 def _examples() -> list[Path]:
-    return sorted(p.relative_to(REPO) for p in (REPO / "examples").glob("**/*.y*ml"))
+    """Every Study / mesh example config. examples/foundations holds material cards (not configs) and history-path
+    configs (``analysis: {type: history}``), whose resolution is tested in test_history_yaml.py (HY8)."""
+    skip = REPO / "examples" / "foundations"
+    return sorted(p.relative_to(REPO) for p in (REPO / "examples").glob("**/*.y*ml") if skip not in p.parents)
 
 
 def test_u1_examples_resolve_as_before() -> None:

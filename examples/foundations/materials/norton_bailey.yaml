@@ -1,0 +1,16 @@
+# SYNTHETIC card: invented numbers, not a real material, no engineering claim.
+name: synthetic_norton_bailey_creep
+model: norton_bailey
+units: {stress: MPa, time: h}
+parameters:
+  elasticity: {K: 3000.0, G: 1100.0}      # MPa
+  B: 0.002               # strain at sigma_ref and t_ref
+  sigma_ref: 10.0        # MPa
+  n: 3.0
+  m: 0.4
+  t_ref: 1.0             # h
+  hardening: time
+provenance: {source: "synthetic example, invented numbers", synthetic: true, date: "2026-11-27", license: "CC0-1.0"}
+validity:
+  stress: [0.0, 20.0]
+  time: [0.0, 1000.0]    # h

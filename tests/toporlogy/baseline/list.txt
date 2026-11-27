@@ -127,7 +127,7 @@ response  - objective or constraint response (31)
   dilated_volume                weighted=false
   displacement                  where=?  direction=?  case=0  name=displacement
   dynamic_compliance            (no parameters)
-  effective_poisson             (no parameters)
+  effective_poisson             convention=null  load=0  transverse=1
   effective_stiffness           i=0  j=0  negate=false
   eigenvalue                    k=1
   end_compliance                weights=null

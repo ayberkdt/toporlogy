@@ -11,6 +11,7 @@ from typing import Any
 import numpy as np
 
 from toporlogy.configuration.build import Setup
+from toporlogy.configuration.history_build import HistorySetup
 from toporlogy.core.verdict import RETURNED_DESIGN, constraint_entry
 from toporlogy.execution.runs import flags_of, status_of, verdict_of, write_resolved
 
@@ -92,6 +93,79 @@ def run_setup(setup: Setup, folder: str | Path, progress: Callable[[int, dict[st
         tp = time.perf_counter()
         try:
             out = step(res, st, folder)
+        except Exception as e:  # noqa: BLE001 - a failing post step must not lose the optimised design
+            out = {"passed": False, "error": f"{type(e).__name__}: {e}", "summary": f"ERROR {type(e).__name__}: {e}"}
+        if out:
+            summary["post"][key] = out
+        if post_progress is not None:
+            post_progress(key, out or {}, time.perf_counter() - tp)
+    summary["verdict"] = verdict_of(summary)
+    summary["status"] = status_of(summary)
+    summary["flags"] = flags_of(summary)
+    (folder / "summary.json").write_text(json.dumps(summary, indent=1, default=str), encoding="utf-8")
+    return summary
+
+
+def run_history_setup(setup: HistorySetup, folder: str | Path,
+                      progress: Callable[[int, dict[str, Any]], None] | None = None, source: str | None = None,
+                      overrides: Sequence[str] = (),
+                      post_progress: Callable[[str, dict[str, Any] | None, float], None] | None = None
+                      ) -> dict[str, Any]:
+    """Run a built history study (``analysis: history``) into ``folder``; returns the summary (also ``summary.json``).
+
+    Folder content: ``config.resolved.yaml``, ``history.jsonl`` (``it``, ``f0`` = the objective, ``volume``,
+    ``change``), ``result.npz`` (``x``, ``xphys``, ``times``, ``compliance`` of the returned design at every step time),
+    ``summary.json`` (the keys of :func:`run_setup`, so ``show`` and ``compare`` read it) and what the post steps write
+    (``vtu``, ``summary``). ``optimize_viscoelastic`` has no per-iteration callback, so ``progress(it, row)`` is called
+    for every iteration after the optimisation; ``post_progress`` as in :func:`run_setup`. A post step that raises is
+    recorded as ``{"passed": false, "error": ...}``."""
+    import torch
+
+    from toporlogy.core.verdict import constraint_entry
+    from toporlogy.optimization.diagnostics import grey_fraction
+
+    folder = Path(folder)
+    r = setup.config
+    write_resolved(r, folder, source, overrides)
+    t0 = time.perf_counter()
+    res = setup.optimize()
+    seconds = time.perf_counter() - t0
+    with torch.no_grad():
+        final = setup.structure.response(setup.weights(res.xphys))
+    n = len(res.history["f0"])
+    rows = [{"it": i + 1, "f0": res.history["f0"][i], "volume": res.history["volume"][i],
+             "change": res.history["change"][i] if i < len(res.history["change"]) else 0.0, "t": None}
+            for i in range(n)]
+    (folder / "history.jsonl").write_text("".join(json.dumps(row) + "\n" for row in rows), encoding="utf-8")
+    if progress is not None:
+        for row in rows:
+            progress(row["it"], {"objective": row["f0"], "volume": row["volume"], "change": row["change"],
+                                 "seconds": None})
+    comp = final.compliance.detach().numpy()
+    np.savez(folder / "result.npz", x=res.x, xphys=res.xphys, times=setup.times, compliance=comp)
+    upper = float(setup.options["volume"])
+    ftol = 1e-3
+    cons = [constraint_entry("volume", float(res.volume), upper, ftol, RETURNED_DESIGN)]
+    summary: dict[str, Any] = {
+        "name": r["name"], "analysis": "history", "model": setup.kind, "objective_name": setup.objective_name,
+        "objective": res.objective, "objective_source": RETURNED_DESIGN, "constraints": cons,
+        "iterations": res.iterations, "max_iter": int(setup.options["max_iter"]), "converged": bool(res.converged),
+        "termination": res.termination, "max_violation": max(0.0, float(res.volume) - upper),
+        "kkt_residual": res.kkt_residual, "stationarity": None, "seconds": seconds,
+        "grey_fraction": grey_fraction(res.xphys), "tol": float(setup.options["tol"]),
+        "objective_steps": list(setup.steps), "objective_times_s": [float(setup.times[k]) for k in setup.steps],
+        "objective_values": [float(v) for v in res.objectives] if res.objectives is not None else None,
+        "config": "config.resolved.yaml", "source": source, "created": time.strftime("%Y-%m-%dT%H:%M:%S"),
+        "post": {}}
+    for name, step in setup.post:
+        key, k = name, 2
+        while key in summary["post"]:
+            key, k = f"{name}_{k}", k + 1
+        if post_progress is not None:
+            post_progress(key, None, 0.0)
+        tp = time.perf_counter()
+        try:
+            out = step(res, setup, folder, final)
         except Exception as e:  # noqa: BLE001 - a failing post step must not lose the optimised design
             out = {"passed": False, "error": f"{type(e).__name__}: {e}", "summary": f"ERROR {type(e).__name__}: {e}"}
         if out:

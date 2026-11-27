@@ -1,0 +1,12 @@
+[
+ {
+  "nodeid": "tests/toporlogy/test_viscoelastic_robust.py::test_vr1_minmax_worst_case_not_worse",
+  "kind": "pre-registered check failed",
+  "model_backend": "optimization.viscoelastic_topology min-max (MMA bound formulation), Q4 plane strain, CPU",
+  "reason": "worst case of the min-max design 1.21480e-4 vs 1.21135e-4 for the single t = 100 s design (+0.28 %); with a constant load the worst case is always the last time, so min-max reduces to J(100 s), and the bound formulation stopped (tol 1e-3, 95 iterations) at a worse local point than the direct run (134 iterations)",
+  "risk": "low",
+  "resolution": "hypothesis too strong for a nonconvex problem with different iteration paths; a min-max study needs time-varying loads or several load cases, and a convergence test on the KKT residual rather than the step size",
+  "record": "docs/foundations/prereg/VR_viscoelastic_robust.md",
+  "slow": false
+ }
+]

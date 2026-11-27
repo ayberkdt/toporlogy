@@ -1,0 +1,15 @@
+# SYNTHETIC card: invented numbers, not a real material, no engineering claim.
+name: synthetic_perzyna
+model: perzyna
+units: {stress: MPa, time: s, rate: 1/s}
+parameters:
+  elasticity: {E: 2000.0, G: 740.0}       # MPa
+  yield_stress: 20.0
+  hardening: 100.0
+  tau0: 0.5                                # s
+  sigma_ref: 20.0
+  m: 2.0
+provenance: {source: "synthetic example, invented numbers", synthetic: true, date: "2026-11-27", license: "CC0-1.0"}
+validity:
+  stress: [0.0, 40.0]
+  strain_rate: [1.0e-4, 1.0e+1]

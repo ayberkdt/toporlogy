@@ -5,7 +5,7 @@ as subspaces (05 §3).
 pairing maximises the total MAC (Hungarian method). Eigenvalues within ``cluster_tol`` (relative) form a cluster:
 inside a cluster the individual vectors are arbitrary (any rotation of a basis is a basis), so a cluster is compared
 as a subspace by the largest principal angle between M-orthonormal bases. Pre-registered checks:
-``docs/olcumler/mod_takibi_onkayit.md`` (MT1-MT6).
+``docs/olcumler/mod_takibi_onkayit.md`` (MT1-MT6). The MAC itself is :func:`toporlogy.solvers.eigen.mac`.
 """
 from __future__ import annotations
 
@@ -17,7 +17,9 @@ import scipy.linalg as sla
 import scipy.sparse as sp
 from scipy.optimize import linear_sum_assignment
 
-__all__ = ["mac", "Tracking", "track_modes", "clusters", "subspace_angle"]
+from toporlogy.solvers.eigen import mac
+
+__all__ = ["Tracking", "track_modes", "clusters", "subspace_angle"]
 
 
 def _M(M: Any, n: int) -> Any:
@@ -26,27 +28,6 @@ def _M(M: Any, n: int) -> Any:
     if M.shape != (n, n):
         raise ValueError(f"M must be ({n}, {n}), got {M.shape}")
     return M
-
-
-def _check_pd(M: Any, Phi: np.ndarray) -> None:
-    d = np.einsum("ik,ik->k", Phi, np.asarray(M @ Phi))
-    if not (d > 0).all():
-        raise ValueError("M is not positive definite on the given modes (phi' M phi <= 0)")
-
-
-def mac(Phi: np.ndarray, Psi: np.ndarray, M: Any = None) -> np.ndarray:
-    """(k1, k2) M-weighted modal assurance criterion of the columns of ``Phi`` and ``Psi``."""
-    Phi, Psi = np.asarray(Phi, float), np.asarray(Psi, float)
-    if Phi.ndim != 2 or Psi.ndim != 2 or Phi.shape[0] != Psi.shape[0]:
-        raise ValueError(f"Phi and Psi must be (n, k) with the same n, got {Phi.shape} and {Psi.shape}")
-    M = _M(M, Phi.shape[0])
-    _check_pd(M, Phi)
-    _check_pd(M, Psi)
-    MPsi = np.asarray(M @ Psi)
-    cross = Phi.T @ MPsi
-    a = np.einsum("ik,ik->k", Phi, np.asarray(M @ Phi))
-    b = np.einsum("ik,ik->k", Psi, MPsi)
-    return np.asarray(cross ** 2 / np.outer(a, b))
 
 
 def clusters(lam: np.ndarray, cluster_tol: float = 1e-6) -> list[list[int]]:

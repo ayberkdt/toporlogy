@@ -1,0 +1,12 @@
+[
+ {
+  "nodeid": "tests/toporlogy/test_solver_diagnostics.py::test_l2c_spd_path_does_not_return_silently_on_indefinite",
+  "kind": "pre-registered check failed",
+  "model_backend": "fem.mesh.linear.Factorization structure spd (DirectSolver SuperLU, CPU)",
+  "reason": "the SPD path solved a symmetric indefinite 6x6 block matrix without an error (relative residual 9.3e-17, solution correct to 2.2e-16): it does not detect that the matrix is not SPD",
+  "risk": "low",
+  "resolution": "the returned solution is residual-checked, so the defect is an unverified structural claim, not a wrong answer; an opt-in SPD verification (inertia or pivot signs) is the follow-up; callers that need definiteness use solvers.diagnostics.inertia",
+  "record": "docs/foundations/prereg/L_solver.md",
+  "slow": false
+ }
+]

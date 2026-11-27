@@ -60,7 +60,8 @@ __all__ = ["VOIGT_3D", "VOIGT_2D", "SYMMETRY_RTOL", "voigt_pairs", "sym", "skew"
            "tensor_to_compliance", "tensor_to_mandel", "mandel_to_tensor", "stiffness_to_mandel",
            "mandel_to_stiffness", "compliance_to_mandel", "mandel_to_compliance", "mandel_eigenvalues",
            "mandel_condition_number", "check_rotation", "rotate2", "rotate4", "rotation_from_rotvec",
-           "rotvec_from_rotation", "random_rotations", "principal_invariants", "j2", "j3", "lode_angle",
+           "rotvec_from_rotation", "random_rotations", "cofactor", "det_derivative", "principal_invariants", "j2",
+           "j3", "lode_angle",
            "von_mises_squared", "principal_values", "principal_directions", "principal_value_gradients", "tresca",
            "DeformationError", "InvertedDeformationError", "SingularDeformationError", "deformation_gradient",
            "jacobian", "jacobian_minus_one", "deformation_state", "right_cauchy_green", "left_cauchy_green",
@@ -481,8 +482,11 @@ def rotvec_from_rotation(R: Any) -> np.ndarray:
     with np.errstate(invalid="ignore", divide="ignore"):
         f = np.where(th < 1e-8, 1.0 + th ** 2 / 6, th / s)
     out[...] = f[..., None] * v
-    if np.any(near_pi):                     # R ≈ 2 a aᵀ − I: axis from the largest diagonal of (R + I) / 2
-        B = 0.5 * (R[near_pi] + np.eye(3))
+    if np.any(near_pi):
+        # sym R = cos θ I + (1 − cos θ) a aᵀ exactly, so a aᵀ = (sym R − cos θ I) / (1 − cos θ); the axis is the
+        # column of largest diagonal (an earlier (R + I)/2 assumed cos θ = −1 and kept the skew part: O(π − θ) error)
+        Rn, cn = R[near_pi], c[near_pi]
+        B = (0.5 * (Rn + np.swapaxes(Rn, -1, -2)) - cn[..., None, None] * np.eye(3)) / (1.0 - cn)[..., None, None]
         k = np.argmax(np.einsum("...ii->...i", B), axis=-1)
         a = np.take_along_axis(B, k[..., None, None].repeat(3, axis=-1), axis=-2)[..., 0, :]
         a = a / np.linalg.norm(a, axis=-1, keepdims=True)
@@ -593,6 +597,31 @@ def deformation_gradient(H: Any) -> Any:
     """F = I + H from the displacement gradient H = ∇_X u."""
     H = _arr(H)
     return _eye(_dim2(H), H) + H
+
+
+def cofactor(F: Any) -> Any:
+    """Cofactor matrix cof F = (adj F)ᵀ of square 2×2 or 3×3 matrices (batched over leading axes; NumPy or torch),
+    from the explicit 2×2 minors — no inverse, so it is exact for singular F (rank 2: one nonzero rank-1 cofactor;
+    rank ≤ 1 in 3-D: zero). For invertible F, cof F = det(F) F⁻ᵀ
+    (``docs/foundations/prereg/TK_cofactor_rotation.md``)."""
+    F = _arr(F)
+    if F.ndim < 2 or F.shape[-1] != F.shape[-2] or F.shape[-1] not in (2, 3):
+        raise ValueError(f"cofactor needs (..., 2, 2) or (..., 3, 3) matrices, got shape {tuple(F.shape)}")
+    if F.shape[-1] == 2:
+        rows = [[F[..., 1, 1], -F[..., 1, 0]], [-F[..., 0, 1], F[..., 0, 0]]]
+    else:
+        def c(i: int, j: int) -> Any:
+            r = [k for k in range(3) if k != i]
+            q = [k for k in range(3) if k != j]
+            minor = F[..., r[0], q[0]] * F[..., r[1], q[1]] - F[..., r[0], q[1]] * F[..., r[1], q[0]]
+            return minor if (i + j) % 2 == 0 else -minor
+        rows = [[c(i, j) for j in range(3)] for i in range(3)]
+    return _stack([_stack(r, -1) for r in rows], -2)
+
+
+def det_derivative(F: Any, H: Any) -> Any:
+    """Directional derivative D(det F)[H] = cof(F) : H (exact also for singular F)."""
+    return ddot(cofactor(F), _arr(H))
 
 
 def _singular_tol(F: Any) -> Any:

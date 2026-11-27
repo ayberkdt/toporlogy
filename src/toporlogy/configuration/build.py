@@ -193,7 +193,11 @@ def _tie_planes(spec: Any, chain: list[Any], d: Any) -> list[tuple[int, float]]:
 
 
 def build(resolved: dict[str, Any]) -> Setup:
-    """Construct every component of a resolved config (see :func:`resolve`) into a :class:`Setup`."""
+    """Construct every component of a resolved config (see :func:`resolve`) into a :class:`Setup` (an
+    ``analysis: history`` config into a :class:`~toporlogy.configuration.history_build.HistorySetup`)."""
+    if "analysis" in resolved:
+        from toporlogy.configuration.history_build import build_history
+        return build_history(resolved)  # type: ignore[return-value]  # analysis history: own path (history_build.py)
     if (resolved.get("domain") or {}).get("type") in ("mesh", "shell"):
         from toporlogy.configuration.mesh_build import build_mesh
         return build_mesh(resolved)                    # domain type mesh or shell: own path (mesh_build.py)

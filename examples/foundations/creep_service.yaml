@@ -1,0 +1,26 @@
+# Topology optimisation of a Norton-creep cantilever for its service-time compliance
+# (analysis: history; docs/foundations/HISTORY_YAML.md). SYNTHETIC material and loads: no engineering claim.
+#   python -m toporlogy validate examples/foundations/creep_service.yaml
+#   python -m toporlogy run examples/foundations/creep_service.yaml
+# SI units. The tip load is applied over 10 s and held for 1e4 s; stresses creep (rate A (q/sigma_ref)^n), the
+# compliance F.u grows with time; the objective is its value at t = 1e4 s. Each iteration solves a nonlinear problem
+# per time step (Newton), so this is much slower than the viscoelastic example.
+name: creep_service
+analysis: {type: history, plane: strain}
+domain: {generator: rectangle, n: [24, 8], size: [3.0, 1.0], element: Q4}
+material: materials/norton_isothermal.yaml                  # relative to this file
+supports:
+  - {set: left, fix: all}
+loads:
+  - {point: [3.0, 0.0], force: [0.0, -2.0e+6], time: {ramp: 10.0}}          # N, total force vector
+times: {logspace: [1.0, 1.0e+4, 7], events: [10.0]}                         # s
+objective: {compliance_at: 1.0e+4}
+constraints:
+  - {response: volume, upper: 0.4}
+chain:
+  - {type: density_filter, rmin: 0.12}
+optimizer: {type: mma, max_iter: 25, tol: 0.0}
+post:
+  - {type: vtu, name: design}
+  - {type: summary, name: history_summary}
+output: {folder: runs}

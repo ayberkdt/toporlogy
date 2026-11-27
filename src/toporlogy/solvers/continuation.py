@@ -19,6 +19,12 @@ point: a path-dependent material commits its trial state there; nothing is commi
   taken; a negative discriminant rejects the step (code ``complex_roots``); near-equal angles are logged as
   ``path ambiguity``. Rejected steps halve Δs (below ``ds_min``: :class:`ContinuationError` with code
   ``step_limit``); accepted steps scale Δs by √(``desired_iterations``/iterations), within [ds_min, ds_max].
+  Exactly singular tangent (R07): when the predictor solve K⁻¹q fails (``LinearSolveFailure``) or is non-finite, the
+  direction comes from :func:`_singular_predictor`: the null vector of the bordered system [[K, −q], [Δx_prevᵀ,
+  ψ² qᵀq Δλ_prev]] (orientation fixed by the previous increment, ⟨t, t_prev⟩ > 0), the previous increment itself at a
+  bifurcation point (the bordered matrix is singular), and, at a start without a previous increment, the null vector
+  of [K, −q] (``direction`` orients it; a bifurcation start without ``start_tangent`` has no unique direction and
+  fails as before). The corrector is unchanged and K is not regularised; where the solve succeeds nothing changes.
   The method follows ONE path through limit points; at a bifurcation point of a symmetric problem it continues on
   the primary path; branch switching is a separate step (below). ``start_tangent`` = (Δx, Δλ) orients the first
   predictor as a previous increment would (used after a branch switch).
@@ -222,6 +228,70 @@ def _converged(R: np.ndarray, lin: Linearization, x: np.ndarray, nq: float, rtol
     return (rel <= rtol or eta <= eta_tol), rel, eta
 
 
+_BORDER_DENSE_MAX = 4000        # n + 1 above this: no dense bordered system, the previous increment is used
+
+
+def _singular_predictor(lin: Linearization, q: np.ndarray, psi2: float, dx_prev: np.ndarray | None,
+                        dlam_prev: float, direction: float) -> tuple[np.ndarray, float, str] | None:
+    """Unit predictor direction (tₓ, t_λ), ‖t‖_G = 1 with ‖t‖_G² = tₓᵀtₓ + ψ² qᵀq t_λ², when K⁻¹q does not exist
+    (module notes, "exactly singular tangent"); None when there is none. Called only after the predictor solve
+    failed, so a regular K never reaches it.
+
+    * With a previous increment p: the null vector of the bordered system [[K, −q], [pₓᵀ, ψ² qᵀq p_λ]] t = e_{n+1}
+      (⟨p, t⟩_G = 1 > 0 fixes the orientation) when that matrix has full numerical rank (a limit point); at a
+      bifurcation point (null space of [K, −q] two-dimensional, the bordered matrix singular) the previous increment.
+    * Without one: the null vector of [K, −q] when its numerical rank is n; oriented by ``direction`` through t_λ,
+      or, for t_λ = 0 (a limit point), through the sign of the largest component of tₓ. Null space of dimension two or
+      more: None (no arbitrary unique mode).
+
+    Numerical rank: singular values ≤ (n + 1) ε σ_max count as zero. Dense (n + 1 ≤ ``_BORDER_DENSE_MAX``)."""
+    n = len(q)
+    qq = float(q @ q)
+
+    def unit(tx: np.ndarray, tl: float) -> tuple[np.ndarray, float] | None:
+        g = math.sqrt(float(tx @ tx) + psi2 * qq * tl * tl)
+        return (tx / g, tl / g) if g > 0.0 and math.isfinite(g) else None
+
+    if dx_prev is not None:
+        if n + 1 <= _BORDER_DENSE_MAX:
+            K = _dense(lin.matrix)
+            B = np.zeros((n + 1, n + 1))
+            B[:n, :n] = K
+            B[:n, n] = -q
+            B[n, :n] = dx_prev
+            B[n, n] = psi2 * qq * dlam_prev
+            sv = np.linalg.svd(B, compute_uv=False)
+            if sv[-1] > (n + 1) * np.finfo(float).eps * sv[0]:
+                rhs = np.zeros(n + 1)
+                rhs[n] = 1.0
+                t = np.linalg.solve(B, rhs)
+                u = unit(t[:n], float(t[n])) if np.all(np.isfinite(t)) else None
+                if u is not None:
+                    return u[0], u[1], "bordered null vector"
+        u = unit(np.asarray(dx_prev, float), float(dlam_prev))
+        return None if u is None else (u[0], u[1], "previous increment")
+    if n + 1 > _BORDER_DENSE_MAX:
+        return None
+    A = np.column_stack([_dense(lin.matrix), -q])
+    _, s, Vt = np.linalg.svd(A)
+    if s[-1] <= (n + 1) * np.finfo(float).eps * s[0]:
+        return None                                  # rank < n: null space of dimension >= 2 (a bifurcation point)
+    t = Vt[-1]
+    tx, tl = t[:n], float(t[n])
+    if abs(tl) * math.sqrt(qq) > 1e-12 * lin.norm1 * float(np.linalg.norm(tx)):
+        sign = 1.0 if tl * direction >= 0 else -1.0
+    else:
+        tl = 0.0
+        sign = (1.0 if tx[int(np.argmax(np.abs(tx)))] >= 0 else -1.0) * (1.0 if direction >= 0 else -1.0)
+    u = unit(sign * tx, sign * tl)
+    return None if u is None else (u[0], u[1], "null vector of [K, -q]")
+
+
+def _dense(matrix: Any) -> np.ndarray:
+    A = full_tangent(matrix)
+    return np.asarray(A.toarray() if sp.issparse(A) else A, float)
+
+
 def arc_length(problem: ContinuationProblem, x0: np.ndarray, lam0: float, settings: ArcLengthSettings,
                stop: Callable[[np.ndarray, float], bool], spectrum: TangentSpectrum | None = None,
                start_tangent: tuple[np.ndarray, float] | None = None,
@@ -252,10 +322,15 @@ def arc_length(problem: ContinuationProblem, x0: np.ndarray, lam0: float, settin
         rec = StepRecord(lam, False, [])
         rec.notes.append(f"ds = {ds:.6g}")
         ok = False
+        dx: np.ndarray | None = None
+        dlam = 0.0
         try:
             dq = np.asarray(problem.solve(lin0, q)).reshape(q.shape)
         except LinearSolveFailure as e:
             rec.code, rec.reason = "singular_tangent", f"predictor solve failed ({e})"
+            dq = None
+        if dq is not None and not np.all(np.isfinite(dq)):
+            rec.code, rec.reason = "singular_tangent", "predictor solve returned a non-finite vector"
             dq = None
         if dq is not None:
             if dx_prev is None:
@@ -264,6 +339,13 @@ def arc_length(problem: ContinuationProblem, x0: np.ndarray, lam0: float, settin
                 sgn = 1.0 if float(dx_prev @ dq) + psi2 * dlam_prev * qq >= 0 else -1.0
             dlam = sgn * ds / math.sqrt(float(dq @ dq) + psi2 * qq)
             dx = dlam * dq
+        else:
+            tan = _singular_predictor(lin0, q, psi2, dx_prev, dlam_prev, st.direction)
+            if tan is not None:
+                dx, dlam = ds * tan[0], ds * tan[1]
+                rec.notes.append(f"predictor: {tan[2]} (K singular: {rec.reason})")
+                rec.code, rec.reason = "", ""
+        if dx is not None:
             for it in range(st.max_iter + 1):
                 lin = _linearize(problem, x + dx, lam + dlam, rec)
                 if lin is None:
@@ -680,7 +762,8 @@ def locate_critical(problem: ContinuationProblem, path: ContinuationPath, i: int
     if not 0 <= i < len(path.points) - 1:
         raise ValueError(f"interval {i} outside the path (0 .. {len(path.points) - 2})")
     A, B = path.points[i], path.points[i + 1]
-    sA, sB = spectrum(problem.linearize(A.x, A.lam)), spectrum(problem.linearize(B.x, B.lam))
+    linA, linB = problem.linearize(A.x, A.lam), problem.linearize(B.x, B.lam)
+    sA, sB = spectrum(linA), spectrum(linB)
     mA, mB = sA.index, sB.index
     if mA == mB:
         raise ValueError(f"no critical point between points {i} and {i + 1}: index {mA} at both")
@@ -688,6 +771,17 @@ def locate_critical(problem: ContinuationProblem, path: ContinuationPath, i: int
     fA, vA = sA.position(j)
     fB, vB = sB.position(j)
     if not fA * fB < 0:
+        # an endpoint that already meets the convergence test IS the critical point (an accepted point that lands
+        # exactly on it: the crossing eigenvalue is zero there; docs/foundations/prereg/R07c_locate_zero.md)
+        scale0 = max(abs(fA), abs(fB))
+        for t_end, P_end, f_end, v_end, lin_end in ((0.0, A, fA, vA, linA), (1.0, B, fB, vB, linB)):
+            if abs(f_end) <= max(cs.eig_tol * scale0, 16 * np.finfo(float).eps * lin_end.norm1):
+                phi_e = _signed(v_end)
+                q_e = np.asarray(problem.load, float)
+                lt_e = float(phi_e @ q_e) / float(np.linalg.norm(q_e))
+                kind_e = "bifurcation" if abs(lt_e) <= cs.bifurcation_tol else "limit"
+                return CriticalPoint(P_end.lam, np.asarray(P_end.x, float).copy(), phi_e, f_end, kind_e, lt_e, mA,
+                                     mB, False, t_end, 0, True, i, [])
         raise ValueError(f"crossing eigenvalue not bracketed ({fA:.3e} at point {i}, {fB:.3e} at {i + 1})")
     c = B.x - A.x
     cc = float(c @ c)

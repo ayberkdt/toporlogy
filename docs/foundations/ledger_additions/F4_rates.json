@@ -1,0 +1,22 @@
+[
+ {
+  "nodeid": "tests/toporlogy/test_fem_rates_investigation.py::test_f4_1_i_interpolation_rate_matches_galerkin_rate_at_the_historical_pair[T4]",
+  "kind": "pre-registered check failed",
+  "model_backend": "general mesh T4 3-D (CPU), interpolation error without a solve",
+  "reason": "F4-1 (i): T4 interpolation L2 pair rate p(8, 16) = 1.918 differs from the Galerkin 1.796 by 0.122 > 0.10; the solved L2 error is more pre-asymptotic than the interpolation error (T10 energy 1.814 vs 1.788 passes)",
+  "risk": "low",
+  "resolution": "none needed: the solved rate rises 1.796 -> 1.923 (16, 24); recorded in docs/foundations/F4_RATES.md",
+  "record": "docs/foundations/prereg/F4_rates.md",
+  "slow": true
+ },
+ {
+  "nodeid": "tests/toporlogy/test_fem_rates_investigation.py::test_f4_3_rate_scatter_over_mesh_draws_and_undistorted_mesh[T10-ns1]",
+  "kind": "pre-registered check failed",
+  "model_backend": "general mesh T10 3-D, SuperLU (CPU)",
+  "reason": "F4-3: only 1 of 4 other mesh draws give the T10 energy pair rate p(4, 8) >= 1.8 (1.7997, 1.7855, 1.8140, 1.7818; historical draw 1.7877; undistorted 1.825): the T10 miss is not a mesh-draw accident",
+  "risk": "low",
+  "resolution": "T10 energy rate is pre-asymptotic: interpolation energy rate 1.814, 1.899, 1.949, 1.961 for n = 4-8, 8-12, 12-16, 16-24; solved p(8, 12) = 1.889",
+  "record": "docs/foundations/prereg/F4_rates.md",
+  "slow": true
+ }
+]

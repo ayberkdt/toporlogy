@@ -1,0 +1,102 @@
+{
+ "sha": "f12a243",
+ "python": "3.12.1",
+ "numpy": "2.2.6",
+ "scipy": "1.14.1",
+ "torch": "2.5.1+cu121",
+ "platform": "Windows-11-10.0.26200-SP0",
+ "torch_threads": 6,
+ "OMP_NUM_THREADS": null,
+ "cases": {
+  "spectral_log_frechet_batch1": {
+   "median_s": 0.00025549999554641545,
+   "min_s": 0.0002426000137347728,
+   "max_s": 0.00028150001890026033,
+   "repeats": 5
+  },
+  "stress_to_voigt_batch1": {
+   "median_s": 7.569999434053898e-05,
+   "min_s": 7.450001430697739e-05,
+   "max_s": 9.459999273531139e-05,
+   "repeats": 5
+  },
+  "spectral_log_frechet_batch1000": {
+   "median_s": 0.006472300010500476,
+   "min_s": 0.006276400003116578,
+   "max_s": 0.006910800002515316,
+   "repeats": 5
+  },
+  "stress_to_voigt_batch1000": {
+   "median_s": 0.0001947000273503363,
+   "min_s": 0.0001933000166900456,
+   "max_s": 0.0002027000009547919,
+   "repeats": 5
+  },
+  "spectral_log_frechet_batch100000": {
+   "median_s": 0.572610800008988,
+   "min_s": 0.5571312999818474,
+   "max_s": 0.5991898999782279,
+   "repeats": 5
+  },
+  "stress_to_voigt_batch100000": {
+   "median_s": 0.022349100006977096,
+   "min_s": 0.021808399993460625,
+   "max_s": 0.023269199999049306,
+   "repeats": 5
+  },
+  "spd_factor_solve_n2000_rhs8": {
+   "median_s": 0.7317264000012074,
+   "min_s": 0.709366900002351,
+   "max_s": 0.7351914999890141,
+   "repeats": 3
+  },
+  "spd_factor_solve_n20000_rhs8": {
+   "median_s": 371.3568656000134,
+   "min_s": 362.9860671000206,
+   "max_s": 391.8634335999959,
+   "repeats": 3
+  },
+  "general_mesh_Q4_40x20_assemble_solve": {
+   "median_s": 0.03271520000998862,
+   "min_s": 0.03137739998055622,
+   "max_s": 0.03420850000111386,
+   "repeats": 3
+  },
+  "general_mesh_Q4_120x60_assemble_solve": {
+   "median_s": 0.4559010999801103,
+   "min_s": 0.45341089999419637,
+   "max_s": 0.4637225999904331,
+   "repeats": 3
+  },
+  "material_point_legacy_J2_10k": {
+   "median_s": 0.017915000003995374,
+   "min_s": 0.016928500001085922,
+   "max_s": 0.019069000001763925,
+   "repeats": 5
+  },
+  "material_point_generalized_maxwell_10k": {
+   "median_s": 0.02745399999548681,
+   "min_s": 0.024989700003061444,
+   "max_s": 0.02867510000942275,
+   "repeats": 5
+  },
+  "material_point_norton_10k": {
+   "median_s": 0.020278299984056503,
+   "min_s": 0.020196700002998114,
+   "max_s": 0.021203700016485527,
+   "repeats": 5
+  },
+  "viscoelastic_adjoint_gradient_8x4_12steps": {
+   "median_s": 0.10906640000757761,
+   "min_s": 0.10518509999383241,
+   "max_s": 0.11120479999226518,
+   "repeats": 5
+  },
+  "viscoelastic_adjoint_gradient_8x4_12steps_checkpoint4": {
+   "median_s": 0.17937130000791512,
+   "min_s": 0.174812799989013,
+   "max_s": 0.18140929998480715,
+   "repeats": 5
+  }
+ }
+}

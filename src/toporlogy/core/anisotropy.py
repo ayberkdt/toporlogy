@@ -36,7 +36,19 @@ they blow up like the condition number near its boundary (ν → 1/2, ν → −
 :func:`stiffness_from_cholesky` parametrise SPD stiffnesses as M_C = L Lᵀ (L lower triangular, log-diagonal), which
 stays SPD for every parameter value, unlike the engineering constants.
 
-Verification: ``tests/toporlogy/test_anisotropy.py`` (records P1-P11 of ``docs/olcumler/tensor_elastisite.md``).
+Aggregate moduli
+----------------
+:func:`aggregate_moduli` (Voigt / Reuss / Hill bulk and shear moduli of a general Voigt **stiffness**) uses the
+rotation invariants of C_ijkl and of S_ijkl = C⁻¹: K_V = C_iijj / 9, G_V = (C_ijij − C_iijj / 3) / 10, K_R = 1 / S_iijj,
+G_R = 5 / (2 (S_ijij − S_iijj / 3)), Hill = mean of Voigt and Reuss. K_V is the bulk modulus of the uniform-strain
+average, K_R that of the uniform-stress (hydrostatic pressure) average; they are not the directional compressibility
+β(n). :func:`universal_anisotropy_index` A_U = 5 G_V / G_R + K_V / K_R − 6 ≥ 0 (zero iff the tensor is isotropic;
+Ranganathan & Ostoja-Starzewski 2008, PRL 101, 055504, formula recalled, not re-read here); :func:`zener_ratio`
+2 C44 / (C11 − C12) exists for cubic symmetry only and refuses every other tensor. None of these indices says
+anything about strength or yield.
+
+Verification: ``tests/toporlogy/test_anisotropy.py`` (records P1-P11 of ``docs/olcumler/tensor_elastisite.md``) and
+``tests/toporlogy/test_moduli_foundations.py`` (``docs/foundations/prereg/T_spectral.md``).
 """
 from __future__ import annotations
 
@@ -47,14 +59,14 @@ import numpy as np
 
 from toporlogy.core import tensor as T
 from toporlogy.core.linear_elastic import (check_positive_definite, fibonacci_sphere, isotropic_compliance,
-                                           isotropic_moduli, isotropic_stiffness)
+                                           isotropic_moduli, isotropic_stiffness, symmetry_class)
 from toporlogy.references import cite
 
 __all__ = ["young_modulus", "poisson_ratio", "shear_modulus", "linear_compressibility",
            "volumetric_compressibility", "plane_basis", "poisson_extrema", "shear_extrema", "directional_extrema",
            "QUANTITIES", "isotropic_sweep", "isotropic_stiffness_derivatives", "compliance_derivative",
            "rotated_stiffness_derivative", "young_modulus_derivative", "cholesky_parameters",
-           "stiffness_from_cholesky"]
+           "stiffness_from_cholesky", "aggregate_moduli", "universal_anisotropy_index", "zener_ratio"]
 
 QUANTITIES = ("young", "poisson", "shear", "linear_compressibility")
 
@@ -315,3 +327,45 @@ def stiffness_from_cholesky(theta: Any) -> np.ndarray:
     L[_TRIL] = th[6:]
     M = L @ L.T
     return T.mandel_to_stiffness(0.5 * (M + M.T))
+
+
+# ============================================================================================== aggregate moduli
+def aggregate_moduli(C6: Any) -> dict[str, float]:
+    """Voigt, Reuss and Hill bulk and shear moduli of a Voigt stiffness C6 (6, 6; symmetric positive definite, in
+    any frame: the result is rotation invariant), from the invariants in the module notes. Keys ``K_V, G_V, K_R, G_R,
+    K_H, G_H`` (units of C) and the Hill isotropic equivalents ``E_H, nu_H``. K_V ≥ K_R and G_V ≥ G_R hold for every
+    admissible C (to rounding)."""
+    C = np.asarray(C6, float)
+    if C.shape != (6, 6):
+        raise ValueError(f"C6 must be a Voigt stiffness (6, 6), got {C.shape}")
+    check_positive_definite(C, "stiffness", "C")
+    S = np.linalg.inv(C)
+    C4, S4 = T.stiffness_to_tensor(C), T.compliance_to_tensor(0.5 * (S + S.T))
+    cv, cd = np.einsum("iijj", C4), np.einsum("ijij", C4)
+    sv, sd = np.einsum("iijj", S4), np.einsum("ijij", S4)
+    K_V, G_V = cv / 9.0, (cd - cv / 3.0) / 10.0
+    K_R, G_R = 1.0 / sv, 5.0 / (2.0 * (sd - sv / 3.0))
+    K_H, G_H = 0.5 * (K_V + K_R), 0.5 * (G_V + G_R)
+    return {"K_V": float(K_V), "G_V": float(G_V), "K_R": float(K_R), "G_R": float(G_R), "K_H": float(K_H),
+            "G_H": float(G_H), "E_H": float(9 * K_H * G_H / (3 * K_H + G_H)),
+            "nu_H": float((3 * K_H - 2 * G_H) / (2 * (3 * K_H + G_H)))}
+
+
+def universal_anisotropy_index(C6: Any) -> float:
+    """A_U = 5 G_V/G_R + K_V/K_R − 6 ≥ 0 of a Voigt stiffness (:func:`aggregate_moduli`); 0 for isotropy only."""
+    m = aggregate_moduli(C6)
+    return float(5.0 * m["G_V"] / m["G_R"] + m["K_V"] / m["K_R"] - 6.0)
+
+
+def zener_ratio(C6: Any, rtol: float = 1e-10) -> float:
+    """Zener ratio 2 C44 / (C11 − C12) of a Voigt stiffness that is cubic (or isotropic, ratio 1) **in the given
+    axes** (:func:`toporlogy.core.linear_elastic.symmetry_class`). Any other tensor, including a cubic one whose cubic
+    axes are rotated away from the frame, raises ValueError: the ratio is undefined or wrong there."""
+    C = np.asarray(C6, float)
+    if C.shape != (6, 6):
+        raise ValueError(f"C6 must be a Voigt stiffness (6, 6), got {C.shape}")
+    cls = symmetry_class(C, rtol)
+    if cls not in ("cubic", "isotropic"):
+        raise ValueError(f"the Zener ratio is defined for cubic symmetry in the cubic axes only; this stiffness is "
+                         f"{cls!r} in the given frame")
+    return float(2.0 * C[3, 3] / (C[0, 0] - C[0, 1]))

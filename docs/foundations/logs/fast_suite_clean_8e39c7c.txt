@@ -1,0 +1,97 @@
+2026-11-27 11:21 +0300
+...............x..............................................x......... [  1%]
+............x........................................................... [  3%]
+.............................................x.......................... [  5%]
+........................................................................ [  7%]
+........................................................................ [  9%]
+........................................................................ [ 11%]
+................................................s......................x [ 12%]
+.......................x................................................ [ 14%]
+...x.................................................................... [ 16%]
+...................................x.................................... [ 18%]
+........................................................................ [ 20%]
+........................................................................ [ 22%]
+..........................................................x............. [ 24%]
+.........................x.............................................. [ 25%]
+........................................................................ [ 27%]
+........................................................................ [ 29%]
+........................................................................ [ 31%]
+...............x........................................................ [ 33%]
+........................................................x............... [ 35%]
+........x............................................................... [ 37%]
+........................................................................ [ 38%]
+........................................................................ [ 40%]
+........................................................................ [ 42%]
+...................................................x...........x.x...... [ 44%]
+..............x......................s.................................. [ 46%]
+..........xx...x........................................................ [ 48%]
+........................................................................ [ 50%]
+........................................................................ [ 51%]
+....................x....................x.............................. [ 53%]
+.....x.................................................................. [ 55%]
+........................................................................ [ 57%]
+.........................................................x.............. [ 59%]
+......s............................x.x..............................x... [ 61%]
+..............................x......................................... [ 62%]
+.............................x..x............xxx.....................xx. [ 64%]
+..x........x.........x...............................................x.. [ 66%]
+...................x...............................x.................... [ 68%]
+...........................................s............................ [ 70%]
+.x.x.................................................................... [ 72%]
+....s................................................................... [ 74%]
+...x.x...........x.........x.x....x....xx...........................x... [ 75%]
+...........xxxx....x.................................................... [ 77%]
+.......x............................................x................... [ 79%]
+........................................................................ [ 81%]
+........................................................................ [ 83%]
+........................................................................ [ 85%]
+........................................................................ [ 87%]
+........................................................................ [ 88%]
+........................................................................ [ 90%]
+......................xx.x.xx........................................... [ 92%]
+..............................................................xx........ [ 94%]
+..........x.........................................................x... [ 96%]
+.................................................................x...... [ 98%]
+....................................x................................... [100%]
+============================== warnings summary ===============================
+tests/toporlogy/test_adaptivity.py::test_a2f_test_quadrature_and_exact_gradient
+  D:\Masaustu\Topology Optimization\.claude\tmp-toporlogy\f3\suite_8e39c7c\tests\toporlogy\test_adaptivity.py:270: IntegrationWarning: The occurrence of roundoff error is detected, which prevents 
+    the requested tolerance from being achieved.  The error may be 
+    underestimated.
+    ref = 2 * quad(lambda t: math.cos(t) ** (-4 / 3), 0, PI / 4, epsabs=1e-14, epsrel=1e-14)[0]
+
+tests/toporlogy/test_constitutive.py: 40 warnings
+  D:\Masaustu\Topology Optimization\.claude\tmp-toporlogy\f3\suite_8e39c7c\tests\toporlogy\test_constitutive.py:282: DeprecationWarning: Conversion of an array with ndim > 0 to a scalar is deprecated, and will error in future. Ensure you extract a single element from your array before performing this operation. (Deprecated NumPy 1.25.)
+    f_tr = math.sqrt(1.5) * np.linalg.norm(s_tr) - float(m.kappa(st["alpha"]))
+
+tests/toporlogy/test_fem_assembly_constraints.py::test_fa6c_constant_traction_on_a_curved_facet_high_rule[T6]
+tests/toporlogy/test_fem_assembly_constraints.py::test_fa6c_constant_traction_on_a_curved_facet_high_rule[Q9]
+  D:\Masaustu\Topology Optimization\.claude\tmp-toporlogy\f3\suite_8e39c7c\tests\toporlogy\test_fem_assembly_constraints.py:381: IntegrationWarning: The occurrence of roundoff error is detected, which prevents 
+    the requested tolerance from being achieved.  The error may be 
+    underestimated.
+    Ls = quad(ds, 0, 1, epsabs=1e-14, epsrel=1e-14)[0]
+
+tests/toporlogy/test_fem_assembly_constraints.py::test_fa6c_constant_traction_on_a_curved_facet_high_rule[T6]
+tests/toporlogy/test_fem_assembly_constraints.py::test_fa6c_constant_traction_on_a_curved_facet_high_rule[Q9]
+  D:\Masaustu\Topology Optimization\.claude\tmp-toporlogy\f3\suite_8e39c7c\tests\toporlogy\test_fem_assembly_constraints.py:382: IntegrationWarning: The occurrence of roundoff error is detected, which prevents 
+    the requested tolerance from being achieved.  The error may be 
+    underestimated.
+    cx = quad(lambda s: (xs(s) - p0[0]) * ds(s), 0, 1, epsabs=1e-14, epsrel=1e-14)[0]
+
+tests/toporlogy/test_mesh_verification.py: 286 warnings
+  C:\Users\ayber\AppData\Local\Programs\Python\Python312\Lib\site-packages\skfem\element\discrete_field.py:77: DeprecationWarning: Writing 'u.value' is unnecessary and can be replaced by 'u'.
+    warn("Writing 'u.value' is unnecessary "
+
+tests/toporlogy/test_nonlinear_heat.py::test_nh7_steady_one_dimensional_kirchhoff[dirichlet]
+tests/toporlogy/test_nonlinear_heat.py::test_nh7_steady_one_dimensional_kirchhoff[flux]
+  D:\Masaustu\Topology Optimization\.claude\tmp-toporlogy\f3\suite_8e39c7c\tests\toporlogy\test_nonlinear_heat.py:95: RuntimeWarning: divide by zero encountered in log
+    return float(np.polyfit(np.log(h), np.log(e), 1)[0])
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+----------------------------- verification status -----------------------------
+pardiso  NOT VERIFIED  pypardiso not installed (ModuleNotFoundError: No module named 'pypardiso'); set TOPORLOGY_PYLIB to test it
+gmsh     NOT VERIFIED  could not import 'gmsh': No module named 'gmsh'
+cuda     VERIFIED      3 passed
+3813 passed, 5 skipped, 167 deselected, 70 xfailed, 333 warnings in 3810.40s (1:03:30)
+exit 0
+2026-11-27 12:25 +0300

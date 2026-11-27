@@ -48,10 +48,16 @@ __all__ = ["NotPositiveDefiniteError", "check_positive_definite", "IsotropicModu
            "isotropic_stiffness", "isotropic_compliance", "isotropic_plane_stress", "isotropic_plane_strain",
            "plane_bulk_modulus", "orthotropic_compliance", "transversely_isotropic_compliance", "cubic_stiffness",
            "engineering_constants", "symmetry_class", "acoustic_tensor", "fibonacci_sphere", "strong_ellipticity",
-           "wave_speeds", "ElasticTensor", "SINGULAR_RCOND"]
+           "wave_speeds", "ElasticTensor", "SINGULAR_RCOND", "poisson_uniaxial", "forward_accuracy_established",
+           "FORWARD_ACCURACY_KAPPA_LIMIT"]
 
 #: scaled smallest Mandel eigenvalue below which a matrix counts as numerically singular
 SINGULAR_RCOND = 64 * np.finfo(float).eps
+
+#: largest Mandel condition number κ for which :func:`forward_accuracy_established` says "established": results of
+#: inverses and directional properties are asserted to c κ u with c = 100 up to κ = 1e10 (one decade of margin),
+#: i.e. about three correct digits at the limit (``docs/foundations/ELASTIC_CONDITIONING.md``)
+FORWARD_ACCURACY_KAPPA_LIMIT = 1e11
 
 
 class NotPositiveDefiniteError(ValueError):
@@ -61,7 +67,13 @@ class NotPositiveDefiniteError(ValueError):
 def check_positive_definite(A6: Any, kind: str = "stiffness", what: str = "C") -> dict[str, float]:
     """Diagnostics {"min_eigenvalue", "max_eigenvalue", "rcond", "condition_number"} of a Voigt stiffness or
     compliance (Mandel eigenvalues) if it is symmetric and positive definite (Cholesky succeeds and
-    λ_min / λ_max > :data:`SINGULAR_RCOND`); raises ValueError (asymmetric) or :class:`NotPositiveDefiniteError`."""
+    λ_min / λ_max > :data:`SINGULAR_RCOND`); raises ValueError (asymmetric) or :class:`NotPositiveDefiniteError`.
+
+    Limit: the test is conservative. A matrix that is positive definite in exact arithmetic but has κ > 1/SINGULAR_RCOND
+    (about 7e13) is refused as "numerically singular": float64 cannot decide its sign. An accepted matrix is positive
+    definite as stored (no false acceptance in 300 + 40 seeded cases, ``tests/toporlogy/test_elastic_conditioning.py``
+    EC7, R02b; a test, not a proof). Acceptance says nothing about the accuracy of S = C⁻¹ or of directional properties
+    computed from it: see :func:`forward_accuracy_established`."""
     A = T.check_symmetric(np.asarray(A6, float), T.SYMMETRY_RTOL, what)
     if A.shape not in ((6, 6), (3, 3)):
         raise ValueError(f"{what} must be a Voigt matrix (6, 6) or (3, 3), got {A.shape}")
@@ -78,6 +90,33 @@ def check_positive_definite(A6: Any, kind: str = "stiffness", what: str = "C") -
         raise NotPositiveDefiniteError(f"{what} is numerically singular (λ_min / λ_max = {rc:.3e})")
     return {"min_eigenvalue": float(w[0]), "max_eigenvalue": float(w[-1]), "rcond": rc,
             "condition_number": float(w[-1] / w[0])}
+
+
+def forward_accuracy_established(C6: Any, kind: str = "stiffness") -> dict[str, Any]:
+    """Whether float64 results derived from a Voigt stiffness (or compliance) can be trusted to a stated accuracy.
+    {"condition_number", "kappa_u", "rcond", "verdict"} from the Mandel eigenvalues w (ascending), rc = w_min / w_max,
+    κ = 1 / rc and u = 2⁻⁵³: "not_positive_definite" if rc ≤ −:data:`SINGULAR_RCOND`; "undecidable" if |rc| <
+    :data:`SINGULAR_RCOND` (the sign of w_min cannot be decided from the stored matrix); "established" if κ ≤
+    :data:`FORWARD_ACCURACY_KAPPA_LIMIT`; else "not_established" (positive definite, but a forward error of κ u or
+    more cannot be excluded). ``kappa_u`` = κ u is the first-order scale of the relative error of an inverse, an energy
+    on the softest strain or a directional property of sampled directions; the measured errors are within 100 κ u up
+    to κ = 1e10 (``docs/foundations/ELASTIC_CONDITIONING.md``). Not a certificate: no a priori error bound is
+    claimed (an adversarial direction can reach κ² u). ``condition_number`` is inf unless rc > 0."""
+    A = T.check_symmetric(np.asarray(C6, float), T.SYMMETRY_RTOL, "A")
+    if A.shape not in ((6, 6), (3, 3)):
+        raise ValueError(f"A must be a Voigt matrix (6, 6) or (3, 3), got {A.shape}")
+    M = T.stiffness_to_mandel(A) if kind == "stiffness" else T.compliance_to_mandel(A)
+    w = np.linalg.eigvalsh(0.5 * (M + M.T))
+    rc = float(w[0] / w[-1])
+    kappa = 1.0 / rc if rc > 0 else math.inf
+    if rc <= -SINGULAR_RCOND:
+        verdict = "not_positive_definite"
+    elif abs(rc) < SINGULAR_RCOND:
+        verdict = "undecidable"
+    else:
+        verdict = "established" if kappa <= FORWARD_ACCURACY_KAPPA_LIMIT else "not_established"
+    return {"condition_number": kappa, "kappa_u": kappa * float(np.finfo(float).eps) / 2, "rcond": rc,
+            "verdict": verdict}
 
 
 # ============================================================================================== isotropic
@@ -281,6 +320,34 @@ def engineering_constants(S6: Any) -> dict[str, Any]:
     mask[np.arange(6), np.arange(6)] = False
     out["coupling"] = float(np.abs(S[mask]).max() / np.abs(S).max())
     return out
+
+
+def poisson_uniaxial(C: Any, load: int, transverse: int) -> Any:
+    """Poisson ratio ν_{load,transverse} = −ε_transverse / ε_load under uniaxial stress along ``load`` of the stiffness
+    ``C`` (Voigt, engineering shear; 3×3 in 2-D, 6×6 in 3-D; NumPy or torch, differentiable in torch). With
+    S = C⁻¹: ν = −S[transverse, load] / S[load, load], the column S[:, load] from a linear solve of C x = e_load (no
+    explicit inverse). ``load`` and ``transverse`` are distinct normal components (2-D: 0, 1; 3-D: 0, 1, 2). The
+    stiffness ratio C12/C11 is not this quantity: for an uncoupled 2-D C it is ν21, and with normal–shear coupling it
+    is no Poisson ratio at all (``docs/foundations/prereg/E04_poisson.md``)."""
+    nv = int(C.shape[-1])
+    if tuple(C.shape[-2:]) != (nv, nv) or nv not in (3, 6):
+        raise ValueError(f"C must be (3, 3) or (6, 6) Voigt, got {tuple(C.shape)}")
+    nn = 2 if nv == 3 else 3
+    i, j = int(load), int(transverse)
+    if i == j or not (0 <= i < nn and 0 <= j < nn):
+        raise ValueError(f"load and transverse must be distinct normal components in 0..{nn - 1}, got {load}, "
+                         f"{transverse}")
+    x: Any
+    if T._is_torch(C):
+        import torch
+        et = torch.zeros(nv, dtype=C.dtype, device=C.device)
+        et[i] = 1.0
+        x = torch.linalg.solve(C, et)
+    else:
+        en = np.zeros(nv)
+        en[i] = 1.0
+        x = np.linalg.solve(np.asarray(C, float), en)
+    return -x[j] / x[i]
 
 
 def symmetry_class(C6: Any, rtol: float = 1e-10) -> str:

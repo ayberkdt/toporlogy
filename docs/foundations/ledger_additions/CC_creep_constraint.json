@@ -1,0 +1,12 @@
+[
+ {
+  "nodeid": "tests/toporlogy/test_creep_constraint.py::test_cc3_creep_strain_constraint_respected",
+  "kind": "pre-registered check failed",
+  "model_backend": "optimization.creep_topology + optimize_viscoelastic with a p-norm creep-strain constraint (MMA), CPU",
+  "reason": "limit = 0.5 x the unconstrained creep design's p-norm (5.64e-3): the constrained run hit the 1500-iteration cap infeasible (p-norm 7.17e-3, KKT residual 1.0); max point creep strain 1.96e-2 -> 1.33e-2, J(1000 s) +90 %",
+  "risk": "low",
+  "resolution": "the limit was chosen without a feasibility study; a continuation in the limit (e.g. 0.9, 0.8, ...), a feasibility check of the bound and a larger move limit or GCMMA are the follow-up; gradients of the constraint are verified (CC2)",
+  "record": "docs/foundations/prereg/CC_creep_constraint.md",
+  "slow": true
+ }
+]
