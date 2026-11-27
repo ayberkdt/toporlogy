@@ -76,3 +76,10 @@ same card, not against the physical world.
 
 Run: `python -m pytest tests/toporlogy/test_material_cards.py -q -p no:randomly` (TMP/TEMP and --basetemp under
 `.claude/tmp-toporlogy/P05`). First result appended below after the run.
+
+## Amendment (added before the first run)
+
+Amendment written 2026-11-27 03:31 +0300 (clock output), before the first run: two checks were added to the test file that the table above
+does not list. **MC2c** (regression, bitwise): a `curing_thermoelastic` card with `kamal_sourour` kinetics builds the same model
+as the directly constructed `KamalSourour` one. **MC8**: `load_material_card` does not mutate its input dict (equality with a
+deep copy). No threshold or earlier prediction was changed.
