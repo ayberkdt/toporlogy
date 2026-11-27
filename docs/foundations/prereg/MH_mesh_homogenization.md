@@ -66,3 +66,10 @@ answer. A periodic cell tiles the plane (space) with exactly its own measure, so
 of the mesh, Σ dV. Change (periodic bc, elasticity and conduction): refuse with ValueError when
 | |det L| − Σ dV | > 1e-9 Σ dV. Check MH9: (a) the MH2 rectangle 12 × 10 with lattice diag(6, 10) (half period in x,
 nodes match) → ValueError naming both measures; (b) every MH1–MH8 test unchanged; (c) the cell tests (fast) unchanged.
+
+### MH9 result (run 12:32 +0300 by the clock; recorded 2026-11-27 12:32 +0300)
+
+PASS on the first run: lattice diag(6, 10) on the 12 × 10 rectangle refused for elasticity and conduction ("mesh
+measure"); MH1–MH8 values unchanged to the printed digits; MB and all fast cell tests pass (34 passed). The 40 × 40
+square and rhombic cells of the slow runs pass the new check (measures 1.0 and 0.866025403784). The guard adds a
+refusal only; this commit postdates the final clean suite (8e39c7c) and is covered by the targeted run named here.

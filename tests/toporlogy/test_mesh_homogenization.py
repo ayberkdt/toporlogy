@@ -212,3 +212,12 @@ def test_mh8_refusals() -> None:
         homogenize_mesh_elasticity(m, D, L, np.zeros(m.n_cells))
     with pytest.raises(ValueError, match="linearly dependent"):
         homogenize_mesh_elasticity(m, D, [[1.0, 0.0], [2.0, 0.0]])
+
+
+# ---------------------------------------------------------------------------------------------- MH9
+def test_mh9_sub_period_lattice_is_refused() -> None:
+    m = rectangle(12, 10, 12.0, 10.0, "Q4")
+    with pytest.raises(ValueError, match="mesh measure"):
+        homogenize_mesh_elasticity(m, D_plane_stress(NU), [[6.0, 0.0], [0.0, 10.0]])
+    with pytest.raises(ValueError, match="mesh measure"):
+        homogenize_mesh_conduction(m, 1.0, [[6.0, 0.0], [0.0, 10.0]])

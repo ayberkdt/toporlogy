@@ -95,6 +95,16 @@ def _periodic_cases(mesh: Mesh, L: np.ndarray, Hs: list[np.ndarray], ncomp: int,
     return per + LinearConstraints.fix(ndof, ncomp * pin + np.arange(ncomp), np.zeros((ncomp, len(Hs))))
 
 
+def _same_measure(L: np.ndarray, P: Any) -> None:
+    """A periodic cell tiles with exactly its own measure: |det L| must equal the mesh measure Σ dV (a sub-period
+    lattice still matches node pairs on a structured mesh and would give a silently wrong answer; MH9)."""
+    det = abs(float(np.linalg.det(L)))
+    meas = float(P.geom.dV.sum())
+    if abs(det - meas) > 1e-9 * meas:
+        raise ValueError(f"the lattice cell measure |det lattice| = {det:.12g} differs from the mesh measure "
+                         f"{meas:.12g}: the lattice is not the period of this mesh")
+
+
 def _effective(problem: Any, Ke0: np.ndarray, cons: LinearConstraints, volume: float,
                sensitivities: bool) -> MeshHomogenized:
     sol = solve_constrained(problem, np.zeros((problem.ndof, cons.n_cases)), cons, redundant="drop")
@@ -138,6 +148,7 @@ def homogenize_mesh_elasticity(mesh: Mesh, D: Any, lattice: Any, E: Any = None, 
         volume = float(P.geom.dV.sum()) * (P.thickness if mesh.dim == 2 else 1.0)
         return _effective(P, np.zeros(0), LinearConstraints.fix(P.ndof, dofs, vals), volume, False)
     Ke0 = kn.stiffness(P.geom, np.broadcast_to(D0, (mesh.n_cells, k, k)), P.thickness)
+    _same_measure(L, P)
     volume = abs(float(np.linalg.det(L))) * (P.thickness if mesh.dim == 2 else 1.0)
     cons = _periodic_cases(mesh, L, Hs, mesh.dim, P.ndof)
     return _effective(P, Ke0, cons, volume, sensitivities)
@@ -177,6 +188,7 @@ def homogenize_mesh_conduction(mesh: Mesh, kappa: Any, lattice: Any, k: Any = No
         raise ValueError(f"kappa must be a scalar or ({dim}, {dim}), got {kap.shape}")
     P = HeatProblem(mesh, kv[:, None, None] * kt, thickness=thickness, degree=degree)
     Ke0 = kn.conduction(P.geom, np.broadcast_to(kt, (mesh.n_cells, dim, dim)), P.thickness)
+    _same_measure(L, P)
     volume = abs(float(np.linalg.det(L))) * (P.thickness if dim == 2 else 1.0)
     gs = [np.eye(dim)[i][None, :] for i in range(dim)]               # T = g·x: "H" is the (1, dim) gradient row
     cons = _periodic_cases(mesh, L, gs, 1, P.ndof)
