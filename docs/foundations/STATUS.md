@@ -1,11 +1,11 @@
 # Foundations II — live status
 
-Actual HEAD: `796f96e`  
+Actual HEAD: `040f61f`  
 Branch / dirty state: `foundations/round-3` / dirty  
-Updated at: 2026-11-27 10:57 +0300  
+Updated at: 2026-11-27 11:11 +0300  
 Environment / resource budget: Windows 11, Python 3.12.1, numpy 2.2.6, scipy 1.14.1, torch 2.5.1+cu121 (CUDA present, not exercised), mpmath 1.3.0, scikit-fem 12.0.2, meshio absent; 12 logical CPUs; 16.7 GB RAM, about 2-4 GB free; C: 5.6 GB free (temp files on D:)  
 Last successful integrated checkpoint: 7249632 (clean-worktree fast suite, run 10:05-10:55: 3796 passed / 5 skipped / 70 xfailed / 0 failed; ruff and mypy clean; records check clean)  
-Current unit: IP projection with beta continuation (IH follow-up); final clean-worktree suite
+Current unit: IAc bounded auxetic cell; final clean-worktree suite
 
 | ID | Priority | Dependencies | State | Evidence / SHA | Blocker / next action |
 |---|---|---|---|---|---|
@@ -58,7 +58,10 @@ Current unit: IP projection with beta continuation (IH follow-up); final clean-w
 | NS-newton-shared | P1 | — | VERIFIED_SCOPE | prereg/NS_newton_shared.md (NS1-NS4 pass; bitwise neutral vs 1f898bf) | none |
 | MH-mesh-homogenization | P1 | WP06-fem-kernel | VERIFIED_SCOPE | prereg/MH_mesh_homogenization.md (MH1-MH8, 15 passed first run) | Study response on the general mesh; KUBC/SUBC on the mesh |
 | MB-mesh-bounds | P1 | MH-mesh-homogenization | VERIFIED_SCOPE | prereg/MB_mesh_bounds.md (MB1-MB5 pass first run; C_SUBC <= C_PBC <= C_KUBC) | none |
-| IH-inverse-homogenization | P1 | MH-mesh-homogenization | FAILED | prereg/IH_inverse_homogenization.md (IH1, IH2, IH3/4 a-b, IH5 pass; IH3(c), IH4(c) FAILED: uniform grey stationary point); post hoc 0/1 start 0.841/0.837 of HS | IP projection (running) |
+| IH-inverse-homogenization | P1 | MH-mesh-homogenization | FAILED | prereg/IH_inverse_homogenization.md (IH1, IH2, IH3/4 a-b, IH5 pass; IH3(c), IH4(c) FAILED: uniform grey stationary point); post hoc 0/1 start 0.841/0.837 of HS | none (IP follow-up verified) |
+| IP-projection | P1 | IH-inverse-homogenization | VERIFIED_SCOPE | prereg/IP_projection.md (IP1-IP4 pass first run; kappa/HS 0.9895 square, 0.9880 rhombus, grey <= 0.4 %) | none |
+| IA-auxetic-stiffness-ratio | P2 | IP-projection | FAILED | prereg/IA_auxetic_cell.md (registered checks pass: C12/C11 -1.76; physical reading failed: uniaxial-stress ratios +0.0004/+0.005 through normal-shear coupling; an earlier reading was corrected) | compliance-based objective (IAb, IAc) |
+| IAb-auxetic-compliance | P2 | IA-auxetic-stiffness-ratio | FAILED | prereg/IAb_auxetic_compliance.md (registered checks pass; design is a near mechanism: min eig 1.1e-9, disconnected solid) | IAc (all moduli bounded) running |
 
 ## Next executable units
 
