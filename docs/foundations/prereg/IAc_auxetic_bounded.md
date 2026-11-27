@@ -43,3 +43,9 @@ IAb: the stiffness-ratio objective is exploitable by shear coupling, the complia
 mechanism; bounding E1, E2 and G12 removes both.
 
 Figure (tiled 3 × 3, base cell outlined): `fig_iac_cell.png` / `.pdf`; `scripts/ia_design.py bounded` re-runs IC2 deterministically (same ν12 −2.3365, ν21 −0.1699; full C and S in `IAc_design.json`) and `scripts/ih_cells_figure.py iac` draws it (datawiz audit 0 errors). The cell: wavy horizontal beams joined by staggered vertical posts.
+
+### Test set-up note (2026-11-27 11:53 +0300)
+
+A later re-run of the whole file in parallel with four other optimisation files and the clean suite hit the
+project-wide pytest timeout of 900 s (IB2 takes 692 s alone). The slow optimisation test now carries
+`@pytest.mark.timeout(2400)`; no threshold, input or assertion changed.

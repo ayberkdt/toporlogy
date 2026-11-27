@@ -41,3 +41,9 @@ see this: "C positive definite" is satisfied by the void material, and a ν12 bo
 mechanism. Thresholds are not changed after the fact; the lesson is recorded: a physical auxetic design needs all
 moduli bounded below (E1, E2 and G12 from the full compliance) and the connectivity of the solid checked. Follow-up
 record: IAc.
+
+### Test set-up note (2026-11-27 11:53 +0300)
+
+A later re-run of the whole file in parallel with four other optimisation files and the clean suite hit the
+project-wide pytest timeout of 900 s (IB2 takes 692 s alone). The slow optimisation test now carries
+`@pytest.mark.timeout(2400)`; no threshold, input or assertion changed.

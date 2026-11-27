@@ -53,6 +53,7 @@ def test_ic1_gradients_of_the_three_moduli() -> None:
 
 
 @pytest.mark.slow
+@pytest.mark.timeout(2400)   # 600 MMA iterations with extra homogenisations: 7-14 min alone, longer on a shared CPU
 def test_ic2_ic3_bounded_auxetic_cell() -> None:
     m, L = square(40)
     c = m.cell_centroids()

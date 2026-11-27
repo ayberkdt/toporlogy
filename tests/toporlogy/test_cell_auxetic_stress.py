@@ -56,6 +56,7 @@ def test_ib4_other_paths_unchanged() -> None:
 
 
 @pytest.mark.slow
+@pytest.mark.timeout(2400)   # 600 MMA iterations with extra homogenisations: 7-14 min alone, longer on a shared CPU
 def test_ib2_ib3_auxetic_under_uniaxial_stress() -> None:
     m, L = square(40)
     c = m.cell_centroids()
