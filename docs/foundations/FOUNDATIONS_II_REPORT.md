@@ -20,6 +20,8 @@ the record is named in each row. Synthetic parameters throughout; no real materi
 | R5 adiabatic | Perzyna with σ_y(T), Taylor–Quinney heating from the dissipation (not the plastic work), coupled tangent | AD1–AD8 (`R5_adiabatic.md`); roundoff allowances added to two inequality checks after a 6e-15 failure (recorded) | — |
 | C creep | Norton, Norton–Bailey, Arrhenius, adaptive long holds | C2–C7 (`C_creep.md`) | C3g (n = 20 relaxation prediction), C6a (global error of local step control) |
 | R rate | physical J2, Perzyna, Eyring, Drucker–Prager | R1–R7 (`R_rate.md`) | R3a (1-ulp steady state) |
+| T2 second derivative | d²f(A)[H, K] by second divided differences (stable confluent limits), Hessian-vector product | SD1–SD10 vs a 3×3 block-matrix oracle (≤ 1.9e-12 at κ = 1e4) (`T2_second_derivative.md`) | wording: O(h²) slope check inapplicable to a cubic |
+| L6 saddle point | block operator, Schur complement, block-diagonal (MINRES) and block-triangular (GMRES) preconditioners with a scaled pressure mass | L6a, b1a/c, c1, c3, c5/6, d, f (`L6_saddle.md`); MINRES converges in 24/24 Taylor–Hood cases up to ν = 0.5; a restart-status fault fixed | L6b1b (constant pressure is an exact eigenvector), L6c2a/b (T6 counts 47), L6c4 (capped statistic), L6e (ILU not symmetric) |
 | T spectral | f(A) with Fréchet derivative/JVP/VJP at repeated eigenvalues; VRH, A_U, Zener | TS1–TS9, MO1–4, E5 (`T_spectral.md`) | — |
 | F4 rates / F2fix | historical T4/T10 rate misses and curved T10 patch investigated | R05 cause: curved T10 needs degree 3 (default now 3 for curved T10, patch exact to 1.5e-15); R04: T4 a mesh-draw accident, T10 pre-asymptotic, no defect (`F4_RATES.md`, `F2fix_curved_t10_degree.md`) | F4-1 T4 interpolation gap, F4-3 T10 draws (strict xfails) |
 | TK tensor | cofactor/det derivative without inverse; rotation log near π | TK1–TK5; **fixed an O(π − θ) axis error** of the existing near-π branch (`TK_cofactor_rotation.md`) | — |
@@ -33,6 +35,7 @@ the record is named in each row. Synthetic parameters throughout; no real materi
 | P05 material cards | dict/YAML cards with explicit units, provenance, validity box for 8 model families | MC1–MC8 (`P05_material_cards.md`); a consistently mislabelled stress unit is undetectable (stated) | — |
 | M mesh | validation (duplicates, non-manifold, orientation by id), quality with a Bernstein Jacobian certificate, inverse map / point location, renumbering, VTU roundtrip | M1–M5 (`M_mesh.md`); gmsh import NOT VERIFIED | — |
 | HY YAML | `analysis: {type: history}` configs: material card, time schedule, service-time / min–max objectives, CLI validate/run, VTU + JSON output | HY1–HY9 (`HY_history_yaml.md`) | — |
+| HT temperature YAML | `temperature: {table}` in the history YAML for shifted viscoelastic and Arrhenius creep | YAML = API bitwise; refusals with paths (`HT_history_yaml_temperature.md`) | HT4 first run: two HY7 messages lost the word "isothermal" (message fixed) |
 | D3 checkpoint | segment checkpointing of the viscoelastic adjoint | same gradient, 17.5× less saved memory, 2× solves (`D3_checkpoint.md`) | — |
 | N nonlinear | objectivity, plane stress, patches, truss, Hencky via spectral log | N1–N5 (`N_nonlinear.md`); R07 still present (measured) | — |
 
