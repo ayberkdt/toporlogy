@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import itertools
 from dataclasses import dataclass, field
+from collections.abc import Sequence
 from typing import Any
 
 import numpy as np
@@ -106,10 +107,23 @@ def cell_objective(mesh: Mesh, lattice: Any, D: Any, x_phys: np.ndarray, penal: 
     return val, dE * penal * x_phys ** (penal - 1.0) * (1.0 - emin), h.C
 
 
+def _project(xb: np.ndarray, beta: float, eta: float) -> tuple[np.ndarray, np.ndarray]:
+    """tanh projection (the formula of :class:`toporlogy.design.chain.HeavisideProjection`) and its derivative."""
+    a, d = np.tanh(beta * eta), np.tanh(beta * (1.0 - eta))
+    th = np.tanh(beta * (xb - eta))
+    return (a + th) / (a + d), beta * (1.0 - th ** 2) / (a + d)
+
+
 def optimize_cell(mesh: Mesh, lattice: Any, D: Any, volume: float, rmin: float, objective: str = "bulk",
                   penal: float = 3.5, emin: float = 1e-9, max_iter: int = 300, move: float = 0.2,
-                  x0: np.ndarray | None = None, kkt_tol: float | None = None) -> CellOptimizeResult:
-    """Maximise the effective ``objective`` of the periodic cell under a volume fraction (module notes)."""
+                  x0: np.ndarray | None = None, kkt_tol: float | None = None,
+                  projection: tuple[float, Sequence[float]] | None = None,
+                  stage_iter: int = 100) -> CellOptimizeResult:
+    """Maximise the effective ``objective`` of the periodic cell under a volume fraction (module notes).
+
+    ``projection=(eta, betas)``: the filtered field is projected by the tanh step with threshold ``eta``; β runs
+    through ``betas``, each stage until ``kkt_tol`` or ``stage_iter`` iterations, MMA restarted per stage, and the
+    volume is taken on the projected field (``prereg/IP_projection.md``). Without it one stage of ``max_iter``."""
     from toporlogy.optimization.diagnostics import kkt_estimate
     from toporlogy.optimizers.mma import MMA
     if not 0 < volume < 1:
@@ -120,31 +134,58 @@ def optimize_cell(mesh: Mesh, lattice: Any, D: Any, volume: float, rmin: float, 
     x = np.full(mesh.n_cells, float(volume)) if x0 is None else np.asarray(x0, float).copy()
     if x.shape != (mesh.n_cells,):
         raise ValueError(f"x0 must have {mesh.n_cells} entries")
-    opt = MMA(move=move)
-    hist: dict[str, list[float]] = {"objective": [], "volume": [], "change": []}
+    if projection is None:
+        stages: list[float | None] = [None]
+        caps = [int(max_iter)]
+        eta = 0.5
+    else:
+        eta = float(projection[0])
+        stages = [float(b) for b in projection[1]]
+        if not stages or not all(b > 0 for b in stages if b is not None) or not 0 < eta < 1:
+            raise ValueError("projection must be (eta in (0, 1), non-empty positive betas)")
+        caps = [int(stage_iter)] * len(stages)
+    hist: dict[str, list[float]] = {"objective": [], "volume": [], "change": [], "beta": []}
     f_ref: float | None = None
     stop, kkt, it = "max_iter", None, 0
-    val, C, xp = 0.0, np.zeros((3, 3)), filt(x)
-    while it < int(max_iter):
-        xp = filt(x)
-        val, dval, C = cell_objective(mesh, lattice, D, xp, penal, emin, objective)
-        f_ref = abs(val) if f_ref is None else f_ref
-        f0, df0 = -val / f_ref, -filt.backward(dval) / f_ref              # MMA minimises
-        v = float(vw @ xp)
-        g = np.array([v / volume - 1.0])
-        dg = (filt.backward(vw) / volume)[None, :]
-        hist["objective"].append(val)
-        hist["volume"].append(v)
-        if kkt_tol is not None:
-            kkt = float(kkt_estimate(x, df0, g, dg)["residual"])
-            if kkt <= kkt_tol:
-                stop = "kkt"
-                break
-        it += 1
-        xn = opt.step(x, f0, df0, g, dg)
-        hist["change"].append(float(np.abs(xn - x).max()))
-        x = xn
-    else:
-        xp = filt(x)
-        val, _, C = cell_objective(mesh, lattice, D, xp, penal, emin, objective)
+
+    def physical(x: np.ndarray, beta: float | None) -> tuple[np.ndarray, np.ndarray | None]:
+        xb = filt(x)
+        if beta is None:
+            return xb, None
+        return _project(xb, beta, eta)
+
+    val, C = 0.0, np.zeros((3, 3))
+    xp = filt(x)
+    for beta, cap in zip(stages, caps, strict=True):
+        opt = MMA(move=move)
+        k = 0
+        stop = "max_iter"
+        while k < cap:
+            xp, dp = physical(x, beta)
+            val, dval, C = cell_objective(mesh, lattice, D, xp, penal, emin, objective)
+            f_ref = abs(val) if f_ref is None else f_ref
+            if dp is None:
+                f0, df0 = -val / f_ref, -filt.backward(dval) / f_ref              # MMA minimises
+                dg = (filt.backward(vw) / volume)[None, :]
+            else:
+                f0, df0 = -val / f_ref, -filt.backward(dval * dp) / f_ref
+                dg = (filt.backward(vw * dp) / volume)[None, :]
+            v = float(vw @ xp)
+            g = np.array([v / volume - 1.0])
+            hist["objective"].append(val)
+            hist["volume"].append(v)
+            hist["beta"].append(float("nan") if beta is None else beta)
+            if kkt_tol is not None:
+                kkt = float(kkt_estimate(x, df0, g, dg)["residual"])
+                if kkt <= kkt_tol:
+                    stop = "kkt"
+                    break
+            it += 1
+            k += 1
+            xn = opt.step(x, f0, df0, g, dg)
+            hist["change"].append(float(np.abs(xn - x).max()))
+            x = xn
+        else:
+            xp, _ = physical(x, beta)
+            val, _, C = cell_objective(mesh, lattice, D, xp, penal, emin, objective)
     return CellOptimizeResult(x, xp, val, C, float(vw @ xp), it, stop, kkt, hist)
