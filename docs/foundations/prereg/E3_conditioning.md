@@ -94,3 +94,50 @@ strict + ledger additions in `docs/foundations/ledger_additions/E3_conditioning.
 
 Run: `python -m pytest tests/toporlogy/test_elastic_conditioning.py -q -p no:randomly` (TMP/TEMP and basetemp as the brief).
 First results are appended below.
+
+## First result (written 2026-11-27 08:28 +0300 from the clock; run of `tests/toporlogy/test_elastic_conditioning.py` on the commit that follows this record; raw data `docs/foundations/E3_conditioning.json`, produced by `docs/foundations/scripts/e3_conditioning.py`)
+
+First run of the file as written (with `-x`): stopped at the first failure (item 1). After that correction: 2 failed (items 2
+and 3), 27 passed. After the corrections below: 33 passed, 1 xfailed (strict). **No threshold was changed.** What changed, in the order found:
+
+1. **EC4 / EC5, kappa = 1, test set-up (metric) defect, found on the first run (`-x`).** At kappa = 1 the Mandel matrix is the
+   identity: the material is isotropic with nu = 0 for every direction pair (b^T S a = (n.m)^2 = 0), so the reference
+   value is 0 and the relative error "7.3" was rounding noise divided by zero. The nu rows (directional, engineering,
+   `poisson_uniaxial`) now use |x - ref| / max(|ref|, 1) (`_rel_nu`), identical to the relative error wherever |ref| >= 1.
+   The threshold 100 kappa u is the same. This metric change was made after seeing the failure (rule 2: set-up, not
+   threshold); the strict relative error is undefined only at kappa = 1.
+2. **AC4 scaling, implementation drift from the prereg, found on the second run.** The prereg says "rel 1e-15"; the code had
+   used |ratio - expected| <= 1e-15 on the speed ratio (3 x stricter for C x 9). Corrected to the relative form
+   |ratio / expected - 1| <= 1e-15; measured for C x 9: 5.9e-16. Threshold unchanged.
+3. **AC2 at kappa = 1, preregistered tolerance too tight: FAIL kept as a strict xfail.** The proved lower bound
+   w_min/2 = 0.5 is *attained* at kappa = 1 (Q = I/2 for the identity Mandel matrix), and float eigenvalues fall to
+   0.4999999999999993, below 0.4999999999999998 - 4 u w_max = 0.49999999999999956 by about 3e-16 (the slack of 4 u was too small
+   for eigenvalue rounding). Kept as `xfail(strict=True)` with the ledger entry in
+   `ledger_additions/E3_conditioning.json`; a separately labelled **post-hoc** test `test_ac2_amended_slack_16u_at_kappa_1`
+   (slack 16 u w_max, chosen after the failure) passes. For kappa = 1e2, 1e6, 1e10 the 4 u slack passes.
+4. **EC8, prediction wording wrong (arithmetic slip in this record, found on re-derivation before the run, recorded here
+   rather than rewritten above).** The prereg line says the isotropic E = 1, nu = 0.3 condition number is 2.3333. The
+   derivation gives kappa = 3K / 2G = (1 + nu) / (1 - 2 nu) = 1.3 / 0.4 = 3.25; the test asserts 3.25. A failed prediction of the
+   wording, not of the code.
+
+| ID | Result | Measured |
+|---|---|---|
+| EC1 | PASS (kappa <= 1e10) | worst energy error over kappa: random strain 8.1e-15 (kappa 1e6); soft strain 1.7e-7 at kappa = 1e10 (bound 1.1e-4, 0.15 kappa u) |
+| EC2 | PASS | normwise S error 1.0e-15 (1e2), 1.3e-11 (1e6), 1.6e-7 (1e10): 0.09-0.14 kappa u; 1e12: 5.6e-6; 1e14: 7.2e-4 (reported) |
+| EC3 | PASS | E(n) 1.2e-15, 1.3e-11, 1.6e-7 at 1e2, 1e6, 1e10 (<= 0.14 kappa u; kappa = 1: 3.7e-16); 1e12: 5.6e-6; 1e14: 7.2e-4 (reported) |
+| EC4 | PASS | nu(n,m) 1.6e-15, 5.3e-12, 2.6e-8; engineering nu_ij 6.6e-16, 4.9e-12, 2.3e-8; poisson_uniaxial 4.3e-16, 5.3e-12, 2.5e-8 (all <= 0.14 kappa u); 1e14: 5.4e-4, 3.4e-4, 3.3e-4 (reported) |
+| EC5 | PASS | float reciprocity residual <= 4.7e-17 at every level incl. 1e14 (8.6e-17); mp residual <= 9.5e-45 |
+| EC6a | PASS | accepted at 1, 1e2, 1e6, 1e10, 1e12; kappa = 1e14 SPD in mp, refused "numerically singular", verdict "undecidable" |
+| EC6b | PASS | lambda_min/lambda_max = -1e-1, -1e-6, -1e-12 and 0 rejected; S with nu12 = 5, E1 = 20 rejected |
+| EC6c | PASS | nu12 = 5, nu13 = -3 accepted, reproduced to 1e-12; verdict "established" |
+| EC7 | PASS | 300 matrices: 67 accepted (all mp-SPD), **0 false acceptances**, 96 SPD matrices refused (the conservative band), 137 indefinite refused |
+| EC8 | PASS (with the corrected 3.25) | verdicts established x4, not_established (1e12), undecidable (1e14) |
+| AC1 | PASS | symmetry <= 1e-14 at 1, 1e2, 1e6, 1e10 (700 directions each) |
+| AC2 | kappa 1e2, 1e6, 1e10 PASS; **kappa = 1: FAIL (xfail strict)**, amended 16 u PASS | see item 3 |
+| AC3 | PASS | isotropic eigenvalues {G, G, K + 4G/3} to <= 1e-14 (both parameter sets) |
+| AC4 | PASS (after item 2) | c_T = 3202.56 m/s, c_L = 5955.68 m/s at rho = 7800 kg/m^3 (synthetic), scaling to 1e-15 |
+| AC5 | PASS | label "sampled" / "refined", min Q eigenvalue within the proved bounds |
+| R02a | PASS | exact kappa of the reconstruction in [1e34, 1e36]; matrix finite, SPD in mp, refused by `check_positive_definite` and `cholesky_parameters`, verdict "undecidable" |
+| R02b | PASS | 40 samples, exact kappa 7.9e13 ... 2.3e36: all SPD by construction; **0 accepted** (also the 4 below 1e15); 0 float-Cholesky failures; 0 stored-matrix non-SPD in mp; map error <= 2.04 u; smallest-eigenvalue relative error from 8e-16 to 5.6e19 |
+
+Interpretation, limits and the accuracy regime table: `docs/foundations/ELASTIC_CONDITIONING.md`.
