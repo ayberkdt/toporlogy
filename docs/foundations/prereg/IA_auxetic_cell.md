@@ -37,10 +37,19 @@ All checks PASS on the first run; no threshold, input or assertion changed. IP1,
 | IA3 | PASS | thresholded design: C12/C11 = **−1.660** (≤ −0.3), min eigenvalue of C 6.6e-4 (> 0); the solid is one periodic body |
 | IA4 | PASS | the bulk path (IP2 fingerprint) bitwise unchanged |
 
-**Convention, stated explicitly (the trap of E04):** the design is not square-symmetric (C11 = 0.020, C22 = 0.095),
-so the registered quantity C12/C11 is not the physical ν12. With S = C⁻¹ of an orthotropic 2-D cell, uniaxial stress
-along y gives −ε_x/ε_y = −S12/S22 = C12/C11 = **ν21 = −1.76**, and uniaxial stress along x gives −ε_y/ε_x =
-−S12/S11 = C12/C22 = **ν12 = −0.37** (thresholded: −1.66 and −0.38). The cell is auxetic in both directions; the
-large number belongs to loading along y. |C12| < √(C11 C22) holds (positive definite), so a value below −1 is
-admissible for an anisotropic cell. The registered label "the stiffness-ratio ν12 of the square-symmetric convention"
-applies to the check as written (C12/C11 ≤ −0.5); the physical names above are the correct reading.
+**Correction (written 10 minutes after the paragraph it replaces, commit 54d695d; that paragraph was wrong).** It
+claimed the cell is auxetic in both directions (ν21 = −1.76, ν12 = −0.37) by reading S = C⁻¹ as if C13 = C23 = 0. That
+was not checked, and it is false: `scripts/ia_design.py` (deterministic re-run, same C12/C11 = −1.7621, written to
+`IA_design.json`) gives the full C = [[0.0200, −0.0352, 0.0117], [−0.0352, 0.0952, −0.0229], [0.0117, −0.0229,
+0.0076]] with strong normal–shear coupling. From the full compliance, uniaxial stress along x gives ν12 = −S21/S11 =
+**+0.0004** and along y ν21 = −S12/S22 = **+0.005** (thresholded design: +0.0005, +0.0046). **The cell is not auxetic
+under uniaxial stress.** C12/C11 = −1.76 is the ratio σ_y/σ_x under uniaxial *strain* along x with ε_y = γ_xy = 0
+held; the optimiser reached it through the shear coupling, which the objective does not see. The registered check
+(C12/C11 ≤ −0.5) passed as written; the physical claim does not follow from it. The historical grid run had
+C13 ≈ 1e-6 (orthotropic), so the trap did not show there.
+
+Finding: on a general mesh without symmetry, the stiffness-ratio objective is exploitable by normal–shear coupling.
+A physical auxetic objective must use the full compliance (−S21/S11) or enforce orthotropy. Error mechanism and
+prevention: a derived physical quantity was reported from a formula with an unverified assumption; the physical
+ratios are now computed from the full S in `ia_design.py`, and the follow-up record (IAb) registers the
+compliance-based objective.
