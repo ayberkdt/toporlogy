@@ -1,10 +1,10 @@
 # Foundations II — live status
 
-Actual HEAD: `aa62547`  
+Actual HEAD: `cdd42fe`  
 Branch / dirty state: `foundations/round-3` / dirty  
-Updated at: 2026-11-27 06:18 +0300  
+Updated at: 2026-11-27 08:17 +0300  
 Environment / resource budget: Windows 11, Python 3.12.1, numpy 2.2.6, scipy 1.14.1, torch 2.5.1+cu121 (CUDA present, not exercised), mpmath 1.3.0, scikit-fem 12.0.2, meshio absent; 12 logical CPUs; 16.7 GB RAM, about 2-4 GB free; C: 5.6 GB free (temp files on D:)  
-Last successful integrated checkpoint: c5c87d4 (clean-worktree fast suite 2960 passed / 58 xfailed / 0 failed; ruff and mypy clean)  
+Last successful integrated checkpoint: cb6e41e (clean-worktree fast suite 3566 passed / 67 xfailed / 0 failed; ruff and mypy clean; records check clean)  
 Current unit: WP06 F4 / WP16 TS7 slices; CO6 post hoc continuation
 
 | ID | Priority | Dependencies | State | Evidence / SHA | Blocker / next action |
@@ -79,6 +79,7 @@ Current unit: WP06 F4 / WP16 TS7 slices; CO6 post hoc continuation
 - CLEAN-WORKTREE fast suite (-m 'not slow') at c5c87d4: 2960 passed, 5 skipped, 137 deselected, 58 xfailed, 0 failed, exit 0, 36:51 (logs/fast_suite_clean_c5c87d4.txt)
 - benchmarks at f12a243: docs/foundations/BENCHMARKS.md (measurements only)
 - CLEAN-WORKTREE fast suite at de4dd3b: 3212 passed, 5 skipped, 155 deselected, 60 xfailed, 1 FAILED, exit 1, 37:51 (logs/fast_suite_clean_de4dd3b.txt). The failure: test_units U1 collected the new examples/foundations YAML files (material cards and history configs) into the Study config snapshot; fixed at aa62547 by excluding that folder (HY8 covers the history configs); snapshot unchanged, test_units + test_history_yaml 99 passed.
+- CLEAN-WORKTREE fast suite at cb6e41e: 3566 passed, 5 skipped, 158 deselected, 67 xfailed, 0 failed, exit 0, 52:47 (logs/fast_suite_clean_cb6e41e.txt)
 
 ## Resource and permission blockers
 

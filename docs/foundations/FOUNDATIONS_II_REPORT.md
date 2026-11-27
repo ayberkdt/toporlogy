@@ -66,7 +66,10 @@ Figure of the designs: `FIG_DESIGNS.md` (datawiz audit 0 errors).
 * Baseline marker at f1ff694: 8 passed (bitwise); collection 2584 tests (`logs/`).
 * Fast suite at 79623a7: 2747 passed, 55 xfailed, 2 failed — both snapshot tests, artefacts of regenerating the
   snapshots in the working tree during the run (pass after regeneration).
-* **Clean-worktree fast suite at c5c87d4: 2960 passed, 5 skipped, 58 xfailed, 0 failed, exit 0** (36:51;
+* **Clean-worktree fast suite at cb6e41e: 3566 passed, 5 skipped, 67 xfailed, 0 failed, exit 0** (52:47;
+  `logs/fast_suite_clean_cb6e41e.txt`). Earlier clean runs: de4dd3b (1 failure in the example snapshot, fixed),
+  c5c87d4 (0 failures).
+* Clean-worktree fast suite at c5c87d4: 2960 passed, 5 skipped, 58 xfailed, 0 failed, exit 0** (36:51;
   `logs/fast_suite_clean_c5c87d4.txt`). Later commits (WP09 adaptivity, material cards, creep optimisation) were
   checked with their own files and the meta tests; a final clean run covers them.
 * ruff and mypy clean at each integration commit (mypy: 170 files).
