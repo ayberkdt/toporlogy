@@ -14,6 +14,8 @@ the record is named in each row. Synthetic parameters throughout; no real materi
 | L solver | backward/forward error report, inertia, Krylov with structural checks, gauge solve, refinement, transpose solve | L1–L5 (`L_solver.md`) | L2c: SPD path does not detect an indefinite matrix (answer residual-checked) |
 | P properties | E(T)/ν(T)/K(T)/G(T) from two functions, validity box, ε_th = ∫α dT, thermoelastic point | PP1–PP17 (`P_properties.md`) | — |
 | V viscoelastic | Maxwell/KV/SLS/Burgers, 3-D generalized Maxwell (independent K, G spectra), WLF/Arrhenius, DMA | V1–V10, C1 (`V_viscoelastic.md`) | — |
+| VF fractional | Mittag-Leffler E_α, E_α,β (vs mpmath ≤ 1.5e-13), fractional Maxwell/KV/Zener closed forms (vs numerical inverse Laplace ~1e-16), passivity, Prony bridge to the generalized Maxwell with an error budget | VF1–VF11 (`VF_fractional.md`) | VF9 monotone Prony error at α = 0.3 |
+| TP thermoplastics | logistic glass-transition property model, crystallinity mixing inside the bounds, crystallising thermoelastic point with latent heat and shrinkage | TP1, TP2, TP5, MX1–MX4 (`TP_thermoplastic.md`) | wording: secant-CTE control 25.9 % (predicted ~8 %) |
 | C creep | Norton, Norton–Bailey, Arrhenius, adaptive long holds | C2–C7 (`C_creep.md`) | C3g (n = 20 relaxation prediction), C6a (global error of local step control) |
 | R rate | physical J2, Perzyna, Eyring, Drucker–Prager | R1–R7 (`R_rate.md`) | R3a (1-ulp steady state) |
 | T spectral | f(A) with Fréchet derivative/JVP/VJP at repeated eigenvalues; VRH, A_U, Zener | TS1–TS9, MO1–4, E5 (`T_spectral.md`) | — |
