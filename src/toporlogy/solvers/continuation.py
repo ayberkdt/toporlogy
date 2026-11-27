@@ -762,7 +762,8 @@ def locate_critical(problem: ContinuationProblem, path: ContinuationPath, i: int
     if not 0 <= i < len(path.points) - 1:
         raise ValueError(f"interval {i} outside the path (0 .. {len(path.points) - 2})")
     A, B = path.points[i], path.points[i + 1]
-    sA, sB = spectrum(problem.linearize(A.x, A.lam)), spectrum(problem.linearize(B.x, B.lam))
+    linA, linB = problem.linearize(A.x, A.lam), problem.linearize(B.x, B.lam)
+    sA, sB = spectrum(linA), spectrum(linB)
     mA, mB = sA.index, sB.index
     if mA == mB:
         raise ValueError(f"no critical point between points {i} and {i + 1}: index {mA} at both")
@@ -770,6 +771,17 @@ def locate_critical(problem: ContinuationProblem, path: ContinuationPath, i: int
     fA, vA = sA.position(j)
     fB, vB = sB.position(j)
     if not fA * fB < 0:
+        # an endpoint that already meets the convergence test IS the critical point (an accepted point that lands
+        # exactly on it: the crossing eigenvalue is zero there; docs/foundations/prereg/R07c_locate_zero.md)
+        scale0 = max(abs(fA), abs(fB))
+        for t_end, P_end, f_end, v_end, lin_end in ((0.0, A, fA, vA, linA), (1.0, B, fB, vB, linB)):
+            if abs(f_end) <= max(cs.eig_tol * scale0, 16 * np.finfo(float).eps * lin_end.norm1):
+                phi_e = _signed(v_end)
+                q_e = np.asarray(problem.load, float)
+                lt_e = float(phi_e @ q_e) / float(np.linalg.norm(q_e))
+                kind_e = "bifurcation" if abs(lt_e) <= cs.bifurcation_tol else "limit"
+                return CriticalPoint(P_end.lam, np.asarray(P_end.x, float).copy(), phi_e, f_end, kind_e, lt_e, mA,
+                                     mB, False, t_end, 0, True, i, [])
         raise ValueError(f"crossing eigenvalue not bracketed ({fA:.3e} at point {i}, {fB:.3e} at {i + 1})")
     c = B.x - A.x
     cc = float(c @ c)

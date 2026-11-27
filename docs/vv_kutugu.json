@@ -538,36 +538,6 @@
    "slow": false
   },
   {
-   "nodeid": "tests/toporlogy/test_bifurcation.py::test_a1_asymmetric_bifurcation_located_and_classified",
-   "kind": "pre-registered check failed",
-   "model_backend": "solvers.continuation arc_length, closed-form spring model A (CPU)",
-   "reason": "model A, ds = 0,01 ön kayıtlı: birincil yolda |dx/dλ| = 1/k_a = 0,01, ilk yay boyu adımı Δλ = 1 ve kabul edilen nokta tam λ_c = 1'e düşüyor; K = diag(0, 100) tekil, sonraki tahmin çözümü K⁻¹q başarısız (11 ret, step_limit / singular_tangent). Yerleştirme değil, arc_length'in tam tekil kabul noktasından tahmin üretememesi; post hoc ds = 0,0137 ile geçiyor Update 27 Nov 2026 (prereg/R07_bordered.md): the arc_length predictor now passes the exactly singular point (bordered / previous-increment predictor); the test still fails, now in locate_critical: the crossing eigenvalue is exactly 0 at the accepted point and is not bracketed.",
-   "risk": "low",
-   "resolution": "bracket a crossing eigenvalue that is exactly zero at an accepted point in locate_critical (the predictor part of R07 is fixed: prereg/R07_bordered.md)",
-   "record": "docs/olcumler/catallanma_onkayit.md",
-   "slow": false
-  },
-  {
-   "nodeid": "tests/toporlogy/test_bifurcation.py::test_a2_asymmetric_branch_switch[plus]",
-   "kind": "pre-registered check failed",
-   "model_backend": "solvers.continuation arc_length, closed-form spring model A (CPU)",
-   "reason": "model A, ds = 0,01 ön kayıtlı: birincil yolda |dx/dλ| = 1/k_a = 0,01, ilk yay boyu adımı Δλ = 1 ve kabul edilen nokta tam λ_c = 1'e düşüyor; K = diag(0, 100) tekil, sonraki tahmin çözümü K⁻¹q başarısız (11 ret, step_limit / singular_tangent). Yerleştirme değil, arc_length'in tam tekil kabul noktasından tahmin üretememesi; post hoc ds = 0,0137 ile geçiyor Update 27 Nov 2026 (prereg/R07_bordered.md): the arc_length predictor now passes the exactly singular point (bordered / previous-increment predictor); the test still fails, now in locate_critical: the crossing eigenvalue is exactly 0 at the accepted point and is not bracketed.",
-   "risk": "low",
-   "resolution": "bracket a crossing eigenvalue that is exactly zero at an accepted point in locate_critical (the predictor part of R07 is fixed: prereg/R07_bordered.md)",
-   "record": "docs/olcumler/catallanma_onkayit.md",
-   "slow": false
-  },
-  {
-   "nodeid": "tests/toporlogy/test_bifurcation.py::test_a2_asymmetric_branch_switch[minus]",
-   "kind": "pre-registered check failed",
-   "model_backend": "solvers.continuation arc_length, closed-form spring model A (CPU)",
-   "reason": "model A, ds = 0,01 ön kayıtlı: birincil yolda |dx/dλ| = 1/k_a = 0,01, ilk yay boyu adımı Δλ = 1 ve kabul edilen nokta tam λ_c = 1'e düşüyor; K = diag(0, 100) tekil, sonraki tahmin çözümü K⁻¹q başarısız (11 ret, step_limit / singular_tangent). Yerleştirme değil, arc_length'in tam tekil kabul noktasından tahmin üretememesi; post hoc ds = 0,0137 ile geçiyor Update 27 Nov 2026 (prereg/R07_bordered.md): the arc_length predictor now passes the exactly singular point (bordered / previous-increment predictor); the test still fails, now in locate_critical: the crossing eigenvalue is exactly 0 at the accepted point and is not bracketed.",
-   "risk": "low",
-   "resolution": "bracket a crossing eigenvalue that is exactly zero at an accepted point in locate_critical (the predictor part of R07 is fixed: prereg/R07_bordered.md)",
-   "record": "docs/olcumler/catallanma_onkayit.md",
-   "slow": false
-  },
-  {
    "nodeid": "tests/toporlogy/test_bifurcation.py::test_fc4_dense_and_sparse_spectra_agree",
    "kind": "pre-registered check failed",
    "model_backend": "solvers.continuation locate_critical, fem.nonlinear SVK Q4 column (CPU, numpy eigh / SuperLU)",

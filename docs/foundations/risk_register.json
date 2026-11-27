@@ -78,12 +78,12 @@
    "id": "R07",
    "severity": "medium",
    "impact": "exact singular point breaks the arc-length predictor",
-   "evidence": "prereg/R07_bordered.md: bordered / previous-increment predictor passes an exactly singular accepted point (R1-R6 pass, bitwise neutral elsewhere); historical A1/A2 xfails now fail in locate_critical (zero crossing eigenvalue not bracketed)",
+   "evidence": "prereg/R07_bordered.md (bordered predictor) and R07c_locate_zero.md (critical point at an accepted point); historical A1/A2 strict xfails promoted",
    "owner": "WP10",
    "dependencies": [],
    "reproduction": null,
    "acceptance_gate": "N4",
-   "status": "IN_PROGRESS (predictor fixed; critical-point bracketing at an exactly zero eigenvalue still fails)"
+   "status": "VERIFIED_SCOPE (resolved on the bifurcation models; corrector ZeroDivisionError at some ulp offsets of the truss noted in R07_bordered.md)"
   },
   {
    "id": "R08",
