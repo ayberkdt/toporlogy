@@ -88,3 +88,11 @@ homogeneous cell returns κ, rel 1e-10); MH1–MH9 unchanged.
 PASS on the first run: diag(1, −1) refused ("positive definite"), [[1, 0.5], [0, 1]] refused ("symmetric"); the SPD
 anisotropic κ and the scalar 2.5 are returned by the homogeneous skew cell to ≤ 1e-10. MH and MB files: 23 passed.
 The conduction path is not used by the cell optimisation, so the slow results are unaffected.
+
+## Robustness addition MH11 (preregistered 2026-11-27 12:46 +0300, base `773fd33`, before the code change)
+
+Measured before this record (probe at 773fd33): thickness 0 fails inside the factorisation ("Factor is exactly
+singular") and thickness −1 is accepted with a positive C (negative K over a negative volume). The root is that
+`fem.mesh.problem.ElasticProblem` does not check the thickness (pre-existing; a follow-up). Change here:
+`homogenize_mesh_elasticity` and `homogenize_mesh_conduction` require a finite thickness > 0 (ValueError). Check
+MH11: thickness 0, −1 and NaN refused in both functions; MH1–MH10 unchanged.
